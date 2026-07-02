@@ -35,7 +35,7 @@ This plan implements the audit remediation and architectural foundation in depen
     - Use fast-check to generate env objects with missing/invalid fields; assert Joi schema rejects them and error messages contain the variable names
     - **Validates: Requirements 3.2, 3.3, 3.4**
 
-- [~] 3. Checkpoint - Verify environment validation
+- [x] 3. Checkpoint - Verify environment validation
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 4. Apply HTTP security middleware and bootstrap refactor
@@ -106,7 +106,7 @@ This plan implements the audit remediation and architectural foundation in depen
     - **Property 6: Validation failure response conforms to error envelope**
     - **Validates: Requirements 5.1, 5.2, 5.4, 5.5**
 
-- [~] 6. Checkpoint - Verify middleware and interceptors
+- [x] 6. Checkpoint - Verify middleware and interceptors
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 7. Establish common directory structure and relocate shared code
@@ -135,42 +135,42 @@ This plan implements the audit remediation and architectural foundation in depen
     - Update import in `auth.module.ts`
     - _Requirements: 9.7_
 
-- [ ] 8. Refactor auth module to use ConfigService and eliminate secrets
+- [x] 8. Refactor auth module to use ConfigService and eliminate secrets
   - [x] 8.1 Refactor AuthModule to use JwtModule.registerAsync with ConfigService
     - Replace inline `JwtModule.register()` with `JwtModule.registerAsync()` using `ConfigService`
     - Read `JWT_SECRET` and `JWT_EXPIRATION` from ConfigService
     - Import `ConfigModule` in AuthModule imports
     - _Requirements: 2.1, 2.4_
 
-  - [-] 8.2 Refactor JwtStrategy to inject ConfigService
+  - [x] 8.2 Refactor JwtStrategy to inject ConfigService
     - Add `ConfigService` injection to `JwtStrategy` constructor
     - Read `secretOrKey` from `config.get<string>('JWT_SECRET')`
     - Remove all fallback secret strings
     - _Requirements: 2.1, 2.4_
 
-  - [-] 8.3 Remove createDefaultUser and fix bcrypt cost
+  - [x] 8.3 Remove createDefaultUser and fix bcrypt cost
     - Remove `createDefaultUser()` method from `apps/api/src/users/users.service.ts`
     - Remove the auto-creation logic in `apps/api/src/auth/auth.service.ts` `validateUser` method
     - Update bcrypt cost factor from 10 to 12 in all hashing calls
     - _Requirements: 2.5, 2.6, 2.7_
 
-  - [~] 8.4 Write property test for bcrypt cost factor (Property 1)
+  - [x] 8.4 Write property test for bcrypt cost factor (Property 1)
     - **Property 1: Bcrypt cost factor invariant**
     - Use fast-check to generate password strings; verify hash prefix is `$2b$12$` or `$2a$12$`
     - **Validates: Requirements 2.7**
 
-- [~] 9. Checkpoint - Verify auth refactor and common structure
+- [x] 9. Checkpoint - Verify auth refactor and common structure
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 10. Remove frontend duplicate route structure
-  - [~] 10.1 Delete the (dashboard) route group
+- [x] 10. Remove frontend duplicate route structure
+  - [x] 10.1 Delete the (dashboard) route group
     - Delete the entire `apps/web/src/app/(dashboard)/` directory (contains `layout.tsx` and `dashboard/page.tsx`)
     - Verify the canonical `apps/web/src/app/dashboard/` retains all sub-routes (patients, orders, laboratory, doctor)
     - Verify `apps/web/src/app/dashboard/layout.tsx` serves as the single dashboard layout
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-- [ ] 11. Integration tests
-  - [~] 11.1 Write integration tests for bootstrap and middleware
+- [x] 11. Integration tests
+  - [x] 11.1 Write integration tests for bootstrap and middleware
     - Test: app starts successfully with valid env vars
     - Test: app fails to start with missing `JWT_SECRET`
     - Test: Helmet security headers present on responses
@@ -180,7 +180,7 @@ This plan implements the audit remediation and architectural foundation in depen
     - Test: unknown endpoint returns 404 in error envelope
     - _Requirements: 3.1, 2.2, 4.1, 4.3, 4.5, 4.6, 6.1, 11.2, 11.3_
 
-- [~] 12. Final checkpoint - Full verification
+- [x] 12. Final checkpoint - Full verification
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
