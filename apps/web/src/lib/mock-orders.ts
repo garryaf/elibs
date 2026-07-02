@@ -1,0 +1,112 @@
+import type { Order } from "@/types/order";
+import { MOCK_TESTS } from "./mock-tests";
+
+const t = (id: string) => MOCK_TESTS.find((x) => x.id === id)!;
+
+export const MOCK_ORDERS: Order[] = [
+  {
+    id: "o-001",
+    orderNumber: "ORD-2026-0001",
+    patientId: "p-002",
+    patientName: "Siti Rahayu",
+    patientMrn: "MRN-2026-0002",
+    status: "COMPLETED",
+    details: [
+      { id: "od-001", testId: "t-001", test: t("t-001"), qty: 1, price: 85000, resultValue: "Selesai", resultFlag: "NORMAL", status: "COMPLETED" },
+      { id: "od-002", testId: "t-005", test: t("t-005"), qty: 1, price: 40000, resultValue: 120, resultFlag: "NORMAL", status: "COMPLETED" },
+      { id: "od-003", testId: "t-008", test: t("t-008"), qty: 1, price: 55000, resultValue: 220, resultFlag: "HIGH", status: "COMPLETED" },
+    ],
+    invoice: {
+      id: "inv-001", orderId: "o-001",
+      subtotal: 180000, discountAmount: 0, total: 180000,
+      paymentMethod: "CASH", paidAt: "2026-06-29T10:45:00Z",
+    },
+    totalAmount: 180000,
+    createdAt: "2026-06-29T10:00:00Z",
+    updatedAt: "2026-06-29T14:30:00Z",
+    clinicalInterpretation: "Kolesterol sedikit tinggi. Kurangi makanan berlemak.",
+    approvedAt: "2026-06-29T15:00:00Z",
+    approvedBy: "dr. Andi",
+  },
+  {
+    id: "o-002",
+    orderNumber: "ORD-2026-0002",
+    patientId: "p-001",
+    patientName: "Budi Santoso",
+    patientMrn: "MRN-2026-0001",
+    status: "IN_ANALYSIS",
+    details: [
+      { id: "od-004", testId: "t-007", test: t("t-007"), qty: 1, price: 175000, resultValue: 6.8, resultFlag: "HIGH", status: "COMPLETED" },
+      { id: "od-005", testId: "t-023", test: t("t-023"), qty: 1, price: 130000, status: "PENDING" },
+      { id: "od-006", testId: "t-024", test: t("t-024"), qty: 1, price: 140000, status: "PENDING" },
+    ],
+    invoice: {
+      id: "inv-002", orderId: "o-002",
+      subtotal: 445000, discountAmount: 20000, total: 425000,
+      paymentMethod: "EDC", paidAt: "2026-06-30T08:15:00Z",
+    },
+    totalAmount: 425000,
+    createdAt: "2026-06-30T08:00:00Z",
+    updatedAt: "2026-06-30T08:15:00Z",
+    notes: "Pasien DM tipe 2, pantau HbA1c",
+  },
+  {
+    id: "o-003",
+    orderNumber: "ORD-2026-0003",
+    patientId: "p-004",
+    patientName: "Dewi Kusuma",
+    patientMrn: "MRN-2026-0004",
+    status: "PENDING_PAYMENT",
+    details: [
+      { id: "od-007", testId: "t-001", test: t("t-001"), qty: 1, price: 85000 },
+      { id: "od-008", testId: "t-017", test: t("t-017"), qty: 1, price: 95000 },
+      { id: "od-009", testId: "t-021", test: t("t-021"), qty: 1, price: 50000 },
+    ],
+    totalAmount: 230000,
+    createdAt: "2026-06-30T09:00:00Z",
+    updatedAt: "2026-06-30T09:00:00Z",
+  },
+  {
+    id: "o-004",
+    orderNumber: "ORD-2026-0004",
+    patientId: "p-007",
+    patientName: "Bagas Anugerah",
+    patientMrn: "MRN-2026-0007",
+    status: "PAID",
+    details: [
+      { id: "od-010", testId: "t-020", test: t("t-020"), qty: 1, price: 175000 },
+      { id: "od-011", testId: "t-019", test: t("t-019"), qty: 1, price: 85000 },
+    ],
+    invoice: {
+      id: "inv-004", orderId: "o-004",
+      subtotal: 260000, discountAmount: 0, total: 260000,
+      paymentMethod: "TRANSFER", paidAt: "2026-06-30T09:30:00Z",
+    },
+    totalAmount: 260000,
+    createdAt: "2026-06-30T09:15:00Z",
+    updatedAt: "2026-06-30T09:30:00Z",
+  },
+  {
+    id: "o-005",
+    orderNumber: "ORD-2026-0005",
+    patientId: "p-008",
+    patientName: "Nurul Hidayah",
+    patientMrn: "MRN-2026-0008",
+    status: "SAMPLE_COLLECTED",
+    details: [
+      { id: "od-012", testId: "t-014", test: t("t-014"), qty: 1, price: 60000 },
+      { id: "od-013", testId: "t-015", test: t("t-015"), qty: 1, price: 60000 },
+      { id: "od-014", testId: "t-016", test: t("t-016"), qty: 1, price: 70000 },
+      { id: "od-015", testId: "t-012", test: t("t-012"), qty: 1, price: 60000 },
+      { id: "od-016", testId: "t-013", test: t("t-013"), qty: 1, price: 55000 },
+    ],
+    invoice: {
+      id: "inv-005", orderId: "o-005",
+      subtotal: 305000, discountAmount: 15000, total: 290000,
+      paymentMethod: "CASH", paidAt: "2026-06-30T08:50:00Z",
+    },
+    totalAmount: 290000,
+    createdAt: "2026-06-30T08:45:00Z",
+    updatedAt: "2026-06-30T08:50:00Z",
+  },
+];

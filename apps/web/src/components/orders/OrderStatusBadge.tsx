@@ -1,0 +1,67 @@
+import { cn } from "@/lib/utils";
+import type { OrderStatus } from "@/types/order";
+
+const STATUS_CONFIG: Record<
+  OrderStatus,
+  { label: string; dot: string; bg: string; text: string; ring: string }
+> = {
+  PENDING_PAYMENT: {
+    label: "Belum Bayar",
+    dot: "bg-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-900/30",
+    text: "text-amber-700 dark:text-amber-300",
+    ring: "ring-amber-200 dark:ring-amber-700/50",
+  },
+  PAID: {
+    label: "Lunas",
+    dot: "bg-blue-400",
+    bg: "bg-blue-50 dark:bg-blue-900/30",
+    text: "text-blue-700 dark:text-blue-300",
+    ring: "ring-blue-200 dark:ring-blue-700/50",
+  },
+  SAMPLE_COLLECTED: {
+    label: "Sampel Diterima",
+    dot: "bg-indigo-400",
+    bg: "bg-indigo-50 dark:bg-indigo-900/30",
+    text: "text-indigo-700 dark:text-indigo-300",
+    ring: "ring-indigo-200 dark:ring-indigo-700/50",
+  },
+  IN_ANALYSIS: {
+    label: "Analisa",
+    dot: "bg-violet-400 animate-pulse",
+    bg: "bg-violet-50 dark:bg-violet-900/30",
+    text: "text-violet-700 dark:text-violet-300",
+    ring: "ring-violet-200 dark:ring-violet-700/50",
+  },
+  COMPLETED: {
+    label: "Selesai",
+    dot: "bg-emerald-500",
+    bg: "bg-emerald-50 dark:bg-emerald-900/30",
+    text: "text-emerald-700 dark:text-emerald-300",
+    ring: "ring-emerald-200 dark:ring-emerald-700/50",
+  },
+  CANCELLED: {
+    label: "Dibatalkan",
+    dot: "bg-red-400",
+    bg: "bg-red-50 dark:bg-red-900/30",
+    text: "text-red-700 dark:text-red-300",
+    ring: "ring-red-200 dark:ring-red-700/50",
+  },
+};
+
+export function OrderStatusBadge({ status }: { status: OrderStatus }) {
+  const cfg = STATUS_CONFIG[status];
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
+        cfg.bg,
+        cfg.text,
+        cfg.ring
+      )}
+    >
+      <span className={cn("h-1.5 w-1.5 rounded-full", cfg.dot)} />
+      {cfg.label}
+    </span>
+  );
+}

@@ -1,0 +1,28 @@
+export type Gender = "MALE" | "FEMALE";
+
+export type PatientStatus = "ACTIVE" | "INACTIVE";
+
+export interface Patient {
+  id: string;
+  mrn: string;
+  nik: string;
+  name: string;
+  dob: string; // ISO date string (YYYY-MM-DD)
+  gender: Gender;
+  phone: string;
+  address: string;
+  email?: string;
+  status: PatientStatus;
+  createdAt: string;
+  lastVisit?: string;
+}
+
+export interface PatientFormData {
+  nik: string;
+  name: string;
+  dob: string;
+  gender: Gender;
+  phone: string;
+  address: string;
+  email?: string;
+}
