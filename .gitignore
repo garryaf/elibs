@@ -1,1 +1,57 @@
 node_modules
+###############################################################################
+# Enterprise Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+# Next.js
+.next/
+out/
+# Build
+dist/
+build/
+coverage/
+# Cache
+.cache/
+.turbo/
+.eslintcache
+*.tsbuildinfo
+# Environment
+.env
+.env.*
+!.env.example
+# Logs
+logs/
+*.log
+# Docker
+docker-data/
+postgres-data/
+redis-data/
+*.pid
+# PostgreSQL
+*.sql.gz
+*.dump
+*.backup
+# SQLite
+*.sqlite
+*.sqlite3
+*.db
+# Uploads
+uploads/
+storage/
+# IDE
+.vscode/
+.idea/
+# macOS
+.DS_Store
+# Linux
+*~
+# Temporary
+tmp/
+temp/
+# Test
+.nyc_output/
+# Misc
+*.swp
+*.swo
