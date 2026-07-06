@@ -55,3 +55,6 @@ temp/
 # Misc
 *.swp
 *.swo
+# MS Office temporary/lock files
+~$*
+*.tmp
