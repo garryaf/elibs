@@ -1,0 +1,34 @@
+# Dependencies (will be reinstalled in Docker)
+node_modules
+apps/api/node_modules
+apps/web/node_modules
+
+# Build outputs
+apps/api/dist
+apps/web/.next
+
+# Environment files (injected via docker-compose)
+.env
+.env.*
+deploy/env/.env.*
+
+# Version control
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Documentation & specs (not needed in image)
+*.md
+.kiro
+Functiona spec
+
+# Test coverage
+coverage
+apps/api/coverage
+apps/web/coverage
+
+# Logs
+*.log

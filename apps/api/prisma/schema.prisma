@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -200,10 +201,165 @@ model Tariff {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  test TestMaster @relation(fields: [testId], references: [id])
+  test      TestMaster @relation(fields: [testId], references: [id])
+  clinic    Clinic?    @relation(fields: [clinicId], references: [id])
+  insurance Insurance? @relation(fields: [insuranceId], references: [id])
 
   @@unique([testId, clinicId, insuranceId])
   @@map("tariffs")
+}
+
+// === MASTER DATA: DOCTOR / REFERRAL ===
+
+model Doctor {
+  id            String    @id @default(uuid()) @db.Uuid
+  code          String    @unique
+  name          String
+  specialization String?
+  phone         String?
+  email         String?
+  licenseNumber String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  orders Order[]
+
+  @@map("doctors")
+}
+
+// === MASTER DATA: CLINIC ===
+
+model Clinic {
+  id        String    @id @default(uuid()) @db.Uuid
+  code      String    @unique
+  name      String
+  address   String?
+  phone     String?
+  email     String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  orders  Order[]
+  tariffs Tariff[]
+
+  @@map("clinics")
+}
+
+// === MASTER DATA: INSURANCE ===
+
+model Insurance {
+  id        String    @id @default(uuid()) @db.Uuid
+  code      String    @unique
+  name      String
+  type      String?   // BPJS, Swasta, etc.
+  phone     String?
+  email     String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  orders   Order[]
+  tariffs  Tariff[]
+  patients Patient[]
+
+  @@map("insurances")
+}
+
+// === MASTER DATA: EQUIPMENT ===
+
+model Equipment {
+  id            String    @id @default(uuid()) @db.Uuid
+  code          String    @unique
+  name          String
+  manufacturer  String?
+  model         String?
+  serialNumber  String?
+  location      String?
+  status        String    @default("ACTIVE") // ACTIVE, MAINTENANCE, RETIRED
+  lastCalibration DateTime?
+  nextCalibration DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  calibrations Calibration[]
+
+  @@map("equipments")
+}
+
+// === MASTER DATA: CALIBRATION ===
+
+model Calibration {
+  id            String   @id @default(uuid()) @db.Uuid
+  equipmentId   String   @db.Uuid
+  calibratedAt  DateTime
+  calibratedBy  String
+  result        String   // PASS, FAIL
+  notes         String?
+  nextDueDate   DateTime?
+  certificateNo String?
+  createdAt     DateTime @default(now())
+
+  equipment Equipment @relation(fields: [equipmentId], references: [id])
+
+  @@index([equipmentId])
+  @@map("calibrations")
+}
+
+// === MASTER DATA: REAGENT ===
+
+model Reagent {
+  id            String    @id @default(uuid()) @db.Uuid
+  code          String    @unique
+  name          String
+  manufacturer  String?
+  lotNumber     String?
+  expiryDate    DateTime?
+  quantity      Int       @default(0)
+  unit          String?
+  storageTemp   String?   // e.g., "2-8°C"
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@map("reagents")
+}
+
+// === MASTER DATA: SAMPLE TYPE ===
+
+model SampleTypeMaster {
+  id           String    @id @default(uuid()) @db.Uuid
+  code         String    @unique
+  name         String
+  container    String?   // e.g., "EDTA Tube", "SST Tube"
+  instructions String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  @@map("sample_types")
+}
+
+// === MASTER DATA: MEASUREMENT UNIT ===
+
+model MeasurementUnit {
+  id           String    @id @default(uuid()) @db.Uuid
+  code         String    @unique
+  name         String
+  description  String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("measurement_units")
 }
 
 // === PATIENT ===
@@ -218,12 +374,24 @@ model Patient {
   phone                      String?
   address                    String?
   email                      String?
+  // Phase G: Geographic fields for analytics
+  province                   String?
+  city                       String?
+  district                   String?
+  village                    String?
+  postalCode                 String?
+  // Clinical fields
+  bloodType                  String?
+  emergencyContact           String?
+  emergencyPhone             String?
+  insuranceId                String?   @db.Uuid
   consentDigitalNotification Boolean   @default(false)
   createdAt                  DateTime  @default(now())
   updatedAt                  DateTime  @updatedAt
   deletedAt                  DateTime?
 
-  orders Order[]
+  insurance Insurance? @relation(fields: [insuranceId], references: [id])
+  orders    Order[]
 
   @@map("patients")
 }
@@ -262,6 +430,9 @@ model Order {
   updatedAt         DateTime         @updatedAt
 
   patient       Patient           @relation(fields: [patientId], references: [id])
+  clinic        Clinic?           @relation(fields: [clinicId], references: [id])
+  doctor        Doctor?           @relation(fields: [doctorId], references: [id])
+  insurance     Insurance?        @relation(fields: [insuranceId], references: [id])
   orderDetails  OrderDetail[]
   notifications NotificationLog[]
 

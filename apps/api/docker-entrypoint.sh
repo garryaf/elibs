@@ -8,8 +8,9 @@ echo "Port: ${PORT:-3001}"
 # Run Prisma migrations (safe for production — deploy only applies pending)
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
   echo "Running database migrations..."
-  npx prisma migrate deploy
+  cd /app/apps/api && npx prisma migrate deploy
   echo "Migrations complete."
+  cd /app
 fi
 
 # Execute the main command

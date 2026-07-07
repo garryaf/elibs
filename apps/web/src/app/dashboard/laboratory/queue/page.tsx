@@ -15,6 +15,7 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api";
 import {
   LabStatusBadge,
   type OrderStatus,
@@ -179,24 +180,20 @@ export default function LaboratoryQueuePage() {
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: String(PAGE_SIZE),
+      const res = await apiClient.getLabQueue({
+        status: activeTab !== "ALL" ? activeTab : undefined,
+        search: search.trim() || undefined,
       });
-      if (activeTab !== "ALL") {
-        params.set("status", activeTab);
-      }
-      if (search.trim()) {
-        params.set("search", search.trim());
-      }
-
-      const res = await fetch(`/api/v1/lab/queue?${params.toString()}`);
-      if (res.ok) {
-        const json: LabQueueResponse = await res.json();
-        setOrders(json.data.items);
-        setTotalItems(json.data.total);
+      const data = res?.data as { items?: LabQueueOrder[]; total?: number } | LabQueueOrder[] | unknown;
+      if (Array.isArray(data)) {
+        setOrders(data as LabQueueOrder[]);
+        setTotalItems((data as LabQueueOrder[]).length);
+      } else if (data && typeof data === "object" && "items" in (data as object)) {
+        const d = data as { items: LabQueueOrder[]; total: number };
+        setOrders(d.items);
+        setTotalItems(d.total);
       } else {
-        // Fallback to mock data during development
+        // Fallback: try to map from orders endpoint
         applyMockData();
       }
     } catch {
@@ -236,12 +233,19 @@ export default function LaboratoryQueuePage() {
 
   const tabCounts = useMemo(() => {
     const counts: Record<QueueTab, number> = {
-      ALL: MOCK_QUEUE_ORDERS.length,
-      PAID: MOCK_QUEUE_ORDERS.filter((o) => o.status === "PAID").length,
-      SAMPLE_COLLECTED: MOCK_QUEUE_ORDERS.filter((o) => o.status === "SAMPLE_COLLECTED").length,
-      IN_ANALYSIS: MOCK_QUEUE_ORDERS.filter((o) => o.status === "IN_ANALYSIS").length,
-      VERIFIED: MOCK_QUEUE_ORDERS.filter((o) => o.status === "VERIFIED").length,
+      ALL: totalItems,
+      PAID: 0,
+      SAMPLE_COLLECTED: 0,
+      IN_ANALYSIS: 0,
+      VERIFIED: 0,
     };
+    // When we have order data, count from the current set
+    orders.forEach((o) => {
+      if (o.status in counts) {
+        counts[o.status as QueueTab]++;
+      }
+    });
+    if (activeTab === "ALL") counts.ALL = totalItems;
     return counts;
   }, []);
 

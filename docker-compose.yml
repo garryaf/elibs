@@ -14,7 +14,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres123}
       POSTGRES_DB: ${DB_NAME:-elis_db}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_PORT:-5433}:5432"
     volumes:
       - elis_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -44,9 +44,8 @@ services:
   # --- Application ---
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
-      target: production
+      context: .
+      dockerfile: apps/api/Dockerfile
     container_name: elis-api
     ports:
       - "${API_PORT:-3001}:3001"
@@ -68,8 +67,8 @@ services:
 
   web:
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/web/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: http://localhost:${API_PORT:-3001}
     container_name: elis-web

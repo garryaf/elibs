@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Search, Plus, TrendingUp } from "lucide-react";
-import { MOCK_ORDERS } from "@/lib/mock-orders";
+import { apiClient } from "@/lib/api";
 import type { Order, OrderStatus } from "@/types/order";
 import { OrderTable } from "@/components/orders/OrderTable";
 
@@ -20,9 +20,35 @@ function formatRupiah(amount: number): string {
 }
 
 export default function OrdersPage() {
-  const [orders] = useState<Order[]>(MOCK_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
+
+  const loadOrders = useCallback(async () => {
+    try {
+      const res = await apiClient.getOrders({ limit: 100, status: statusFilter !== "ALL" ? statusFilter : undefined });
+      const raw = (res?.data as { data?: unknown[] })?.data ?? [];
+      const mapped: Order[] = (raw as Record<string, unknown>[]).map((o) => ({
+        id: o.id as string,
+        orderNumber: o.orderNumber as string,
+        patientId: (o as { patient?: { id?: string } }).patient?.id || (o.patientId as string) || "",
+        patientName: (o as { patient?: { name?: string } }).patient?.name || "",
+        patientMrn: (o as { patient?: { mrn?: string } }).patient?.mrn || "",
+        status: o.status as OrderStatus,
+        details: ((o as { orderDetails?: unknown[] }).orderDetails || []) as Order["details"],
+        totalAmount: Number(o.totalAmount) || 0,
+        createdAt: o.createdAt as string,
+        updatedAt: o.updatedAt as string,
+      }));
+      setOrders(mapped);
+    } catch {
+      setOrders([]);
+    }
+  }, [statusFilter]);
+
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
 
   const filtered = useMemo(() => {
     return orders.filter((o) => {
@@ -30,12 +56,11 @@ export default function OrdersPage() {
       const matchSearch =
         !q ||
         o.orderNumber.toLowerCase().includes(q) ||
-        o.patientName.toLowerCase().includes(q) ||
-        o.patientMrn.toLowerCase().includes(q);
-      const matchStatus = statusFilter === "ALL" || o.status === statusFilter;
-      return matchSearch && matchStatus;
+        (o.patientName || "").toLowerCase().includes(q) ||
+        (o.patientMrn || "").toLowerCase().includes(q);
+      return matchSearch;
     });
-  }, [orders, search, statusFilter]);
+  }, [orders, search]);
 
   const stats = {
     total: orders.length,

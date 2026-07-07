@@ -1,6 +1,7 @@
 # ============================================================================
 # eLIS Web — Multi-stage Production Dockerfile
-# Next.js standalone output for minimal container size
+# Build context: monorepo root (.)
+# Usage: docker build -f apps/web/Dockerfile .
 # ============================================================================
 
 # --- Stage 1: Dependencies ---
@@ -8,23 +9,35 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
 
-COPY package.json package-lock.json* ./
-RUN npm ci && npm cache clean --force
+# Copy root workspace files for npm install
+COPY package.json package-lock.json ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+
+# Install all workspace dependencies
+RUN npm ci --workspace=web && npm cache clean --force
 
 # --- Stage 2: Build ---
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 
-# Build-time environment variables
+# Copy source files needed for build
+COPY apps/web/ ./apps/web/
+COPY package.json ./
+
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-
-# Enable standalone output for production
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+
+# Build Next.js
+RUN cd apps/web && npm run build
+
+# Prune dev dependencies
+RUN npm prune --workspace=web --omit=dev
 
 # --- Stage 3: Production ---
 FROM node:20-alpine AS production
@@ -37,12 +50,15 @@ RUN addgroup -g 1001 -S elis && \
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copy standalone output (if enabled in next.config)
-# Fallback: copy .next + node_modules
-COPY --from=builder /app/.next ./.next
+# Copy pruned node_modules
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./
+COPY --from=builder /app/apps/web/node_modules ./apps/web/node_modules
+
+# Copy built application
+COPY --from=builder /app/apps/web/.next ./apps/web/.next
+COPY --from=builder /app/apps/web/public ./apps/web/public
+COPY --from=builder /app/apps/web/package.json ./apps/web/
+COPY package.json ./
 
 USER elis
 
@@ -51,4 +67,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
-CMD ["npm", "run", "start"]
+CMD ["npm", "run", "start", "--workspace=web"]

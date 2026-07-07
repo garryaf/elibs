@@ -1,17 +1,52 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Search, UserPlus, Download } from "lucide-react";
-import { MOCK_PATIENTS } from "@/lib/mock-patients";
+import { apiClient } from "@/lib/api";
 import type { Patient, PatientFormData, PatientStatus } from "@/types/patient";
 import { PatientTable } from "@/components/patients/PatientTable";
 import { PatientFormModal } from "@/components/patients/PatientFormModal";
 import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
 
 export default function PatientsPage() {
-  const [patients, setPatients] = useState<Patient[]>(MOCK_PATIENTS);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<PatientStatus | "ALL">("ALL");
+
+  const loadPatients = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await apiClient.getPatients({ limit: 200, search: search || undefined });
+      const raw = (res?.data as { data?: unknown[] })?.data ?? [];
+      // Map backend Patient model to frontend Patient type
+      const mapped: Patient[] = (raw as Record<string, unknown>[]).map((p) => ({
+        id: p.id as string,
+        mrn: p.mrn as string,
+        nik: p.nik as string,
+        name: p.name as string,
+        dob: (p.dateOfBirth as string) || "",
+        gender: p.gender as "MALE" | "FEMALE",
+        phone: (p.phone as string) || "",
+        address: (p.address as string) || "",
+        email: (p.email as string) || undefined,
+        status: p.deletedAt ? "INACTIVE" : "ACTIVE",
+        createdAt: p.createdAt as string,
+        lastVisit: p.updatedAt as string,
+      }));
+      setPatients(mapped);
+    } catch {
+      // If API fails, show empty state
+      setPatients([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [search]);
+
+  useEffect(() => {
+    const debounce = setTimeout(loadPatients, 300);
+    return () => clearTimeout(debounce);
+  }, [loadPatients]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [viewingPatient, setViewingPatient] = useState<Patient | null>(null);
@@ -62,22 +97,37 @@ export default function PatientsPage() {
     );
   };
 
-  const handleSubmit = (data: PatientFormData) => {
+  const handleSubmit = async (data: PatientFormData) => {
     if (editingPatient) {
-      setPatients((prev) =>
-        prev.map((p) =>
-          p.id === editingPatient.id ? { ...p, ...data } : p
-        )
-      );
+      try {
+        await apiClient.updatePatient(editingPatient.id, {
+          name: data.name,
+          nik: data.nik,
+          dateOfBirth: data.dob,
+          gender: data.gender,
+          phone: data.phone,
+          address: data.address,
+          email: data.email || undefined,
+        });
+        loadPatients();
+      } catch {
+        // Error silently handled — could add toast later
+      }
     } else {
-      const newPatient: Patient = {
-        id: `p-${Date.now()}`,
-        mrn: `MRN-2026-${String(patients.length + 1).padStart(4, "0")}`,
-        status: "ACTIVE",
-        createdAt: new Date().toISOString(),
-        ...data,
-      };
-      setPatients((prev) => [newPatient, ...prev]);
+      try {
+        await apiClient.createPatient({
+          name: data.name,
+          nik: data.nik,
+          dateOfBirth: data.dob,
+          gender: data.gender,
+          phone: data.phone,
+          address: data.address,
+          email: data.email || undefined,
+        });
+        loadPatients();
+      } catch {
+        // Error silently handled
+      }
     }
   };
 

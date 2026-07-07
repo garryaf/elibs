@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsEmail,
   IsDateString,
+  IsUUID,
   Matches,
 } from 'class-validator';
 import { Gender } from '@prisma/client';
@@ -34,6 +35,44 @@ export class CreatePatientDto {
   @IsOptional()
   @IsEmail()
   email?: string;
+
+  // Phase G: Geographic fields
+  @IsOptional()
+  @IsString()
+  province?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  district?: string;
+
+  @IsOptional()
+  @IsString()
+  village?: string;
+
+  @IsOptional()
+  @IsString()
+  postalCode?: string;
+
+  // Clinical fields
+  @IsOptional()
+  @IsString()
+  bloodType?: string;
+
+  @IsOptional()
+  @IsString()
+  emergencyContact?: string;
+
+  @IsOptional()
+  @IsString()
+  emergencyPhone?: string;
+
+  @IsOptional()
+  @IsUUID()
+  insuranceId?: string;
 
   @IsOptional()
   @IsBoolean()

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ClipboardList,
   Clock,
@@ -10,6 +10,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -29,26 +30,15 @@ interface VolumePoint {
 }
 
 // ---------------------------------------------------------------------------
-// Mock data — replace with real API calls to:
-//   GET /api/v1/dashboard/lab-summary
-//   GET /api/v1/dashboard/lab-volume
+// Fallback data — used when API is loading or fails
 // ---------------------------------------------------------------------------
 
-const MOCK_SUMMARY: LabSummary = {
-  totalOrdersToday: 42,
-  averageTatMinutes: 87,
-  pendingApproval: 6,
-  totalInQueue: 18,
-  ordersByStatus: {
-    PENDING_PAYMENT: 5,
-    PAID: 4,
-    SAMPLE_COLLECTED: 3,
-    IN_ANALYSIS: 7,
-    VERIFIED: 6,
-    APPROVED: 12,
-    NOTIFIED: 5,
-    CANCELLED: 0,
-  },
+const EMPTY_SUMMARY: LabSummary = {
+  totalOrdersToday: 0,
+  averageTatMinutes: 0,
+  pendingApproval: 0,
+  totalInQueue: 0,
+  ordersByStatus: {},
 };
 
 function generateMockVolume(days: number): VolumePoint[] {
@@ -250,10 +240,38 @@ const DATE_RANGES: { value: DateRange; label: string }[] = [
 
 export default function LabDashboardPage() {
   const [dateRange, setDateRange] = useState<DateRange>(30);
+  const [summary, setSummary] = useState<LabSummary>(EMPTY_SUMMARY);
+  const [volumeData, setVolumeData] = useState<VolumePoint[]>([]);
 
-  // In production, these would be fetched from the API
-  const summary = MOCK_SUMMARY;
-  const volumeData = useMemo(() => generateMockVolume(dateRange), [dateRange]);
+  // Fetch summary from real API
+  useEffect(() => {
+    apiClient.getLabSummary().then((res) => {
+      const d = (res?.data ?? res) as Record<string, unknown>;
+      setSummary({
+        totalOrdersToday: (d.totalOrdersToday as number) || 0,
+        averageTatMinutes: (d.averageTatMinutes as number) || (d.avgTat as number) || 0,
+        pendingApproval: (d.pendingApproval as number) || 0,
+        totalInQueue: (d.totalInQueue as number) || 0,
+        ordersByStatus: (d.ordersByStatus as Record<string, number>) || {},
+      });
+    }).catch(() => { /* keep empty summary */ });
+  }, []);
+
+  // Fetch volume from real API
+  useEffect(() => {
+    const endDate = new Date().toISOString().slice(0, 10);
+    const startDate = new Date(Date.now() - dateRange * 86400000).toISOString().slice(0, 10);
+    apiClient.getLabVolume({ startDate, endDate }).then((res) => {
+      const d = (res?.data ?? res) as unknown;
+      if (Array.isArray(d)) {
+        setVolumeData(d as VolumePoint[]);
+      } else {
+        setVolumeData(generateMockVolume(dateRange));
+      }
+    }).catch(() => {
+      setVolumeData(generateMockVolume(dateRange));
+    });
+  }, [dateRange]);
 
   return (
     <div className="space-y-6">

@@ -40,6 +40,20 @@ const STATUS_CONFIG: Record<
     text: "text-emerald-700 dark:text-emerald-300",
     ring: "ring-emerald-200 dark:ring-emerald-700/50",
   },
+  VERIFIED: {
+    label: "Terverifikasi",
+    dot: "bg-teal-500",
+    bg: "bg-teal-50 dark:bg-teal-900/30",
+    text: "text-teal-700 dark:text-teal-300",
+    ring: "ring-teal-200 dark:ring-teal-700/50",
+  },
+  APPROVED: {
+    label: "Disetujui",
+    dot: "bg-green-600",
+    bg: "bg-green-50 dark:bg-green-900/30",
+    text: "text-green-700 dark:text-green-300",
+    ring: "ring-green-200 dark:ring-green-700/50",
+  },
   CANCELLED: {
     label: "Dibatalkan",
     dot: "bg-red-400",
