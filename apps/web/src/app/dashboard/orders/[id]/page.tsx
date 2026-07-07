@@ -1,19 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, Printer, User,
   CreditCard, Banknote, Building2, ReceiptText,
-  FlaskConical, Clock
+  FlaskConical, Clock, Loader2
 } from "lucide-react";
-import { MOCK_ORDERS } from "@/lib/mock-orders";
-import type { Order, PaymentMethod } from "@/types/order";
+import { apiClient } from "@/lib/api";
+import type { PaymentMethod } from "@/types/order";
 import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
 import { cn } from "@/lib/utils";
 
+// ─── Local types matching API response ──────────────────────────────────────
+
+interface OrderDetailApi {
+  id: string;
+  testId: string;
+  status: string;
+  resultValue?: number | string;
+  flag?: "NORMAL" | "LOW" | "HIGH" | "CRITICAL";
+  price: number;
+  discount: number;
+  finalPrice: number;
+  test: {
+    code: string;
+    name: string;
+    unit: string;
+  };
+}
+
+interface OrderApi {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number;
+  paymentMethod?: string;
+  amountPaid?: number;
+  paidAt?: string;
+  barcode?: string;
+  barcodeImage?: string;
+  patient: {
+    name: string;
+    mrn: string;
+  };
+  orderDetails: OrderDetailApi[];
+  createdAt: string;
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
 function formatRupiah(n: number) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
+  return `Rp ${n.toLocaleString("id-ID")}`;
 }
 
 function formatDateTime(iso: string) {
@@ -58,7 +96,7 @@ function Numpad({ onPress }: { onPress: (v: string) => void }) {
 /* ────────────────────────────────────────────────────────────────
    SUCCESS MODAL
 ──────────────────────────────────────────────────────────────── */
-function SuccessModal({ order, onClose }: { order: Order; onClose: () => void }) {
+function SuccessModal({ order, onClose }: { order: OrderApi; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
@@ -103,27 +141,52 @@ export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
-  const [order, setOrder] = useState<Order | null>(
-    () => MOCK_ORDERS.find((o) => o.id === id) ?? null
-  );
+  const [order, setOrder] = useState<OrderApi | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [cashInput, setCashInput] = useState("");
   const [discount, setDiscount] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  if (!order) {
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    apiClient
+      .getOrder(id)
+      .then((res) => {
+        const data = (res as { success: boolean; data: OrderApi }).data;
+        setOrder(data);
+      })
+      .catch((err) => {
+        setError(err?.message || "Gagal memuat data order");
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
+
+  if (error || !order) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
         <ReceiptText className="h-12 w-12 text-slate-300" />
-        <p className="text-slate-500">Order tidak ditemukan.</p>
+        <p className="text-slate-500">{error || "Order tidak ditemukan."}</p>
         <button onClick={() => router.back()} className="text-sm text-emerald-600 hover:underline">Kembali</button>
       </div>
     );
   }
 
-  const subtotal = order.details.reduce((s, d) => s + d.price, 0);
-  const discountAmount = discount ? parseFloat(discount.replace(/\D/g, "")) : (order.invoice?.discountAmount ?? 0);
+  const subtotal = order.orderDetails.reduce((s, d) => s + d.price, 0);
+  const discountAmount = discount ? parseFloat(discount.replace(/\D/g, "")) : 0;
   const total = Math.max(0, subtotal - discountAmount);
   const cashPaid = parseInt(cashInput.replace(/\D/g, "") || "0", 10);
   const change = Math.max(0, cashPaid - total);
@@ -140,10 +203,19 @@ export default function OrderDetailPage() {
 
   const handlePay = async () => {
     setIsProcessing(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setOrder((o) => o ? { ...o, status: "PAID", invoice: { id: "inv-new", orderId: o.id, subtotal, discountAmount, total, paymentMethod, paidAt: new Date().toISOString() } } : o);
-    setIsProcessing(false);
-    setShowSuccess(true);
+    try {
+      await apiClient.payOrder(id, { paymentMethod, amountPaid: paymentMethod === "CASH" ? cashPaid : total });
+      // Reload order to get updated state
+      const res = await apiClient.getOrder(id);
+      const data = (res as { success: boolean; data: OrderApi }).data;
+      setOrder(data);
+      setShowSuccess(true);
+    } catch (err: unknown) {
+      const message = err && typeof err === "object" && "message" in err ? (err as { message: string }).message : "Pembayaran gagal";
+      alert(message);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const alreadyPaid = order.status !== "PENDING_PAYMENT";
@@ -168,7 +240,7 @@ export default function OrderDetailPage() {
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                 {order.orderNumber}
               </h1>
-              <OrderStatusBadge status={order.status} />
+              <OrderStatusBadge status={order.status as import("@/types/order").OrderStatus} />
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400">{formatDateTime(order.createdAt)}</p>
           </div>
@@ -187,18 +259,13 @@ export default function OrderDetailPage() {
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                  {order.patientName.charAt(0)}
+                  {order.patient.name.charAt(0)}
                 </div>
                 <div>
-                  <div className="font-semibold text-slate-900 dark:text-white">{order.patientName}</div>
-                  <div className="font-mono text-xs text-emerald-600 dark:text-emerald-400">{order.patientMrn}</div>
+                  <div className="font-semibold text-slate-900 dark:text-white">{order.patient.name}</div>
+                  <div className="font-mono text-xs text-emerald-600 dark:text-emerald-400">{order.patient.mrn}</div>
                 </div>
               </div>
-              {order.notes && (
-                <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
-                  📝 {order.notes}
-                </div>
-              )}
             </div>
 
             {/* Test items */}
@@ -206,11 +273,11 @@ export default function OrderDetailPage() {
               <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 dark:border-slate-800">
                 <FlaskConical className="h-4 w-4 text-slate-400" />
                 <span className="text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                  Daftar Pemeriksaan ({order.details.length} item)
+                  Daftar Pemeriksaan ({order.orderDetails.length} item)
                 </span>
               </div>
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {order.details.map((d) => (
+                {order.orderDetails.map((d) => (
                   <div key={d.id} className="flex items-center justify-between px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
@@ -220,7 +287,7 @@ export default function OrderDetailPage() {
                         <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{d.test.name}</div>
                         <div className="flex items-center gap-1 text-xs text-slate-400">
                           <Clock className="h-3 w-3" />
-                          TAT {d.test.turnaroundHours} jam
+                          {d.test.unit}
                         </div>
                       </div>
                     </div>
@@ -259,7 +326,7 @@ export default function OrderDetailPage() {
             </div>
 
             {/* Already paid info */}
-            {alreadyPaid && order.invoice && (
+            {alreadyPaid && order.paidAt && (
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-800 dark:bg-emerald-900/20">
                 <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
                   <CheckCircle2 className="h-5 w-5" />
@@ -269,13 +336,13 @@ export default function OrderDetailPage() {
                   <div>
                     <p className="text-xs text-emerald-600/70">Metode</p>
                     <p className="font-semibold text-emerald-800 dark:text-emerald-200">
-                      {PAYMENT_METHODS.find((m) => m.value === order.invoice!.paymentMethod)?.label ?? "—"}
+                      {PAYMENT_METHODS.find((m) => m.value === order.paymentMethod)?.label ?? order.paymentMethod ?? "—"}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-emerald-600/70">Waktu Bayar</p>
                     <p className="font-semibold text-emerald-800 dark:text-emerald-200">
-                      {order.invoice.paidAt ? new Date(order.invoice.paidAt).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+                      {order.paidAt ? new Date(order.paidAt).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
                     </p>
                   </div>
                 </div>
@@ -348,10 +415,7 @@ export default function OrderDetailPage() {
               >
                 {isProcessing ? (
                   <span className="flex items-center justify-center gap-2">
-                    <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                    </svg>
+                    <Loader2 className="h-5 w-5 animate-spin" />
                     Memproses...
                   </span>
                 ) : (

@@ -7,6 +7,7 @@ import { PaymentModule } from './payment/payment.module';
 import { LabWorkflowModule } from './lab-workflow/lab-workflow.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { NotificationModule } from './notification/notification.module';
+import { RegionModule } from './region/region.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { NotificationModule } from './notification/notification.module';
     LabWorkflowModule,
     DashboardModule,
     NotificationModule,
+    RegionModule,
   ],
   exports: [
     AuditModule,
@@ -27,6 +29,7 @@ import { NotificationModule } from './notification/notification.module';
     LabWorkflowModule,
     DashboardModule,
     NotificationModule,
+    RegionModule,
   ],
 })
 export class LaboratoryModule {}

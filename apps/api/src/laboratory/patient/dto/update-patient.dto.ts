@@ -55,6 +55,23 @@ export class UpdatePatientDto {
   @IsString()
   postalCode?: string;
 
+  // Region FK fields
+  @IsOptional()
+  @IsString()
+  provinsiId?: string;
+
+  @IsOptional()
+  @IsString()
+  kabupatenKotaId?: string;
+
+  @IsOptional()
+  @IsString()
+  kecamatanId?: string;
+
+  @IsOptional()
+  @IsString()
+  kelurahanDesaId?: string;
+
   // Clinical fields
   @IsOptional()
   @IsString()

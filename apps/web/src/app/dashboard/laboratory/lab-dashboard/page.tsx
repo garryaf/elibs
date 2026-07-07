@@ -41,18 +41,8 @@ const EMPTY_SUMMARY: LabSummary = {
   ordersByStatus: {},
 };
 
-function generateMockVolume(days: number): VolumePoint[] {
-  const points: VolumePoint[] = [];
-  const now = new Date();
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    points.push({
-      date: d.toISOString().slice(0, 10),
-      count: Math.floor(20 + Math.random() * 30),
-    });
-  }
-  return points;
+function generateEmptyVolume(): VolumePoint[] {
+  return [];
 }
 
 // ---------------------------------------------------------------------------
@@ -266,10 +256,10 @@ export default function LabDashboardPage() {
       if (Array.isArray(d)) {
         setVolumeData(d as VolumePoint[]);
       } else {
-        setVolumeData(generateMockVolume(dateRange));
+        setVolumeData(generateEmptyVolume());
       }
     }).catch(() => {
-      setVolumeData(generateMockVolume(dateRange));
+      setVolumeData(generateEmptyVolume());
     });
   }, [dateRange]);
 

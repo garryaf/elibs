@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, User, Phone, MapPin, Mail, Hash, Calendar, Shield, Heart, Building } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Patient, PatientFormData, Gender } from "@/types/patient";
+import { CascadingRegionSelector, type RegionValue } from "@/components/regions/CascadingRegionSelector";
 
 interface PatientFormModalProps {
   isOpen: boolean;
@@ -25,6 +26,10 @@ const initialForm: PatientFormData = {
   district: "",
   village: "",
   postalCode: "",
+  provinsiId: undefined,
+  kabupatenKotaId: undefined,
+  kecamatanId: undefined,
+  kelurahanDesaId: undefined,
   bloodType: "",
   emergencyContact: "",
   emergencyPhone: "",
@@ -55,6 +60,21 @@ function FormField({ label, id, icon: Icon, error, required, children }: FormInp
 
 const inputClass = "mt-0 h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-emerald-500";
 
+/**
+ * Validates region selection: if any region level is selected, all four must be selected.
+ * All empty is valid (region selection is optional).
+ */
+function validateRegion(region: RegionValue): string | undefined {
+  const { provinsiId, kabupatenKotaId, kecamatanId, kelurahanDesaId } = region;
+  const hasAny = !!(provinsiId || kabupatenKotaId || kecamatanId || kelurahanDesaId);
+  const hasAll = !!(provinsiId && kabupatenKotaId && kecamatanId && kelurahanDesaId);
+
+  if (hasAny && !hasAll) {
+    return "Semua level wilayah harus dipilih";
+  }
+  return undefined;
+}
+
 export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: PatientFormModalProps) {
   const [form, setForm] = useState<PatientFormData>(() =>
     editData
@@ -71,17 +91,46 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
           district: editData.district ?? "",
           village: editData.village ?? "",
           postalCode: editData.postalCode ?? "",
+          provinsiId: editData.provinsiId ?? undefined,
+          kabupatenKotaId: editData.kabupatenKotaId ?? undefined,
+          kecamatanId: editData.kecamatanId ?? undefined,
+          kelurahanDesaId: editData.kelurahanDesaId ?? undefined,
           bloodType: editData.bloodType ?? "",
           emergencyContact: editData.emergencyContact ?? "",
           emergencyPhone: editData.emergencyPhone ?? "",
         }
       : initialForm
   );
-  const [errors, setErrors] = useState<Partial<Record<keyof PatientFormData, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof PatientFormData | "region", string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Derive region value for the CascadingRegionSelector
+  const regionValue: RegionValue = {
+    provinsiId: form.provinsiId,
+    kabupatenKotaId: form.kabupatenKotaId,
+    kecamatanId: form.kecamatanId,
+    kelurahanDesaId: form.kelurahanDesaId,
+  };
+
+  const handleRegionChange = (value: RegionValue) => {
+    setForm((prev) => ({
+      ...prev,
+      provinsiId: value.provinsiId,
+      kabupatenKotaId: value.kabupatenKotaId,
+      kecamatanId: value.kecamatanId,
+      kelurahanDesaId: value.kelurahanDesaId,
+    }));
+    // Clear region error when user makes a change
+    if (errors.region) {
+      setErrors((prev) => {
+        const { region: _, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
+
   const validate = (): boolean => {
-    const newErrors: Partial<Record<keyof PatientFormData, string>> = {};
+    const newErrors: Partial<Record<keyof PatientFormData | "region", string>> = {};
     if (!form.nik || form.nik.length !== 16) newErrors.nik = "NIK harus 16 digit";
     if (!form.name || form.name.trim().length < 3) newErrors.name = "Nama minimal 3 karakter";
     if (!form.dob) newErrors.dob = "Tanggal lahir wajib diisi";
@@ -90,6 +139,13 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       newErrors.email = "Format email tidak valid";
     }
+
+    // Validate region: if any is selected, all must be selected
+    const regionError = validateRegion(regionValue);
+    if (regionError) {
+      newErrors.region = regionError;
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -254,79 +310,53 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                 <MapPin className="h-4 w-4 text-emerald-600" />
                 Alamat
               </h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <FormField label="Alamat Lengkap" id="patient-address" icon={MapPin} error={errors.address} required>
-                    <textarea
-                      id="patient-address"
-                      rows={2}
-                      placeholder="Jl. nama jalan, No. RT/RW"
-                      value={form.address}
-                      onChange={(e) => setForm({ ...form, address: e.target.value })}
-                      className={cn(
-                        "mt-0 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-emerald-500",
-                        errors.address && "border-red-400 focus:border-red-400 focus:ring-red-400/20"
-                      )}
+              <div className="space-y-4">
+                {/* Alamat Lengkap free-text field */}
+                <FormField label="Alamat Lengkap" id="patient-address" icon={MapPin} error={errors.address} required>
+                  <textarea
+                    id="patient-address"
+                    rows={2}
+                    placeholder="Jl. nama jalan, No. RT/RW"
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    className={cn(
+                      "mt-0 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-emerald-500",
+                      errors.address && "border-red-400 focus:border-red-400 focus:ring-red-400/20"
+                    )}
+                  />
+                </FormField>
+
+                {/* Cascading Region Selector */}
+                <div>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <Building className="h-3.5 w-3.5 text-slate-400" />
+                    Wilayah Administratif
+                    <span className="text-xs text-slate-400 font-normal">(opsional)</span>
+                  </label>
+                  <CascadingRegionSelector
+                    value={regionValue}
+                    onChange={handleRegionChange}
+                  />
+                  {errors.region && (
+                    <p className="mt-2 text-xs text-red-500">{errors.region}</p>
+                  )}
+                </div>
+
+                {/* Kode Pos */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField label="Kode Pos" id="patient-postal" icon={Hash}>
+                    <input
+                      id="patient-postal"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      placeholder="Kode pos"
+                      value={form.postalCode ?? ""}
+                      onChange={(e) => setForm({ ...form, postalCode: e.target.value.replace(/\D/g, "") })}
+                      className={inputClass}
                     />
                   </FormField>
                 </div>
-
-                <FormField label="Kelurahan / Desa" id="patient-village" icon={Building}>
-                  <input
-                    id="patient-village"
-                    type="text"
-                    placeholder="Nama kelurahan/desa"
-                    value={form.village ?? ""}
-                    onChange={(e) => setForm({ ...form, village: e.target.value })}
-                    className={inputClass}
-                  />
-                </FormField>
-
-                <FormField label="Kecamatan" id="patient-district" icon={Building}>
-                  <input
-                    id="patient-district"
-                    type="text"
-                    placeholder="Nama kecamatan"
-                    value={form.district ?? ""}
-                    onChange={(e) => setForm({ ...form, district: e.target.value })}
-                    className={inputClass}
-                  />
-                </FormField>
-
-                <FormField label="Kota / Kabupaten" id="patient-city" icon={Building}>
-                  <input
-                    id="patient-city"
-                    type="text"
-                    placeholder="Nama kota/kabupaten"
-                    value={form.city ?? ""}
-                    onChange={(e) => setForm({ ...form, city: e.target.value })}
-                    className={inputClass}
-                  />
-                </FormField>
-
-                <FormField label="Provinsi" id="patient-province" icon={Building}>
-                  <input
-                    id="patient-province"
-                    type="text"
-                    placeholder="Nama provinsi"
-                    value={form.province ?? ""}
-                    onChange={(e) => setForm({ ...form, province: e.target.value })}
-                    className={inputClass}
-                  />
-                </FormField>
-
-                <FormField label="Kode Pos" id="patient-postal" icon={Hash}>
-                  <input
-                    id="patient-postal"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={5}
-                    placeholder="Kode pos"
-                    value={form.postalCode ?? ""}
-                    onChange={(e) => setForm({ ...form, postalCode: e.target.value.replace(/\D/g, "") })}
-                    className={inputClass}
-                  />
-                </FormField>
               </div>
             </div>
 

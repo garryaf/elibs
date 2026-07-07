@@ -11,6 +11,7 @@ datasource db {
 model User {
   id           String    @id @default(uuid()) @db.Uuid
   email        String    @unique
+  name         String?
   passwordHash String
   role         Role
   createdAt    DateTime  @default(now())
@@ -362,6 +363,69 @@ model MeasurementUnit {
   @@map("measurement_units")
 }
 
+// === REGION MASTER DATA ===
+
+model Provinsi {
+  id        String   @id // EMSIFA code: "11", "32", etc.
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  kabupatenKota KabupatenKota[]
+  patients      Patient[]
+
+  @@map("provinsi")
+}
+
+model KabupatenKota {
+  id         String   @id // EMSIFA code: "1101", "3201", etc.
+  provinsiId String
+  name       String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  provinsi  Provinsi    @relation(fields: [provinsiId], references: [id])
+  kecamatan Kecamatan[]
+  patients  Patient[]
+
+  @@index([provinsiId])
+  @@map("kabupaten_kota")
+}
+
+model Kecamatan {
+  id              String   @id // EMSIFA code: "110101", "320101", etc.
+  kabupatenKotaId String
+  name            String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  kabupatenKota KabupatenKota  @relation(fields: [kabupatenKotaId], references: [id])
+  kelurahanDesa KelurahanDesa[]
+  patients      Patient[]
+
+  @@index([kabupatenKotaId])
+  @@map("kecamatan")
+}
+
+model KelurahanDesa {
+  id          String   @id // EMSIFA code: "1101012001", etc.
+  kecamatanId String
+  name        String
+  postalCode  String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  kecamatan Kecamatan @relation(fields: [kecamatanId], references: [id])
+  patients  Patient[]
+
+  @@index([kecamatanId])
+  @@map("kelurahan_desa")
+}
+
 // === PATIENT ===
 
 model Patient {
@@ -380,6 +444,11 @@ model Patient {
   district                   String?
   village                    String?
   postalCode                 String?
+  // Region FK fields (nullable for backward compatibility)
+  provinsiId                 String?
+  kabupatenKotaId            String?
+  kecamatanId                String?
+  kelurahanDesaId            String?
   // Clinical fields
   bloodType                  String?
   emergencyContact           String?
@@ -390,8 +459,12 @@ model Patient {
   updatedAt                  DateTime  @updatedAt
   deletedAt                  DateTime?
 
-  insurance Insurance? @relation(fields: [insuranceId], references: [id])
-  orders    Order[]
+  insurance        Insurance?     @relation(fields: [insuranceId], references: [id])
+  provinsiRef      Provinsi?      @relation(fields: [provinsiId], references: [id])
+  kabupatenKotaRef KabupatenKota? @relation(fields: [kabupatenKotaId], references: [id])
+  kecamatanRef     Kecamatan?     @relation(fields: [kecamatanId], references: [id])
+  kelurahanDesaRef KelurahanDesa? @relation(fields: [kelurahanDesaId], references: [id])
+  orders           Order[]
 
   @@map("patients")
 }

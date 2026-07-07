@@ -262,6 +262,43 @@ class ApiClient {
     return this.get(`/api/v1/dashboard/lab-volume${query}`);
   }
 
+  async getExecutiveSummary(): Promise<ApiResponse<unknown>> {
+    return this.get("/api/v1/dashboard/executive-summary");
+  }
+
+  async getRecentOrders(): Promise<ApiResponse<unknown>> {
+    return this.get("/api/v1/dashboard/recent-orders");
+  }
+
+  // ─── Users ─────────────────────────────────────────────────────────────────
+
+  async getUsers(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: string;
+  }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.search) qs.set("search", params.search);
+    if (params?.role) qs.set("role", params.role);
+    const query = qs.toString() ? `?${qs.toString()}` : "";
+    return this.get(`/api/v1/users${query}`);
+  }
+
+  async createUser(data: unknown): Promise<ApiResponse<unknown>> {
+    return this.post("/api/v1/users", data);
+  }
+
+  async updateUser(id: string, data: unknown): Promise<ApiResponse<unknown>> {
+    return this.put(`/api/v1/users/${id}`, data);
+  }
+
+  async deleteUser(id: string): Promise<ApiResponse<unknown>> {
+    return this.delete(`/api/v1/users/${id}`);
+  }
+
   // ─── Audit ────────────────────────────────────────────────────────────────
 
   async getAuditLogs(params?: {

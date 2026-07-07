@@ -42,17 +42,6 @@ interface LabQueueOrder {
   }[];
 }
 
-interface LabQueueResponse {
-  success: boolean;
-  data: {
-    items: LabQueueOrder[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
-
 // ---------- Constants ----------
 
 type QueueTab = "ALL" | "PAID" | "SAMPLE_COLLECTED" | "IN_ANALYSIS" | "VERIFIED";
@@ -67,103 +56,28 @@ const QUEUE_TABS: { id: QueueTab; label: string; icon: React.ElementType }[] = [
 
 const PAGE_SIZE = 10;
 
-// ---------- Mock data for development ----------
-// In production, this would be replaced by actual API calls
+// ---------- API Response Mapper ----------
 
-const MOCK_QUEUE_ORDERS: LabQueueOrder[] = [
-  {
-    id: "o-004",
-    orderNumber: "LAB-20260630-0004",
-    patientId: "p-007",
-    patientName: "Bagas Anugerah",
-    patientMrn: "RM-202606-0007",
-    status: "PAID",
-    createdAt: "2026-06-30T09:15:00Z",
-    totalAmount: 260000,
-    details: [
-      { id: "od-010", testId: "t-020", testCode: "HIV", testName: "HIV Rapid Test", status: "PENDING" },
-      { id: "od-011", testId: "t-019", testCode: "HBS", testName: "HBsAg Rapid", status: "PENDING" },
-    ],
-  },
-  {
-    id: "o-005",
-    orderNumber: "LAB-20260630-0005",
-    patientId: "p-008",
-    patientName: "Nurul Hidayah",
-    patientMrn: "RM-202606-0008",
-    status: "SAMPLE_COLLECTED",
-    createdAt: "2026-06-30T08:45:00Z",
-    barcodeImage: "data:image/png;base64,iVBORw0KGgo=",
-    totalAmount: 290000,
-    details: [
-      { id: "od-012", testId: "t-014", testCode: "SGOT", testName: "SGOT", status: "PENDING" },
-      { id: "od-013", testId: "t-015", testCode: "SGPT", testName: "SGPT", status: "PENDING" },
-      { id: "od-014", testId: "t-016", testCode: "BIL-T", testName: "Bilirubin Total", status: "PENDING" },
-      { id: "od-015", testId: "t-012", testCode: "UREA", testName: "Ureum", status: "PENDING" },
-      { id: "od-016", testId: "t-013", testCode: "CREA", testName: "Kreatinin", status: "PENDING" },
-    ],
-  },
-  {
-    id: "o-006",
-    orderNumber: "LAB-20260630-0006",
-    patientId: "p-002",
-    patientName: "Siti Rahayu",
-    patientMrn: "RM-202606-0002",
-    status: "IN_ANALYSIS",
-    createdAt: "2026-06-30T07:30:00Z",
-    barcodeImage: "data:image/png;base64,iVBORw0KGgo=",
-    totalAmount: 180000,
-    details: [
-      { id: "od-017", testId: "t-001", testCode: "DL", testName: "Darah Lengkap", status: "COMPLETED" },
-      { id: "od-018", testId: "t-005", testCode: "GDS", testName: "Gula Darah Sewaktu", status: "PENDING" },
-    ],
-  },
-  {
-    id: "o-007",
-    orderNumber: "LAB-20260630-0007",
-    patientId: "p-009",
-    patientName: "Ahmad Faisal",
-    patientMrn: "RM-202606-0009",
-    status: "VERIFIED",
-    createdAt: "2026-06-30T06:00:00Z",
-    barcodeImage: "data:image/png;base64,iVBORw0KGgo=",
-    totalAmount: 350000,
-    details: [
-      { id: "od-019", testId: "t-007", testCode: "HBA1C", testName: "HbA1c", status: "COMPLETED" },
-      { id: "od-020", testId: "t-008", testCode: "CHOL", testName: "Kolesterol Total", status: "COMPLETED" },
-      { id: "od-021", testId: "t-009", testCode: "TG", testName: "Trigliserida", status: "COMPLETED" },
-    ],
-  },
-  {
-    id: "o-008",
-    orderNumber: "LAB-20260630-0008",
-    patientId: "p-010",
-    patientName: "Rina Wulandari",
-    patientMrn: "RM-202606-0010",
-    status: "PAID",
-    createdAt: "2026-06-30T10:00:00Z",
-    totalAmount: 150000,
-    details: [
-      { id: "od-022", testId: "t-001", testCode: "DL", testName: "Darah Lengkap", status: "PENDING" },
-    ],
-  },
-  {
-    id: "o-009",
-    orderNumber: "LAB-20260630-0009",
-    patientId: "p-011",
-    patientName: "Dian Permata",
-    patientMrn: "RM-202606-0011",
-    status: "IN_ANALYSIS",
-    createdAt: "2026-06-30T07:00:00Z",
-    barcodeImage: "data:image/png;base64,iVBORw0KGgo=",
-    totalAmount: 425000,
-    details: [
-      { id: "od-023", testId: "t-023", testCode: "T3", testName: "T3 Total", status: "COMPLETED" },
-      { id: "od-024", testId: "t-024", testCode: "T4", testName: "T4 Free", status: "COMPLETED" },
-      { id: "od-025", testId: "t-025", testCode: "TSH", testName: "TSH", status: "PENDING" },
-    ],
-  },
-];
+function mapApiOrder(o: any): LabQueueOrder {
+  return {
+    id: o.id,
+    orderNumber: o.orderNumber,
+    patientId: o.patientId ?? o.patient?.id ?? "",
+    patientName: o.patient?.name ?? o.patientName ?? "",
+    patientMrn: o.patient?.mrn ?? o.patientMrn ?? "",
+    status: o.status,
+    createdAt: o.createdAt,
+    barcodeImage: o.barcodeImage,
+    totalAmount: Number(o.totalAmount) || 0,
+    details: (o.orderDetails ?? o.details ?? []).map((d: any) => ({
+      id: d.id,
+      testId: d.testId,
+      testCode: d.test?.code ?? d.testCode ?? "",
+      testName: d.test?.name ?? d.testName ?? "",
+      status: d.status,
+    })),
+  };
+}
 
 // ---------- Component ----------
 
@@ -176,7 +90,7 @@ export default function LaboratoryQueuePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
-  // Fetch orders from API (with fallback to mock data)
+  // Fetch orders from API
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -184,41 +98,31 @@ export default function LaboratoryQueuePage() {
         status: activeTab !== "ALL" ? activeTab : undefined,
         search: search.trim() || undefined,
       });
-      const data = res?.data as { items?: LabQueueOrder[]; total?: number } | LabQueueOrder[] | unknown;
-      if (Array.isArray(data)) {
-        setOrders(data as LabQueueOrder[]);
-        setTotalItems((data as LabQueueOrder[]).length);
-      } else if (data && typeof data === "object" && "items" in (data as object)) {
-        const d = data as { items: LabQueueOrder[]; total: number };
-        setOrders(d.items);
-        setTotalItems(d.total);
+      // Response shape: { success, data: { data: Order[], meta: {...} } }
+      const envelope = (res?.data ?? res) as any;
+      const innerData = envelope?.data ?? envelope;
+
+      if (Array.isArray(innerData)) {
+        // If response is directly an array
+        const mapped = innerData.map(mapApiOrder);
+        setOrders(mapped);
+        setTotalItems(mapped.length);
+      } else if (innerData?.data && Array.isArray(innerData.data)) {
+        // Standard paginated response: { data: [...], meta: {...} }
+        const mapped = innerData.data.map(mapApiOrder);
+        setOrders(mapped);
+        setTotalItems(innerData.meta?.total ?? mapped.length);
       } else {
-        // Fallback: try to map from orders endpoint
-        applyMockData();
+        setOrders([]);
+        setTotalItems(0);
       }
     } catch {
-      // API not available — use mock data
-      applyMockData();
+      setOrders([]);
+      setTotalItems(0);
     } finally {
       setIsLoading(false);
     }
   }, [page, activeTab, search]);
-
-  const applyMockData = useCallback(() => {
-    const filtered = MOCK_QUEUE_ORDERS.filter((o) => {
-      const matchStatus = activeTab === "ALL" || o.status === activeTab;
-      const q = search.toLowerCase();
-      const matchSearch =
-        !q ||
-        o.orderNumber.toLowerCase().includes(q) ||
-        o.patientName.toLowerCase().includes(q) ||
-        o.patientMrn.toLowerCase().includes(q);
-      return matchStatus && matchSearch;
-    });
-    setTotalItems(filtered.length);
-    const start = (page - 1) * PAGE_SIZE;
-    setOrders(filtered.slice(start, start + PAGE_SIZE));
-  }, [activeTab, search, page]);
 
   useEffect(() => {
     fetchOrders();
@@ -331,7 +235,10 @@ export default function LaboratoryQueuePage() {
             ) : orders.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
-                  Tidak ada order ditemukan.
+                  <div className="flex flex-col items-center gap-2">
+                    <FlaskConical className="h-8 w-8 text-muted-foreground/50" />
+                    <p>Tidak ada order dalam antrian</p>
+                  </div>
                 </td>
               </tr>
             ) : (

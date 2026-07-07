@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,21 +12,56 @@ import {
   AlertTriangle,
   CheckCircle2,
   History,
+  Loader2,
 } from "lucide-react";
-import { MOCK_ORDERS } from "@/lib/mock-orders";
+import { apiClient } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { LabStatusBadge } from "@/components/laboratory/lab-status-badge";
-import type { OrderDetail } from "@/types/order";
 
 // ---------- Types ----------
 
 type Flag = "NORMAL" | "LOW" | "HIGH" | "CRITICAL";
 
-interface ResultFormEntry {
-  orderDetailId: string;
-  resultValue: string;
-  comment: string;
+interface ReferenceValue {
+  minRef: string | null;
+  maxRef: string | null;
+  criticalMin: string | null;
+  criticalMax: string | null;
+  gender: string | null;
+  minAge: number | null;
+  maxAge: number | null;
+}
+
+interface TestInfo {
+  code: string;
+  name: string;
+  unit: string | null;
+  referenceValues: ReferenceValue[];
+}
+
+interface OrderDetail {
+  id: string;
+  testId: string;
+  status: string;
+  resultValue: string | null;
   flag: Flag | null;
+  comment: string | null;
+  test: TestInfo;
+}
+
+interface Patient {
+  name: string;
+  mrn: string;
+  gender: string;
+  dateOfBirth: string;
+}
+
+interface Order {
+  id: string;
+  orderNumber: string;
+  status: string;
+  patient: Patient;
+  orderDetails: OrderDetail[];
 }
 
 interface DeltaCheckItem {
@@ -36,41 +71,76 @@ interface DeltaCheckItem {
   orderNumber: string;
 }
 
-// ---------- Mock Delta Check Data ----------
+interface DeltaCheckEntry {
+  testId: string;
+  testName: string;
+  history: DeltaCheckItem[];
+}
 
-const MOCK_DELTA_CHECK: Record<string, DeltaCheckItem[]> = {
-  "od-012": [
-    { resultValue: "32", flag: "NORMAL", resultDate: "2026-06-15T10:00:00Z", orderNumber: "ORD-2026-0090" },
-    { resultValue: "45", flag: "HIGH", resultDate: "2026-05-20T09:30:00Z", orderNumber: "ORD-2026-0072" },
-  ],
-  "od-013": [
-    { resultValue: "28", flag: "NORMAL", resultDate: "2026-06-15T10:00:00Z", orderNumber: "ORD-2026-0090" },
-  ],
-  "od-004": [
-    { resultValue: "7.2", flag: "HIGH", resultDate: "2026-05-10T11:00:00Z", orderNumber: "ORD-2026-0045" },
-    { resultValue: "6.5", flag: "HIGH", resultDate: "2026-02-15T09:00:00Z", orderNumber: "ORD-2026-0020" },
-    { resultValue: "6.1", flag: "HIGH", resultDate: "2025-11-20T10:30:00Z", orderNumber: "ORD-2025-0180" },
-  ],
-};
+interface ResultFormEntry {
+  orderDetailId: string;
+  resultValue: string;
+  comment: string;
+  flag: Flag | null;
+}
 
 // ---------- Helpers ----------
 
 function calculateFlag(
   value: number,
   minRef?: number,
-  maxRef?: number
+  maxRef?: number,
+  criticalMin?: number,
+  criticalMax?: number
 ): Flag | null {
   if (minRef === undefined || maxRef === undefined) return null;
 
-  // Simplified critical thresholds (critical = 2x beyond normal range)
-  const range = maxRef - minRef;
-  const criticalMin = minRef - range * 0.5;
-  const criticalMax = maxRef + range * 0.5;
-
-  if (value < criticalMin || value > criticalMax) return "CRITICAL";
+  if (criticalMin !== undefined && value < criticalMin) return "CRITICAL";
+  if (criticalMax !== undefined && value > criticalMax) return "CRITICAL";
   if (value < minRef) return "LOW";
   if (value > maxRef) return "HIGH";
   return "NORMAL";
+}
+
+/**
+ * Find the matching reference value for a patient based on gender/age.
+ * Falls back to the first reference value if no specific match found.
+ */
+function getMatchingReference(
+  referenceValues: ReferenceValue[],
+  patientGender?: string,
+  patientAge?: number
+): { minRef?: number; maxRef?: number; criticalMin?: number; criticalMax?: number } {
+  if (!referenceValues || referenceValues.length === 0) return {};
+
+  // Try to find a gender+age specific reference
+  const match = referenceValues.find((rv) => {
+    const genderMatch = !rv.gender || rv.gender === patientGender;
+    const ageMatch =
+      (rv.minAge === null || (patientAge !== undefined && patientAge >= rv.minAge)) &&
+      (rv.maxAge === null || (patientAge !== undefined && patientAge <= rv.maxAge));
+    return genderMatch && ageMatch;
+  });
+
+  const ref = match || referenceValues[0];
+
+  return {
+    minRef: ref.minRef ? parseFloat(ref.minRef) : undefined,
+    maxRef: ref.maxRef ? parseFloat(ref.maxRef) : undefined,
+    criticalMin: ref.criticalMin ? parseFloat(ref.criticalMin) : undefined,
+    criticalMax: ref.criticalMax ? parseFloat(ref.criticalMax) : undefined,
+  };
+}
+
+function calculateAge(dateOfBirth: string): number {
+  const birth = new Date(dateOfBirth);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
 }
 
 function getFlagConfig(flag: Flag | null) {
@@ -115,23 +185,99 @@ export default function ResultEntryPage() {
   const router = useRouter();
   const orderId = params.orderId as string;
 
-  const order = MOCK_ORDERS.find((o) => o.id === orderId);
-
-  const [results, setResults] = useState<ResultFormEntry[]>(() => {
-    if (!order) return [];
-    return order.details.map((d) => ({
-      orderDetailId: d.id,
-      resultValue: d.resultValue !== undefined ? String(d.resultValue) : "",
-      comment: "",
-      flag: d.resultFlag ?? null,
-    }));
-  });
-
+  const [order, setOrder] = useState<Order | null>(null);
+  const [deltaCheck, setDeltaCheck] = useState<DeltaCheckEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<ResultFormEntry[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
-  // Mock user role — in production comes from auth context
-  const userRole: "ANALIS" | "ADMIN" = "ANALIS";
+  // Load order and delta check data
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadData() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const [orderRes, deltaRes] = await Promise.all([
+          apiClient.getOrder(orderId) as Promise<{ success: boolean; data: Order }>,
+          apiClient.getDeltaCheck(orderId) as Promise<{ success: boolean; data: DeltaCheckEntry[] }>,
+        ]);
+
+        if (cancelled) return;
+
+        if (!orderRes.success || !orderRes.data) {
+          setError("Order tidak ditemukan.");
+          return;
+        }
+
+        const orderData = orderRes.data;
+        setOrder(orderData);
+
+        if (deltaRes.success && deltaRes.data) {
+          setDeltaCheck(deltaRes.data);
+        }
+
+        // Initialize result form entries from order details
+        const patientAge = orderData.patient.dateOfBirth
+          ? calculateAge(orderData.patient.dateOfBirth)
+          : undefined;
+        const patientGender = orderData.patient.gender;
+
+        setResults(
+          orderData.orderDetails.map((detail) => {
+            const existingValue = detail.resultValue ?? "";
+            let flag: Flag | null = detail.flag ?? null;
+
+            // If there's already a value, recalculate flag preview
+            if (existingValue && !isNaN(parseFloat(existingValue))) {
+              const ref = getMatchingReference(
+                detail.test?.referenceValues ?? [],
+                patientGender,
+                patientAge
+              );
+              flag = calculateFlag(
+                parseFloat(existingValue),
+                ref.minRef,
+                ref.maxRef,
+                ref.criticalMin,
+                ref.criticalMax
+              );
+            }
+
+            return {
+              orderDetailId: detail.id,
+              resultValue: existingValue,
+              comment: detail.comment ?? "",
+              flag,
+            };
+          })
+        );
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const message =
+          err && typeof err === "object" && "message" in err
+            ? (err as { message: string }).message
+            : "Gagal memuat data order.";
+        setError(message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadData();
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId]);
+
+  const patientAge = useMemo(() => {
+    if (!order?.patient.dateOfBirth) return undefined;
+    return calculateAge(order.patient.dateOfBirth);
+  }, [order]);
 
   const updateResult = useCallback(
     (orderDetailId: string, value: string) => {
@@ -139,18 +285,24 @@ export default function ResultEntryPage() {
         prev.map((r) => {
           if (r.orderDetailId !== orderDetailId) return r;
 
-          const detail = order?.details.find((d) => d.id === orderDetailId);
+          const detail = order?.orderDetails.find((d) => d.id === orderDetailId);
           let flag: Flag | null = null;
           const numVal = parseFloat(value);
+
           if (!isNaN(numVal) && detail?.test) {
-            flag = calculateFlag(numVal, detail.test.minRef, detail.test.maxRef);
+            const ref = getMatchingReference(
+              detail.test?.referenceValues ?? [],
+              order?.patient.gender,
+              patientAge
+            );
+            flag = calculateFlag(numVal, ref.minRef, ref.maxRef, ref.criticalMin, ref.criticalMax);
           }
 
           return { ...r, resultValue: value, flag };
         })
       );
     },
-    [order]
+    [order, patientAge]
   );
 
   const updateComment = useCallback(
@@ -165,16 +317,44 @@ export default function ResultEntryPage() {
   );
 
   const allResultsFilled = useMemo(
-    () => results.every((r) => r.resultValue.trim() !== ""),
+    () => results.length > 0 && results.every((r) => r.resultValue.trim() !== ""),
     [results]
   );
 
+  const canVerify = useMemo(() => {
+    if (!order) return false;
+    return (
+      allResultsFilled &&
+      (order.status === "IN_ANALYSIS" || order.status === "SAMPLE_COLLECTED")
+    );
+  }, [order, allResultsFilled]);
+
   const handleSubmitResults = async () => {
     setSubmitting(true);
-    // In production: PUT /api/v1/lab/:orderId/results
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSubmitting(false);
-    alert("Hasil berhasil disimpan!");
+    try {
+      await apiClient.enterResults(
+        orderId,
+        results.map((r) => ({
+          orderDetailId: r.orderDetailId,
+          resultValue: r.resultValue,
+          comment: r.comment || undefined,
+        })) as Array<{ orderDetailId: string; resultValue: string }>
+      );
+
+      // Refresh order data after save
+      const orderRes = await apiClient.getOrder(orderId) as { success: boolean; data: Order };
+      if (orderRes.success && orderRes.data) {
+        setOrder(orderRes.data);
+      }
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "message" in err
+          ? (err as { message: string }).message
+          : "Gagal menyimpan hasil.";
+      alert(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleVerify = async () => {
@@ -183,17 +363,46 @@ export default function ResultEntryPage() {
       return;
     }
     setVerifying(true);
-    // In production: POST /api/v1/lab/:orderId/verify
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setVerifying(false);
-    alert("Hasil berhasil diverifikasi!");
-    router.push("/dashboard/laboratory/results");
+    try {
+      await apiClient.verifyResults(orderId);
+      router.push("/dashboard/laboratory/results");
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "message" in err
+          ? (err as { message: string }).message
+          : "Gagal memverifikasi hasil.";
+      alert(message);
+    } finally {
+      setVerifying(false);
+    }
   };
 
-  if (!order) {
+  // Build delta check lookup by testId
+  const deltaCheckMap = useMemo(() => {
+    const map: Record<string, DeltaCheckItem[]> = {};
+    for (const entry of deltaCheck) {
+      map[entry.testId] = entry.history;
+    }
+    return map;
+  }, [deltaCheck]);
+
+  // ---------- Loading State ----------
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center rounded-2xl border border-border bg-card p-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <span className="ml-3 text-sm text-muted-foreground">Memuat data order...</span>
+      </div>
+    );
+  }
+
+  // ---------- Error / Not Found State ----------
+
+  if (error || !order) {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center">
-        <p className="text-muted-foreground">Order tidak ditemukan.</p>
+        <p className="text-muted-foreground">{error || "Order tidak ditemukan."}</p>
         <Link
           href="/dashboard/laboratory/results"
           className="mt-4 inline-flex items-center gap-2 text-sm text-primary hover:underline"
@@ -204,6 +413,8 @@ export default function ResultEntryPage() {
       </div>
     );
   }
+
+  // ---------- Render ----------
 
   return (
     <div className="space-y-6">
@@ -221,7 +432,7 @@ export default function ResultEntryPage() {
               Input Hasil — {order.orderNumber}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {order.patientName} · {order.patientMrn}
+              {order.patient.name} · {order.patient.mrn}
             </p>
           </div>
         </div>
@@ -230,11 +441,18 @@ export default function ResultEntryPage() {
 
       {/* Result Entry Cards */}
       <div className="space-y-4">
-        {order.details.map((detail, idx) => {
+        {order.orderDetails.map((detail, idx) => {
           const entry = results[idx];
           const flagConfig = entry ? getFlagConfig(entry.flag) : null;
-          const deltaItems = MOCK_DELTA_CHECK[detail.id] ?? [];
+          const deltaItems = deltaCheckMap[detail.testId] ?? [];
           const FlagIcon = flagConfig?.icon;
+
+          // Get reference range for display
+          const ref = getMatchingReference(
+            detail.test?.referenceValues ?? [],
+            order.patient.gender,
+            patientAge
+          );
 
           return (
             <div
@@ -249,25 +467,26 @@ export default function ResultEntryPage() {
                 <div className="flex-1 space-y-3">
                   <div className="flex items-center gap-3">
                     <span className="rounded-md bg-[#6B8E6B]/10 px-2 py-1 font-mono text-xs font-bold text-[#6B8E6B]">
-                      {detail.test.code}
+                      {detail.test?.code ?? "-"}
                     </span>
                     <h3 className="font-semibold text-foreground">
-                      {detail.test.name}
+                      {detail.test?.name ?? "-"}
                     </h3>
-                    <span className="text-xs text-muted-foreground">
-                      ({detail.test.category})
-                    </span>
                   </div>
 
                   {/* Reference range info */}
-                  {(detail.test.minRef !== undefined ||
-                    detail.test.maxRef !== undefined) && (
+                  {(ref.minRef !== undefined || ref.maxRef !== undefined) && (
                     <div className="text-xs text-muted-foreground">
                       Rentang Normal:{" "}
                       <span className="font-medium text-foreground">
-                        {detail.test.minRef} – {detail.test.maxRef}
+                        {ref.minRef} – {ref.maxRef}
                       </span>{" "}
-                      {detail.test.unit}
+                      {detail.test?.unit}
+                      {(ref.criticalMin !== undefined || ref.criticalMax !== undefined) && (
+                        <span className="ml-2 text-red-500">
+                          (Kritis: {"<"}{ref.criticalMin} atau {">"}{ref.criticalMax})
+                        </span>
+                      )}
                     </div>
                   )}
 
@@ -288,9 +507,9 @@ export default function ResultEntryPage() {
                             : "border-border"
                         )}
                       />
-                      {detail.test.unit && (
+                      {detail.test?.unit && (
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                          {detail.test.unit}
+                          {detail.test?.unit}
                         </span>
                       )}
                     </div>
@@ -380,22 +599,30 @@ export default function ResultEntryPage() {
             submitting && "opacity-50 cursor-not-allowed"
           )}
         >
-          <Save className="h-4 w-4" />
+          {submitting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
           {submitting ? "Menyimpan..." : "Simpan Hasil"}
         </button>
 
-        {/* Verify button - only visible for ANALIS role */}
-        {(userRole === "ANALIS" || userRole === "ADMIN") && (
+        {/* Verify button - visible when results are filled and order is in analysis */}
+        {canVerify && (
           <button
             onClick={handleVerify}
-            disabled={verifying || !allResultsFilled}
+            disabled={verifying}
             className={cn(
               "inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all",
               "bg-[#6B8E6B] text-white hover:bg-[#5A7D5A] shadow-sm",
-              (verifying || !allResultsFilled) && "opacity-50 cursor-not-allowed"
+              verifying && "opacity-50 cursor-not-allowed"
             )}
           >
-            <ShieldCheck className="h-4 w-4" />
+            {verifying ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ShieldCheck className="h-4 w-4" />
+            )}
             {verifying ? "Memverifikasi..." : "Verifikasi Hasil"}
           </button>
         )}

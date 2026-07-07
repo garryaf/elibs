@@ -1,11 +1,48 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { ClipboardCheck, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
-import { MOCK_ORDERS } from "@/lib/mock-orders";
+import { useState, useEffect, useCallback } from "react";
+import {
+  ClipboardCheck,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+} from "lucide-react";
+import { apiClient } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { LabStatusBadge } from "@/components/laboratory/lab-status-badge";
-import type { Order, OrderDetail } from "@/types/order";
+
+/* ─── Types ─── */
+interface TestInfo {
+  code: string;
+  name: string;
+  unit: string;
+}
+
+interface OrderDetailItem {
+  id: string;
+  testId: string;
+  status: string;
+  resultValue: string | null;
+  flag: string | null;
+  comment: string | null;
+  test: TestInfo;
+}
+
+interface PatientInfo {
+  name: string;
+  mrn: string;
+  gender: string;
+  dateOfBirth: string;
+}
+
+interface ApprovalOrder {
+  id: string;
+  orderNumber: string;
+  status: string;
+  createdAt: string;
+  patient: PatientInfo;
+  orderDetails: OrderDetailItem[];
+}
 
 /* ─── Flag Styling ─── */
 const FLAG_STYLES: Record<string, { bg: string; text: string; label: string }> = {
@@ -22,6 +59,7 @@ function ConfirmDialog({
   description,
   confirmLabel,
   confirmClassName,
+  loading,
   onConfirm,
   onCancel,
   children,
@@ -31,6 +69,7 @@ function ConfirmDialog({
   description: string;
   confirmLabel: string;
   confirmClassName: string;
+  loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
   children?: React.ReactNode;
@@ -46,14 +85,20 @@ function ConfirmDialog({
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
             onClick={onCancel}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+            disabled={loading}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
           >
             Batal
           </button>
           <button
             onClick={onConfirm}
-            className={cn("rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors", confirmClassName)}
+            disabled={loading}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50",
+              confirmClassName
+            )}
           >
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {confirmLabel}
           </button>
         </div>
@@ -63,11 +108,17 @@ function ConfirmDialog({
 }
 
 /* ─── Result Flag Badge ─── */
-function FlagBadge({ flag }: { flag?: string }) {
+function FlagBadge({ flag }: { flag?: string | null }) {
   if (!flag) return null;
   const style = FLAG_STYLES[flag] ?? FLAG_STYLES.NORMAL;
   return (
-    <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase", style.bg, style.text)}>
+    <span
+      className={cn(
+        "inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase",
+        style.bg,
+        style.text
+      )}
+    >
       {style.label}
     </span>
   );
@@ -79,17 +130,42 @@ function ApprovalCard({
   onApprove,
   onReject,
 }: {
-  order: Order;
-  onApprove: (orderId: string, interpretation: string) => void;
-  onReject: (orderId: string, reason: string) => void;
+  order: ApprovalOrder;
+  onApprove: (orderId: string, interpretation: string) => Promise<void>;
+  onReject: (orderId: string, reason: string) => Promise<void>;
 }) {
-  const [interpretation, setInterpretation] = useState(order.clinicalInterpretation ?? "");
+  const [interpretation, setInterpretation] = useState("");
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
-  const criticalCount = order.details.filter((d) => d.resultFlag === "CRITICAL").length;
-  const abnormalCount = order.details.filter((d) => d.resultFlag === "HIGH" || d.resultFlag === "LOW").length;
+  const criticalCount = order.orderDetails.filter((d) => d.flag === "CRITICAL").length;
+  const abnormalCount = order.orderDetails.filter(
+    (d) => d.flag === "HIGH" || d.flag === "LOW"
+  ).length;
+
+  const handleApproveConfirm = async () => {
+    setActionLoading(true);
+    try {
+      await onApprove(order.id, interpretation);
+      setShowApproveDialog(false);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!rejectionReason.trim()) return;
+    setActionLoading(true);
+    try {
+      await onReject(order.id, rejectionReason);
+      setShowRejectDialog(false);
+      setRejectionReason("");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   return (
     <>
@@ -100,8 +176,10 @@ function ApprovalCard({
             <span className="font-mono text-xs font-semibold text-primary">
               {order.orderNumber}
             </span>
-            <h3 className="mt-1 font-bold text-foreground">{order.patientName}</h3>
-            <span className="text-xs text-muted-foreground">MRN: {order.patientMrn}</span>
+            <h3 className="mt-1 font-bold text-foreground">{order.patient.name}</h3>
+            <span className="text-xs text-muted-foreground">
+              MRN: {order.patient.mrn}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             {criticalCount > 0 && (
@@ -115,47 +193,48 @@ function ApprovalCard({
                 {abnormalCount} Abnormal
               </span>
             )}
-            <LabStatusBadge status="VERIFIED" />
+            <span className="inline-flex items-center rounded-md bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+              VERIFIED
+            </span>
           </div>
         </div>
-
-        {/* Notes */}
-        {order.notes && (
-          <p className="text-xs text-muted-foreground italic border-l-2 border-border pl-3">
-            {order.notes}
-          </p>
-        )}
 
         {/* Test Results Table */}
         <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Test</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Hasil</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Satuan</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Ref. Range</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Flag</th>
+                <th className="px-3 py-2 text-left font-medium text-muted-foreground">
+                  Test
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-muted-foreground">
+                  Hasil
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-muted-foreground">
+                  Satuan
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-muted-foreground">
+                  Flag
+                </th>
               </tr>
             </thead>
             <tbody>
-              {order.details.map((detail: OrderDetail) => (
+              {order.orderDetails.map((detail) => (
                 <tr key={detail.id} className="border-b border-border last:border-0">
                   <td className="px-3 py-2">
-                    <span className="font-mono text-xs font-semibold text-primary">{detail.test.code}</span>
-                    <span className="ml-2 text-foreground">{detail.test.name}</span>
+                    <span className="font-mono text-xs font-semibold text-primary">
+                      {detail.test?.code ?? "-"}
+                    </span>
+                    <span className="ml-2 text-foreground">{detail.test?.name ?? "-"}</span>
                   </td>
                   <td className="px-3 py-2 font-semibold text-foreground">
                     {detail.resultValue ?? "-"}
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground">{detail.test.unit}</td>
                   <td className="px-3 py-2 text-muted-foreground">
-                    {detail.test.minRef !== undefined && detail.test.maxRef !== undefined
-                      ? `${detail.test.minRef} – ${detail.test.maxRef}`
-                      : "-"}
+                    {detail.test?.unit ?? "-"}
                   </td>
                   <td className="px-3 py-2">
-                    <FlagBadge flag={detail.resultFlag} />
+                    <FlagBadge flag={detail.flag} />
                   </td>
                 </tr>
               ))}
@@ -165,7 +244,10 @@ function ApprovalCard({
 
         {/* Interpretation Text Field */}
         <div>
-          <label htmlFor={`interp-${order.id}`} className="block text-xs font-medium text-muted-foreground mb-1">
+          <label
+            htmlFor={`interp-${order.id}`}
+            className="block text-xs font-medium text-muted-foreground mb-1"
+          >
             Interpretasi Klinis
           </label>
           <textarea
@@ -185,14 +267,14 @@ function ApprovalCard({
             className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/40"
           >
             <XCircle className="h-4 w-4" />
-            Reject
+            Tolak
           </button>
           <button
             onClick={() => setShowApproveDialog(true)}
             className="flex items-center gap-2 rounded-lg bg-[oklch(0.55_0.08_145)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[oklch(0.50_0.08_145)]"
           >
             <CheckCircle2 className="h-4 w-4" />
-            Approve
+            Setujui
           </button>
         </div>
       </div>
@@ -202,29 +284,22 @@ function ApprovalCard({
         open={showApproveDialog}
         title="Konfirmasi Approval"
         description="Apakah Anda yakin ingin menyetujui hasil pemeriksaan ini? Hasil akan dikirim ke pasien."
-        confirmLabel="Ya, Approve"
+        confirmLabel="Ya, Setujui"
         confirmClassName="bg-[oklch(0.55_0.08_145)] hover:bg-[oklch(0.50_0.08_145)]"
-        onConfirm={() => {
-          onApprove(order.id, interpretation);
-          setShowApproveDialog(false);
-        }}
+        loading={actionLoading}
+        onConfirm={handleApproveConfirm}
         onCancel={() => setShowApproveDialog(false)}
       />
 
       {/* Reject Confirmation Dialog */}
       <ConfirmDialog
         open={showRejectDialog}
-        title="Reject Order"
+        title="Tolak Order"
         description="Berikan alasan penolakan agar analis dapat memperbaiki hasil."
-        confirmLabel="Reject"
+        confirmLabel="Tolak"
         confirmClassName="bg-red-600 hover:bg-red-700"
-        onConfirm={() => {
-          if (rejectionReason.trim()) {
-            onReject(order.id, rejectionReason);
-            setShowRejectDialog(false);
-            setRejectionReason("");
-          }
-        }}
+        loading={actionLoading}
+        onConfirm={handleRejectConfirm}
         onCancel={() => {
           setShowRejectDialog(false);
           setRejectionReason("");
@@ -244,26 +319,51 @@ function ApprovalCard({
 
 /* ─── Main Approval Page ─── */
 export default function LabApprovalPage() {
-  const [processedIds, setProcessedIds] = useState<Set<string>>(new Set());
+  const [orders, setOrders] = useState<ApprovalOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const pendingOrders = useMemo(() => {
-    return MOCK_ORDERS.filter(
-      (o) => o.status === "VERIFIED" && !processedIds.has(o.id)
-    );
-  }, [processedIds]);
+  const fetchApprovalQueue = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await apiClient.getApprovalQueue();
+      const result = response as {
+        success: boolean;
+        data: { data: ApprovalOrder[]; meta: { total: number } };
+      };
+      setOrders(result.data.data);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "message" in err
+            ? String((err as { message: string }).message)
+            : "Gagal memuat data approval queue";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchApprovalQueue();
+  }, [fetchApprovalQueue]);
 
   const handleApprove = async (orderId: string, interpretation: string) => {
-    // In production: POST /api/v1/lab/:orderId/approve
-    // { decision: "APPROVE", interpretation }
-    console.log("[Approval] Approving order:", orderId, { interpretation });
-    setProcessedIds((prev) => new Set(prev).add(orderId));
+    await apiClient.approveOrder(orderId, {
+      decision: "APPROVE",
+      interpretation,
+    });
+    setOrders((prev) => prev.filter((o) => o.id !== orderId));
   };
 
   const handleReject = async (orderId: string, reason: string) => {
-    // In production: POST /api/v1/lab/:orderId/approve
-    // { decision: "REJECT", rejectionReason: reason }
-    console.log("[Approval] Rejecting order:", orderId, { reason });
-    setProcessedIds((prev) => new Set(prev).add(orderId));
+    await apiClient.approveOrder(orderId, {
+      decision: "REJECT",
+      rejectionReason: reason,
+    });
+    setOrders((prev) => prev.filter((o) => o.id !== orderId));
   };
 
   return (
@@ -277,23 +377,43 @@ export default function LabApprovalPage() {
           <div>
             <h2 className="text-lg font-bold text-foreground">Doctor Approval</h2>
             <p className="text-xs text-muted-foreground">
-              {pendingOrders.length} order menunggu persetujuan
+              {loading
+                ? "Memuat data..."
+                : `${orders.length} order menunggu persetujuan`}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Order Cards */}
+      {/* Content */}
       <div className="space-y-4">
-        {pendingOrders.length === 0 ? (
+        {loading ? (
+          <div className="rounded-2xl border border-dashed border-border py-16 text-center">
+            <Loader2 className="mx-auto h-10 w-10 text-muted-foreground/50 animate-spin" />
+            <p className="mt-3 text-sm text-muted-foreground">
+              Memuat data approval...
+            </p>
+          </div>
+        ) : error ? (
+          <div className="rounded-2xl border border-dashed border-red-200 dark:border-red-800 py-16 text-center">
+            <AlertTriangle className="mx-auto h-10 w-10 text-red-400" />
+            <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>
+            <button
+              onClick={fetchApprovalQueue}
+              className="mt-4 rounded-lg bg-muted px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/80 transition-colors"
+            >
+              Coba Lagi
+            </button>
+          </div>
+        ) : orders.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border py-16 text-center">
             <CheckCircle2 className="mx-auto h-10 w-10 text-muted-foreground/50" />
             <p className="mt-3 text-sm text-muted-foreground">
-              Semua order telah diproses. Tidak ada yang menunggu approval.
+              Tidak ada order yang menunggu approval
             </p>
           </div>
         ) : (
-          pendingOrders.map((order) => (
+          orders.map((order) => (
             <ApprovalCard
               key={order.id}
               order={order}

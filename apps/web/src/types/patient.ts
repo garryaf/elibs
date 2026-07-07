@@ -12,12 +12,17 @@ export interface Patient {
   phone: string;
   address: string;
   email?: string;
-  // Phase G: Geographic fields
+  // Phase G: Geographic fields (legacy free-text)
   province?: string;
   city?: string;
   district?: string;
   village?: string;
   postalCode?: string;
+  // Region FK fields (normalized)
+  provinsiId?: string;
+  kabupatenKotaId?: string;
+  kecamatanId?: string;
+  kelurahanDesaId?: string;
   // Clinical fields
   bloodType?: string;
   emergencyContact?: string;
@@ -36,12 +41,17 @@ export interface PatientFormData {
   phone: string;
   address: string;
   email?: string;
-  // Phase G: Geographic fields
+  // Phase G: Geographic fields (legacy free-text)
   province?: string;
   city?: string;
   district?: string;
   village?: string;
   postalCode?: string;
+  // Region FK fields (normalized)
+  provinsiId?: string;
+  kabupatenKotaId?: string;
+  kecamatanId?: string;
+  kelurahanDesaId?: string;
   // Clinical fields
   bloodType?: string;
   emergencyContact?: string;

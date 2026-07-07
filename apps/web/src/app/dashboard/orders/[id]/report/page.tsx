@@ -1,20 +1,86 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Printer, Download, Share2 } from "lucide-react";
-import { MOCK_ORDERS } from "@/lib/mock-orders";
+import { ArrowLeft, Printer, Download, Share2, Loader2 } from "lucide-react";
+import { apiClient } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+// ─── Local types matching API response ──────────────────────────────────────
+
+interface OrderDetailApi {
+  id: string;
+  testId: string;
+  status: string;
+  resultValue?: number | string;
+  flag?: "NORMAL" | "LOW" | "HIGH" | "CRITICAL";
+  price: number;
+  discount: number;
+  finalPrice: number;
+  test: {
+    code: string;
+    name: string;
+    unit: string;
+  };
+}
+
+interface OrderApi {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number;
+  paymentMethod?: string;
+  amountPaid?: number;
+  paidAt?: string;
+  barcode?: string;
+  barcodeImage?: string;
+  patient: {
+    name: string;
+    mrn: string;
+  };
+  orderDetails: OrderDetailApi[];
+  createdAt: string;
+  clinicalInterpretation?: string;
+  approvedBy?: string;
+}
 
 export default function ReportPreviewPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
-  const order = MOCK_ORDERS.find((o) => o.id === id);
+  const [order, setOrder] = useState<OrderApi | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!order) {
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    apiClient
+      .getOrder(id)
+      .then((res) => {
+        const data = (res as { success: boolean; data: OrderApi }).data;
+        setOrder(data);
+      })
+      .catch((err) => {
+        setError(err?.message || "Gagal memuat data order");
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
+
+  if (error || !order) {
     return (
       <div className="p-8 text-center text-slate-500">
-        Order tidak ditemukan. <button onClick={() => router.back()} className="text-emerald-600 hover:underline">Kembali</button>
+        {error || "Order tidak ditemukan."}{" "}
+        <button onClick={() => router.back()} className="text-emerald-600 hover:underline">Kembali</button>
       </div>
     );
   }
@@ -33,7 +99,10 @@ export default function ReportPreviewPage() {
           <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
             <Download className="h-4 w-4 text-emerald-500" /> Download PDF
           </button>
-          <button className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+          >
             <Printer className="h-4 w-4" /> Cetak Hasil
           </button>
         </div>
@@ -63,8 +132,8 @@ export default function ReportPreviewPage() {
 
           {/* Data Pasien */}
           <div className="mt-8 grid grid-cols-2 gap-x-12 gap-y-2 text-sm">
-            <div className="flex"><span className="w-24 text-slate-500">Nama</span><span className="font-semibold text-slate-900">: {order.patientName}</span></div>
-            <div className="flex"><span className="w-24 text-slate-500">MRN</span><span className="font-mono font-semibold text-slate-900">: {order.patientMrn}</span></div>
+            <div className="flex"><span className="w-24 text-slate-500">Nama</span><span className="font-semibold text-slate-900">: {order.patient.name}</span></div>
+            <div className="flex"><span className="w-24 text-slate-500">MRN</span><span className="font-mono font-semibold text-slate-900">: {order.patient.mrn}</span></div>
             <div className="flex"><span className="w-24 text-slate-500">Tgl Order</span><span className="text-slate-900">: {new Date(order.createdAt).toLocaleDateString("id-ID")}</span></div>
             <div className="flex"><span className="w-24 text-slate-500">Dokter</span><span className="text-slate-900">: {order.approvedBy || "dr. Mandiri"}</span></div>
           </div>
@@ -76,13 +145,12 @@ export default function ReportPreviewPage() {
                 <tr className="border-b-2 border-slate-300">
                   <th className="py-2 font-bold text-slate-800">PEMERIKSAAN</th>
                   <th className="py-2 font-bold text-slate-800">HASIL</th>
-                  <th className="py-2 font-bold text-slate-800">NILAI RUJUKAN</th>
                   <th className="py-2 font-bold text-slate-800">SATUAN</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {order.details.map((d) => {
-                  const isAbnormal = d.resultFlag === "HIGH" || d.resultFlag === "LOW";
+                {order.orderDetails.map((d) => {
+                  const isAbnormal = d.flag === "HIGH" || d.flag === "LOW";
                   return (
                     <tr key={d.id}>
                       <td className="py-3 font-medium text-slate-800">{d.test.name}</td>
@@ -91,9 +159,6 @@ export default function ReportPreviewPage() {
                           {d.resultValue ?? "-"}
                           {isAbnormal && <span className="ml-1 text-[10px]">*</span>}
                         </span>
-                      </td>
-                      <td className="py-3 font-mono text-slate-500">
-                        {d.test.minRef !== undefined ? `${d.test.minRef} - ${d.test.maxRef}` : "-"}
                       </td>
                       <td className="py-3 text-slate-500">{d.test.unit}</td>
                     </tr>

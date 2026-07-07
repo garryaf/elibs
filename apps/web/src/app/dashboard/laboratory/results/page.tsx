@@ -1,11 +1,40 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Search, FlaskConical, Droplets, ChevronRight } from "lucide-react";
-import { MOCK_ORDERS } from "@/lib/mock-orders";
+import {
+  Search,
+  FlaskConical,
+  Droplets,
+  ChevronRight,
+  Loader2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api";
 import { LabStatusBadge } from "@/components/laboratory/lab-status-badge";
+
+// ---------- Types ----------
+
+interface ResultOrder {
+  id: string;
+  orderNumber: string;
+  patientName: string;
+  patientMrn: string;
+  status: string;
+  createdAt: string;
+  details: {
+    id: string;
+    testId: string;
+    testCode: string;
+    testName: string;
+    unit: string;
+    status: string;
+    resultValue: string | null;
+    flag: string | null;
+  }[];
+}
+
+// ---------- Constants ----------
 
 type ResultsTab = "SAMPLE_COLLECTED" | "IN_ANALYSIS";
 
@@ -14,22 +43,119 @@ const RESULTS_TABS: { id: ResultsTab; label: string; icon: React.ElementType }[]
   { id: "IN_ANALYSIS", label: "Proses Analisa", icon: FlaskConical },
 ];
 
+// ---------- API Response Mapper ----------
+
+function mapApiOrder(o: any): ResultOrder {
+  return {
+    id: o.id,
+    orderNumber: o.orderNumber,
+    patientName: o.patient?.name ?? o.patientName ?? "",
+    patientMrn: o.patient?.mrn ?? o.patientMrn ?? "",
+    status: o.status,
+    createdAt: o.createdAt,
+    details: (o.orderDetails ?? o.details ?? []).map((d: any) => ({
+      id: d.id,
+      testId: d.testId,
+      testCode: d.test?.code ?? d.testCode ?? "",
+      testName: d.test?.name ?? d.testName ?? "",
+      unit: d.test?.unit ?? d.unit ?? "",
+      status: d.status,
+      resultValue: d.resultValue ?? null,
+      flag: d.flag ?? null,
+    })),
+  };
+}
+
+// ---------- Component ----------
+
 export default function LabResultsPage() {
   const [activeTab, setActiveTab] = useState<ResultsTab>("SAMPLE_COLLECTED");
   const [search, setSearch] = useState("");
+  const [orders, setOrders] = useState<ResultOrder[]>([]);
+  const [tabCounts, setTabCounts] = useState<Record<ResultsTab, number>>({
+    SAMPLE_COLLECTED: 0,
+    IN_ANALYSIS: 0,
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const filteredOrders = useMemo(() => {
-    return MOCK_ORDERS.filter((o) => {
-      const matchStatus = o.status === activeTab;
-      const q = search.toLowerCase();
-      const matchSearch =
-        !q ||
-        o.orderNumber.toLowerCase().includes(q) ||
-        o.patientName.toLowerCase().includes(q) ||
-        o.patientMrn.toLowerCase().includes(q);
-      return matchStatus && matchSearch;
-    });
-  }, [activeTab, search]);
+  // Fetch orders based on active tab
+  const fetchOrders = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      let res: any;
+
+      if (activeTab === "SAMPLE_COLLECTED") {
+        // Lab queue endpoint returns PAID + SAMPLE_COLLECTED orders
+        res = await apiClient.getLabQueue({ status: "SAMPLE_COLLECTED" });
+      } else {
+        // IN_ANALYSIS orders are not in lab queue — use orders endpoint
+        res = await apiClient.getOrders({ status: "IN_ANALYSIS" });
+      }
+
+      // Unwrap TransformInterceptor envelope: { success, data: { data: [...], meta } }
+      const envelope = (res?.data ?? res) as any;
+      const innerData = envelope?.data ?? envelope;
+
+      if (Array.isArray(innerData)) {
+        const mapped = innerData.map(mapApiOrder);
+        setOrders(mapped);
+      } else if (innerData?.data && Array.isArray(innerData.data)) {
+        const mapped = innerData.data.map(mapApiOrder);
+        setOrders(mapped);
+      } else {
+        setOrders([]);
+      }
+    } catch {
+      setOrders([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeTab]);
+
+  // Fetch counts for both tabs on mount and when data changes
+  const fetchCounts = useCallback(async () => {
+    try {
+      const [sampleRes, analysisRes] = await Promise.all([
+        apiClient.getLabQueue({ status: "SAMPLE_COLLECTED" }),
+        apiClient.getOrders({ status: "IN_ANALYSIS" }),
+      ]);
+
+      const extractCount = (res: any): number => {
+        const envelope = (res?.data ?? res) as any;
+        const innerData = envelope?.data ?? envelope;
+        if (Array.isArray(innerData)) return innerData.length;
+        if (innerData?.meta?.total != null) return innerData.meta.total;
+        if (innerData?.data && Array.isArray(innerData.data)) return innerData.data.length;
+        return 0;
+      };
+
+      setTabCounts({
+        SAMPLE_COLLECTED: extractCount(sampleRes),
+        IN_ANALYSIS: extractCount(analysisRes),
+      });
+    } catch {
+      // Keep existing counts on error
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  useEffect(() => {
+    fetchCounts();
+  }, [fetchCounts]);
+
+  // Filter by local search
+  const filteredOrders = orders.filter((o) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      o.orderNumber.toLowerCase().includes(q) ||
+      o.patientName.toLowerCase().includes(q) ||
+      o.patientMrn.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -38,7 +164,7 @@ export default function LabResultsPage() {
         <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-border bg-card p-1">
           {RESULTS_TABS.map((tab) => {
             const Icon = tab.icon;
-            const count = MOCK_ORDERS.filter((o) => o.status === tab.id).length;
+            const count = tabCounts[tab.id];
             const isActive = activeTab === tab.id;
             return (
               <button
@@ -50,6 +176,7 @@ export default function LabResultsPage() {
                     ? "bg-[oklch(0.55_0.08_145)] text-white shadow-sm"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
+                aria-pressed={isActive}
               >
                 <Icon className="h-4 w-4" />
                 {tab.label}
@@ -75,23 +202,35 @@ export default function LabResultsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-4 text-sm outline-none focus:border-primary text-foreground placeholder:text-muted-foreground"
+            aria-label="Search lab results"
           />
         </div>
       </div>
 
       {/* Order Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredOrders.length === 0 ? (
-          <div className="col-span-full rounded-2xl border border-dashed border-border py-12 text-center text-muted-foreground">
-            Tidak ada order pada status ini.
+        {isLoading ? (
+          <div className="col-span-full flex items-center justify-center rounded-2xl border border-dashed border-border py-12">
+            <Loader2 className="h-5 w-5 animate-spin text-[#6B8E6B]" />
+            <span className="ml-2 text-sm text-muted-foreground">
+              Memuat data...
+            </span>
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border py-12 text-center text-muted-foreground">
+            <FlaskConical className="h-8 w-8 text-muted-foreground/50" />
+            <p>Tidak ada order yang siap diinput hasil</p>
           </div>
         ) : (
           filteredOrders.map((order) => {
             const completedCount = order.details.filter(
-              (d) => d.resultValue !== undefined
+              (d) => d.resultValue !== null
             ).length;
             const totalCount = order.details.length;
-            const progress = Math.round((completedCount / totalCount) * 100);
+            const progress =
+              totalCount > 0
+                ? Math.round((completedCount / totalCount) * 100)
+                : 0;
 
             return (
               <Link
@@ -117,7 +256,11 @@ export default function LabResultsPage() {
                 </div>
 
                 <div className="mb-3">
-                  <LabStatusBadge status={order.status as "SAMPLE_COLLECTED" | "IN_ANALYSIS"} />
+                  <LabStatusBadge
+                    status={
+                      order.status as "SAMPLE_COLLECTED" | "IN_ANALYSIS"
+                    }
+                  />
                 </div>
 
                 {/* Progress bar */}
@@ -143,12 +286,12 @@ export default function LabResultsPage() {
                       key={d.id}
                       className={cn(
                         "rounded-md px-2 py-1 font-mono text-[10px] font-semibold",
-                        d.resultValue !== undefined
+                        d.resultValue !== null
                           ? "bg-[#6B8E6B]/10 text-[#6B8E6B]"
                           : "bg-muted text-muted-foreground"
                       )}
                     >
-                      {d.test.code}
+                      {d.testCode}
                     </span>
                   ))}
                 </div>
@@ -156,6 +299,10 @@ export default function LabResultsPage() {
                 <div className="flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
                   <span>{totalCount} parameter</span>
                   <span>
+                    {new Date(order.createdAt).toLocaleDateString("id-ID", {
+                      day: "2-digit",
+                      month: "short",
+                    })}{" "}
                     {new Date(order.createdAt).toLocaleTimeString("id-ID", {
                       hour: "2-digit",
                       minute: "2-digit",

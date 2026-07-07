@@ -1,18 +1,41 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, CheckCircle2, ChevronRight, User, FlaskConical, ArrowLeft, Tag } from "lucide-react";
-import { MOCK_PATIENTS } from "@/lib/mock-patients";
-import { MOCK_TESTS, TEST_CATEGORIES } from "@/lib/mock-tests";
-import type { Patient } from "@/types/patient";
-import type { TestMaster } from "@/types/order";
+import { Search, X, CheckCircle2, ChevronRight, User, FlaskConical, ArrowLeft, Tag, Loader2 } from "lucide-react";
+import { apiClient } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type Step = 1 | 2 | 3;
 
+// ─── Local types matching API responses ─────────────────────────────────────
+
+interface PatientApi {
+  id: string;
+  name: string;
+  mrn: string;
+  nik: string;
+  phone: string;
+  gender: string;
+}
+
+interface TestApi {
+  id: string;
+  code: string;
+  name: string;
+  categoryId: string;
+  unit: string;
+  price: number;
+  category: { name: string };
+}
+
+interface TestCategoryApi {
+  id: string;
+  name: string;
+}
+
 function formatRupiah(n: number) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
+  return `Rp ${n.toLocaleString("id-ID")}`;
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -58,19 +81,35 @@ function StepIndicator({ current }: { current: Step }) {
 }
 
 /* ────────────────────────────────────────────────────────────────
-   STEP 1: PATIENT SEARCH
+   STEP 1: PATIENT SEARCH (debounced API call)
 ──────────────────────────────────────────────────────────────── */
-function PatientStep({ onSelect }: { onSelect: (p: Patient) => void }) {
+function PatientStep({ onSelect }: { onSelect: (p: PatientApi) => void }) {
   const [q, setQ] = useState("");
-  const results = useMemo(() => {
-    if (q.trim().length < 2) return [];
-    const lower = q.toLowerCase();
-    return MOCK_PATIENTS.filter(
-      (p) =>
-        p.status === "ACTIVE" &&
-        (p.name.toLowerCase().includes(lower) || p.nik.includes(lower) || p.mrn.toLowerCase().includes(lower))
-    );
-  }, [q]);
+  const [results, setResults] = useState<PatientApi[]>([]);
+  const [searching, setSearching] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const searchPatients = useCallback((query: string) => {
+    if (query.trim().length < 2) {
+      setResults([]);
+      return;
+    }
+    setSearching(true);
+    apiClient
+      .getPatients({ search: query, limit: 10 })
+      .then((res) => {
+        const data = (res as { data: { data: PatientApi[] } }).data;
+        setResults(data.data || []);
+      })
+      .catch(() => setResults([]))
+      .finally(() => setSearching(false));
+  }, []);
+
+  const handleChange = (value: string) => {
+    setQ(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => searchPatients(value), 300);
+  };
 
   return (
     <div className="space-y-4">
@@ -84,14 +123,15 @@ function PatientStep({ onSelect }: { onSelect: (p: Patient) => void }) {
           id="new-order-patient-search"
           type="text"
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
           autoFocus
           placeholder="Cari pasien..."
           className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
+        {searching && <Loader2 className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400" />}
       </div>
 
-      {q.trim().length >= 2 && (
+      {q.trim().length >= 2 && !searching && (
         <div className="space-y-2">
           {results.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400 dark:border-slate-700">
@@ -141,38 +181,57 @@ function PatientStep({ onSelect }: { onSelect: (p: Patient) => void }) {
 }
 
 /* ────────────────────────────────────────────────────────────────
-   STEP 2: TEST SELECTION
+   STEP 2: TEST SELECTION (loads from API)
 ──────────────────────────────────────────────────────────────── */
 function TestStep({
   selectedTests,
   onToggle,
+  allTests,
+  categories,
+  loadingTests,
 }: {
-  selectedTests: TestMaster[];
-  onToggle: (t: TestMaster) => void;
+  selectedTests: TestApi[];
+  onToggle: (t: TestApi) => void;
+  allTests: TestApi[];
+  categories: TestCategoryApi[];
+  loadingTests: boolean;
 }) {
-  const [activeCategory, setActiveCategory] = useState(TEST_CATEGORIES[0]);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  const byCategory = useMemo(() => {
-    const cats = search
-      ? [
-          ...new Set(
-            MOCK_TESTS.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()) || t.code.toLowerCase().includes(search.toLowerCase())).map((t) => t.category)
-          ),
-        ]
-      : [activeCategory];
+  // Default to first category once loaded
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategoryId) {
+      setActiveCategoryId(categories[0].id);
+    }
+  }, [categories, activeCategoryId]);
 
-    return cats.map((cat) => ({
-      category: cat,
-      tests: MOCK_TESTS.filter(
-        (t) =>
-          t.category === cat &&
-          (search === "" || t.name.toLowerCase().includes(search.toLowerCase()) || t.code.toLowerCase().includes(search.toLowerCase()))
-      ),
-    })).filter((g) => g.tests.length > 0);
-  }, [activeCategory, search]);
+  const byCategory = useMemo(() => {
+    if (search) {
+      const lower = search.toLowerCase();
+      const filtered = allTests.filter(
+        (t) => t.name.toLowerCase().includes(lower) || t.code.toLowerCase().includes(lower)
+      );
+      const catIds = [...new Set(filtered.map((t) => t.categoryId))];
+      return catIds.map((catId) => ({
+        category: categories.find((c) => c.id === catId)?.name || "Lainnya",
+        tests: filtered.filter((t) => t.categoryId === catId),
+      })).filter((g) => g.tests.length > 0);
+    }
+    const tests = allTests.filter((t) => t.categoryId === activeCategoryId);
+    const catName = categories.find((c) => c.id === activeCategoryId)?.name || "Lainnya";
+    return tests.length > 0 ? [{ category: catName, tests }] : [];
+  }, [activeCategoryId, search, allTests, categories]);
 
   const isSelected = (id: string) => selectedTests.some((t) => t.id === id);
+
+  if (loadingTests) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -195,21 +254,21 @@ function TestStep({
       </div>
 
       {/* Category tabs */}
-      {!search && (
+      {!search && categories.length > 0 && (
         <div className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
-          {TEST_CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <button
-              key={cat}
-              id={`test-cat-${cat.toLowerCase().replace(/\s/g, "-")}`}
-              onClick={() => setActiveCategory(cat)}
+              key={cat.id}
+              id={`test-cat-${cat.name.toLowerCase().replace(/\s/g, "-")}`}
+              onClick={() => setActiveCategoryId(cat.id)}
               className={cn(
                 "whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
-                activeCategory === cat
+                activeCategoryId === cat.id
                   ? "bg-emerald-600 text-white shadow-sm"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               )}
             >
-              {cat}
+              {cat.name}
             </button>
           ))}
         </div>
@@ -250,7 +309,7 @@ function TestStep({
                       <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
                         <span>{formatRupiah(test.price)}</span>
                         <span>·</span>
-                        <span>TAT {test.turnaroundHours}j</span>
+                        <span>{test.unit}</span>
                       </div>
                     </div>
                     <div className={cn(
@@ -283,8 +342,8 @@ function ConfirmStep({
   notes,
   onNotesChange,
 }: {
-  patient: Patient;
-  selectedTests: TestMaster[];
+  patient: PatientApi;
+  selectedTests: TestApi[];
   notes: string;
   onNotesChange: (v: string) => void;
 }) {
@@ -358,26 +417,62 @@ function ConfirmStep({
 export default function NewOrderPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [selectedTests, setSelectedTests] = useState<TestMaster[]>([]);
+  const [patient, setPatient] = useState<PatientApi | null>(null);
+  const [selectedTests, setSelectedTests] = useState<TestApi[]>([]);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // Tests and categories loaded on mount
+  const [allTests, setAllTests] = useState<TestApi[]>([]);
+  const [categories, setCategories] = useState<TestCategoryApi[]>([]);
+  const [loadingTests, setLoadingTests] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoadingTests(true);
+      try {
+        const [testsRes, catsRes] = await Promise.all([
+          apiClient.getTests({ limit: 100 }),
+          apiClient.getTestCategories({ limit: 50 }),
+        ]);
+        const testsData = (testsRes as { data: { data: TestApi[] } }).data;
+        const catsData = (catsRes as { data: { data: TestCategoryApi[] } }).data;
+        setAllTests(testsData.data || []);
+        setCategories(catsData.data || []);
+      } catch {
+        // Silently fail, tests will be empty
+      } finally {
+        setLoadingTests(false);
+      }
+    };
+    loadData();
+  }, []);
+
   const subtotal = selectedTests.reduce((s, t) => s + t.price, 0);
 
-  const toggleTest = (t: TestMaster) => {
+  const toggleTest = (t: TestApi) => {
     setSelectedTests((prev) =>
       prev.some((x) => x.id === t.id) ? prev.filter((x) => x.id !== t.id) : [...prev, t]
     );
   };
 
   const handleSubmit = async () => {
+    if (!patient) return;
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setIsSubmitting(false);
-    setSuccess(true);
-    setTimeout(() => router.push("/dashboard/orders"), 1800);
+    try {
+      await apiClient.createOrder({
+        patientId: patient.id,
+        testIds: selectedTests.map((t) => t.id),
+      });
+      setSuccess(true);
+      setTimeout(() => router.push("/dashboard/orders"), 1800);
+    } catch (err: unknown) {
+      const message = err && typeof err === "object" && "message" in err ? (err as { message: string }).message : "Gagal membuat order";
+      alert(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (success) {
@@ -424,7 +519,13 @@ export default function NewOrderPage() {
           />
         )}
         {step === 2 && (
-          <TestStep selectedTests={selectedTests} onToggle={toggleTest} />
+          <TestStep
+            selectedTests={selectedTests}
+            onToggle={toggleTest}
+            allTests={allTests}
+            categories={categories}
+            loadingTests={loadingTests}
+          />
         )}
         {step === 3 && patient && (
           <ConfirmStep
@@ -501,10 +602,7 @@ export default function NewOrderPage() {
           >
             {isSubmitting ? (
               <>
-                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
+                <Loader2 className="h-4 w-4 animate-spin" />
                 Menyimpan...
               </>
             ) : (

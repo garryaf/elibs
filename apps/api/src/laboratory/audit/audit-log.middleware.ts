@@ -15,7 +15,7 @@ const SENSITIVE_FIELDS = [
 /**
  * Models that should be intercepted by the audit middleware.
  */
-const AUDITED_MODELS = ['Order', 'OrderDetail', 'Patient'];
+const AUDITED_MODELS = ['Order', 'OrderDetail', 'Patient', 'TestCategory', 'TestMaster', 'Panel', 'Tariff', 'Doctor', 'Clinic', 'Insurance', 'Equipment', 'Reagent', 'SampleTypeMaster', 'MeasurementUnit', 'User'];
 
 /**
  * Strips sensitive fields from an object before storing in audit logs.
@@ -44,6 +44,18 @@ function getModelDelegate(
     Order: prisma.order,
     OrderDetail: prisma.orderDetail,
     Patient: prisma.patient,
+    TestCategory: prisma.testCategory,
+    TestMaster: prisma.testMaster,
+    Panel: prisma.panel,
+    Tariff: prisma.tariff,
+    Doctor: prisma.doctor,
+    Clinic: prisma.clinic,
+    Insurance: prisma.insurance,
+    Equipment: prisma.equipment,
+    Reagent: prisma.reagent,
+    SampleTypeMaster: prisma.sampleTypeMaster,
+    MeasurementUnit: prisma.measurementUnit,
+    User: prisma.user,
   };
   return (delegates[model] as { findUnique: (args: { where: { id: string } }) => Promise<unknown> }) ?? null;
 }
