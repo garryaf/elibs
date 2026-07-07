@@ -21,8 +21,8 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Global prefix
-  app.setGlobalPrefix('api/v1');
+  // NOTE: Controllers already include 'api/v1' in their paths,
+  // so we do NOT set a global prefix to avoid doubling.
 
   // Global pipes, filters, and interceptors
   app.useGlobalPipes(globalValidationPipe);

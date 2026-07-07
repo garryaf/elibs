@@ -1,0 +1,95 @@
+# ============================================================================
+# eLIS — Local Development Docker Compose
+# Usage: docker compose up -d
+# Access: API → http://localhost:3001 | Web → http://localhost:3000
+# ============================================================================
+
+services:
+  # --- Infrastructure ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: elis-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres123}
+      POSTGRES_DB: ${DB_NAME:-elis_db}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - elis_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-elis_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - elis-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: elis-redis
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - elis_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - elis-network
+
+  # --- Application ---
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: production
+    container_name: elis-api
+    ports:
+      - "${API_PORT:-3001}:3001"
+    env_file:
+      - ./deploy/env/.env.local
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres123}@postgres:5432/${DB_NAME:-elis_db}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - elis-network
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:${API_PORT:-3001}
+    container_name: elis-web
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:${API_PORT:-3001}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - elis-network
+
+volumes:
+  elis_pgdata:
+    driver: local
+  elis_redis:
+    driver: local
+
+networks:
+  elis-network:
+    driver: bridge

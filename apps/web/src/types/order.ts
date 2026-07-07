@@ -3,6 +3,8 @@ export type OrderStatus =
   | "PAID"
   | "SAMPLE_COLLECTED"
   | "IN_ANALYSIS"
+  | "VERIFIED"
+  | "APPROVED"
   | "COMPLETED"
   | "CANCELLED";
 

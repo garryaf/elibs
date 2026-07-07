@@ -1,0 +1,77 @@
+# ============================================================================
+# eLIS — Production / Cloud Deployment Docker Compose
+# Usage: docker compose -f docker-compose.prod.yml up -d
+# 
+# This compose file is designed for cloud deployment where:
+# - PostgreSQL is a managed service (AWS RDS, GCP Cloud SQL, Azure DB)
+# - Redis is a managed service (AWS ElastiCache, GCP Memorystore)
+# - Only application containers are deployed
+# - All config comes from environment variables or secrets manager
+# ============================================================================
+
+services:
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: production
+    container_name: elis-api
+    ports:
+      - "${API_PORT:-3001}:3001"
+    env_file:
+      - ./deploy/env/.env.production
+    environment:
+      NODE_ENV: production
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - elis-network
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.elis.example.com}
+    container_name: elis-web
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.elis.example.com}
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - elis-network
+
+networks:
+  elis-network:
+    driver: bridge

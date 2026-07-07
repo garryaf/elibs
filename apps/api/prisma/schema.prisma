@@ -46,3 +46,279 @@ model AuditLog {
 
   @@map("audit_logs")
 }
+
+// === ENUMS ===
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  SAMPLE_COLLECTED
+  IN_ANALYSIS
+  VERIFIED
+  APPROVED
+  NOTIFIED
+  CANCELLED
+}
+
+enum OrderDetailStatus {
+  PENDING
+  RESULT_ENTERED
+  VERIFIED
+  APPROVED
+}
+
+enum Flag {
+  NORMAL
+  LOW
+  HIGH
+  CRITICAL
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  INSURANCE
+}
+
+enum SampleCondition {
+  ACCEPTABLE
+  LIPEMIC
+  HEMOLYTIC
+  CLOTTED
+  INSUFFICIENT
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum NotificationType {
+  EMAIL
+  WHATSAPP
+}
+
+// === MASTER DATA ===
+
+model TestCategory {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  tests TestMaster[]
+
+  @@map("test_categories")
+}
+
+model TestMaster {
+  id                     String    @id @default(uuid()) @db.Uuid
+  code                   String    @unique
+  name                   String
+  categoryId             String    @db.Uuid
+  unit                   String?
+  method                 String?
+  sampleType             String?
+  price                  Decimal   @db.Decimal(12, 2)
+  requiresDoctorApproval Boolean   @default(true)
+  isActive               Boolean   @default(true)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  deletedAt              DateTime?
+
+  category        TestCategory     @relation(fields: [categoryId], references: [id])
+  referenceValues ReferenceValue[]
+  tariffs         Tariff[]
+  panelTests      PanelTest[]
+  orderDetails    OrderDetail[]
+
+  @@map("test_masters")
+}
+
+model ReferenceValue {
+  id          String   @id @default(uuid()) @db.Uuid
+  testId      String   @db.Uuid
+  gender      Gender
+  minAge      Int      @default(0)
+  maxAge      Int      @default(150)
+  minRef      Decimal  @db.Decimal(10, 4)
+  maxRef      Decimal  @db.Decimal(10, 4)
+  criticalMin Decimal? @db.Decimal(10, 4)
+  criticalMax Decimal? @db.Decimal(10, 4)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  test TestMaster @relation(fields: [testId], references: [id])
+
+  @@unique([testId, gender, minAge, maxAge])
+  @@map("reference_values")
+}
+
+model Panel {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  description String?
+  price       Decimal   @db.Decimal(12, 2)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  panelTests PanelTest[]
+
+  @@map("panels")
+}
+
+model PanelTest {
+  id      String @id @default(uuid()) @db.Uuid
+  panelId String @db.Uuid
+  testId  String @db.Uuid
+
+  panel Panel      @relation(fields: [panelId], references: [id])
+  test  TestMaster @relation(fields: [testId], references: [id])
+
+  @@unique([panelId, testId])
+  @@map("panel_tests")
+}
+
+model Tariff {
+  id          String   @id @default(uuid()) @db.Uuid
+  testId      String   @db.Uuid
+  clinicId    String?  @db.Uuid
+  insuranceId String?  @db.Uuid
+  price       Decimal  @db.Decimal(12, 2)
+  discount    Decimal  @default(0) @db.Decimal(5, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  test TestMaster @relation(fields: [testId], references: [id])
+
+  @@unique([testId, clinicId, insuranceId])
+  @@map("tariffs")
+}
+
+// === PATIENT ===
+
+model Patient {
+  id                         String    @id @default(uuid()) @db.Uuid
+  mrn                        String    @unique
+  nik                        String    @unique
+  name                       String
+  dateOfBirth                DateTime  @db.Date
+  gender                     Gender
+  phone                      String?
+  address                    String?
+  email                      String?
+  consentDigitalNotification Boolean   @default(false)
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  deletedAt                  DateTime?
+
+  orders Order[]
+
+  @@map("patients")
+}
+
+// === ORDER ===
+
+model Order {
+  id                String           @id @default(uuid()) @db.Uuid
+  orderNumber       String           @unique
+  patientId         String           @db.Uuid
+  clinicId          String?          @db.Uuid
+  doctorId          String?          @db.Uuid
+  insuranceId       String?          @db.Uuid
+  status            OrderStatus      @default(PENDING_PAYMENT)
+  totalAmount       Decimal          @db.Decimal(12, 2)
+  paymentMethod     PaymentMethod?
+  amountPaid        Decimal?         @db.Decimal(12, 2)
+  paidAt            DateTime?
+  barcode           String?
+  barcodeImage      String?
+  sampleCollectedAt DateTime?
+  sampleCollectedBy String?          @db.Uuid
+  sampleCondition   SampleCondition?
+  rejectionReason   String?
+  verifiedAt        DateTime?
+  verifiedBy        String?          @db.Uuid
+  verificationNotes String?
+  approvedAt        DateTime?
+  approvedBy        String?          @db.Uuid
+  interpretation    String?
+  rejectedReason    String?
+  cancelledAt       DateTime?
+  cancelledBy       String?          @db.Uuid
+  cancelReason      String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  patient       Patient           @relation(fields: [patientId], references: [id])
+  orderDetails  OrderDetail[]
+  notifications NotificationLog[]
+
+  @@index([status])
+  @@index([patientId])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderDetail {
+  id              String            @id @default(uuid()) @db.Uuid
+  orderId         String            @db.Uuid
+  testId          String            @db.Uuid
+  status          OrderDetailStatus @default(PENDING)
+  resultValue     String?
+  flag            Flag?
+  comment         String?
+  price           Decimal           @db.Decimal(12, 2)
+  discount        Decimal           @default(0) @db.Decimal(5, 2)
+  finalPrice      Decimal           @db.Decimal(12, 2)
+  resultEnteredAt DateTime?
+  resultEnteredBy String?           @db.Uuid
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  order Order      @relation(fields: [orderId], references: [id])
+  test  TestMaster @relation(fields: [testId], references: [id])
+
+  @@index([orderId])
+  @@map("order_details")
+}
+
+// === NOTIFICATION ===
+
+model NotificationLog {
+  id        String             @id @default(uuid()) @db.Uuid
+  orderId   String             @db.Uuid
+  type      NotificationType
+  recipient String
+  status    NotificationStatus @default(PENDING)
+  attempts  Int                @default(0)
+  lastError String?
+  sentAt    DateTime?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("notification_logs")
+}
+
+// === SEQUENCE TABLE (for MRN) ===
+
+model MrnSequence {
+  id        String @id // format: "YYYYMM" e.g. "202507"
+  lastValue Int    @default(0)
+
+  @@map("mrn_sequences")
+}
