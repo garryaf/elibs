@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, User, Phone, MapPin, Mail, Hash, Calendar } from "lucide-react";
+import { X, User, Phone, MapPin, Mail, Hash, Calendar, Shield, Heart, Building } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Patient, PatientFormData, Gender } from "@/types/patient";
 
@@ -20,6 +20,14 @@ const initialForm: PatientFormData = {
   phone: "",
   address: "",
   email: "",
+  province: "",
+  city: "",
+  district: "",
+  village: "",
+  postalCode: "",
+  bloodType: "",
+  emergencyContact: "",
+  emergencyPhone: "",
 };
 
 interface FormInputProps {
@@ -58,14 +66,22 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
           phone: editData.phone,
           address: editData.address,
           email: editData.email ?? "",
+          province: editData.province ?? "",
+          city: editData.city ?? "",
+          district: editData.district ?? "",
+          village: editData.village ?? "",
+          postalCode: editData.postalCode ?? "",
+          bloodType: editData.bloodType ?? "",
+          emergencyContact: editData.emergencyContact ?? "",
+          emergencyPhone: editData.emergencyPhone ?? "",
         }
       : initialForm
   );
-  const [errors, setErrors] = useState<Partial<PatientFormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof PatientFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validate = (): boolean => {
-    const newErrors: Partial<PatientFormData> = {};
+    const newErrors: Partial<Record<keyof PatientFormData, string>> = {};
     if (!form.nik || form.nik.length !== 16) newErrors.nik = "NIK harus 16 digit";
     if (!form.name || form.name.trim().length < 3) newErrors.name = "Nama minimal 3 karakter";
     if (!form.dob) newErrors.dob = "Tanggal lahir wajib diisi";
@@ -82,7 +98,6 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
     e.preventDefault();
     if (!validate()) return;
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 600)); // Simulate network
     onSubmit(form);
     setIsSubmitting(false);
     onClose();
@@ -97,16 +112,11 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
       aria-modal="true"
       aria-labelledby="patient-modal-title"
     >
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 backdrop-blur-sm px-6 py-4 dark:border-slate-800 dark:bg-slate-900/95">
           <div>
             <h2 id="patient-modal-title" className="text-lg font-bold text-slate-900 dark:text-white">
               {editData ? "Edit Data Pasien" : "Daftarkan Pasien Baru"}
@@ -126,116 +136,234 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
 
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate>
-          <div className="grid gap-4 p-6 sm:grid-cols-2">
-            {/* NIK */}
-            <FormField label="NIK" id="patient-nik" icon={Hash} error={errors.nik} required>
-              <input
-                id="patient-nik"
-                type="text"
-                inputMode="numeric"
-                maxLength={16}
-                placeholder="16 digit NIK"
-                value={form.nik}
-                onChange={(e) => setForm({ ...form, nik: e.target.value.replace(/\D/g, "") })}
-                className={cn(inputClass, errors.nik && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
-              />
-            </FormField>
+          <div className="p-6 space-y-6">
+            {/* Section: Data Diri */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                <User className="h-4 w-4 text-emerald-600" />
+                Data Diri
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField label="NIK" id="patient-nik" icon={Hash} error={errors.nik} required>
+                  <input
+                    id="patient-nik"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={16}
+                    placeholder="16 digit NIK"
+                    value={form.nik}
+                    onChange={(e) => setForm({ ...form, nik: e.target.value.replace(/\D/g, "") })}
+                    className={cn(inputClass, errors.nik && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
+                  />
+                </FormField>
 
-            {/* Full Name */}
-            <FormField label="Nama Lengkap" id="patient-name" icon={User} error={errors.name} required>
-              <input
-                id="patient-name"
-                type="text"
-                placeholder="Nama lengkap sesuai KTP"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className={cn(inputClass, errors.name && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
-              />
-            </FormField>
+                <FormField label="Nama Lengkap" id="patient-name" icon={User} error={errors.name} required>
+                  <input
+                    id="patient-name"
+                    type="text"
+                    placeholder="Nama lengkap sesuai KTP"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className={cn(inputClass, errors.name && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
+                  />
+                </FormField>
 
-            {/* Date of Birth */}
-            <FormField label="Tanggal Lahir" id="patient-dob" icon={Calendar} error={errors.dob} required>
-              <input
-                id="patient-dob"
-                type="date"
-                value={form.dob}
-                max={new Date().toISOString().split("T")[0]}
-                onChange={(e) => setForm({ ...form, dob: e.target.value })}
-                className={cn(inputClass, errors.dob && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
-              />
-            </FormField>
+                <FormField label="Tanggal Lahir" id="patient-dob" icon={Calendar} error={errors.dob} required>
+                  <input
+                    id="patient-dob"
+                    type="date"
+                    value={form.dob}
+                    max={new Date().toISOString().split("T")[0]}
+                    onChange={(e) => setForm({ ...form, dob: e.target.value })}
+                    className={cn(inputClass, errors.dob && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
+                  />
+                </FormField>
 
-            {/* Gender */}
-            <FormField label="Jenis Kelamin" id="patient-gender" icon={User} required>
-              <div className="mt-0 flex gap-3">
-                {(["MALE", "FEMALE"] as Gender[]).map((g) => (
-                  <label
-                    key={g}
-                    className={cn(
-                      "flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-all",
-                      form.gender === g
-                        ? "border-emerald-400 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-400/20 dark:border-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300"
-                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
-                    )}
+                <FormField label="Jenis Kelamin" id="patient-gender" icon={User} required>
+                  <div className="mt-0 flex gap-3">
+                    {(["MALE", "FEMALE"] as Gender[]).map((g) => (
+                      <label
+                        key={g}
+                        className={cn(
+                          "flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-all",
+                          form.gender === g
+                            ? "border-emerald-400 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-400/20 dark:border-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300"
+                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="gender"
+                          value={g}
+                          checked={form.gender === g}
+                          onChange={() => setForm({ ...form, gender: g })}
+                          className="sr-only"
+                        />
+                        {g === "MALE" ? "♂ Laki-laki" : "♀ Perempuan"}
+                      </label>
+                    ))}
+                  </div>
+                </FormField>
+
+                <FormField label="Nomor Telepon" id="patient-phone" icon={Phone} error={errors.phone} required>
+                  <input
+                    id="patient-phone"
+                    type="tel"
+                    placeholder="08xxxxxxxxxx"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })}
+                    className={cn(inputClass, errors.phone && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
+                  />
+                </FormField>
+
+                <FormField label="Email" id="patient-email" icon={Mail} error={errors.email}>
+                  <input
+                    id="patient-email"
+                    type="email"
+                    placeholder="email@contoh.com (opsional)"
+                    value={form.email ?? ""}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className={cn(inputClass, errors.email && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
+                  />
+                </FormField>
+
+                <FormField label="Golongan Darah" id="patient-blood" icon={Heart}>
+                  <select
+                    id="patient-blood"
+                    value={form.bloodType ?? ""}
+                    onChange={(e) => setForm({ ...form, bloodType: e.target.value })}
+                    className={inputClass}
                   >
-                    <input
-                      type="radio"
-                      name="gender"
-                      value={g}
-                      checked={form.gender === g}
-                      onChange={() => setForm({ ...form, gender: g })}
-                      className="sr-only"
-                    />
-                    {g === "MALE" ? "♂ Laki-laki" : "♀ Perempuan"}
-                  </label>
-                ))}
+                    <option value="">— Pilih —</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                  </select>
+                </FormField>
               </div>
-            </FormField>
+            </div>
 
-            {/* Phone */}
-            <FormField label="Nomor Telepon" id="patient-phone" icon={Phone} error={errors.phone} required>
-              <input
-                id="patient-phone"
-                type="tel"
-                placeholder="08xxxxxxxxxx"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })}
-                className={cn(inputClass, errors.phone && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
-              />
-            </FormField>
+            {/* Section: Alamat */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-emerald-600" />
+                Alamat
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <FormField label="Alamat Lengkap" id="patient-address" icon={MapPin} error={errors.address} required>
+                    <textarea
+                      id="patient-address"
+                      rows={2}
+                      placeholder="Jl. nama jalan, No. RT/RW"
+                      value={form.address}
+                      onChange={(e) => setForm({ ...form, address: e.target.value })}
+                      className={cn(
+                        "mt-0 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-emerald-500",
+                        errors.address && "border-red-400 focus:border-red-400 focus:ring-red-400/20"
+                      )}
+                    />
+                  </FormField>
+                </div>
 
-            {/* Email */}
-            <FormField label="Email" id="patient-email" icon={Mail} error={errors.email}>
-              <input
-                id="patient-email"
-                type="email"
-                placeholder="email@contoh.com (opsional)"
-                value={form.email ?? ""}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className={cn(inputClass, errors.email && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
-              />
-            </FormField>
+                <FormField label="Kelurahan / Desa" id="patient-village" icon={Building}>
+                  <input
+                    id="patient-village"
+                    type="text"
+                    placeholder="Nama kelurahan/desa"
+                    value={form.village ?? ""}
+                    onChange={(e) => setForm({ ...form, village: e.target.value })}
+                    className={inputClass}
+                  />
+                </FormField>
 
-            {/* Address (full width) */}
-            <div className="sm:col-span-2">
-              <FormField label="Alamat Lengkap" id="patient-address" icon={MapPin} error={errors.address} required>
-                <textarea
-                  id="patient-address"
-                  rows={3}
-                  placeholder="Jl. nama jalan, No., Kelurahan, Kecamatan, Kota, Provinsi"
-                  value={form.address}
-                  onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  className={cn(
-                    "mt-0 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-emerald-500",
-                    errors.address && "border-red-400 focus:border-red-400 focus:ring-red-400/20"
-                  )}
-                />
-              </FormField>
+                <FormField label="Kecamatan" id="patient-district" icon={Building}>
+                  <input
+                    id="patient-district"
+                    type="text"
+                    placeholder="Nama kecamatan"
+                    value={form.district ?? ""}
+                    onChange={(e) => setForm({ ...form, district: e.target.value })}
+                    className={inputClass}
+                  />
+                </FormField>
+
+                <FormField label="Kota / Kabupaten" id="patient-city" icon={Building}>
+                  <input
+                    id="patient-city"
+                    type="text"
+                    placeholder="Nama kota/kabupaten"
+                    value={form.city ?? ""}
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                    className={inputClass}
+                  />
+                </FormField>
+
+                <FormField label="Provinsi" id="patient-province" icon={Building}>
+                  <input
+                    id="patient-province"
+                    type="text"
+                    placeholder="Nama provinsi"
+                    value={form.province ?? ""}
+                    onChange={(e) => setForm({ ...form, province: e.target.value })}
+                    className={inputClass}
+                  />
+                </FormField>
+
+                <FormField label="Kode Pos" id="patient-postal" icon={Hash}>
+                  <input
+                    id="patient-postal"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={5}
+                    placeholder="Kode pos"
+                    value={form.postalCode ?? ""}
+                    onChange={(e) => setForm({ ...form, postalCode: e.target.value.replace(/\D/g, "") })}
+                    className={inputClass}
+                  />
+                </FormField>
+              </div>
+            </div>
+
+            {/* Section: Kontak Darurat */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                <Shield className="h-4 w-4 text-emerald-600" />
+                Kontak Darurat
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField label="Nama Kontak Darurat" id="patient-emergency-name" icon={User}>
+                  <input
+                    id="patient-emergency-name"
+                    type="text"
+                    placeholder="Nama keluarga/kerabat"
+                    value={form.emergencyContact ?? ""}
+                    onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })}
+                    className={inputClass}
+                  />
+                </FormField>
+
+                <FormField label="Telepon Darurat" id="patient-emergency-phone" icon={Phone}>
+                  <input
+                    id="patient-emergency-phone"
+                    type="tel"
+                    placeholder="08xxxxxxxxxx"
+                    value={form.emergencyPhone ?? ""}
+                    onChange={(e) => setForm({ ...form, emergencyPhone: e.target.value.replace(/\D/g, "") })}
+                    className={inputClass}
+                  />
+                </FormField>
+              </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end gap-3 border-t border-slate-100 px-6 py-4 dark:border-slate-800">
+          <div className="sticky bottom-0 flex justify-end gap-3 border-t border-slate-100 bg-white/95 backdrop-blur-sm px-6 py-4 dark:border-slate-800 dark:bg-slate-900/95">
             <button
               type="button"
               id="patient-modal-cancel"

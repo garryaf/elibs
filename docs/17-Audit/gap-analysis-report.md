@@ -173,3 +173,49 @@ Per requirement Section 4, berikut master data yang BELUM ada di database:
 ---
 
 > Report Status: Complete — Ready for implementation approval.
+
+
+---
+
+## IMPLEMENTATION LOG
+
+### Phase G: Patient Master Enhancement — ✅ COMPLETED
+
+| Task | Status | Evidence |
+|------|--------|----------|
+| Add geographic fields (province, city, district, village, postalCode) | ✅ | Migration applied |
+| Add clinical fields (bloodType, emergencyContact, emergencyPhone) | ✅ | Migration applied |
+| Add insuranceId FK to Patient | ✅ | FK to Insurance model |
+| Update CreatePatientDto | ✅ | All new fields validated |
+| Update UpdatePatientDto | ✅ | All new fields optional |
+| Update PatientService | ✅ | New fields in create() |
+| Verified via API test | ✅ | Patient created with province, city, etc. |
+
+### Phase H: Master Data Extension — ✅ COMPLETED
+
+| Model | Table | CRUD Endpoints | FK Enforcement | Status |
+|-------|-------|---------------|----------------|--------|
+| Doctor | `doctors` | `/api/v1/master/doctors` | Order.doctorId → doctors.id | ✅ |
+| Clinic | `clinics` | `/api/v1/master/clinics` | Order.clinicId → clinics.id, Tariff.clinicId → clinics.id | ✅ |
+| Insurance | `insurances` | `/api/v1/master/insurances` | Order.insuranceId, Tariff.insuranceId, Patient.insuranceId | ✅ |
+| Equipment | `equipments` | `/api/v1/master/equipments` | — | ✅ |
+| Calibration | `calibrations` | (nested via equipment) | calibrations.equipmentId → equipments.id | ✅ |
+| Reagent | `reagents` | `/api/v1/master/reagents` | — | ✅ |
+| SampleType | `sample_types` | `/api/v1/master/sample-types` | — | ✅ |
+| MeasurementUnit | `measurement_units` | `/api/v1/master/units` | — | ✅ |
+
+### Migration Applied
+- `20260707074526_add_master_data_models` — All tables and FK constraints created
+
+### API Endpoint Count
+- Before: 26 routes
+- After: 67 routes (+28 new CRUD endpoints, +13 additional routes)
+
+### Validation
+- ✅ NestJS Build: Pass
+- ✅ Next.js Build: Pass
+- ✅ Docker Build: Both images built
+- ✅ Docker Deploy: All 4 containers healthy
+- ✅ API Integration Test: Doctor, Clinic, Insurance, Equipment, Reagent CRUD verified
+- ✅ Patient Enhancement: Geographic and clinical fields working
+- ✅ FK Enforcement: Order → Doctor, Clinic, Insurance relations active

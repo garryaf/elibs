@@ -12,6 +12,17 @@ export interface Patient {
   phone: string;
   address: string;
   email?: string;
+  // Phase G: Geographic fields
+  province?: string;
+  city?: string;
+  district?: string;
+  village?: string;
+  postalCode?: string;
+  // Clinical fields
+  bloodType?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
+  // Status
   status: PatientStatus;
   createdAt: string;
   lastVisit?: string;
@@ -25,4 +36,14 @@ export interface PatientFormData {
   phone: string;
   address: string;
   email?: string;
+  // Phase G: Geographic fields
+  province?: string;
+  city?: string;
+  district?: string;
+  village?: string;
+  postalCode?: string;
+  // Clinical fields
+  bloodType?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
 }
