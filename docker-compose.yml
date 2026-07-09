@@ -53,9 +53,13 @@ services:
       - ./deploy/env/.env.local
     environment:
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres123}@postgres:5432/${DB_NAME:-elis_db}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-elis-local-development-secret-key-minimum-32-characters}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-1d}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3001
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001}
     depends_on:
       postgres:
         condition: service_healthy
