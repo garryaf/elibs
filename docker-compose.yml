@@ -1,10 +1,40 @@
 # ============================================================================
-# eLIS — Local Development Docker Compose
+# eLIS — Docker Compose (Dev + Production)
 # Usage: docker compose up -d
-# Access: API → http://localhost:3001 | Web → http://localhost:3000
+# Production: Set env vars (DOMAIN, JWT_SECRET, etc.) then docker compose up -d --build
+# Access: https://elibs.jizo.my.id (prod) | http://localhost:3000 (dev)
 # ============================================================================
 
 services:
+  # --- Reverse Proxy (Nginx + SSL) ---
+  nginx:
+    image: nginx:alpine
+    container_name: elis-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/nginx-init.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/nginx/nginx.conf:/etc/nginx/conf.d/ssl.conf:ro
+      - ./deploy/certbot/conf:/etc/letsencrypt:ro
+      - ./deploy/certbot/www:/var/www/certbot:ro
+    depends_on:
+      - api
+      - web
+    restart: unless-stopped
+    networks:
+      - elis-network
+
+  certbot:
+    image: certbot/certbot
+    container_name: elis-certbot
+    volumes:
+      - ./deploy/certbot/conf:/etc/letsencrypt
+      - ./deploy/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - elis-network
+
   # --- Infrastructure ---
   postgres:
     image: postgres:15-alpine
@@ -59,7 +89,7 @@ services:
       REDIS_PORT: 6379
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 3001
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://elibs.jizo.my.id,http://localhost:3000,http://localhost:3001}
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,12 +104,12 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:${API_PORT:-3001}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     container_name: elis-web
     ports:
       - "${WEB_PORT:-3000}:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:${API_PORT:-3001}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     depends_on:
       api:
         condition: service_healthy

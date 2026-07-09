@@ -4,7 +4,12 @@
  * Uses native fetch with NEXT_PUBLIC_API_URL from environment.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+/**
+ * API base URL configuration:
+ * - Production (behind Nginx): NEXT_PUBLIC_API_URL is empty → uses relative path (same-origin)
+ * - Local development: NEXT_PUBLIC_API_URL=http://localhost:3001
+ */
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
