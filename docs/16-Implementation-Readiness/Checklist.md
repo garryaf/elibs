@@ -99,3 +99,64 @@
 | Testing | 70% | 17 property tests (PBT); no E2E or integration tests |
 
 **Overall Implementation Readiness: 100%** ✅
+
+
+---
+
+## Enterprise Architecture Audit Findings — AUDIT-eLIS-2026-001
+
+**Appended:** 2026-07-09  
+**Source:** Enterprise Administration Architecture Audit (Document ID: AUDIT-eLIS-2026-001, Version 2.0)  
+**Cross-Reference Format:** `[Document ID]#[Finding ID]`
+
+> The following findings were identified during the Enterprise Admin Architecture Audit and require remediation. Items are ordered by priority (P1 = Must Have, blocks production). Each item is prefixed with the audit Document ID for traceability.
+
+### Critical Findings (P1 — Must Have / Immediate Action)
+
+| # | Audit Reference | Finding | Priority | Severity | Effort | Cross-Reference |
+|---|----------------|---------|:--------:|:--------:|:------:|----------------|
+| 1 | [AUDIT-eLIS-2026-001] | 5 Critical RBAC security findings requiring immediate role guard fixes — Patient, Order, Payment, Notification, and Lab Result endpoints lack `@Roles` restriction allowing any authenticated user access | P1 | Critical | 10 SP | [AUDIT-eLIS-2026-004]#RBAC-SEC-001, [AUDIT-eLIS-2026-004]#RBAC-SEC-002, [AUDIT-eLIS-2026-004]#RBAC-SEC-003, [AUDIT-eLIS-2026-004]#RBAC-SEC-004, [AUDIT-eLIS-2026-004]#RBAC-SEC-005 |
+| 2 | [AUDIT-eLIS-2026-001] | InsuranceType enum constraint missing — `type` field is free-text String? without validation, allowing arbitrary values that break billing routing logic (data integrity failure) | P1 | Critical | 2 SP | [AUDIT-eLIS-2026-002]#FG-MD-001 |
+| 3 | [AUDIT-eLIS-2026-001] | Reporting backend module missing — frontend page exists (`/dashboard/reports`) with no backend implementation, producing broken UX | P1 | Critical | 13 SP | [AUDIT-eLIS-2026-002]#FG-SET-003 |
+| 4 | [AUDIT-eLIS-2026-001] | WCAG 2.4.1 accessibility barriers — no skip-to-content link and sidebar not wrapped in `<nav>` landmark, blocking screen reader users from bypassing repeated content | P1 | Critical | 4 SP | [AUDIT-eLIS-2026-003]#NAV-GAP-401, [AUDIT-eLIS-2026-003]#NAV-GAP-402 |
+| 5 | [AUDIT-eLIS-2026-001] | BPJS integration entirely absent — no SEP number field, no BPJS verification status, no referring facility code, no class level. Blocks national insurance claim processing for 96% of Indonesian insured population | P1 | Critical | 15–20 PD | [AUDIT-eLIS-2026-005]#INS-BIL-002 |
+| 6 | [AUDIT-eLIS-2026-001] | Multi-insurance per patient support missing — Patient model uses single nullable `insuranceId` FK (0 or 1 insurance). Enterprise requires 1–5 insurance records per patient with primary/secondary designation | P1 | Critical | 18–22 PD | [AUDIT-eLIS-2026-005]#INS-PAY-003 |
+| 7 | [AUDIT-eLIS-2026-001] | Insurance rejection workflow missing — when a claim is denied, no fallback workflow exists. No status change, no patient notification, no 72hr cash fallback prompt. Orders remain in limbo state | P1 | Critical | 15–20 PD | [AUDIT-eLIS-2026-005]#INS-PAY-002 |
+
+### Audit Summary Metrics
+
+| Metric | Value |
+|--------|-------|
+| Total Gaps Identified | 111 |
+| Critical Findings | 10 |
+| High Findings | 34 |
+| Medium Findings | 47 |
+| Low Findings | 20 |
+| Architecture Compliance Score | 84.3 / 100 (Compliant) |
+| Insurance Readiness | 25% (NOT READY) |
+| Enterprise RBAC Capabilities | 0 of 6 implemented |
+| Total Remediation Effort | ~360–518 SP equivalent |
+| Recommended Migration Phases | 3 (across 12 sprints) |
+
+### Audit Document Cross-Reference Index
+
+| Document ID | Title | Location |
+|-------------|-------|----------|
+| [AUDIT-eLIS-2026-001] | Enterprise Admin Audit Report | `docs/17-Audit/enterprise-admin-audit-report.md` |
+| [AUDIT-eLIS-2026-002] | Architecture Gap Analysis | `docs/17-Audit/architecture-gap-analysis.md` |
+| [AUDIT-eLIS-2026-003] | Navigation Review | `docs/17-Audit/navigation-review.md` |
+| [AUDIT-eLIS-2026-004] | RBAC & User Management Review | `docs/17-Audit/rbac-review.md` |
+| [AUDIT-eLIS-2026-005] | Insurance & Healthcare Readiness | `docs/17-Audit/insurance-readiness.md` |
+
+### Related ADRs Produced
+
+| ADR | Title | Link |
+|-----|-------|------|
+| ADR-0013 | Settings vs Master Data Separation | `docs/15-ADR/ADR-0013-Settings-vs-Master-Data-Separation.md` |
+| ADR-0014 | Enterprise RBAC Model Selection | `docs/15-ADR/ADR-0014-Enterprise-RBAC-Model-Selection.md` |
+| ADR-0015 | Navigation Restructuring Approach | `docs/15-ADR/ADR-0015-Navigation-Restructuring-Approach.md` |
+| ADR-0016 | Insurance Integration Architecture | `docs/15-ADR/ADR-0016-Insurance-Integration-Architecture.md` |
+
+---
+
+*Items above were appended by Enterprise Architecture Audit process. Existing checklist items above this section remain unchanged.*
