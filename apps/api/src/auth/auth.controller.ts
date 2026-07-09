@@ -12,6 +12,11 @@ export class AuthController {
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
     }
-    return this.authService.login(user);
+    const result = await this.authService.login(user);
+    return {
+      success: true,
+      message: 'Login successful',
+      data: result,
+    };
   }
 }
