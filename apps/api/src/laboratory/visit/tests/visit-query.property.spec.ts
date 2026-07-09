@@ -79,7 +79,7 @@ function visitRecordArb(overrides?: Partial<{
     paymentMethod: fc.constantFrom(PaymentMethod.CASH, PaymentMethod.BPJS, PaymentMethod.INSURANCE),
     insuranceId: fc.option(fc.uuid(), { nil: null }),
     bpjsNumber: fc.option(
-      fc.stringOf(fc.constantFrom('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'), { minLength: 13, maxLength: 13 }),
+      fc.stringMatching(/^\d{13}$/),
       { nil: null },
     ),
     createdAt: fc.constant(new Date()),
@@ -91,7 +91,7 @@ function visitRecordArb(overrides?: Partial<{
         : fc.string({ minLength: 2, maxLength: 30 }),
       mrn: overrides?.patientMrn
         ? fc.constant(overrides.patientMrn)
-        : fc.stringOf(fc.constantFrom('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'), { minLength: 6, maxLength: 10 }),
+        : fc.stringMatching(/^\d{6,10}$/),
     }),
     doctor: fc.option(
       fc.record({ id: fc.uuid(), name: fc.string({ minLength: 2, maxLength: 20 }) }),
@@ -172,19 +172,27 @@ describe('Feature: visit-management, Property 10: Query Filter Correctness', () 
           doctorId: fc.option(fc.uuid(), { nil: undefined }),
           clinicId: fc.option(fc.uuid(), { nil: undefined }),
           startDate: fc.option(
-            fc.date({ min: new Date('2024-01-01'), max: new Date('2025-12-31') }).map(
-              (d) => d.toISOString().split('T')[0],
-            ),
+            fc.integer({ min: 0, max: 729 }).map((dayOffset) => {
+              const d = new Date('2024-01-01T00:00:00.000Z');
+              d.setUTCDate(d.getUTCDate() + dayOffset);
+              return d.toISOString().split('T')[0];
+            }),
             { nil: undefined },
           ),
           endDate: fc.option(
-            fc.date({ min: new Date('2025-01-01'), max: new Date('2026-12-31') }).map(
-              (d) => d.toISOString().split('T')[0],
-            ),
+            fc.integer({ min: 0, max: 729 }).map((dayOffset) => {
+              const d = new Date('2025-01-01T00:00:00.000Z');
+              d.setUTCDate(d.getUTCDate() + dayOffset);
+              return d.toISOString().split('T')[0];
+            }),
             { nil: undefined },
           ),
         }),
         async (dataset, filters) => {
+          // Reset mocks between iterations
+          mockPrisma.visit.findMany.mockReset();
+          mockPrisma.visit.count.mockReset();
+
           // Apply filters in-memory to determine expected results
           let expected = [...dataset];
 
@@ -244,7 +252,8 @@ describe('Feature: visit-management, Property 10: Query Filter Correctness', () 
           }
 
           // Verify the Prisma where clause was constructed correctly
-          const findManyCall = mockPrisma.visit.findMany.mock.calls[0][0];
+          const calls = mockPrisma.visit.findMany.mock.calls;
+          const findManyCall = calls[calls.length - 1][0];
           const where = findManyCall.where;
 
           if (filters.status) {
@@ -324,8 +333,11 @@ describe('Feature: visit-management, Property 11: Pagination Invariants', () => 
         // Limit (1 to 100)
         fc.integer({ min: 1, max: 100 }),
         async (totalVisits, page, limit) => {
+          // Reset mocks between iterations
+          mockPrisma.visit.findMany.mockReset();
+          mockPrisma.visit.count.mockReset();
+
           // Calculate how many items would be on this page
-          const totalPages = Math.ceil(totalVisits / limit) || 0;
           const skip = (page - 1) * limit;
           const remainingAfterSkip = Math.max(0, totalVisits - skip);
           const expectedPageSize = Math.min(limit, remainingAfterSkip);
@@ -435,12 +447,12 @@ describe('Feature: visit-management, Property 13: Search Results Relevance', () 
     await fc.assert(
       fc.asyncProperty(
         // Generate a non-empty search term (alphanumeric to avoid regex issues)
-        fc.stringOf(fc.constantFrom(
-          'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-          'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-          '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        ), { minLength: 1, maxLength: 10 }),
+        fc.stringMatching(/^[a-jA-J0-9]{1,10}$/),
         async (searchTerm) => {
+          // Reset mocks between iterations
+          mockPrisma.visit.findMany.mockReset();
+          mockPrisma.visit.count.mockReset();
+
           // Create mock results that contain the search term
           const matchingVisits: VisitRecord[] = [
             {
@@ -488,7 +500,8 @@ describe('Feature: visit-management, Property 13: Search Results Relevance', () 
           const result = await visitService.findAll(query);
 
           // Verify the search OR clause was constructed correctly
-          const findManyCall = mockPrisma.visit.findMany.mock.calls[0][0];
+          const calls = mockPrisma.visit.findMany.mock.calls;
+          const findManyCall = calls[calls.length - 1][0];
           const where = findManyCall.where;
 
           // The where clause must have an OR with three conditions

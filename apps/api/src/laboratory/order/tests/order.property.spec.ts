@@ -106,9 +106,15 @@ describe('Order Creation Property Tests', () => {
             }),
           };
 
+          const mockVisitService = {
+            validateVisitForOrder: jest.fn().mockResolvedValue(undefined),
+            transitionToInProgress: jest.fn().mockResolvedValue(undefined),
+          };
+
           const service = new OrderService(
             mockPrisma as any,
             mockTariffResolver as any,
+            mockVisitService as any,
           );
 
           const dto = {

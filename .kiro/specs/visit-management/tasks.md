@@ -31,7 +31,7 @@ Implement the Visit Management module for eLIS following a phased approach: Phas
     - Register VisitModule in `apps/api/src/laboratory/laboratory.module.ts`
     - _Requirements: 1.1, 1.9, 10.1, 10.2, 10.3, 10.9_
 
-- [ ] 2. Checkpoint - Phase A complete
+- [x] 2. Checkpoint - Phase A complete
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 3. Phase B: Visit Service — Core CRUD & Business Logic
@@ -124,10 +124,10 @@ Implement the Visit Management module for eLIS following a phased approach: Phas
     - Property 7: Generate visits with varying order statuses, verify cancellation succeeds iff no orders OR all PENDING_PAYMENT
     - **Validates: Requirements 3.2, 3.3, 3.5, 3.6, 3.7, 3.8**
 
-- [ ] 4. Checkpoint - Phase B complete
+- [x] 4. Checkpoint - Phase B complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Phase C: Controller, Query/Search & Order Linkage
+- [x] 5. Phase C: Controller, Query/Search & Order Linkage
   - [x] 5.1 Implement VisitController endpoints
     - Implement `POST /api/v1/visits` with guards `@UseGuards(JwtAuthGuard, RolesGuard)` and `@Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.KLINIK_PARTNER, Role.SUPER_ADMIN)`
     - Implement `GET /api/v1/visits` with guard `@UseGuards(JwtAuthGuard)` (all authenticated users)
@@ -164,7 +164,7 @@ Implement the Visit Management module for eLIS following a phased approach: Phas
     - After order creation: call `visitService.transitionToInProgress(visitId)`
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-  - [-] 5.5 Write property tests for Query and Search
+  - [x] 5.5 Write property tests for Query and Search
     - **Property 10: Query Filter Correctness**
     - **Property 11: Pagination Invariants**
     - **Property 13: Search Results Relevance**
@@ -174,17 +174,17 @@ Implement the Visit Management module for eLIS following a phased approach: Phas
     - Property 13: Generate search terms, verify all results have patient name, MRN, or visitNumber containing the term
     - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5, 5.6**
 
-  - [ ] 5.6 Write property test for Audit Log Completeness
+  - [x] 5.6 Write property test for Audit Log Completeness
     - **Property 12: Audit Log Completeness**
     - Create `apps/api/src/laboratory/visit/tests/visit-audit.property.spec.ts`
     - For each mutating operation (create, update, cancel), verify: audit log entry exists with correct action, entityName "Visit", visit ID, non-null userId, and no SENSITIVE_FIELDS keys in oldValues/newValues
     - **Validates: Requirements 12.1, 12.2, 12.3, 12.4, 12.5**
 
-- [ ] 6. Checkpoint - Phase C complete
+- [x] 6. Checkpoint - Phase C complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Phase D: Frontend Visit UI
-  - [ ] 7.1 Create Visit Registration page
+- [x] 7. Phase D: Frontend Visit UI
+  - [x] 7.1 Create Visit Registration page
     - Implement patient search/selection component with debounced input (300ms, min 2 chars)
     - Display patient summary (name, MRN, DOB, gender) as read-only section after selection
     - Add form fields: doctor selection (searchable dropdown), clinic selection (searchable dropdown), payment method (required)
@@ -195,7 +195,7 @@ Implement the Visit Management module for eLIS following a phased approach: Phas
     - Display inline validation errors on failure without losing form state
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.8, 11.9_
 
-  - [ ] 7.2 Create Visit List page with search and filters
+  - [x] 7.2 Create Visit List page with search and filters
     - Implement visit list table with pagination (default page size 20)
     - Add search input filtering by patient name, MRN, or visit number
     - Add status filter (tabs or dropdown for REGISTERED, IN_PROGRESS, COMPLETED, CANCELLED)
@@ -204,7 +204,7 @@ Implement the Visit Management module for eLIS following a phased approach: Phas
     - Integrate with GET `/api/v1/visits` API
     - _Requirements: 11.7_
 
-- [ ] 8. Final Checkpoint - All phases complete
+- [x] 8. Final Checkpoint - All phases complete
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
