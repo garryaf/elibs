@@ -2,14 +2,42 @@
 # eLIS — Development & Deployment Commands
 # ============================================================================
 
-.PHONY: help dev dev-up dev-down prod-up prod-down logs clean seed
+.PHONY: help setup dev dev-up dev-down prod-up prod-down logs clean seed
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
+# --- Initial Setup ---
+setup: ## First-time setup: create env files from templates
+	@echo "=== eLIS Initial Setup ==="
+	@if [ ! -f deploy/env/.env.local ]; then \
+		cp deploy/env/.env.example deploy/env/.env.local; \
+		echo "✅ Created deploy/env/.env.local from template"; \
+		echo "   → Review and update values if needed"; \
+	else \
+		echo "ℹ️  deploy/env/.env.local already exists (skipped)"; \
+	fi
+	@if [ ! -f deploy/env/.env.production ]; then \
+		cp deploy/env/.env.example deploy/env/.env.production; \
+		echo "✅ Created deploy/env/.env.production from template"; \
+		echo "   ⚠️  IMPORTANT: Update ALL placeholder values before deploying to production!"; \
+	else \
+		echo "ℹ️  deploy/env/.env.production already exists (skipped)"; \
+	fi
+	@echo ""
+	@echo "Setup complete. Run 'make dev-up' to start development environment."
+
 # --- Local Development (Full Docker) ---
 dev-up: ## Start all services locally (Docker)
+	@if [ ! -f deploy/env/.env.local ]; then \
+		echo "❌ ERROR: deploy/env/.env.local not found."; \
+		echo ""; \
+		echo "   This file is required but not tracked in git (contains secrets)."; \
+		echo "   Run 'make setup' to create it from the template."; \
+		echo ""; \
+		exit 1; \
+	fi
 	docker compose up -d --build
 	@echo ""
 	@echo "✅ eLIS running:"
@@ -29,6 +57,18 @@ dev-logs-api: ## View API logs only
 
 # --- Production Deployment ---
 prod-up: ## Start production containers (requires external DB + Redis)
+	@if [ ! -f deploy/env/.env.production ]; then \
+		echo "❌ ERROR: deploy/env/.env.production not found."; \
+		echo ""; \
+		echo "   This file is required but not tracked in git (contains secrets)."; \
+		echo "   Run 'make setup' to create it from the template, then update ALL values."; \
+		echo ""; \
+		exit 1; \
+	fi
+	@grep -q "CHANGE_ME" deploy/env/.env.production && \
+		echo "⚠️  WARNING: deploy/env/.env.production contains placeholder values (CHANGE_ME)." && \
+		echo "   Update all placeholders before deploying to a real environment." && \
+		echo "" || true
 	docker compose -f docker-compose.prod.yml up -d --build
 	@echo ""
 	@echo "✅ eLIS Production running"
