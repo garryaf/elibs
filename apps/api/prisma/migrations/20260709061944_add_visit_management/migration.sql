@@ -4,8 +4,8 @@ CREATE TYPE "VisitStatus" AS ENUM ('REGISTERED', 'IN_PROGRESS', 'COMPLETED', 'CA
 -- AlterEnum
 ALTER TYPE "PaymentMethod" ADD VALUE 'BPJS';
 
--- DropIndex
-DROP INDEX "patients_name_trgm_idx";
+-- DropIndex (IF EXISTS — index may not exist if trgm migration hasn't run)
+DROP INDEX IF EXISTS "patients_name_trgm_idx";
 
 -- AlterTable
 ALTER TABLE "orders" ADD COLUMN     "visitId" UUID;

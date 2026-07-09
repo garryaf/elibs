@@ -288,10 +288,10 @@ describe('PatientService Property Tests', () => {
    * Property 5: Search Correctness
    *
    * *For any* patient in the database and any search query string, if the query is a
-   * substring (case-insensitive) of the patient's name, MRN, or NIK, then that patient
-   * SHALL appear in the search results.
+   * case-insensitive substring of name, MRN, or email, or a substring of phone,
+   * or (if digits-only) a prefix of the NIK, then that patient SHALL appear in the search results.
    *
-   * **Validates: Requirements 4.4**
+   * **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5, 1.6**
    */
   describe('Property 5: Search Correctness', () => {
     // Arbitrary for generating a patient record
@@ -302,9 +302,9 @@ describe('PatientService Property Tests', () => {
       nik: fc.stringMatching(/^\d{16}$/),
       dateOfBirth: fc.constant(new Date('1990-01-01')),
       gender: fc.constantFrom('MALE', 'FEMALE'),
-      phone: fc.constant(null),
+      phone: fc.stringMatching(/^08\d{8,11}$/),
       address: fc.constant(null),
-      email: fc.constant(null),
+      email: fc.string({ minLength: 5, maxLength: 30 }).map((s) => `${s}@example.com`),
       province: fc.constant(null),
       city: fc.constant(null),
       district: fc.constant(null),
@@ -324,30 +324,24 @@ describe('PatientService Property Tests', () => {
       deletedAt: fc.constant(null),
     });
 
-    it('should return a patient when search query is a substring of name, MRN, or NIK', async () => {
+    it('should construct correct where clause with enhanced search fields', async () => {
       await fc.assert(
         fc.asyncProperty(
           patientRecordArb,
-          fc.constantFrom('name', 'mrn', 'nik') as fc.Arbitrary<'name' | 'mrn' | 'nik'>,
-          fc.boolean(),
-          async (patient, field, changeCase) => {
+          fc.constantFrom('name', 'mrn', 'phone', 'email') as fc.Arbitrary<'name' | 'mrn' | 'phone' | 'email'>,
+          async (patient, field) => {
             const fieldValue = patient[field] as string;
-            if (fieldValue.length === 0) return;
+            if (!fieldValue || fieldValue.length === 0) return;
 
-            // Pick a random substring of the field value
+            // Pick a substring of the field value as search query
             const startIdx = Math.floor(Math.random() * fieldValue.length);
             const endIdx = startIdx + 1 + Math.floor(Math.random() * (fieldValue.length - startIdx));
-            let searchQuery = fieldValue.slice(startIdx, endIdx);
-
-            // Optionally change case to test case-insensitivity
-            if (changeCase) {
-              searchQuery = searchQuery.toUpperCase();
-            }
+            const searchQuery = fieldValue.slice(startIdx, endIdx);
 
             // Skip empty queries
             if (searchQuery.length === 0) return;
 
-            // The patient record with region refs as the service expects from Prisma
+            // The patient record with region refs
             const patientWithRefs = {
               ...patient,
               provinsiRef: null,
@@ -356,42 +350,111 @@ describe('PatientService Property Tests', () => {
               kelurahanDesaRef: null,
             };
 
-            // Simulate the actual database contains behavior:
-            // name: case-insensitive contains
-            // nik: case-sensitive contains (but NIK is digits-only, so case doesn't matter)
-            // mrn: case-insensitive contains
-            const nameMatches = patient.name.toLowerCase().includes(searchQuery.toLowerCase());
-            const nikMatches = patient.nik.includes(searchQuery);
-            const mrnMatches = patient.mrn.toLowerCase().includes(searchQuery.toLowerCase());
-            const shouldMatch = nameMatches || nikMatches || mrnMatches;
+            // Mock findMany to return the patient
+            (prismaService.patient as any).findMany = jest.fn().mockResolvedValue([patientWithRefs]);
+            (prismaService.patient as any).count = jest.fn().mockResolvedValue(1);
 
-            // Mock findMany to return the patient if the query matches (simulating DB behavior)
-            (prismaService.patient as any).findMany = jest.fn().mockResolvedValue(
-              shouldMatch ? [patientWithRefs] : [],
-            );
-            (prismaService.patient as any).count = jest.fn().mockResolvedValue(
-              shouldMatch ? 1 : 0,
-            );
-
-            const result = await service.findAll({ search: searchQuery });
-
-            // The property: since searchQuery IS a substring of the patient's field,
-            // the DB `contains` logic should match it.
-            // For name/mrn: case-insensitive contains always matches a substring regardless of case
-            // For nik: digits-only means case change has no effect
-            expect(result.data.length).toBe(1);
-            expect(result.data[0].id).toBe(patient.id);
+            await service.findAll({ search: searchQuery });
 
             // Verify the service constructs the correct where clause
+            const expectedConditions: any[] = [
+              { name: { contains: searchQuery, mode: 'insensitive' } },
+              { mrn: { contains: searchQuery, mode: 'insensitive' } },
+              { phone: { contains: searchQuery } },
+              { email: { contains: searchQuery, mode: 'insensitive' } },
+            ];
+
+            // NIK condition only added for digit-only queries
+            if (/^\d+$/.test(searchQuery)) {
+              expectedConditions.push({ nik: { startsWith: searchQuery } });
+            }
+
             expect((prismaService.patient as any).findMany).toHaveBeenCalledWith(
               expect.objectContaining({
                 where: expect.objectContaining({
                   deletedAt: null,
-                  OR: [
-                    { name: { contains: searchQuery, mode: 'insensitive' } },
-                    { nik: { contains: searchQuery } },
-                    { mrn: { contains: searchQuery, mode: 'insensitive' } },
-                  ],
+                  OR: expectedConditions,
+                }),
+              }),
+            );
+          },
+        ),
+        { numRuns: 100 },
+      );
+    });
+
+    it('should include NIK prefix condition only when search query is all digits', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          patientRecordArb,
+          async (patient) => {
+            // Use a prefix of the NIK as search query (digits only)
+            const prefixLen = 1 + Math.floor(Math.random() * patient.nik.length);
+            const searchQuery = patient.nik.slice(0, prefixLen);
+
+            const patientWithRefs = {
+              ...patient,
+              provinsiRef: null,
+              kabupatenKotaRef: null,
+              kecamatanRef: null,
+              kelurahanDesaRef: null,
+            };
+
+            (prismaService.patient as any).findMany = jest.fn().mockResolvedValue([patientWithRefs]);
+            (prismaService.patient as any).count = jest.fn().mockResolvedValue(1);
+
+            await service.findAll({ search: searchQuery });
+
+            // Since NIK is all digits, query is all digits, NIK condition should be present
+            const expectedConditions = [
+              { name: { contains: searchQuery, mode: 'insensitive' } },
+              { mrn: { contains: searchQuery, mode: 'insensitive' } },
+              { phone: { contains: searchQuery } },
+              { email: { contains: searchQuery, mode: 'insensitive' } },
+              { nik: { startsWith: searchQuery } },
+            ];
+
+            expect((prismaService.patient as any).findMany).toHaveBeenCalledWith(
+              expect.objectContaining({
+                where: expect.objectContaining({
+                  deletedAt: null,
+                  OR: expectedConditions,
+                }),
+              }),
+            );
+          },
+        ),
+        { numRuns: 100 },
+      );
+    });
+
+    it('should NOT include NIK condition when search query contains non-digit characters', async () => {
+      // Generate a search query that contains at least one non-digit character
+      const nonDigitQueryArb = fc.string({ minLength: 1, maxLength: 20 })
+        .filter((s) => s.length > 0 && !/^\d+$/.test(s));
+
+      await fc.assert(
+        fc.asyncProperty(
+          nonDigitQueryArb,
+          async (searchQuery) => {
+            (prismaService.patient as any).findMany = jest.fn().mockResolvedValue([]);
+            (prismaService.patient as any).count = jest.fn().mockResolvedValue(0);
+
+            await service.findAll({ search: searchQuery });
+
+            // NIK condition should NOT be present for non-digit queries
+            const expectedConditions = [
+              { name: { contains: searchQuery, mode: 'insensitive' } },
+              { mrn: { contains: searchQuery, mode: 'insensitive' } },
+              { phone: { contains: searchQuery } },
+              { email: { contains: searchQuery, mode: 'insensitive' } },
+            ];
+
+            expect((prismaService.patient as any).findMany).toHaveBeenCalledWith(
+              expect.objectContaining({
+                where: expect.objectContaining({
+                  deletedAt: null,
+                  OR: expectedConditions,
                 }),
               }),
             );

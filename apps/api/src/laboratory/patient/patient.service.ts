@@ -149,11 +149,19 @@ export class PatientService {
     const where: any = { deletedAt: null };
 
     if (query.search) {
-      where.OR = [
+      const searchConditions: any[] = [
         { name: { contains: query.search, mode: 'insensitive' } },
-        { nik: { contains: query.search } },
         { mrn: { contains: query.search, mode: 'insensitive' } },
+        { phone: { contains: query.search } },
+        { email: { contains: query.search, mode: 'insensitive' } },
       ];
+
+      // NIK: exact-prefix match (digits only)
+      if (/^\d+$/.test(query.search)) {
+        searchConditions.push({ nik: { startsWith: query.search } });
+      }
+
+      where.OR = searchConditions;
     }
 
     const [data, total] = await Promise.all([
