@@ -83,8 +83,16 @@ enum Flag {
 
 enum PaymentMethod {
   CASH
+  BPJS
   TRANSFER
   INSURANCE
+}
+
+enum VisitStatus {
+  REGISTERED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
 
 enum SampleCondition {
@@ -213,19 +221,20 @@ model Tariff {
 // === MASTER DATA: DOCTOR / REFERRAL ===
 
 model Doctor {
-  id            String    @id @default(uuid()) @db.Uuid
-  code          String    @unique
-  name          String
+  id             String    @id @default(uuid()) @db.Uuid
+  code           String    @unique
+  name           String
   specialization String?
-  phone         String?
-  email         String?
-  licenseNumber String?
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  phone          String?
+  email          String?
+  licenseNumber  String?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
   orders Order[]
+  visits Visit[]
 
   @@map("doctors")
 }
@@ -246,6 +255,7 @@ model Clinic {
 
   orders  Order[]
   tariffs Tariff[]
+  visits  Visit[]
 
   @@map("clinics")
 }
@@ -256,7 +266,7 @@ model Insurance {
   id        String    @id @default(uuid()) @db.Uuid
   code      String    @unique
   name      String
-  type      String?   // BPJS, Swasta, etc.
+  type      String? // BPJS, Swasta, etc.
   phone     String?
   email     String?
   isActive  Boolean   @default(true)
@@ -267,6 +277,7 @@ model Insurance {
   orders   Order[]
   tariffs  Tariff[]
   patients Patient[]
+  visits   Visit[]
 
   @@map("insurances")
 }
@@ -274,20 +285,20 @@ model Insurance {
 // === MASTER DATA: EQUIPMENT ===
 
 model Equipment {
-  id            String    @id @default(uuid()) @db.Uuid
-  code          String    @unique
-  name          String
-  manufacturer  String?
-  model         String?
-  serialNumber  String?
-  location      String?
-  status        String    @default("ACTIVE") // ACTIVE, MAINTENANCE, RETIRED
+  id              String    @id @default(uuid()) @db.Uuid
+  code            String    @unique
+  name            String
+  manufacturer    String?
+  model           String?
+  serialNumber    String?
+  location        String?
+  status          String    @default("ACTIVE") // ACTIVE, MAINTENANCE, RETIRED
   lastCalibration DateTime?
   nextCalibration DateTime?
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
 
   calibrations Calibration[]
 
@@ -297,15 +308,15 @@ model Equipment {
 // === MASTER DATA: CALIBRATION ===
 
 model Calibration {
-  id            String   @id @default(uuid()) @db.Uuid
-  equipmentId   String   @db.Uuid
+  id            String    @id @default(uuid()) @db.Uuid
+  equipmentId   String    @db.Uuid
   calibratedAt  DateTime
   calibratedBy  String
-  result        String   // PASS, FAIL
+  result        String // PASS, FAIL
   notes         String?
   nextDueDate   DateTime?
   certificateNo String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
 
   equipment Equipment @relation(fields: [equipmentId], references: [id])
 
@@ -316,19 +327,19 @@ model Calibration {
 // === MASTER DATA: REAGENT ===
 
 model Reagent {
-  id            String    @id @default(uuid()) @db.Uuid
-  code          String    @unique
-  name          String
-  manufacturer  String?
-  lotNumber     String?
-  expiryDate    DateTime?
-  quantity      Int       @default(0)
-  unit          String?
-  storageTemp   String?   // e.g., "2-8°C"
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  id           String    @id @default(uuid()) @db.Uuid
+  code         String    @unique
+  name         String
+  manufacturer String?
+  lotNumber    String?
+  expiryDate   DateTime?
+  quantity     Int       @default(0)
+  unit         String?
+  storageTemp  String? // e.g., "2-8°C"
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 
   @@map("reagents")
 }
@@ -339,7 +350,7 @@ model SampleTypeMaster {
   id           String    @id @default(uuid()) @db.Uuid
   code         String    @unique
   name         String
-  container    String?   // e.g., "EDTA Tube", "SST Tube"
+  container    String? // e.g., "EDTA Tube", "SST Tube"
   instructions String?
   isActive     Boolean   @default(true)
   createdAt    DateTime  @default(now())
@@ -352,13 +363,13 @@ model SampleTypeMaster {
 // === MASTER DATA: MEASUREMENT UNIT ===
 
 model MeasurementUnit {
-  id           String    @id @default(uuid()) @db.Uuid
-  code         String    @unique
-  name         String
-  description  String?
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("measurement_units")
 }
@@ -402,7 +413,7 @@ model Kecamatan {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  kabupatenKota KabupatenKota  @relation(fields: [kabupatenKotaId], references: [id])
+  kabupatenKota KabupatenKota   @relation(fields: [kabupatenKotaId], references: [id])
   kelurahanDesa KelurahanDesa[]
   patients      Patient[]
 
@@ -465,6 +476,7 @@ model Patient {
   kecamatanRef     Kecamatan?     @relation(fields: [kecamatanId], references: [id])
   kelurahanDesaRef KelurahanDesa? @relation(fields: [kelurahanDesaId], references: [id])
   orders           Order[]
+  visits           Visit[]
 
   @@map("patients")
 }
@@ -478,6 +490,7 @@ model Order {
   clinicId          String?          @db.Uuid
   doctorId          String?          @db.Uuid
   insuranceId       String?          @db.Uuid
+  visitId           String?          @db.Uuid
   status            OrderStatus      @default(PENDING_PAYMENT)
   totalAmount       Decimal          @db.Decimal(12, 2)
   paymentMethod     PaymentMethod?
@@ -506,6 +519,7 @@ model Order {
   clinic        Clinic?           @relation(fields: [clinicId], references: [id])
   doctor        Doctor?           @relation(fields: [doctorId], references: [id])
   insurance     Insurance?        @relation(fields: [insuranceId], references: [id])
+  visit         Visit?            @relation(fields: [visitId], references: [id])
   orderDetails  OrderDetail[]
   notifications NotificationLog[]
 
@@ -565,6 +579,44 @@ model MrnSequence {
   lastValue Int    @default(0)
 
   @@map("mrn_sequences")
+}
+
+// === VISIT ===
+
+model Visit {
+  id               String        @id @default(uuid()) @db.Uuid
+  visitNumber      String        @unique @db.VarChar(50)
+  status           VisitStatus   @default(REGISTERED)
+  registrationDate DateTime      @default(now())
+  patientId        String        @db.Uuid
+  doctorId         String?       @db.Uuid
+  clinicId         String?       @db.Uuid
+  paymentMethod    PaymentMethod
+  insuranceId      String?       @db.Uuid
+  bpjsNumber       String?       @db.VarChar(20)
+  cancelledAt      DateTime?
+  cancelReason     String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  patient   Patient    @relation(fields: [patientId], references: [id])
+  doctor    Doctor?    @relation(fields: [doctorId], references: [id])
+  clinic    Clinic?    @relation(fields: [clinicId], references: [id])
+  insurance Insurance? @relation(fields: [insuranceId], references: [id])
+  orders    Order[]
+
+  @@index([status])
+  @@index([patientId, registrationDate])
+  @@map("visits")
+}
+
+// === SEQUENCE TABLE (for Visit Number) ===
+
+model VisitSequence {
+  id        String @id // format: "YYYYMM" e.g. "202507"
+  lastValue Int    @default(0)
+
+  @@map("visit_sequences")
 }
 
 // === SYSTEM SETTINGS ===

@@ -1,8 +1,11 @@
 import {
   Injectable,
   BadRequestException,
+  ConflictException,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { MrnGeneratorService } from './mrn-generator.service';
 import { RegionValidationService } from '../region/region-validation.service';
@@ -40,7 +43,19 @@ export class PatientService {
     return !!(dto.provinsiId || dto.kabupatenKotaId || dto.kecamatanId || dto.kelurahanDesaId);
   }
 
+  private validateNikFormat(nik: string): void {
+    if (!/^\d{16}$/.test(nik)) {
+      throw new BadRequestException({
+        errorCode: 'ERR_VALIDATION',
+        message: 'NIK must be exactly 16 digits',
+      });
+    }
+  }
+
   async register(dto: CreatePatientDto) {
+    // Validate NIK format (defense-in-depth)
+    this.validateNikFormat(dto.nik);
+
     // Check NIK uniqueness
     const existingPatient = await this.prisma.patient.findFirst({
       where: { nik: dto.nik, deletedAt: null },
@@ -65,36 +80,57 @@ export class PatientService {
     // Generate MRN
     const mrn = await this.mrnGenerator.generate();
 
-    // Create patient
-    const patient = await this.prisma.patient.create({
-      data: {
-        mrn,
-        nik: dto.nik,
-        name: dto.name,
-        dateOfBirth: new Date(dto.dateOfBirth),
-        gender: dto.gender,
-        phone: dto.phone,
-        address: dto.address,
-        email: dto.email,
-        province: dto.province,
-        city: dto.city,
-        district: dto.district,
-        village: dto.village,
-        postalCode: dto.postalCode,
-        provinsiId: dto.provinsiId,
-        kabupatenKotaId: dto.kabupatenKotaId,
-        kecamatanId: dto.kecamatanId,
-        kelurahanDesaId: dto.kelurahanDesaId,
-        bloodType: dto.bloodType,
-        emergencyContact: dto.emergencyContact,
-        emergencyPhone: dto.emergencyPhone,
-        insuranceId: dto.insuranceId,
-        consentDigitalNotification: dto.consentDigitalNotification ?? false,
-      },
-      include: REGION_INCLUDE,
-    });
+    // Create patient with P2002 unique constraint error handling
+    try {
+      const patient = await this.prisma.patient.create({
+        data: {
+          mrn,
+          nik: dto.nik,
+          name: dto.name,
+          dateOfBirth: new Date(dto.dateOfBirth),
+          gender: dto.gender,
+          phone: dto.phone,
+          address: dto.address,
+          email: dto.email,
+          province: dto.province,
+          city: dto.city,
+          district: dto.district,
+          village: dto.village,
+          postalCode: dto.postalCode,
+          provinsiId: dto.provinsiId,
+          kabupatenKotaId: dto.kabupatenKotaId,
+          kecamatanId: dto.kecamatanId,
+          kelurahanDesaId: dto.kelurahanDesaId,
+          bloodType: dto.bloodType,
+          emergencyContact: dto.emergencyContact,
+          emergencyPhone: dto.emergencyPhone,
+          insuranceId: dto.insuranceId,
+          consentDigitalNotification: dto.consentDigitalNotification ?? false,
+        },
+        include: REGION_INCLUDE,
+      });
 
-    return this.transformRegionResponse(patient);
+      return this.transformRegionResponse(patient);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          const target = error.meta?.target as string[];
+          if (target?.includes('nik')) {
+            throw new ConflictException({
+              errorCode: 'ERR_VALIDATION',
+              message: 'Patient with this NIK already exists',
+            });
+          }
+          if (target?.includes('mrn')) {
+            throw new InternalServerErrorException({
+              errorCode: 'ERR_INTERNAL',
+              message: 'MRN generation conflict, please retry',
+            });
+          }
+        }
+      }
+      throw error;
+    }
   }
 
   async findAll(query: {

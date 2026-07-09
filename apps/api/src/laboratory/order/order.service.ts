@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TariffResolverService } from './tariff-resolver.service';
+import { VisitService } from '../visit/visit.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
 import { OrderQueryDto } from './dto/order-query.dto';
@@ -15,9 +16,15 @@ export class OrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tariffResolver: TariffResolverService,
+    private readonly visitService: VisitService,
   ) {}
 
   async create(dto: CreateOrderDto, userId: string) {
+    // Validate visit exists and is in acceptable state if visitId is provided
+    if (dto.visitId) {
+      await this.visitService.validateVisitForOrder(dto.visitId);
+    }
+
     // Validate patient exists and not soft-deleted
     const patient = await this.prisma.patient.findFirst({
       where: { id: dto.patientId, deletedAt: null },
@@ -58,6 +65,7 @@ export class OrderService {
           clinicId: dto.clinicId ?? null,
           doctorId: dto.doctorId ?? null,
           insuranceId: dto.insuranceId ?? null,
+          visitId: dto.visitId ?? null,
           status: OrderStatus.PENDING_PAYMENT,
           totalAmount: pricing.totalAmount,
         },
@@ -77,6 +85,11 @@ export class OrderService {
 
       return createdOrder;
     });
+
+    // After order creation: transition visit to IN_PROGRESS if visitId present
+    if (dto.visitId) {
+      await this.visitService.transitionToInProgress(dto.visitId);
+    }
 
     // Return order with details
     return this.prisma.order.findUnique({

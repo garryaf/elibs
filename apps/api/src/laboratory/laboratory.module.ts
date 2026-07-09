@@ -8,6 +8,7 @@ import { LabWorkflowModule } from './lab-workflow/lab-workflow.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { NotificationModule } from './notification/notification.module';
 import { RegionModule } from './region/region.module';
+import { VisitModule } from './visit/visit.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { RegionModule } from './region/region.module';
     DashboardModule,
     NotificationModule,
     RegionModule,
+    VisitModule,
   ],
   exports: [
     AuditModule,
@@ -30,6 +32,7 @@ import { RegionModule } from './region/region.module';
     DashboardModule,
     NotificationModule,
     RegionModule,
+    VisitModule,
   ],
 })
 export class LaboratoryModule {}
