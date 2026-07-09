@@ -66,8 +66,8 @@ Implement a unified, search-first registration workflow that combines patient lo
     - On success: show confirmation with visit number and options to register another or view detail
     - _Requirements: 2.1, 7.1, 7.2, 7.3_
 
-- [ ] 4. Frontend: Patient Search Step
-  - [ ] 4.1 Create `PatientSearchStep` component
+- [x] 4. Frontend: Patient Search Step
+  - [x] 4.1 Create `PatientSearchStep` component
     - Create `apps/web/src/components/registration/PatientSearchStep.tsx`
     - Accept props: `onPatientSelected` callback, `onRegisterNew` callback
     - Render a search input with placeholder "Cari pasien berdasarkan nama, NIK, MRN, telepon, atau email (min. 2 karakter)..."
@@ -83,8 +83,8 @@ Implement a unified, search-first registration workflow that combines patient lo
     - Handle network errors with a dismissible error notification in Indonesian
     - _Requirements: 2.1, 2.3, 2.4, 2.5, 3.1, 5.1, 5.2, 5.3_
 
-- [ ] 5. Frontend: Patient Registration Step
-  - [ ] 5.1 Create `PatientRegistrationStep` component
+- [x] 5. Frontend: Patient Registration Step
+  - [x] 5.1 Create `PatientRegistrationStep` component
     - Create `apps/web/src/components/registration/PatientRegistrationStep.tsx`
     - Accept props: `onPatientRegistered` callback (receives new patient data), `onBack` callback
     - Render inline patient registration form with required fields: NIK (16-digit, masked input), name (1–200 chars), date of birth (date picker, not future), gender (MALE/FEMALE selection)
@@ -98,7 +98,7 @@ Implement a unified, search-first registration workflow that combines patient lo
     - Provide a "Kembali" (back) button that calls `onBack()`
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 5.4, 5.5_
 
-- [ ] 6. Frontend: Visit Creation Step
+- [x] 6. Frontend: Visit Creation Step
   - [x] 6.1 Create `VisitCreationStep` component
     - Create `apps/web/src/components/registration/VisitCreationStep.tsx`
     - Accept props: `patient` (selected patient data), `onVisitCreated` callback, `onBack` callback
@@ -117,11 +117,11 @@ Implement a unified, search-first registration workflow that combines patient lo
     - Implement unsaved data confirmation: if form has data and user clicks back, show confirmation dialog before discarding
     - _Requirements: 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 7.2, 7.4, 7.5, 7.6_
 
-- [ ] 7. Checkpoint - Frontend workflow components complete
+- [x] 7. Checkpoint - Frontend workflow components complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Integration: Navigation Update and Wiring
-  - [ ] 8.1 Update patients page "Daftarkan Pasien" button to navigate to unified workflow
+- [x] 8. Integration: Navigation Update and Wiring
+  - [x] 8.1 Update patients page "Daftarkan Pasien" button to navigate to unified workflow
     - Open `apps/web/src/app/dashboard/patients/page.tsx`
     - Import `useRouter` from `next/navigation` (already imported in the page)
     - Change the "Daftarkan Pasien" button's `onClick` handler from `handleOpenAdd` to navigate to `/dashboard/registration`
@@ -129,8 +129,8 @@ Implement a unified, search-first registration workflow that combines patient lo
     - Keep the existing PatientFormModal for editing patients (edit flow unchanged)
     - _Requirements: 2.2_
 
-- [ ] 9. Frontend Property Tests
-  - [ ] 9.1 Write property test for BPJS number validation
+- [x] 9. Frontend Property Tests
+  - [x] 9.1 Write property test for BPJS number validation
     - **Property 5: BPJS number validation**
     - Create `apps/web/src/components/registration/__tests__/workflow-state.spec.ts`
     - Use fast-check to generate arbitrary strings
@@ -138,7 +138,7 @@ Implement a unified, search-first registration workflow that combines patient lo
     - Verify: validation passes iff string matches `/^\d{13}$/`, and fails for all other strings
     - **Validates: Requirements 6.2, 6.5**
 
-  - [ ] 9.2 Write property test for visit number format
+  - [x] 9.2 Write property test for visit number format
     - **Property 6: Visit number format and initial status**
     - Add to `apps/web/src/components/registration/__tests__/workflow-state.spec.ts`
     - Use fast-check to generate valid year (2020-2099), month (1-12), sequence (1-9999) values
@@ -146,7 +146,7 @@ Implement a unified, search-first registration workflow that combines patient lo
     - Verify: all generated visit numbers match the regex `/^VST-\d{6}-\d{4}$/`
     - **Validates: Requirements 6.7**
 
-  - [ ] 9.3 Write property test for workflow state machine transitions
+  - [x] 9.3 Write property test for workflow state machine transitions
     - **Property 7: Workflow state machine transitions**
     - Add to `apps/web/src/components/registration/__tests__/workflow-state.spec.ts`
     - Use fast-check to generate random sequences of workflow actions (search, selectPatient, registerPatient, createVisit, goBack)
@@ -157,7 +157,7 @@ Implement a unified, search-first registration workflow that combines patient lo
       - Navigating back from visit-creation results in `selectedPatient === null` and form fields reset
     - **Validates: Requirements 5.1, 7.2, 7.3**
 
-- [ ] 10. Final Checkpoint - All tasks complete
+- [x] 10. Final Checkpoint - All tasks complete
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

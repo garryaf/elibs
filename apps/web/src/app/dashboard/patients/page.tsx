@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Search, UserPlus, Download } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import type { Patient, PatientFormData, PatientStatus } from "@/types/patient";
@@ -9,6 +10,7 @@ import { PatientFormModal } from "@/components/patients/PatientFormModal";
 import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
 
 export default function PatientsPage() {
+  const router = useRouter();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -81,11 +83,6 @@ export default function PatientsPage() {
       const visitDate = new Date(p.lastVisit).toDateString();
       return visitDate === new Date().toDateString();
     }).length,
-  };
-
-  const handleOpenAdd = () => {
-    setEditingPatient(null);
-    setIsModalOpen(true);
   };
 
   const handleEdit = (patient: Patient) => {
@@ -167,7 +164,7 @@ export default function PatientsPage() {
           </div>
           <button
             id="patient-add-btn"
-            onClick={handleOpenAdd}
+            onClick={() => router.push('/dashboard/registration')}
             className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] hover:shadow-md hover:shadow-[#6B8E6B]/20 active:scale-[0.98]"
           >
             <UserPlus className="h-4 w-4" />
