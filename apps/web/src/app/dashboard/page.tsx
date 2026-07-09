@@ -61,7 +61,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   },
   APPROVED: {
     label: "Disetujui",
-    className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+    className: "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/20 dark:text-[#6B8E6B]",
   },
   CANCELLED: {
     label: "Dibatalkan",
@@ -276,7 +276,7 @@ export default function DashboardPage() {
                   {formatShortCurrency(summary.revenueToday)}
                 </p>
               </div>
-              <div className="rounded-lg bg-emerald-100 p-3 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400">
+              <div className="rounded-lg bg-[#6B8E6B]/10 p-3 text-[#6B8E6B] dark:bg-[#6B8E6B]/20 dark:text-[#6B8E6B]">
                 <Banknote className="h-6 w-6" />
               </div>
             </div>

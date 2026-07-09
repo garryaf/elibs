@@ -55,7 +55,7 @@ const STATUS_COLORS: Record<string, string> = {
   SAMPLE_COLLECTED: "bg-indigo-500",
   IN_ANALYSIS: "bg-[oklch(0.55_0.08_145)]",
   VERIFIED: "bg-[oklch(0.55_0.06_90)]",
-  APPROVED: "bg-emerald-500",
+  APPROVED: "bg-[#6B8E6B]/100",
   NOTIFIED: "bg-green-500",
   CANCELLED: "bg-red-400",
 };

@@ -299,15 +299,39 @@ class ApiClient {
     return this.delete(`/api/v1/users/${id}`);
   }
 
+  // ─── Settings ────────────────────────────────────────────────────────────
+
+  async getSmtpSettings(): Promise<ApiResponse<unknown>> {
+    return this.get("/api/v1/settings/smtp");
+  }
+
+  async updateSmtpSettings(data: unknown): Promise<ApiResponse<unknown>> {
+    return this.put("/api/v1/settings/smtp", data);
+  }
+
+  async testSmtpEmail(email: string): Promise<ApiResponse<unknown>> {
+    return this.post("/api/v1/settings/smtp/test", { email });
+  }
+
   // ─── Audit ────────────────────────────────────────────────────────────────
 
   async getAuditLogs(params?: {
     page?: number;
     limit?: number;
-  }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
+    entityName?: string;
+    action?: string;
+    userId?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<unknown>> {
     const qs = new URLSearchParams();
     if (params?.page) qs.set("page", String(params.page));
     if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.entityName) qs.set("entityName", params.entityName);
+    if (params?.action) qs.set("action", params.action);
+    if (params?.userId) qs.set("userId", params.userId);
+    if (params?.startDate) qs.set("startDate", params.startDate);
+    if (params?.endDate) qs.set("endDate", params.endDate);
     const query = qs.toString() ? `?${qs.toString()}` : "";
     return this.get(`/api/v1/audit-logs${query}`);
   }

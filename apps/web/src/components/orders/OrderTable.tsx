@@ -37,16 +37,16 @@ export function OrderTable({ orders }: OrderTableProps) {
   const paginated = orders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-100 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/50">
+            <tr className="border-b border-border bg-[#6B8E6B]/5">
               {["NO. ORDER", "PASIEN", "PEMERIKSAAN", "TOTAL", "STATUS", "TGL. BUAT", "AKSI"].map((h) => (
                 <th
                   key={h}
                   className={cn(
-                    "px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400",
+                    "px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-[#6B8E6B]",
                     (h === "PEMERIKSAAN") && "hidden lg:table-cell",
                     (h === "TGL. BUAT") && "hidden md:table-cell",
                   )}
@@ -74,7 +74,7 @@ export function OrderTable({ orders }: OrderTableProps) {
                 >
                   {/* Order Number */}
                   <td className="px-5 py-4">
-                    <span className="font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                    <span className="font-mono text-xs font-semibold text-[#6B8E6B]">
                       {order.orderNumber}
                     </span>
                   </td>
@@ -110,7 +110,7 @@ export function OrderTable({ orders }: OrderTableProps) {
                       {formatRupiah(order.totalAmount)}
                     </div>
                     {order.invoice?.discountAmount ? (
-                      <div className="text-xs text-emerald-600 dark:text-emerald-400">
+                      <div className="text-xs text-[#6B8E6B]">
                         -{formatRupiah(order.invoice.discountAmount)}
                       </div>
                     ) : null}
@@ -129,11 +129,11 @@ export function OrderTable({ orders }: OrderTableProps) {
                   {/* Action */}
                   <td className="px-5 py-4">
                     <Link
-                      href={order.status === "COMPLETED" ? `/dashboard/orders/${order.id}/report` : `/dashboard/orders/${order.id}`}
-                      className="flex w-max items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-400"
+                      href={order.status === "APPROVED" || order.status === "NOTIFIED" ? `/dashboard/orders/${order.id}/report` : `/dashboard/orders/${order.id}`}
+                      className="flex w-max items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-[#6B8E6B]/50 hover:bg-[#6B8E6B]/10 hover:text-[#6B8E6B]"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      {order.status === "COMPLETED" ? "Hasil" : "Detail"}
+                      {order.status === "APPROVED" || order.status === "NOTIFIED" ? "Hasil" : "Detail"}
                     </Link>
                   </td>
                 </tr>
@@ -170,8 +170,8 @@ export function OrderTable({ orders }: OrderTableProps) {
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-all",
                   currentPage === i + 1
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+                    ? "bg-[#6B8E6B] text-white shadow-sm"
+                    : "border border-border bg-card text-muted-foreground hover:bg-[#6B8E6B]/10"
                 )}
               >
                 {i + 1}

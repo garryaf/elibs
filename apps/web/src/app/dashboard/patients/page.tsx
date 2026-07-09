@@ -18,7 +18,15 @@ export default function PatientsPage() {
     setLoading(true);
     try {
       const res = await apiClient.getPatients({ limit: 200, search: search || undefined });
-      const raw = (res?.data as { data?: unknown[] })?.data ?? [];
+      // Defensive extraction: handle both { data: { data: [] } } and { data: [] } shapes
+      const envelope = (res?.data ?? res) as unknown;
+      let raw: unknown[] = [];
+      if (Array.isArray(envelope)) {
+        raw = envelope;
+      } else if (envelope && typeof envelope === "object" && "data" in envelope) {
+        const inner = (envelope as { data: unknown }).data;
+        raw = Array.isArray(inner) ? inner : [];
+      }
       // Map backend Patient model to frontend Patient type
       const mapped: Patient[] = (raw as Record<string, unknown>[]).map((p) => ({
         id: p.id as string,
@@ -160,7 +168,7 @@ export default function PatientsPage() {
           <button
             id="patient-add-btn"
             onClick={handleOpenAdd}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-700 hover:shadow-md hover:shadow-emerald-600/20 active:scale-[0.98]"
+            className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] hover:shadow-md hover:shadow-[#6B8E6B]/20 active:scale-[0.98]"
           >
             <UserPlus className="h-4 w-4" />
             Daftarkan Pasien
@@ -171,7 +179,7 @@ export default function PatientsPage() {
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             { label: "Total Pasien Terdaftar", value: stats.total, color: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
-            { label: "Pasien Aktif", value: stats.active, color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
+            { label: "Pasien Aktif", value: stats.active, color: "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]" },
             { label: "Kunjungan Hari Ini", value: stats.today, color: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
           ].map((stat) => (
             <div
@@ -194,7 +202,7 @@ export default function PatientsPage() {
               placeholder="Cari nama, NIK, atau MRN..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -207,7 +215,7 @@ export default function PatientsPage() {
                   onClick={() => setStatusFilter(s)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                     statusFilter === s
-                      ? "bg-emerald-600 text-white shadow-sm"
+                      ? "bg-[#6B8E6B] text-white shadow-sm"
                       : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                   }`}
                 >
@@ -230,7 +238,7 @@ export default function PatientsPage() {
         {/* Results summary */}
         {search && (
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{filteredPatients.length}</span> hasil untuk &quot;<span className="font-semibold text-emerald-600">{search}</span>&quot;
+            Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{filteredPatients.length}</span> hasil untuk &quot;<span className="font-semibold text-[#6B8E6B]">{search}</span>&quot;
           </p>
         )}
 
@@ -277,7 +285,7 @@ export default function PatientsPage() {
                 </div>
                 <div>
                   <p className="text-lg font-bold text-slate-900 dark:text-white">{viewingPatient.name}</p>
-                  <p className="font-mono text-sm text-emerald-600 dark:text-emerald-400">{viewingPatient.mrn}</p>
+                  <p className="font-mono text-sm text-[#6B8E6B]">{viewingPatient.mrn}</p>
                 </div>
                 <div className="ml-auto"><PatientStatusBadge status={viewingPatient.status} /></div>
               </div>
@@ -310,7 +318,7 @@ export default function PatientsPage() {
               </button>
               <button
                 onClick={() => setViewingPatient(null)}
-                className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                className="rounded-xl bg-[#6B8E6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5A7D5A]"
               >
                 Tutup
               </button>

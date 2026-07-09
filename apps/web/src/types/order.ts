@@ -5,7 +5,7 @@ export type OrderStatus =
   | "IN_ANALYSIS"
   | "VERIFIED"
   | "APPROVED"
-  | "COMPLETED"
+  | "NOTIFIED"
   | "CANCELLED";
 
 export type PaymentMethod = "CASH" | "TRANSFER" | "EDC";
@@ -30,7 +30,7 @@ export interface OrderDetail {
   price: number;
   resultValue?: number | string;
   resultFlag?: "NORMAL" | "LOW" | "HIGH" | "CRITICAL";
-  status?: "PENDING" | "COMPLETED";
+  status?: "PENDING" | "RESULT_ENTERED" | "VERIFIED" | "APPROVED";
 }
 
 export interface Invoice {

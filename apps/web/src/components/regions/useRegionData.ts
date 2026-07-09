@@ -141,9 +141,17 @@ export function useRegionData({
       );
 
       if (response.success && response.data) {
-        const data = Array.isArray(response.data) ? response.data : [];
-        setItems(data);
-        setCache(cacheKey, data);
+        // Handle both { data: [...] } and { data: { data: [...], meta } } shapes
+        const respData = response.data as unknown;
+        let items: RegionItem[] = [];
+        if (Array.isArray(respData)) {
+          items = respData;
+        } else if (respData && typeof respData === "object" && "data" in respData) {
+          const inner = (respData as { data: unknown }).data;
+          items = Array.isArray(inner) ? inner : [];
+        }
+        setItems(items);
+        setCache(cacheKey, items);
       } else {
         setItems([]);
       }

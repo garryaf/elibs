@@ -83,7 +83,7 @@ function Numpad({ onPress }: { onPress: (v: string) => void }) {
             "flex h-12 items-center justify-center rounded-xl border text-base font-semibold transition-all active:scale-95",
             k === "⌫"
               ? "border-red-200 bg-red-50 text-red-600 hover:bg-red-100 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400"
-              : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50 hover:border-emerald-300 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-emerald-700 dark:hover:text-emerald-400"
+              : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50 hover:border-[#6B8E6B]/50 hover:text-[#6B8E6B] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-[#6B8E6B] dark:hover:text-[#6B8E6B]"
           )}
         >
           {k}
@@ -101,12 +101,12 @@ function SuccessModal({ order, onClose }: { order: OrderApi; onClose: () => void
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
       <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-2xl dark:border-slate-700 dark:bg-slate-900 text-center animate-in fade-in zoom-in-95 duration-200">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
-          <CheckCircle2 className="h-9 w-9 text-emerald-600 dark:text-emerald-400" />
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#6B8E6B]/10 dark:bg-[#6B8E6B]/20">
+          <CheckCircle2 className="h-9 w-9 text-[#6B8E6B]" />
         </div>
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Pembayaran Berhasil!</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Order <span className="font-semibold text-emerald-600">{order.orderNumber}</span> telah lunas.
+          Order <span className="font-semibold text-[#6B8E6B]">{order.orderNumber}</span> telah lunas.
         </p>
         <div className="mt-4 rounded-xl bg-slate-50 p-4 text-left dark:bg-slate-800">
           <div className="flex justify-between text-sm">
@@ -124,7 +124,7 @@ function SuccessModal({ order, onClose }: { order: OrderApi; onClose: () => void
           <button
             id="payment-success-close"
             onClick={onClose}
-            className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+            className="flex-1 rounded-xl bg-[#6B8E6B] py-2.5 text-sm font-semibold text-white hover:bg-[#5A7D5A]"
           >
             Selesai
           </button>
@@ -170,7 +170,7 @@ export default function OrderDetailPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#6B8E6B]" />
       </div>
     );
   }
@@ -180,7 +180,7 @@ export default function OrderDetailPage() {
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
         <ReceiptText className="h-12 w-12 text-slate-300" />
         <p className="text-slate-500">{error || "Order tidak ditemukan."}</p>
-        <button onClick={() => router.back()} className="text-sm text-emerald-600 hover:underline">Kembali</button>
+        <button onClick={() => router.back()} className="text-sm text-[#6B8E6B] hover:underline">Kembali</button>
       </div>
     );
   }
@@ -263,7 +263,7 @@ export default function OrderDetailPage() {
                 </div>
                 <div>
                   <div className="font-semibold text-slate-900 dark:text-white">{order.patient.name}</div>
-                  <div className="font-mono text-xs text-emerald-600 dark:text-emerald-400">{order.patient.mrn}</div>
+                  <div className="font-mono text-xs text-[#6B8E6B]">{order.patient.mrn}</div>
                 </div>
               </div>
             </div>
@@ -311,37 +311,37 @@ export default function OrderDetailPage() {
                         value={discount}
                         onChange={(e) => setDiscount(e.target.value.replace(/\D/g, ""))}
                         placeholder="0"
-                        className="h-7 w-28 rounded-lg border border-slate-200 bg-white px-2 text-right text-sm outline-none focus:border-emerald-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+                        className="h-7 w-28 rounded-lg border border-slate-200 bg-white px-2 text-right text-sm outline-none focus:border-[#6B8E6B] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                       />
                     ) : (
-                      <span className="text-emerald-600 dark:text-emerald-400">-{formatRupiah(discountAmount)}</span>
+                      <span className="text-[#6B8E6B]">-{formatRupiah(discountAmount)}</span>
                     )}
                   </div>
                 </div>
                 <div className="flex justify-between border-t border-slate-200 pt-2 dark:border-slate-700">
                   <span className="font-bold text-slate-900 dark:text-white">Total Tagihan</span>
-                  <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{formatRupiah(total)}</span>
+                  <span className="text-lg font-bold text-[#6B8E6B]">{formatRupiah(total)}</span>
                 </div>
               </div>
             </div>
 
             {/* Already paid info */}
             {alreadyPaid && order.paidAt && (
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-800 dark:bg-emerald-900/20">
-                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+              <div className="rounded-2xl border border-[#6B8E6B]/30 bg-[#6B8E6B]/10 p-5 dark:border-[#6B8E6B]/50 dark:bg-[#6B8E6B]/10">
+                <div className="flex items-center gap-2 text-[#6B8E6B] dark:text-[#6B8E6B]">
                   <CheckCircle2 className="h-5 w-5" />
                   <span className="font-semibold">Pembayaran Telah Diterima</span>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-xs text-emerald-600/70">Metode</p>
-                    <p className="font-semibold text-emerald-800 dark:text-emerald-200">
+                    <p className="text-xs text-[#6B8E6B]/70">Metode</p>
+                    <p className="font-semibold text-[#6B8E6B] dark:text-[#6B8E6B]">
                       {PAYMENT_METHODS.find((m) => m.value === order.paymentMethod)?.label ?? order.paymentMethod ?? "—"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-emerald-600/70">Waktu Bayar</p>
-                    <p className="font-semibold text-emerald-800 dark:text-emerald-200">
+                    <p className="text-xs text-[#6B8E6B]/70">Waktu Bayar</p>
+                    <p className="font-semibold text-[#6B8E6B] dark:text-[#6B8E6B]">
                       {order.paidAt ? new Date(order.paidAt).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
                     </p>
                   </div>
@@ -366,12 +366,12 @@ export default function OrderDetailPage() {
                         className={cn(
                           "flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-all",
                           paymentMethod === m.value
-                            ? "border-emerald-400 bg-emerald-50 ring-2 ring-emerald-400/20 dark:border-emerald-600 dark:bg-emerald-900/20"
-                            : "border-slate-200 bg-white hover:border-emerald-200 dark:border-slate-700 dark:bg-slate-900"
+                            ? "border-[#6B8E6B] bg-[#6B8E6B]/10 ring-1 ring-[#6B8E6B]/30 dark:border-[#6B8E6B] dark:bg-[#6B8E6B]/10"
+                            : "border-slate-200 bg-white hover:border-[#6B8E6B]/30 dark:border-slate-700 dark:bg-slate-900"
                         )}
                       >
                         <input type="radio" className="sr-only" value={m.value} checked={paymentMethod === m.value} onChange={() => setPaymentMethod(m.value)} />
-                        <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", paymentMethod === m.value ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800")}>
+                        <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", paymentMethod === m.value ? "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/20 dark:text-[#6B8E6B]" : "bg-slate-100 text-slate-500 dark:bg-slate-800")}>
                           <Icon className="h-4 w-4" />
                         </div>
                         <div>
@@ -398,7 +398,7 @@ export default function OrderDetailPage() {
                   {cashPaid > 0 && (
                     <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm dark:bg-slate-900">
                       <span className="text-slate-500">Kembalian</span>
-                      <span className={cn("font-bold", change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600")}>
+                      <span className={cn("font-bold", change >= 0 ? "text-[#6B8E6B]" : "text-red-600")}>
                         {formatRupiah(change)}
                       </span>
                     </div>
@@ -411,7 +411,7 @@ export default function OrderDetailPage() {
                 id="order-pay-btn"
                 onClick={handlePay}
                 disabled={!canPay || isProcessing}
-                className="w-full rounded-2xl bg-emerald-600 py-4 text-base font-bold text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="w-full rounded-2xl bg-[#6B8E6B] py-4 text-base font-bold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {isProcessing ? (
                   <span className="flex items-center justify-center gap-2">

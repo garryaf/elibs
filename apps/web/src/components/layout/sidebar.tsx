@@ -10,6 +10,7 @@ import {
   TestTube,
   Stethoscope,
   BarChart3,
+  Shield,
   Settings,
 } from "lucide-react";
 
@@ -20,6 +21,7 @@ const menuItems = [
   { name: "Laboratorium", href: "/dashboard/laboratory", icon: TestTube },
   { name: "Validasi Dokter", href: "/dashboard/doctor", icon: Stethoscope },
   { name: "Laporan", href: "/dashboard/reports", icon: BarChart3 },
+  { name: "Audit Trail", href: "/dashboard/audit-trail", icon: Shield },
   { name: "Pengaturan", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -42,14 +44,14 @@ export function Sidebar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "group flex items-center rounded-xl px-3 py-2.5 text-slate-600 hover:bg-white hover:text-emerald-700 hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-emerald-400 transition-all duration-200 ease-in-out",
-                    isActive && "bg-white text-emerald-700 shadow-sm ring-1 ring-emerald-100 dark:bg-slate-900 dark:text-emerald-400 dark:ring-emerald-900/50"
+                    "group flex items-center rounded-xl px-3 py-2.5 text-slate-600 hover:bg-white hover:text-[#6B8E6B] hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-[#6B8E6B] transition-all duration-200 ease-in-out",
+                    isActive && "bg-white text-[#6B8E6B] shadow-sm ring-1 ring-[#6B8E6B]/20 dark:bg-slate-900 dark:text-[#6B8E6B] dark:ring-[#6B8E6B]/30"
                   )}
                 >
                   <Icon
                     className={cn(
-                      "h-5 w-5 text-slate-400 transition-colors duration-200 group-hover:text-emerald-600 dark:text-slate-500 dark:group-hover:text-emerald-400",
-                      isActive && "text-emerald-600 dark:text-emerald-400"
+                      "h-5 w-5 text-slate-400 transition-colors duration-200 group-hover:text-[#6B8E6B] dark:text-slate-500 dark:group-hover:text-[#6B8E6B]",
+                      isActive && "text-[#6B8E6B]"
                     )}
                   />
                   <span className="ml-3 text-sm">{item.name}</span>

@@ -39,7 +39,7 @@ const REPORT_CONFIGS: ReportConfig[] = [
     label: "Laporan Bulanan",
     description: "Statistik performa lab per bulan",
     icon: BarChart3,
-    color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-300",
+    color: "text-[#6B8E6B] bg-[#6B8E6B]/10 dark:bg-[#6B8E6B]/10 dark:text-[#6B8E6B]",
   },
   {
     id: "patient",
@@ -109,7 +109,7 @@ export default function ReportsPage() {
             Generate dan unduh laporan operasional laboratorium.
           </p>
         </div>
-        <button className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-700 active:scale-[0.98]">
+        <button className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] active:scale-[0.98]">
           <Download className="h-4 w-4" />
           Export PDF
         </button>
@@ -127,7 +127,7 @@ export default function ReportsPage() {
               className={cn(
                 "flex items-start gap-3 rounded-2xl border p-4 text-left transition-all",
                 isActive
-                  ? "border-emerald-300 bg-emerald-50/50 ring-2 ring-emerald-400/20 dark:border-emerald-700 dark:bg-emerald-900/10"
+                  ? "border-[#6B8E6B]/50 bg-[#6B8E6B]/5 ring-1 ring-[#6B8E6B]/30 dark:border-[#6B8E6B] dark:bg-[#6B8E6B]/10"
                   : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700"
               )}
             >
@@ -135,7 +135,7 @@ export default function ReportsPage() {
                 <Icon className="h-5 w-5" />
               </div>
               <div>
-                <p className={cn("text-sm font-semibold", isActive ? "text-emerald-700 dark:text-emerald-300" : "text-slate-900 dark:text-white")}>
+                <p className={cn("text-sm font-semibold", isActive ? "text-[#6B8E6B] dark:text-[#6B8E6B]" : "text-slate-900 dark:text-white")}>
                   {report.label}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">{report.description}</p>
@@ -153,14 +153,14 @@ export default function ReportsPage() {
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
         <span className="text-sm text-slate-400">s/d</span>
         <input
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
       </div>
 
@@ -181,7 +181,7 @@ export default function ReportsPage() {
         <div className="p-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <svg className="h-8 w-8 animate-spin text-emerald-600" viewBox="0 0 24 24" fill="none">
+              <svg className="h-8 w-8 animate-spin text-[#6B8E6B]" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>

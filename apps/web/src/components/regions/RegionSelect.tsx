@@ -89,9 +89,9 @@ export function RegionSelect({
           "flex h-10 w-full items-center justify-between rounded-xl border bg-white px-3.5 py-2 text-sm transition-all",
           "border-slate-200 dark:border-slate-700 dark:bg-slate-900",
           "hover:border-slate-300 dark:hover:border-slate-600",
-          "focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 focus:outline-none",
+          "focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 focus:outline-none",
           disabled && "cursor-not-allowed opacity-50 bg-slate-50 dark:bg-slate-800",
-          isOpen && "border-emerald-400 ring-2 ring-emerald-400/20"
+          isOpen && "border-[#6B8E6B] ring-1 ring-[#6B8E6B]/30"
         )}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
@@ -136,7 +136,7 @@ export function RegionSelect({
                 className={cn(
                   "h-8 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-sm outline-none",
                   "placeholder:text-slate-400",
-                  "focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-400/20",
+                  "focus:border-[#6B8E6B] focus:bg-white focus:ring-2 focus:ring-[#6B8E6B]/20",
                   "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:bg-slate-900"
                 )}
               />
@@ -193,9 +193,9 @@ export function RegionSelect({
                   onClick={() => handleSelect(item)}
                   className={cn(
                     "flex w-full items-center rounded-lg px-3 py-2 text-left text-sm transition-colors",
-                    "hover:bg-emerald-50 dark:hover:bg-emerald-900/20",
+                    "hover:bg-[#6B8E6B]/10 dark:hover:bg-[#6B8E6B]/10",
                     item.id === value
-                      ? "bg-emerald-50 text-emerald-700 font-medium dark:bg-emerald-900/30 dark:text-emerald-300"
+                      ? "bg-[#6B8E6B]/10 text-[#6B8E6B] font-medium dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]"
                       : "text-slate-700 dark:text-slate-300"
                   )}
                 >

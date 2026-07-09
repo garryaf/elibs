@@ -16,6 +16,8 @@ import {
   Droplets,
   Ruler,
   Users,
+  MapPin,
+  RefreshCw,
   Loader2,
   PackageOpen,
   X,
@@ -75,7 +77,7 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
         isActive
-          ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-300 dark:ring-emerald-400/20"
+          ? "bg-[#6B8E6B]/10 text-[#6B8E6B] ring-1 ring-[#6B8E6B]/20 dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B] dark:ring-[#6B8E6B]/20"
           : "bg-slate-100 text-slate-500 ring-1 ring-slate-300/50 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-600/50"
       }`}
     >
@@ -378,6 +380,20 @@ const tabs: TabConfig[] = [
     ],
   },
   {
+    id: "wilayah",
+    label: "Wilayah",
+    icon: MapPin,
+    endpoint: "/api/v1/regions/provinsi?limit=50",
+    columns: [
+      { key: "id", label: "Kode" },
+      { key: "name", label: "Nama Provinsi" },
+    ],
+    fields: [
+      { key: "id", label: "Kode EMSIFA", type: "text", required: true, placeholder: "11, 32, 33, dll" },
+      { key: "name", label: "Nama Provinsi", type: "text", required: true, placeholder: "Nama provinsi" },
+    ],
+  },
+  {
     id: "users",
     label: "Users",
     icon: Users,
@@ -396,6 +412,161 @@ const tabs: TabConfig[] = [
     ],
   },
 ];
+
+// ─── SMTP Settings Component (special tab) ────────────────────────────────────
+
+function SmtpSettingsPanel() {
+  const [config, setConfig] = useState({
+    host: "",
+    port: 587,
+    secure: false,
+    user: "",
+    pass: "",
+    senderName: "eLIS Laboratory",
+    senderEmail: "",
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testEmail, setTestEmail] = useState("garry.afril@gmail.com");
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    apiClient.get<{ success: boolean; data: typeof config }>("/api/v1/settings/smtp")
+      .then((res) => {
+        const data = (res?.data ?? res) as Record<string, unknown>;
+        if (data && typeof data === "object") {
+          setConfig({
+            host: String(data.host || ""),
+            port: Number(data.port) || 587,
+            secure: Boolean(data.secure),
+            user: String(data.user || ""),
+            pass: String(data.pass || ""),
+            senderName: String(data.senderName || "eLIS Laboratory"),
+            senderEmail: String(data.senderEmail || ""),
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      await apiClient.put("/api/v1/settings/smtp", config);
+      setMessage({ type: "success", text: "Konfigurasi SMTP berhasil disimpan" });
+    } catch {
+      setMessage({ type: "error", text: "Gagal menyimpan konfigurasi" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTest = async () => {
+    setTesting(true);
+    setMessage(null);
+    try {
+      const res = await apiClient.post<{ success: boolean; data: { success: boolean; message: string } }>("/api/v1/settings/smtp/test", { email: testEmail });
+      const result = (res?.data ?? res) as { success?: boolean; message?: string };
+      if (result.success) {
+        setMessage({ type: "success", text: result.message || "Email test berhasil dikirim!" });
+      } else {
+        setMessage({ type: "error", text: result.message || "Gagal mengirim email test" });
+      }
+    } catch (err: unknown) {
+      const apiErr = err as { message?: string };
+      setMessage({ type: "error", text: apiErr.message || "Gagal mengirim email test" });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-6 w-6 animate-spin text-[#6B8E6B]" />
+      </div>
+    );
+  }
+
+  const inputCls = "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
+
+  return (
+    <div className="max-w-xl space-y-6">
+      <div>
+        <h3 className="text-base font-semibold text-slate-900 dark:text-white">Konfigurasi SMTP</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Pengaturan server email untuk pengiriman hasil laboratorium.</p>
+      </div>
+
+      {message && (
+        <div className={`rounded-lg px-4 py-3 text-sm ${message.type === "success" ? "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]" : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300"}`}>
+          {message.text}
+        </div>
+      )}
+
+      <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">SMTP Host</label>
+            <input type="text" value={config.host} onChange={(e) => setConfig({ ...config, host: e.target.value })} placeholder="smtp.gmail.com" className={inputCls} />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Port</label>
+            <input type="number" value={config.port} onChange={(e) => setConfig({ ...config, port: Number(e.target.value) })} placeholder="587" className={inputCls} />
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Username</label>
+            <input type="text" value={config.user} onChange={(e) => setConfig({ ...config, user: e.target.value })} placeholder="user@gmail.com" className={inputCls} />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
+            <input type="password" value={config.pass} onChange={(e) => setConfig({ ...config, pass: e.target.value })} placeholder="App Password" className={inputCls} />
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Nama Pengirim</label>
+            <input type="text" value={config.senderName} onChange={(e) => setConfig({ ...config, senderName: e.target.value })} placeholder="eLIS Laboratory" className={inputCls} />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Email Pengirim</label>
+            <input type="email" value={config.senderEmail} onChange={(e) => setConfig({ ...config, senderEmail: e.target.value })} placeholder="lab@clinic.com" className={inputCls} />
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="relative inline-flex cursor-pointer items-center">
+            <input type="checkbox" checked={config.secure} onChange={(e) => setConfig({ ...config, secure: e.target.checked })} className="peer sr-only" />
+            <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#6B8E6B] peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-slate-700" />
+          </label>
+          <span className="text-sm text-slate-700 dark:text-slate-300">Gunakan TLS/SSL (port 465)</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
+        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#5A7D5A] disabled:opacity-50">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {saving ? "Menyimpan..." : "Simpan Konfigurasi"}
+        </button>
+      </div>
+
+      {/* Test Email Section */}
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
+        <h4 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">Kirim Email Test</h4>
+        <div className="flex gap-2">
+          <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="test@example.com" className={`flex-1 ${inputCls}`} />
+          <button onClick={handleTest} disabled={testing} className="flex items-center gap-2 rounded-xl border border-[#6B8E6B]/30 bg-[#6B8E6B]/10 px-4 py-2.5 text-sm font-semibold text-[#6B8E6B] hover:bg-[#6B8E6B]/10 disabled:opacity-50 dark:border-[#6B8E6B]/50 dark:bg-[#6B8E6B]/10 dark:text-[#6B8E6B]">
+            {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {testing ? "Mengirim..." : "Kirim Test"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 
 // ─── Form Modal Component ─────────────────────────────────────────────────────
@@ -547,14 +718,14 @@ function FormModal({
                     placeholder={placeholder}
                     required={isFieldRequired(field)}
                     rows={3}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   />
                 ) : field.type === "select" ? (
                   <select
                     value={String(values[field.key] ?? "")}
                     onChange={(e) => handleChange(field.key, e.target.value)}
                     required={isFieldRequired(field)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition-all focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition-all focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   >
                     <option value="">Pilih {field.label.toLowerCase()}</option>
                     {field.options?.map((opt) => (
@@ -571,7 +742,7 @@ function FormModal({
                       onChange={(e) => handleChange(field.key, e.target.checked)}
                       className="peer sr-only"
                     />
-                    <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-2 peer-focus:ring-emerald-400/20 dark:bg-slate-700 dark:after:border-slate-600" />
+                    <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#6B8E6B] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-2 peer-focus:ring-[#6B8E6B]/20 dark:bg-slate-700 dark:after:border-slate-600" />
                     <span className="ml-3 text-sm text-slate-600 dark:text-slate-400">
                       {Boolean(values[field.key]) ? "Ya" : "Tidak"}
                     </span>
@@ -584,7 +755,7 @@ function FormModal({
                     placeholder={placeholder}
                     required={isFieldRequired(field)}
                     step={field.type === "number" ? "any" : undefined}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   />
                 )}
               </div>
@@ -604,7 +775,7 @@ function FormModal({
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {submitting ? "Menyimpan..." : "Simpan"}
@@ -628,6 +799,7 @@ export default function SettingsPage() {
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<Record<string, unknown> | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   // Categories cache for "Tes Laboratorium" tab's categoryId select
   const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
@@ -637,17 +809,34 @@ export default function SettingsPage() {
   const fetchData = useCallback(async (endpoint: string) => {
     setLoading(true);
     try {
-      const res = await apiClient.get<{
-        success: boolean;
-        data: { data: Record<string, unknown>[]; meta?: unknown } | Record<string, unknown>[];
-      }>(endpoint);
+      const res = await apiClient.get<unknown>(endpoint);
 
-      // Handle both paginated { data: { data: [], meta: {} } } and flat array responses
-      if (Array.isArray(res?.data)) {
-        setData(res.data as Record<string, unknown>[]);
-      } else {
-        setData((res?.data as { data: Record<string, unknown>[] })?.data ?? []);
+      // Defensive extraction: handle all possible API response shapes
+      // Shape 1: { success, data: { data: [...], meta } } (TransformInterceptor + paginated service)
+      // Shape 2: { success, data: [...] } (TransformInterceptor + flat array)
+      // Shape 3: { data: [...], meta } (direct paginated without envelope)
+      // Shape 4: [...] (raw array)
+      const envelope = res as Record<string, unknown>;
+      let extracted: Record<string, unknown>[] = [];
+
+      if (Array.isArray(envelope)) {
+        // Shape 4: raw array
+        extracted = envelope;
+      } else if (envelope?.data !== undefined) {
+        const innerData = envelope.data;
+        if (Array.isArray(innerData)) {
+          // Shape 2: { data: [...] }
+          extracted = innerData as Record<string, unknown>[];
+        } else if (innerData && typeof innerData === "object" && "data" in (innerData as object)) {
+          // Shape 1: { data: { data: [...] } }
+          const deepData = (innerData as Record<string, unknown>).data;
+          extracted = Array.isArray(deepData) ? deepData as Record<string, unknown>[] : [];
+        } else {
+          extracted = [];
+        }
       }
+
+      setData(extracted);
     } catch {
       setData([]);
     } finally {
@@ -658,11 +847,20 @@ export default function SettingsPage() {
   // Fetch categories for the test form's select
   const fetchCategories = useCallback(async () => {
     try {
-      const res = await apiClient.get<{
-        success: boolean;
-        data: { data: { id: string; name: string }[] };
-      }>("/api/v1/master/test-categories");
-      const cats = res?.data?.data ?? [];
+      const res = await apiClient.get<unknown>("/api/v1/master/test-categories");
+      const envelope = res as Record<string, unknown>;
+      let cats: { id: string; name: string }[] = [];
+      
+      if (envelope?.data) {
+        const inner = envelope.data;
+        if (Array.isArray(inner)) {
+          cats = inner as { id: string; name: string }[];
+        } else if (inner && typeof inner === "object" && "data" in (inner as object)) {
+          const deep = (inner as Record<string, unknown>).data;
+          cats = Array.isArray(deep) ? deep as { id: string; name: string }[] : [];
+        }
+      }
+      
       setCategories(cats.map((c) => ({ value: c.id, label: c.name })));
     } catch {
       setCategories([]);
@@ -702,6 +900,21 @@ export default function SettingsPage() {
   }, [currentTab, categories]);
 
   // ─── CRUD Handlers ────────────────────────────────────────────────────────
+
+  const handleSyncRegion = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      await apiClient.post("/api/v1/regions/sync");
+      alert("Sync wilayah berhasil! Data sedang diperbarui dari EMSIFA API.");
+      fetchData(currentTab.endpoint);
+    } catch (err: unknown) {
+      const apiErr = err as { message?: string };
+      alert(apiErr.message || "Gagal sync wilayah. Pastikan Anda login sebagai ADMIN.");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const handleCreate = () => {
     setEditingRow(null);
@@ -791,7 +1004,7 @@ export default function SettingsPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex shrink-0 items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${
                     isActive
-                      ? "border-b-2 border-emerald-600 bg-emerald-50/50 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-900/20 dark:text-emerald-300"
+                      ? "border-b-2 border-[#6B8E6B] bg-[#6B8E6B]/5 text-[#6B8E6B] dark:border-[#6B8E6B] dark:bg-[#6B8E6B]/10 dark:text-[#6B8E6B]"
                       : "text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-300"
                   }`}
                 >
@@ -800,6 +1013,18 @@ export default function SettingsPage() {
                 </button>
               );
             })}
+            {/* SMTP Settings Tab */}
+            <button
+              onClick={() => setActiveTab("smtp")}
+              className={`flex shrink-0 items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${
+                activeTab === "smtp"
+                  ? "border-b-2 border-[#6B8E6B] bg-[#6B8E6B]/5 text-[#6B8E6B] dark:border-[#6B8E6B] dark:bg-[#6B8E6B]/10 dark:text-[#6B8E6B]"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-300"
+              }`}
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span className="hidden sm:inline">Email SMTP</span>
+            </button>
           </div>
         </div>
 
@@ -812,23 +1037,37 @@ export default function SettingsPage() {
               placeholder="Cari nama, kode, atau email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
           </div>
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-700 hover:shadow-md hover:shadow-emerald-600/20 active:scale-[0.98]"
-          >
-            <Plus className="h-4 w-4" />
-            Tambah
-          </button>
+          <div className="flex items-center gap-2">
+            {activeTab === "wilayah" && (
+              <button
+                onClick={handleSyncRegion}
+                disabled={syncing}
+                className="flex items-center gap-2 rounded-xl border border-[#6B8E6B]/30 bg-[#6B8E6B]/10 px-4 py-2.5 text-sm font-semibold text-[#6B8E6B] shadow-sm transition-all hover:bg-[#6B8E6B]/10 disabled:opacity-50 disabled:cursor-not-allowed dark:border-[#6B8E6B]/50 dark:bg-[#6B8E6B]/10 dark:text-[#6B8E6B]"
+              >
+                <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+                {syncing ? "Syncing..." : "Sync dari EMSIFA"}
+              </button>
+            )}
+            <button
+              onClick={handleCreate}
+              className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] hover:shadow-md hover:shadow-[#6B8E6B]/20 active:scale-[0.98]"
+            >
+              <Plus className="h-4 w-4" />
+              Tambah
+            </button>
+          </div>
         </div>
 
         {/* Content */}
         <div className="px-5 pb-5">
-          {loading ? (
+          {activeTab === "smtp" ? (
+            <SmtpSettingsPanel />
+          ) : loading ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+              <Loader2 className="h-8 w-8 animate-spin text-[#6B8E6B]" />
               <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                 Memuat data...
               </p>
@@ -896,7 +1135,7 @@ export default function SettingsPage() {
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => handleEdit(row)}
-                              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-emerald-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-emerald-400"
+                              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-[#6B8E6B] dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-[#6B8E6B]"
                               title="Edit"
                             >
                               <Pencil className="h-3.5 w-3.5" />

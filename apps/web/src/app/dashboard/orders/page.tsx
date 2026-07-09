@@ -12,7 +12,7 @@ const STATUS_FILTERS: { value: OrderStatus | "ALL"; label: string }[] = [
   { value: "PENDING_PAYMENT", label: "Belum Bayar" },
   { value: "PAID", label: "Lunas" },
   { value: "IN_ANALYSIS", label: "Analisa" },
-  { value: "COMPLETED", label: "Selesai" },
+  { value: "APPROVED", label: "Selesai" },
 ];
 
 function formatRupiah(amount: number): string {
@@ -27,7 +27,15 @@ export default function OrdersPage() {
   const loadOrders = useCallback(async () => {
     try {
       const res = await apiClient.getOrders({ limit: 100, status: statusFilter !== "ALL" ? statusFilter : undefined });
-      const raw = (res?.data as { data?: unknown[] })?.data ?? [];
+      // Defensive extraction: handle both { data: { data: [] } } and { data: [] } shapes
+      const envelope = (res?.data ?? res) as unknown;
+      let raw: unknown[] = [];
+      if (Array.isArray(envelope)) {
+        raw = envelope;
+      } else if (envelope && typeof envelope === "object" && "data" in envelope) {
+        const inner = (envelope as { data: unknown }).data;
+        raw = Array.isArray(inner) ? inner : [];
+      }
       const mapped: Order[] = (raw as Record<string, unknown>[]).map((o) => ({
         id: o.id as string,
         orderNumber: o.orderNumber as string,
@@ -68,7 +76,7 @@ export default function OrdersPage() {
     todayRevenue: orders
       .filter((o) => o.invoice?.paidAt && new Date(o.invoice.paidAt).toDateString() === new Date().toDateString())
       .reduce((sum, o) => sum + (o.invoice?.total ?? 0), 0),
-    completed: orders.filter((o) => o.status === "COMPLETED").length,
+    completed: orders.filter((o) => o.status === "APPROVED" || o.status === "NOTIFIED").length,
   };
 
   return (
@@ -86,7 +94,7 @@ export default function OrdersPage() {
         <Link
           href="/dashboard/orders/new"
           id="order-new-btn"
-          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-700 hover:shadow-md active:scale-[0.98]"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] hover:shadow-md active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" />
           Buat Order Baru
@@ -96,14 +104,14 @@ export default function OrdersPage() {
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Total Order Hari Ini", value: String(stats.total), sub: "order", color: "text-blue-600 dark:text-blue-400" },
+          { label: "Total Order Hari Ini", value: String(stats.total), sub: "order", color: "text-[#6B8E6B]" },
           { label: "Menunggu Pembayaran", value: String(stats.pending), sub: "order", color: "text-amber-600 dark:text-amber-400" },
-          { label: "Pendapatan Hari Ini", value: formatRupiah(stats.todayRevenue), sub: "lunas", color: "text-emerald-600 dark:text-emerald-400" },
-          { label: "Order Selesai", value: String(stats.completed), sub: "order", color: "text-violet-600 dark:text-violet-400" },
+          { label: "Pendapatan Hari Ini", value: formatRupiah(stats.todayRevenue), sub: "lunas", color: "text-[#6B8E6B]" },
+          { label: "Order Selesai", value: String(stats.completed), sub: "order", color: "text-[#6B8E6B]" },
         ].map((s) => (
           <div
             key={s.label}
-            className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-slate-800 dark:bg-slate-950"
+            className="rounded-2xl border border-border bg-card px-5 py-4 shadow-sm"
           >
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
@@ -125,11 +133,11 @@ export default function OrdersPage() {
             placeholder="Cari nomor order atau nama pasien..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="h-10 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-[#6B8E6B] focus:ring-1 focus:ring-[#6B8E6B]/30 text-foreground"
           />
         </div>
 
-        <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900 overflow-x-auto">
+        <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1 overflow-x-auto">
           {STATUS_FILTERS.map((f) => (
             <button
               key={f.value}
@@ -137,8 +145,8 @@ export default function OrdersPage() {
               onClick={() => setStatusFilter(f.value)}
               className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                 statusFilter === f.value
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                  ? "bg-[#6B8E6B] text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-[#6B8E6B]/10"
               }`}
             >
               {f.label}
@@ -149,7 +157,7 @@ export default function OrdersPage() {
 
       {search && (
         <p className="text-sm text-slate-500">
-          Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{filtered.length}</span> hasil untuk &quot;<span className="font-semibold text-emerald-600">{search}</span>&quot;
+          Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{filtered.length}</span> hasil untuk &quot;<span className="font-semibold text-[#6B8E6B]">{search}</span>&quot;
         </p>
       )}
 

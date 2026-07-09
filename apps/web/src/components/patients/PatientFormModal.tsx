@@ -58,7 +58,7 @@ function FormField({ label, id, icon: Icon, error, required, children }: FormInp
   );
 }
 
-const inputClass = "mt-0 h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-emerald-500";
+const inputClass = "mt-0 h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-[#6B8E6B]";
 
 /**
  * Validates region selection: if any region level is selected, all four must be selected.
@@ -196,7 +196,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
             {/* Section: Data Diri */}
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                <User className="h-4 w-4 text-emerald-600" />
+                <User className="h-4 w-4 text-[#6B8E6B]" />
                 Data Diri
               </h3>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -243,7 +243,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                         className={cn(
                           "flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-all",
                           form.gender === g
-                            ? "border-emerald-400 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-400/20 dark:border-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300"
+                            ? "border-[#6B8E6B] bg-[#6B8E6B]/10 text-[#6B8E6B] ring-1 ring-[#6B8E6B]/30 dark:border-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]"
                             : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
                         )}
                       >
@@ -307,7 +307,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
             {/* Section: Alamat */}
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-emerald-600" />
+                <MapPin className="h-4 w-4 text-[#6B8E6B]" />
                 Alamat
               </h3>
               <div className="space-y-4">
@@ -320,7 +320,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                     value={form.address}
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
                     className={cn(
-                      "mt-0 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-emerald-500",
+                      "mt-0 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-[#6B8E6B]",
                       errors.address && "border-red-400 focus:border-red-400 focus:ring-red-400/20"
                     )}
                   />
@@ -363,7 +363,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
             {/* Section: Kontak Darurat */}
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                <Shield className="h-4 w-4 text-emerald-600" />
+                <Shield className="h-4 w-4 text-[#6B8E6B]" />
                 Kontak Darurat
               </h3>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -406,7 +406,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
               type="submit"
               id="patient-modal-submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? (
                 <>

@@ -40,7 +40,7 @@ const STATUS_MAP: Record<OrderStatus, StatusConfig> = {
   },
   APPROVED: {
     label: "Disetujui",
-    className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+    className: "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]",
   },
   NOTIFIED: {
     label: "Terkirim",

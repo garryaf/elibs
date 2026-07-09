@@ -59,19 +59,19 @@ function StepIndicator({ current }: { current: Step }) {
               <div
                 className={cn(
                   "flex h-9 w-9 items-center justify-center rounded-xl transition-all",
-                  active ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/30"
-                    : done ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                  active ? "bg-[#6B8E6B] text-white shadow-sm shadow-[#6B8E6B]/30"
+                    : done ? "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/20 dark:text-[#6B8E6B]"
                     : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
                 )}
               >
                 <Icon className="h-4 w-4" />
               </div>
-              <span className={cn("hidden text-xs font-medium sm:block", active ? "text-emerald-700 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400")}>
+              <span className={cn("hidden text-xs font-medium sm:block", active ? "text-[#6B8E6B]" : "text-slate-500 dark:text-slate-400")}>
                 {s.label}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={cn("h-px flex-1 mx-2 transition-all", done ? "bg-emerald-300 dark:bg-emerald-700" : "bg-slate-200 dark:bg-slate-700")} />
+              <div className={cn("h-px flex-1 mx-2 transition-all", done ? "bg-[#6B8E6B]/40 dark:bg-[#6B8E6B]/40" : "bg-slate-200 dark:bg-slate-700")} />
             )}
           </div>
         );
@@ -126,7 +126,7 @@ function PatientStep({ onSelect }: { onSelect: (p: PatientApi) => void }) {
           onChange={(e) => handleChange(e.target.value)}
           autoFocus
           placeholder="Cari pasien..."
-          className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
         {searching && <Loader2 className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400" />}
       </div>
@@ -143,7 +143,7 @@ function PatientStep({ onSelect }: { onSelect: (p: PatientApi) => void }) {
                 key={p.id}
                 id={`order-patient-${p.id}`}
                 onClick={() => onSelect(p)}
-                className="group flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-700 dark:hover:bg-emerald-900/10"
+                className="group flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-[#6B8E6B]/50 hover:bg-[#6B8E6B]/10 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-[#6B8E6B] dark:hover:bg-[#6B8E6B]/10"
               >
                 <div className={cn(
                   "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold",
@@ -154,14 +154,14 @@ function PatientStep({ onSelect }: { onSelect: (p: PatientApi) => void }) {
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-slate-900 dark:text-white truncate">{p.name}</div>
                   <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                    <span className="font-mono text-emerald-600 dark:text-emerald-400">{p.mrn}</span>
+                    <span className="font-mono text-[#6B8E6B]">{p.mrn}</span>
                     <span>·</span>
                     <span>{p.gender === "MALE" ? "Laki-laki" : "Perempuan"}</span>
                     <span>·</span>
                     <span>{p.phone}</span>
                   </div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-slate-300 transition-all group-hover:text-emerald-600" />
+                <ChevronRight className="h-4 w-4 text-slate-300 transition-all group-hover:text-[#6B8E6B]" />
               </button>
             ))
           )}
@@ -228,7 +228,7 @@ function TestStep({
   if (loadingTests) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+        <Loader2 className="h-6 w-6 animate-spin text-[#6B8E6B]" />
       </div>
     );
   }
@@ -249,7 +249,7 @@ function TestStep({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari nama atau kode pemeriksaan..."
-          className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
       </div>
 
@@ -264,7 +264,7 @@ function TestStep({
               className={cn(
                 "whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
                 activeCategoryId === cat.id
-                  ? "bg-emerald-600 text-white shadow-sm"
+                  ? "bg-[#6B8E6B] text-white shadow-sm"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               )}
             >
@@ -292,15 +292,15 @@ function TestStep({
                     className={cn(
                       "flex items-center justify-between rounded-xl border p-3.5 text-left transition-all",
                       selected
-                        ? "border-emerald-300 bg-emerald-50 ring-2 ring-emerald-400/20 dark:border-emerald-700 dark:bg-emerald-900/20"
-                        : "border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-800 dark:hover:bg-emerald-900/10"
+                        ? "border-[#6B8E6B]/50 bg-[#6B8E6B]/10 ring-1 ring-[#6B8E6B]/30 dark:border-[#6B8E6B] dark:bg-[#6B8E6B]/10"
+                        : "border-slate-200 bg-white hover:border-[#6B8E6B]/30 hover:bg-[#6B8E6B]/10/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-[#6B8E6B]/50 dark:hover:bg-[#6B8E6B]/10"
                     )}
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className={cn(
                           "rounded-md px-1.5 py-0.5 font-mono text-[11px] font-semibold",
-                          selected ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-400" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                          selected ? "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/20 dark:text-[#6B8E6B]" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                         )}>
                           {test.code}
                         </span>
@@ -314,7 +314,7 @@ function TestStep({
                     </div>
                     <div className={cn(
                       "ml-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all",
-                      selected ? "border-emerald-500 bg-emerald-500" : "border-slate-300 dark:border-slate-600"
+                      selected ? "border-[#6B8E6B] bg-[#6B8E6B]/100" : "border-slate-300 dark:border-slate-600"
                     )}>
                       {selected && (
                         <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none">
@@ -366,7 +366,7 @@ function ConfirmStep({
           </div>
           <div>
             <div className="font-semibold text-slate-900 dark:text-white">{patient.name}</div>
-            <div className="font-mono text-xs text-emerald-600 dark:text-emerald-400">{patient.mrn} · {patient.phone}</div>
+            <div className="font-mono text-xs text-[#6B8E6B]">{patient.mrn} · {patient.phone}</div>
           </div>
         </div>
       </div>
@@ -389,7 +389,7 @@ function ConfirmStep({
         </div>
         <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
           <span className="font-semibold text-slate-700 dark:text-slate-300">Total</span>
-          <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{formatRupiah(subtotal)}</span>
+          <span className="text-lg font-bold text-[#6B8E6B]">{formatRupiah(subtotal)}</span>
         </div>
       </div>
 
@@ -404,7 +404,7 @@ function ConfirmStep({
           value={notes}
           onChange={(e) => onNotesChange(e.target.value)}
           placeholder="Mis: Pasien puasa 10 jam, suspek DM tipe 2..."
-          className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
       </div>
     </div>
@@ -478,8 +478,8 @@ export default function NewOrderPage() {
   if (success) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
-          <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#6B8E6B]/10 dark:bg-[#6B8E6B]/20">
+          <CheckCircle2 className="h-10 w-10 text-[#6B8E6B]" />
         </div>
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Order Berhasil Dibuat!</h2>
@@ -539,27 +539,27 @@ export default function NewOrderPage() {
 
       {/* Selected tests floating summary (step 2) */}
       {step === 2 && selectedTests.length > 0 && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
+        <div className="rounded-2xl border border-[#6B8E6B]/30 bg-[#6B8E6B]/10 p-4 dark:border-[#6B8E6B]/50 dark:bg-[#6B8E6B]/10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+              <p className="text-sm font-semibold text-[#6B8E6B] dark:text-[#6B8E6B]">
                 {selectedTests.length} pemeriksaan dipilih
               </p>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400">
+              <p className="text-xs text-[#6B8E6B]">
                 Total: <span className="font-bold">{formatRupiah(subtotal)}</span>
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5 max-w-xs justify-end">
               {selectedTests.slice(0, 4).map((t) => (
-                <span key={t.id} className="flex items-center gap-1 rounded-full bg-emerald-100 pl-2 pr-1 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                <span key={t.id} className="flex items-center gap-1 rounded-full bg-[#6B8E6B]/10 pl-2 pr-1 py-0.5 text-[11px] font-semibold text-[#6B8E6B] dark:bg-[#6B8E6B]/20 dark:text-[#6B8E6B]">
                   {t.code}
-                  <button onClick={() => toggleTest(t)} className="rounded-full hover:bg-emerald-200 dark:hover:bg-emerald-800 p-0.5">
+                  <button onClick={() => toggleTest(t)} className="rounded-full hover:bg-[#6B8E6B]/20 dark:hover:bg-[#6B8E6B]/20 p-0.5">
                     <X className="h-2.5 w-2.5" />
                   </button>
                 </span>
               ))}
               {selectedTests.length > 4 && (
-                <span className="rounded-full bg-emerald-200 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-800 dark:text-emerald-300">
+                <span className="rounded-full bg-[#6B8E6B]/20 px-2 py-0.5 text-[11px] font-semibold text-[#6B8E6B] dark:bg-[#6B8E6B]/20 dark:text-[#6B8E6B]">
                   +{selectedTests.length - 4}
                 </span>
               )}
@@ -574,7 +574,7 @@ export default function NewOrderPage() {
           <button
             id="new-order-step1-next"
             onClick={() => setStep(2)}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+            className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#5A7D5A]"
           >
             Pilih Pemeriksaan <ChevronRight className="h-4 w-4" />
           </button>
@@ -586,7 +586,7 @@ export default function NewOrderPage() {
             id="new-order-step2-next"
             onClick={() => setStep(3)}
             disabled={selectedTests.length === 0}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#5A7D5A] disabled:cursor-not-allowed disabled:opacity-40"
           >
             Konfirmasi <ChevronRight className="h-4 w-4" />
           </button>
@@ -598,7 +598,7 @@ export default function NewOrderPage() {
             id="new-order-submit"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#5A7D5A] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? (
               <>

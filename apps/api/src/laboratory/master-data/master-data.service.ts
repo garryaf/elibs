@@ -2,7 +2,9 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateTestCategoryDto } from './dto/create-test-category.dto';
 import { UpdateTestCategoryDto } from './dto/update-test-category.dto';
@@ -34,13 +36,23 @@ export class MasterDataService {
   }
 
   async createCategory(dto: CreateTestCategoryDto) {
-    return this.prisma.testCategory.create({
-      data: {
-        name: dto.name,
-        description: dto.description,
-        isActive: dto.isActive ?? true,
-      },
-    });
+    try {
+      return await this.prisma.testCategory.create({
+        data: {
+          name: dto.name,
+          description: dto.description,
+          isActive: dto.isActive ?? true,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Record with this name/code already exists');
+      }
+      throw error;
+    }
   }
 
   async updateCategory(id: string, dto: UpdateTestCategoryDto) {
@@ -102,19 +114,29 @@ export class MasterDataService {
       });
     }
 
-    return this.prisma.testMaster.create({
-      data: {
-        code: dto.code,
-        name: dto.name,
-        categoryId: dto.categoryId,
-        unit: dto.unit,
-        method: dto.method,
-        sampleType: dto.sampleType,
-        price: dto.price,
-        requiresDoctorApproval: dto.requiresDoctorApproval ?? true,
-        isActive: dto.isActive ?? true,
-      },
-    });
+    try {
+      return await this.prisma.testMaster.create({
+        data: {
+          code: dto.code,
+          name: dto.name,
+          categoryId: dto.categoryId,
+          unit: dto.unit,
+          method: dto.method,
+          sampleType: dto.sampleType,
+          price: dto.price,
+          requiresDoctorApproval: dto.requiresDoctorApproval ?? true,
+          isActive: dto.isActive ?? true,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Record with this name/code already exists');
+      }
+      throw error;
+    }
   }
 
   async updateTest(id: string, dto: UpdateTestDto) {

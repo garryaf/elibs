@@ -412,9 +412,9 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
                       key={d.id}
                       className={cn(
                         "rounded-md px-2 py-1 font-mono text-[11px] font-semibold",
-                        d.status === "COMPLETED"
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                          : "bg-[#6B8E6B]/10 text-[#6B8E6B]"
+                        d.status === "RESULT_ENTERED" || d.status === "VERIFIED" || d.status === "APPROVED"
+                          ? "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]"
+                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                       )}
                       title={d.testName}
                     >

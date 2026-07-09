@@ -1,3 +1,4 @@
+
 # Frontend Architecture Specification
 # Enterprise Laboratory Information System (eLIS)
 

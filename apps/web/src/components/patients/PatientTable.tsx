@@ -153,7 +153,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete }: PatientTabl
                   {/* NIK / MRN */}
                   <td className="px-5 py-4">
                     <div className="font-mono text-xs text-slate-700 dark:text-slate-300">{patient.nik}</div>
-                    <div className="font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">{patient.mrn}</div>
+                    <div className="font-mono text-xs font-semibold text-[#6B8E6B]">{patient.mrn}</div>
                   </td>
 
                   {/* Age / Gender */}
@@ -219,7 +219,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete }: PatientTabl
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-all",
                   currentPage === i + 1
-                    ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/30"
+                    ? "bg-[#6B8E6B] text-white shadow-sm shadow-[#6B8E6B]/30"
                     : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
                 )}
               >

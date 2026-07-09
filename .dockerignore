@@ -1,4 +1,4 @@
-# Dependencies (will be reinstalled in Docker)
+# Dependencies (reinstalled in Docker for correct platform binaries)
 node_modules
 apps/api/node_modules
 apps/web/node_modules

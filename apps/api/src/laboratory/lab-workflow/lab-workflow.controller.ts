@@ -37,7 +37,7 @@ export class LabWorkflowController {
 
   @Get('queue')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.ADMIN)
+  @Roles(Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.ADMIN, Role.SUPER_ADMIN)
   async getQueue(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -50,7 +50,7 @@ export class LabWorkflowController {
 
   @Get('approval-queue')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.DOKTER, Role.SUPER_ADMIN)
+  @Roles(Role.DOKTER, Role.SUPER_ADMIN, Role.ADMIN)
   async getApprovalQueue(
     @Query('page') page?: string,
     @Query('limit') limit?: string,

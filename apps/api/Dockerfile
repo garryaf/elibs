@@ -14,8 +14,8 @@ COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 
-# Install all workspace dependencies (including dev for build)
-RUN npm ci --workspace=api && npm cache clean --force
+# Install dependencies with retry for network issues
+RUN npm ci --workspace=api --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 && npm cache clean --force
 
 # --- Stage 2: Build ---
 FROM node:20-alpine AS builder

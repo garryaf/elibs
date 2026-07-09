@@ -33,13 +33,6 @@ const STATUS_CONFIG: Record<
     text: "text-violet-700 dark:text-violet-300",
     ring: "ring-violet-200 dark:ring-violet-700/50",
   },
-  COMPLETED: {
-    label: "Selesai",
-    dot: "bg-emerald-500",
-    bg: "bg-emerald-50 dark:bg-emerald-900/30",
-    text: "text-emerald-700 dark:text-emerald-300",
-    ring: "ring-emerald-200 dark:ring-emerald-700/50",
-  },
   VERIFIED: {
     label: "Terverifikasi",
     dot: "bg-teal-500",
@@ -48,7 +41,14 @@ const STATUS_CONFIG: Record<
     ring: "ring-teal-200 dark:ring-teal-700/50",
   },
   APPROVED: {
-    label: "Disetujui",
+    label: "Selesai",
+    dot: "bg-[#6B8E6B]/100",
+    bg: "bg-[#6B8E6B]/10 dark:bg-[#6B8E6B]/15",
+    text: "text-[#6B8E6B] dark:text-[#6B8E6B]",
+    ring: "ring-[#6B8E6B]/30 dark:ring-[#6B8E6B]/30",
+  },
+  NOTIFIED: {
+    label: "Terkirim",
     dot: "bg-green-600",
     bg: "bg-green-50 dark:bg-green-900/30",
     text: "text-green-700 dark:text-green-300",
