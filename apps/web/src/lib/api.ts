@@ -389,47 +389,6 @@ class ApiClient {
     return this.get(`/api/v1/master/insurances${query}`);
   }
 
-  // ─── Visits ────────────────────────────────────────────────────────────────
-
-  async getVisits(params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-    startDate?: string;
-    endDate?: string;
-    doctorId?: string;
-    clinicId?: string;
-  }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
-    const qs = new URLSearchParams();
-    if (params?.page) qs.set("page", String(params.page));
-    if (params?.limit) qs.set("limit", String(params.limit));
-    if (params?.search) qs.set("search", params.search);
-    if (params?.status && params.status !== "ALL") qs.set("status", params.status);
-    if (params?.startDate) qs.set("startDate", params.startDate);
-    if (params?.endDate) qs.set("endDate", params.endDate);
-    if (params?.doctorId) qs.set("doctorId", params.doctorId);
-    if (params?.clinicId) qs.set("clinicId", params.clinicId);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/visits${query}`);
-  }
-
-  async getVisit(id: string): Promise<ApiResponse<unknown>> {
-    return this.get(`/api/v1/visits/${id}`);
-  }
-
-  async createVisit(data: unknown): Promise<ApiResponse<unknown>> {
-    return this.post("/api/v1/visits", data);
-  }
-
-  async updateVisit(id: string, data: unknown): Promise<ApiResponse<unknown>> {
-    return this.put(`/api/v1/visits/${id}`, data);
-  }
-
-  async cancelVisit(id: string, reason: string): Promise<ApiResponse<unknown>> {
-    return this.post(`/api/v1/visits/${id}/cancel`, { reason });
-  }
-
   // ─── Audit ────────────────────────────────────────────────────────────────
 
   async getAuditLogs(params?: {
