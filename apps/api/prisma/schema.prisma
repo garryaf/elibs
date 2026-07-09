@@ -262,16 +262,22 @@ model Clinic {
 
 // === MASTER DATA: INSURANCE ===
 
+enum InsuranceType {
+  BPJS
+  SWASTA
+  CORPORATE
+}
+
 model Insurance {
-  id        String    @id @default(uuid()) @db.Uuid
-  code      String    @unique
+  id        String         @id @default(uuid()) @db.Uuid
+  code      String         @unique
   name      String
-  type      String? // BPJS, Swasta, etc.
+  type      InsuranceType?
   phone     String?
   email     String?
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
   deletedAt DateTime?
 
   orders   Order[]

@@ -23,13 +23,14 @@ import { CreatePanelDto } from './dto/create-panel.dto';
 import { UpdatePanelDto } from './dto/update-panel.dto';
 
 @Controller('api/v1/master')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class MasterDataController {
   constructor(private readonly masterDataService: MasterDataService) {}
 
   // ─── Test Categories ─────────────────────────────────────────────────────────
 
   @Get('test-categories')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
   async findAllCategories(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -41,14 +42,12 @@ export class MasterDataController {
   }
 
   @Post('test-categories')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async createCategory(@Body() dto: CreateTestCategoryDto) {
     return this.masterDataService.createCategory(dto);
   }
 
   @Put('test-categories/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async updateCategory(
     @Param('id', ParseUUIDPipe) id: string,
@@ -58,7 +57,6 @@ export class MasterDataController {
   }
 
   @Delete('test-categories/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async deleteCategory(@Param('id', ParseUUIDPipe) id: string) {
     return this.masterDataService.softDeleteCategory(id);
@@ -67,7 +65,7 @@ export class MasterDataController {
   // ─── Tests ────────────────────────────────────────────────────────────────────
 
   @Get('tests')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
   async findAllTests(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -81,14 +79,12 @@ export class MasterDataController {
   }
 
   @Post('tests')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async createTest(@Body() dto: CreateTestDto) {
     return this.masterDataService.createTest(dto);
   }
 
   @Put('tests/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async updateTest(
     @Param('id', ParseUUIDPipe) id: string,
@@ -98,7 +94,6 @@ export class MasterDataController {
   }
 
   @Delete('tests/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async deleteTest(@Param('id', ParseUUIDPipe) id: string) {
     return this.masterDataService.softDeleteTest(id);
@@ -107,7 +102,7 @@ export class MasterDataController {
   // ─── Panels ───────────────────────────────────────────────────────────────────
 
   @Get('panels')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
   async findAllPanels(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -119,14 +114,12 @@ export class MasterDataController {
   }
 
   @Post('panels')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async createPanel(@Body() dto: CreatePanelDto) {
     return this.masterDataService.createPanel(dto);
   }
 
   @Put('panels/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async updatePanel(
     @Param('id', ParseUUIDPipe) id: string,
@@ -136,7 +129,6 @@ export class MasterDataController {
   }
 
   @Delete('panels/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async deletePanel(@Param('id', ParseUUIDPipe) id: string) {
     return this.masterDataService.softDeletePanel(id);

@@ -30,7 +30,7 @@ export function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-200 bg-slate-50 pt-16 transition-all duration-300 dark:border-slate-800 dark:bg-slate-950">
-      <div className="flex h-full flex-col overflow-y-auto px-4 py-6">
+      <nav aria-label="Menu Utama" className="flex h-full flex-col overflow-y-auto px-4 py-6">
         <div className="mb-4 px-2 text-xs font-bold tracking-wider text-slate-400 dark:text-slate-500">
           MAIN MENU
         </div>
@@ -60,7 +60,7 @@ export function Sidebar() {
             );
           })}
         </ul>
-      </div>
+      </nav>
       <div className="p-4 border-t border-slate-200 dark:border-slate-800 text-center">
         <p className="text-[10px] font-medium tracking-wider text-slate-400">eLIS ENTERPRISE v1.0</p>
       </div>

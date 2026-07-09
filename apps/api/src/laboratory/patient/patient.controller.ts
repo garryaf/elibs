@@ -23,13 +23,14 @@ export class PatientController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.KLINIK_PARTNER)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.KLINIK_PARTNER)
   async register(@Body() dto: CreatePatientDto) {
     return this.patientService.register(dto);
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -47,14 +48,15 @@ export class PatientController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
   async findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.patientService.findById(id);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN)
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePatientDto,

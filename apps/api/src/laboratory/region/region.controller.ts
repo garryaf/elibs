@@ -13,6 +13,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 
 @Controller('api/v1/regions')
+@UseGuards(JwtAuthGuard)
 export class RegionController {
   constructor(
     private readonly regionService: RegionService,

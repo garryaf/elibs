@@ -21,7 +21,7 @@ export class PaymentController {
 
   @Post('pay')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.ADMIN)
+  @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
   async processPayment(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ProcessPaymentDto,
@@ -31,13 +31,15 @@ export class PaymentController {
   }
 
   @Get('barcode')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER)
   async getBarcode(@Param('id', ParseUUIDPipe) id: string) {
     return this.paymentService.getBarcode(id);
   }
 
   @Get('invoice')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
   async getInvoice(@Param('id', ParseUUIDPipe) id: string) {
     return this.paymentService.getInvoice(id);
   }
