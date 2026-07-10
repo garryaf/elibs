@@ -123,7 +123,7 @@ const menuGroups: MenuGroup[] = [
       },
       {
         name: "Pengaturan",
-        href: "/dashboard/settings/system",
+        href: "/dashboard/settings/general",
         icon: Settings,
         roles: ["SUPER_ADMIN", "ADMIN"],
       },

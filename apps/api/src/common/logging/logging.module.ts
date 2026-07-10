@@ -45,8 +45,9 @@ import { Request } from 'express';
         }),
         // Redact sensitive headers
         redact: ['req.headers.authorization'],
-        // Transport configuration based on environment
-        ...(process.env.NODE_ENV !== 'production'
+        // Transport: use pino-pretty only in local dev (not in Docker/CI)
+        // Check USE_PRETTY_LOGS env or fallback to checking if pino-pretty is resolvable
+        ...(process.env.USE_PRETTY_LOGS === 'true'
           ? {
               transport: {
                 target: 'pino-pretty',

@@ -1,0 +1,97 @@
+# ============================================================================
+# eLIS — Docker Compose (Local Development)
+# Usage: docker compose -f docker-compose-dev.yml up -d
+# Access: http://localhost:3000 (web) | http://localhost:3001 (api)
+# DB: localhost:5433 | Redis: localhost:6379
+# ============================================================================
+
+services:
+  # --- Infrastructure ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: elis-dev-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: elis_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - elis_dev_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d elis_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - elis-dev
+
+  redis:
+    image: redis:7-alpine
+    container_name: elis-dev-redis
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - elis_dev_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - elis-dev
+
+  # --- API (NestJS) ---
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: elis-dev-api
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/elis_db?schema=public
+      JWT_SECRET: elis-local-development-secret-key-minimum-32-characters
+      JWT_EXPIRATION: 1d
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NODE_ENV: development
+      PORT: 3001
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - elis-dev
+
+  # --- Web (Next.js) ---
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3001
+    container_name: elis-dev-web
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - elis-dev
+
+volumes:
+  elis_dev_pgdata:
+    driver: local
+  elis_dev_redis:
+    driver: local
+
+networks:
+  elis-dev:
+    driver: bridge

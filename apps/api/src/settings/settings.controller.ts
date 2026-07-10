@@ -4,9 +4,10 @@ import {
   Put,
   Post,
   Body,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -34,6 +35,32 @@ export class SettingsController {
     private readonly settingsService: SettingsService,
     private readonly emailService: EmailService,
   ) {}
+
+  /**
+   * GET /api/v1/settings?prefix=notification.
+   * Generic key-value settings retrieval by prefix.
+   */
+  @Get()
+  @ApiOperation({ summary: 'Get settings by prefix' })
+  @ApiQuery({ name: 'prefix', required: false, description: 'Key prefix filter' })
+  async getSettings(@Query('prefix') prefix?: string) {
+    if (prefix) {
+      return this.settingsService.getSettingsByPrefix(prefix);
+    }
+    // Return all settings if no prefix
+    return this.settingsService.getSettingsByPrefix('');
+  }
+
+  /**
+   * PUT /api/v1/settings/bulk
+   * Bulk upsert settings.
+   */
+  @Put('bulk')
+  @ApiOperation({ summary: 'Bulk update settings' })
+  async bulkUpdateSettings(@Body() body: { entries: { key: string; value: string }[] }) {
+    await this.settingsService.bulkUpdate(body.entries);
+    return { success: true, message: 'Settings saved successfully' };
+  }
 
   @Get('smtp')
   @ApiOperation({ summary: 'Get SMTP settings' })
