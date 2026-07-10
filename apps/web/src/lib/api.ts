@@ -6,10 +6,14 @@
 
 /**
  * API base URL configuration:
- * - Production (behind Nginx): NEXT_PUBLIC_API_URL is empty → uses relative path (same-origin)
- * - Local development: NEXT_PUBLIC_API_URL=http://localhost:3001
+ * - Production (behind Nginx): NEXT_PUBLIC_API_URL is explicitly set (could be empty for same-origin)
+ * - Local development: NEXT_PUBLIC_API_URL=http://localhost:3001 (set via docker-compose default)
+ *
+ * The fallback to http://localhost:3001 only activates when the env var is completely
+ * empty/unset AND we're NOT in production. In production behind Nginx, the var is
+ * explicitly configured (even if empty) via the deployment manifest.
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === "production" ? "" : "http://localhost:3001");
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,6 +40,36 @@ export interface LoginResponse {
     accessToken: string;
     user: { email: string; sub: string; role: string };
   };
+}
+
+// ─── Defensive Unwrap Utility ─────────────────────────────────────────────────
+
+/**
+ * Detects and unwraps double-envelope responses.
+ *
+ * Some controllers manually wrap their return value with `{ success, message, data }`,
+ * and then `TransformInterceptor` wraps again. This utility detects the double-wrap
+ * shape and extracts the inner payload.
+ *
+ * Strict check: `success` must be a boolean, `message` must be a string, and `data`
+ * key must exist. This avoids false positives on legitimate data objects that
+ * coincidentally have a `success` field.
+ */
+export function unwrapResponse<T>(data: unknown): T {
+  if (
+    data !== null &&
+    data !== undefined &&
+    typeof data === "object" &&
+    !Array.isArray(data) &&
+    "success" in data &&
+    "message" in data &&
+    "data" in data &&
+    typeof (data as Record<string, unknown>).success === "boolean" &&
+    typeof (data as Record<string, unknown>).message === "string"
+  ) {
+    return (data as Record<string, unknown>).data as T;
+  }
+  return data as T;
 }
 
 // ─── API Client ───────────────────────────────────────────────────────────────
@@ -78,7 +112,7 @@ class ApiClient {
       throw { status: response.status, ...data };
     }
 
-    return data as T;
+    return unwrapResponse<T>(data);
   }
 
   async get<T>(endpoint: string): Promise<T> {

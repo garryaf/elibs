@@ -34,8 +34,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Create a new user' })
   @ApiResponse({ status: 201, description: 'User created successfully' })
   async create(@Body() dto: CreateUserDto) {
-    const user = await this.usersService.create(dto);
-    return { success: true, message: 'User created successfully', data: user };
+    return this.usersService.create(dto);
   }
 
   @Get()
@@ -48,13 +47,12 @@ export class UsersController {
     @Query('search') search?: string,
     @Query('role') role?: string,
   ) {
-    const result = await this.usersService.findAll(
+    return this.usersService.findAll(
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 10,
       search,
       role,
     );
-    return { success: true, message: 'Users retrieved successfully', data: result };
   }
 
   @Get(':id')
@@ -62,8 +60,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, description: 'User retrieved successfully' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    const user = await this.usersService.findById(id);
-    return { success: true, message: 'User retrieved successfully', data: user };
+    return this.usersService.findById(id);
   }
 
   @Put(':id')
@@ -74,8 +71,7 @@ export class UsersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,
   ) {
-    const user = await this.usersService.update(id, dto);
-    return { success: true, message: 'User updated successfully', data: user };
+    return this.usersService.update(id, dto);
   }
 
   @Delete(':id')
@@ -85,6 +81,6 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.usersService.softDelete(id);
-    return { success: true, message: 'User deleted successfully', data: null };
+    return null;
   }
 }
