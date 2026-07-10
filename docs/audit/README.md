@@ -101,7 +101,7 @@ Gap Matrix dengan kolom `Supersedes` atau `Cross-Ref`.
 | `03-patients.md` | Pasien | ✅ Done (wave 2) |
 | `04-registration.md` | Registrasi | ✅ Done (wave 2) |
 | `05-visits.md` | Kunjungan | ✅ Done (wave 2) |
-| `06-orders-payment.md` | Order & Kasir | ⏳ Planned |
+| `06-orders-payment.md` | Order & Kasir | ✅ Done (wave 3) |
 | `07-laboratory.md` | Laboratorium | ⏳ Planned |
 | `08-doctor-approval.md` | Validasi Dokter | ⏳ Planned |
 | `09-dashboard.md` | Dashboard | ⏳ Planned |
