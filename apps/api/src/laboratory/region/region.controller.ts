@@ -85,7 +85,7 @@ export class RegionController {
 
   @Post('sync')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   async syncRegions() {
     const result = await this.regionSyncService.syncAll();
     return {

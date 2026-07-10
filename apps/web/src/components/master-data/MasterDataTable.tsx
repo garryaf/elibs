@@ -24,6 +24,26 @@ interface MasterDataTableProps {
   isLoading?: boolean;
 }
 
+/**
+ * Safely render a cell value. If the value is an object (e.g. a relation),
+ * extract a human-readable field like `name` to prevent React Error #31.
+ */
+function renderCellValue(value: unknown): React.ReactNode {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (typeof value === "object") {
+    // Handle relation objects — prefer .name, .label, .code
+    const obj = value as Record<string, unknown>;
+    if ("name" in obj && typeof obj.name === "string") return obj.name;
+    if ("label" in obj && typeof obj.label === "string") return obj.label;
+    if ("code" in obj && typeof obj.code === "string") return obj.code;
+    return "—";
+  }
+  return String(value);
+}
+
 export function MasterDataTable({
   columns,
   data,
@@ -124,7 +144,7 @@ export function MasterDataTable({
                       <td key={col.key} className="px-5 py-4 text-slate-700 dark:text-slate-300">
                         {col.render
                           ? col.render(row[col.key], row)
-                          : (row[col.key] as React.ReactNode) ?? "—"}
+                          : renderCellValue(row[col.key])}
                       </td>
                     ))}
                     {(onEdit || onDelete) && (
