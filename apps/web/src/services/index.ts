@@ -15,3 +15,4 @@ export * from "./orders";
 export * from "./lab";
 export * from "./dashboard";
 export * from "./users";
+export * from "./master-data";

@@ -11,11 +11,14 @@ if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
   cd /app/apps/api
 
   # Attempt migration deploy; if failed migrations exist, try to resolve them
-  if ! npx prisma migrate deploy 2>/dev/null; then
-    echo "Migration deploy failed. Attempting to resolve failed migrations..."
-    # Get list of failed migrations and mark them as rolled-back
-    # Use POSIX-compatible grep (BusyBox/Alpine doesn't support -P or -oE with extended patterns)
-    FAILED=$(npx prisma migrate status 2>&1 | grep -i "failed" | sed -n 's/.*\([0-9]\{14\}_[a-zA-Z0-9_]*\).*/\1/p' || true)
+  DEPLOY_OUTPUT=$(npx prisma migrate deploy 2>&1) || true
+  DEPLOY_EXIT=$?
+
+  if echo "$DEPLOY_OUTPUT" | grep -q "P3009"; then
+    echo "Migration deploy failed (P3009). Attempting to resolve failed migrations..."
+    # Extract migration name from error output like:
+    # "The `20260709150654_add_insurance_type_enum` migration started at ..."
+    FAILED=$(echo "$DEPLOY_OUTPUT" | grep -o '`[0-9_a-zA-Z]*`' | tr -d '`' | head -n 5)
     if [ -n "$FAILED" ]; then
       for migration in $FAILED; do
         echo "  Resolving (marking rolled-back): $migration"
@@ -25,11 +28,18 @@ if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
       echo "Retrying migration deploy..."
       npx prisma migrate deploy
     else
-      echo "No failed migrations found via status output. Checking database directly..."
-      # Fallback: query the _prisma_migrations table directly for failed entries
-      echo "Retrying deploy..."
-      npx prisma migrate deploy
+      echo "Could not extract failed migration name. Manual intervention required."
+      echo "Run: npx prisma migrate resolve --rolled-back <migration_name>"
+      echo "Deploy output was:"
+      echo "$DEPLOY_OUTPUT"
+      exit 1
     fi
+  elif [ $DEPLOY_EXIT -ne 0 ]; then
+    echo "Migration deploy failed with unexpected error:"
+    echo "$DEPLOY_OUTPUT"
+    exit 1
+  else
+    echo "$DEPLOY_OUTPUT"
   fi
 
   echo "Migrations complete."

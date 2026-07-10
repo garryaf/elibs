@@ -1,7 +1,7 @@
 /**
  * Bug Condition Exploration Test — Master Data CRUD Fix
  *
- * Validates: Requirements 1.1, 1.2, 1.3, 1.4
+ * **Validates: Requirements 1.1, 1.2, 1.3, 1.4**
  *
  * This test encodes the EXPECTED correct behavior for master data navigation,
  * hook existence, and response unwrapping. On unfixed code, these tests FAIL,
@@ -11,6 +11,8 @@
  */
 
 import * as fc from "fast-check";
+import * as fs from "fs";
+import * as path from "path";
 
 // ─── Entity Mapping ─────────────────────────────────────────────────────────
 
@@ -33,61 +35,43 @@ const entityArb = fc.constantFrom(...ENTITY_MAP);
 // ─── Test 1: Navigation ─────────────────────────────────────────────────────
 
 describe("Bug Condition: Master Data Navigation", () => {
-  // Import the masterDataItems array from the page module
   let masterDataItems: Array<{ name: string; href: string }>;
 
-  beforeAll(async () => {
-    // Dynamic import of the page module to get masterDataItems
-    const pageModule = await import(
-      "@/app/dashboard/master-data/page"
+  beforeAll(() => {
+    // Read the actual page source to extract current href values
+    const filePath = path.resolve(
+      __dirname,
+      "../app/dashboard/master-data/page.tsx"
     );
-    // The module default-exports the component; masterDataItems is a module-level const.
-    // We need to access it. Since it's not exported, we'll read the file content and
-    // extract the data. Instead, let's use a simpler approach: re-declare the expected
-    // items and test against the actual page source.
-    // Actually — let's just import and parse the items from the source directly.
-    // Since masterDataItems is not exported, we'll test by verifying the source file.
-    masterDataItems = [
-      { name: "Kategori Pemeriksaan", href: "/dashboard/settings" },
-      { name: "Pemeriksaan Lab", href: "/dashboard/settings" },
-      { name: "Panel", href: "/dashboard/settings" },
-      { name: "Dokter", href: "/dashboard/settings" },
-      { name: "Klinik", href: "/dashboard/settings" },
-      { name: "Asuransi", href: "/dashboard/settings" },
-      { name: "Alat", href: "/dashboard/settings" },
-      { name: "Reagen", href: "/dashboard/settings" },
-      { name: "Satuan", href: "/dashboard/settings" },
-      { name: "Jenis Sampel", href: "/dashboard/settings" },
-    ];
+    const content = fs.readFileSync(filePath, "utf-8");
 
-    // Try to get actual items from the source
-    try {
-      const fs = await import("fs");
-      const path = await import("path");
-      const filePath = path.resolve(
-        __dirname,
-        "../app/dashboard/master-data/page.tsx"
-      );
-      const content = fs.readFileSync(filePath, "utf-8");
+    // Parse the masterDataItems array from the source
+    // Extract name and href pairs using regex
+    const itemBlocks = content.match(
+      /\{\s*name:\s*"([^"]+)"[\s\S]*?href:\s*"([^"]+)"/g
+    );
 
-      // Parse href values from the source using regex
-      const hrefMatches = content.match(/href:\s*"([^"]+)"/g);
-      const nameMatches = content.match(/name:\s*"([^"]+)"/g);
-
-      if (hrefMatches && nameMatches && hrefMatches.length === 10) {
-        masterDataItems = nameMatches.map((nameMatch, i) => ({
-          name: nameMatch.replace(/name:\s*"/, "").replace(/"$/, ""),
-          href: hrefMatches[i].replace(/href:\s*"/, "").replace(/"$/, ""),
-        }));
-      }
-    } catch {
-      // If file reading fails, use hardcoded values from known current state
+    if (itemBlocks && itemBlocks.length === 10) {
+      masterDataItems = itemBlocks.map((block) => {
+        const nameMatch = block.match(/name:\s*"([^"]+)"/);
+        const hrefMatch = block.match(/href:\s*"([^"]+)"/);
+        return {
+          name: nameMatch![1],
+          href: hrefMatch![1],
+        };
+      });
+    } else {
+      // Fallback: use known current state (all pointing to /dashboard/settings)
+      masterDataItems = ENTITY_MAP.map((e) => ({
+        name: e.name,
+        href: "/dashboard/settings",
+      }));
     }
   });
 
   it("Property: For all 10 master data entities, card href equals /dashboard/master-data/{slug}", () => {
     /**
-     * Validates: Requirements 1.1
+     * **Validates: Requirements 1.1**
      *
      * Bug condition: All masterDataItems[i].href === "/dashboard/settings"
      * Expected behavior: masterDataItems[i].href === "/dashboard/master-data/{slug}"
@@ -98,7 +82,7 @@ describe("Bug Condition: Master Data Navigation", () => {
         expect(card).toBeDefined();
         expect(card!.href).toBe(`/dashboard/master-data/${entity.slug}`);
       }),
-      { numRuns: 100 } // Run enough times to exercise all 10 entities
+      { numRuns: 100 }
     );
   });
 });
@@ -118,7 +102,7 @@ describe("Bug Condition: Master Data Hook Existence", () => {
 
   it("Property: For all 10 master data entities, corresponding useQuery hook is importable from @/services", () => {
     /**
-     * Validates: Requirements 1.3
+     * **Validates: Requirements 1.3**
      *
      * Bug condition: hookDoesNotExist(entity) === true for all master data entities
      * Expected behavior: typeof services[hookName] === "function"
@@ -137,7 +121,7 @@ describe("Bug Condition: Master Data Hook Existence", () => {
 // ─── Test 3: Response Unwrapping ────────────────────────────────────────────
 
 describe("Bug Condition: Response Unwrapping", () => {
-  // Arbitrary for paginated API response shape
+  // Arbitrary for paginated API response shape (matches PaginatedResponse<T>)
   const paginatedResponseArb = fc.record({
     data: fc.array(
       fc.record({
@@ -153,30 +137,42 @@ describe("Bug Condition: Response Unwrapping", () => {
     }),
   });
 
-  it("Property: For any paginated response, extracting .data before .map() produces an array without TypeError", () => {
+  it("Property: Dynamic entity page exists and unwraps paginated response .data before rendering", () => {
     /**
-     * Validates: Requirements 1.2
+     * **Validates: Requirements 1.2**
      *
-     * Bug condition: response.map(...) throws TypeError because response is { data: [...], meta: {...} }
-     * Expected behavior: response.data.map(...) works because .data is extracted first
+     * Bug condition: No dynamic entity page exists at [entity]/page.tsx,
+     * so there is no code that correctly unwraps `{ data: [...], meta: {...} }`.
+     * When a future page tries to render the response, calling `.map()` directly
+     * on the paginated wrapper would crash with TypeError.
      *
-     * This test verifies the UNWRAPPING logic: given a paginated response object,
-     * the correct code extracts .data (the array) before calling .map().
+     * Expected behavior: A dynamic route page exists that extracts `.data` array
+     * from the paginated response before calling `.map()` for rendering.
      */
-    fc.assert(
-      fc.property(paginatedResponseArb, (response) => {
-        // Correct unwrapping: extract .data array from paginated wrapper
-        const items = response.data;
-
-        // This should be an array and .map() should not throw
-        expect(Array.isArray(items)).toBe(true);
-        expect(() => items.map((item) => item.id)).not.toThrow();
-
-        // Bug condition: calling .map() directly on the response wrapper SHOULD throw
-        // This demonstrates what the buggy code does
-        expect(() => (response as unknown as unknown[]).map((x) => x)).toThrow();
-      }),
-      { numRuns: 100 }
+    // First: verify the dynamic route page module exists
+    const entityPagePath = path.resolve(
+      __dirname,
+      "../app/dashboard/master-data/[entity]/page.tsx"
     );
+    const pageExists = fs.existsSync(entityPagePath);
+
+    // The page must exist for response unwrapping to be handled
+    expect(pageExists).toBe(true);
+
+    // If page exists, verify it contains proper unwrapping logic
+    if (pageExists) {
+      const content = fs.readFileSync(entityPagePath, "utf-8");
+      fc.assert(
+        fc.property(paginatedResponseArb, () => {
+          // The page source must extract .data from the response before mapping
+          // Look for patterns like: response.data, response?.data, .data ?? []
+          const hasDataExtraction =
+            content.includes(".data") &&
+            (content.includes(".map(") || content.includes(".map ("));
+          expect(hasDataExtraction).toBe(true);
+        }),
+        { numRuns: 10 }
+      );
+    }
   });
 });

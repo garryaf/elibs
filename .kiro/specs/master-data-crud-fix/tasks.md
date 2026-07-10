@@ -6,7 +6,7 @@ Fix the Master Data CRUD page by: (1) correcting all 10 card navigation hrefs, (
 
 ## Tasks
 
-- [-] 1. Write bug condition exploration test
+- [x] 1. Write bug condition exploration test
   - **Property 1: Bug Condition** - Master Data Navigation & Data Rendering Broken
   - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
   - **DO NOT attempt to fix the test or the code when it fails**
@@ -23,7 +23,7 @@ Fix the Master Data CRUD page by: (1) correcting all 10 card navigation hrefs, (
   - Mark task complete when test is written, run, and failure is documented
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 2. Write preservation property tests (BEFORE implementing fix)
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
   - **Property 2: Preservation** - Existing Services and Navigation Unchanged
   - **IMPORTANT**: Follow observation-first methodology
   - Test file: `apps/web/src/__tests__/master-data-preservation.test.ts`
@@ -38,9 +38,9 @@ Fix the Master Data CRUD page by: (1) correcting all 10 card navigation hrefs, (
   - Mark task complete when tests are written, run, and passing on unfixed code
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 3. Fix card navigation hrefs in master-data page
+- [x] 3. Fix card navigation hrefs in master-data page
 
-  - [ ] 3.1 Update all 10 masterDataItems href values
+  - [x] 3.1 Update all 10 masterDataItems href values
     - File: `apps/web/src/app/dashboard/master-data/page.tsx`
     - Change `href: "/dashboard/settings"` → `href: "/dashboard/master-data/kategori-pemeriksaan"` for Kategori Pemeriksaan
     - Change `href: "/dashboard/settings"` → `href: "/dashboard/master-data/pemeriksaan-lab"` for Pemeriksaan Lab
@@ -57,9 +57,9 @@ Fix the Master Data CRUD page by: (1) correcting all 10 card navigation hrefs, (
     - _Preservation: Card grid layout, icons, names, descriptions remain unchanged (only href values change)_
     - _Requirements: 2.1, 3.3_
 
-- [ ] 4. Create TanStack Query service hooks for master data (Satuan & Jenis Sampel first)
+- [x] 4. Create TanStack Query service hooks for master data (Satuan & Jenis Sampel first)
 
-  - [ ] 4.1 Create `apps/web/src/services/master-data.ts` with hooks for Satuan (measurement-units)
+  - [x] 4.1 Create `apps/web/src/services/master-data.ts` with hooks for Satuan (measurement-units)
     - Define `masterDataKeys.units` query key factory
     - Implement `useMasterUnits(params?)` — calls `apiClient.get('/api/v1/master/units')` with pagination params
     - Implement `useCreateMasterUnit()` — POST to `/api/v1/master/units`, invalidates units query cache
@@ -69,13 +69,13 @@ Fix the Master Data CRUD page by: (1) correcting all 10 card navigation hrefs, (
     - _Expected_Behavior: useMasterUnits returns { data: { data: T[], meta }, isLoading, error }_
     - _Requirements: 2.3, 2.4_
 
-  - [ ] 4.2 Add hooks for Jenis Sampel (sample-types)
+  - [x] 4.2 Add hooks for Jenis Sampel (sample-types)
     - Define `masterDataKeys.sampleTypes` query key factory
     - Implement `useMasterSampleTypes(params?)` — calls `apiClient.get('/api/v1/master/sample-types')`
     - Implement `useCreateMasterSampleType()`, `useUpdateMasterSampleType()`, `useDeleteMasterSampleType()`
     - _Requirements: 2.3, 2.4_
 
-  - [ ] 4.3 Add hooks for remaining 8 entities
+  - [x] 4.3 Add hooks for remaining 8 entities
     - Dokter: `useMasterDoctors`, `useCreateMasterDoctor`, `useUpdateMasterDoctor`, `useDeleteMasterDoctor` → `/api/v1/master/doctors`
     - Klinik: `useMasterClinics`, `useCreateMasterClinic`, `useUpdateMasterClinic`, `useDeleteMasterClinic` → `/api/v1/master/clinics`
     - Asuransi: `useMasterInsurances`, `useCreateMasterInsurance`, `useUpdateMasterInsurance`, `useDeleteMasterInsurance` → `/api/v1/master/insurances`
@@ -86,31 +86,31 @@ Fix the Master Data CRUD page by: (1) correcting all 10 card navigation hrefs, (
     - Panel: `useMasterPanels`, `useCreateMasterPanel`, `useUpdateMasterPanel`, `useDeleteMasterPanel` → `/api/v1/master/panels`
     - _Requirements: 2.3, 2.4_
 
-  - [ ] 4.4 Update `apps/web/src/services/index.ts` barrel export
+  - [x] 4.4 Update `apps/web/src/services/index.ts` barrel export
     - Add `export * from "./master-data"` to the barrel file
     - Ensure existing exports (patients, orders, lab, dashboard, users) remain unchanged
     - _Preservation: Existing service exports must remain importable from "@/services"_
     - _Requirements: 2.3, 3.2_
 
-- [ ] 5. Create shared CRUD components with response unwrapping
+- [x] 5. Create shared CRUD components with response unwrapping
 
-  - [ ] 5.1 Create `apps/web/src/components/master-data/MasterDataTable.tsx`
+  - [x] 5.1 Create `apps/web/src/components/master-data/MasterDataTable.tsx`
     - Accept props: `columns`, `data[]`, `meta` (pagination), `onEdit`, `onDelete`, `onSearch`, `isLoading`
     - Render table rows with action buttons (Edit, Delete)
     - Handle pagination via `meta.page`, `meta.totalPages`
     - Include search input with debounce
     - _Requirements: 2.2_
 
-  - [ ] 5.2 Create `apps/web/src/components/master-data/MasterDataFormModal.tsx`
+  - [x] 5.2 Create `apps/web/src/components/master-data/MasterDataFormModal.tsx`
     - Accept props: `fields[]` config (name, label, type, required), `initialData?`, `onSubmit`, `isOpen`, `onClose`
     - Render controlled form inputs based on fields config
     - Handle create mode (empty form) and edit mode (pre-filled with initialData)
     - Call `onSubmit` with form data object
     - _Requirements: 2.4_
 
-- [ ] 6. Create dynamic route page with response unwrapping (Satuan & Jenis Sampel first)
+- [x] 6. Create dynamic route page with response unwrapping (Satuan & Jenis Sampel first)
 
-  - [ ] 6.1 Create `apps/web/src/app/dashboard/master-data/[entity]/page.tsx`
+  - [x] 6.1 Create `apps/web/src/app/dashboard/master-data/[entity]/page.tsx`
     - Read `entity` param from URL using `useParams()`
     - Create entity config map: slug → { useQuery hook, useMutation hooks, columns, form fields, display name }
     - Implement for Satuan (`satuan`) and Jenis Sampel (`jenis-sampel`) first
@@ -124,14 +124,14 @@ Fix the Master Data CRUD page by: (1) correcting all 10 card navigation hrefs, (
     - _Preservation: Non-master-data pages unaffected_
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-  - [ ] 6.2 Add entity configs for remaining 8 entities
+  - [x] 6.2 Add entity configs for remaining 8 entities
     - Add column definitions and form field configs for: kategori-pemeriksaan, pemeriksaan-lab, panel, dokter, klinik, asuransi, alat, reagen
     - Each config maps slug to: display name, query hook, mutation hooks, table columns, form fields
     - _Requirements: 2.1, 2.3_
 
-- [ ] 7. Verify bug condition exploration test now passes
+- [x] 7. Verify bug condition exploration test now passes
 
-  - [ ] 7.1 Re-run bug condition exploration test
+  - [x] 7.1 Re-run bug condition exploration test
     - **Property 1: Expected Behavior** - Master Data Navigation & Data Rendering Fixed
     - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
     - The test from task 1 encodes the expected behavior (correct hrefs, hooks exist, response unwrapped)
@@ -142,7 +142,7 @@ Fix the Master Data CRUD page by: (1) correcting all 10 card navigation hrefs, (
     - Response `.data` array is correctly extracted before `.map()`
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-  - [ ] 7.2 Verify preservation tests still pass
+  - [x] 7.2 Verify preservation tests still pass
     - **Property 2: Preservation** - Existing Services and Navigation Unchanged
     - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
     - Run preservation property tests from step 2
@@ -152,7 +152,7 @@ Fix the Master Data CRUD page by: (1) correcting all 10 card navigation hrefs, (
     - Master Data card visual properties unchanged
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 8. Checkpoint - Ensure all tests pass
+- [x] 8. Checkpoint - Ensure all tests pass
   - Run full test suite: `npx vitest --run` in `apps/web`
   - Ensure bug condition exploration test passes (task 1 test validates fix)
   - Ensure preservation property tests pass (task 2 tests validate no regressions)
