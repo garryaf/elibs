@@ -1,10 +1,12 @@
-import { Controller, Get, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Query, Res, UseGuards, UseInterceptors } from '@nestjs/common';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { Role } from '@prisma/client';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ReportsService } from './reports.service';
+import { PdfReportService } from './pdf-report.service';
 import { ReportQueryDto } from './dto/report-query.dto';
 
 @Controller('api/v1/reports')
@@ -13,7 +15,10 @@ import { ReportQueryDto } from './dto/report-query.dto';
 @UseInterceptors(CacheInterceptor)
 @CacheTTL(60000) // 60 seconds default cache for reports
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) {}
+  constructor(
+    private readonly reportsService: ReportsService,
+    private readonly pdfReportService: PdfReportService,
+  ) {}
 
   @Get('revenue-summary')
   async getRevenueSummary(@Query() query: ReportQueryDto) {
@@ -49,5 +54,38 @@ export class ReportsController {
   async getTurnaroundTime(@Query() query: ReportQueryDto) {
     const data = await this.reportsService.getTurnaroundTime(query);
     return { success: true, message: 'Turnaround time report retrieved', data };
+  }
+
+  @Get('revenue-summary/pdf')
+  async getRevenueSummaryPdf(
+    @Query() query: ReportQueryDto,
+    @Res() res: Response,
+  ) {
+    const data = await this.reportsService.getRevenueSummary(query);
+    const pdfBuffer = await this.pdfReportService.generateRevenuePdf(data);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="revenue-report-${new Date().toISOString().slice(0, 10)}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+    res.send(pdfBuffer);
+  }
+
+  @Get('orders-by-status/pdf')
+  async getOrdersByStatusPdf(
+    @Query() query: ReportQueryDto,
+    @Res() res: Response,
+  ) {
+    const data = await this.reportsService.getOrdersByStatus(query);
+    const pdfBuffer =
+      await this.pdfReportService.generateOrderSummaryPdf(data);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="orders-status-report-${new Date().toISOString().slice(0, 10)}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+    res.send(pdfBuffer);
   }
 }

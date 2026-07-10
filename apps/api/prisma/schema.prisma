@@ -35,6 +35,39 @@ enum Role {
   KLINIK_PARTNER
 }
 
+// === RBAC: Permission System ===
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique           // e.g., "patients.create", "orders.read", "lab.verify"
+  name        String                      // Human-readable: "Buat Pasien Baru"
+  description String?
+  resource    String                      // Resource group: "patients", "orders", "lab", "users", "master-data"
+  action      String                      // Action: "create", "read", "update", "delete", "verify", "approve"
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+
+  @@index([resource, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String   @id @default(uuid()) @db.Uuid
+  role         Role                        // References the Role enum (SUPER_ADMIN, ADMIN, etc.)
+  permissionId String   @db.Uuid
+  isGranted    Boolean  @default(true)    // Can be used to explicitly deny
+  createdAt    DateTime @default(now())
+
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([role, permissionId])
+  @@index([role])
+  @@map("role_permissions")
+}
+
 model AuditLog {
   id         String   @id @default(uuid()) @db.Uuid
   userId     String   @db.Uuid
@@ -135,19 +168,20 @@ model TestCategory {
 }
 
 model TestMaster {
-  id                     String    @id @default(uuid()) @db.Uuid
-  code                   String    @unique
-  name                   String
-  categoryId             String    @db.Uuid
-  unit                   String?
-  method                 String?
-  sampleType             String?
-  price                  Decimal   @db.Decimal(12, 2)
-  requiresDoctorApproval Boolean   @default(true)
-  isActive               Boolean   @default(true)
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
-  deletedAt              DateTime?
+  id                         String    @id @default(uuid()) @db.Uuid
+  code                       String    @unique
+  name                       String
+  categoryId                 String    @db.Uuid
+  unit                       String?
+  method                     String?
+  sampleType                 String?
+  price                      Decimal   @db.Decimal(12, 2)
+  requiresDoctorApproval     Boolean   @default(true)
+  requiresInsurancePreAuth   Boolean   @default(false)  // Tests requiring insurance pre-authorization
+  isActive                   Boolean   @default(true)
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  deletedAt                  DateTime?
 
   category        TestCategory     @relation(fields: [categoryId], references: [id])
   referenceValues ReferenceValue[]
@@ -291,6 +325,7 @@ model Insurance {
   patientInsurances  PatientInsurance[]
   orderInsurances    OrderInsurance[] @relation("orderInsurances")
   paymentComponents  PaymentComponent[] @relation("paymentComponents")
+  batchInvoices      BatchInvoice[]
 
   @@map("insurances")
 }
@@ -565,6 +600,7 @@ model Order {
   orderInsurances    OrderInsurance[]
   bpjsDetail         BpjsOrderDetail?
   paymentComponents  PaymentComponent[]
+  batchInvoiceItems  BatchInvoiceItem[]
 
   @@index([status])
   @@index([patientId])
@@ -671,6 +707,63 @@ model PaymentComponent {
 
   @@index([orderId])
   @@map("payment_components")
+}
+
+// === BATCH INVOICE (Corporate Insurance) ===
+
+enum BatchInvoiceStatus {
+  DRAFT
+  SENT
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model BatchInvoice {
+  id            String              @id @default(uuid()) @db.Uuid
+  invoiceNumber String              @unique
+  insuranceId   String              @db.Uuid
+  periodStart   DateTime            @db.Date
+  periodEnd     DateTime            @db.Date
+  totalAmount   Decimal             @db.Decimal(14, 2)
+  orderCount    Int
+  status        BatchInvoiceStatus  @default(DRAFT)
+  dueDate       DateTime?           @db.Date
+  sentAt        DateTime?
+  paidAt        DateTime?
+  paidAmount    Decimal?            @db.Decimal(14, 2)
+  notes         String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  insurance     Insurance @relation(fields: [insuranceId], references: [id])
+  items         BatchInvoiceItem[]
+
+  @@index([insuranceId, status])
+  @@index([status])
+  @@map("batch_invoices")
+}
+
+model BatchInvoiceItem {
+  id              String       @id @default(uuid()) @db.Uuid
+  batchInvoiceId  String       @db.Uuid
+  orderId         String       @db.Uuid
+
+  batchInvoice    BatchInvoice @relation(fields: [batchInvoiceId], references: [id])
+  order           Order        @relation(fields: [orderId], references: [id])
+
+  @@unique([batchInvoiceId, orderId])
+  @@map("batch_invoice_items")
+}
+
+// === SEQUENCE TABLE (for Batch Invoice Number) ===
+
+model BatchInvoiceSequence {
+  id        String @id // format: "YYYYMM" e.g. "202507"
+  lastValue Int    @default(0)
+
+  @@map("batch_invoice_sequences")
 }
 
 model OrderDetail {

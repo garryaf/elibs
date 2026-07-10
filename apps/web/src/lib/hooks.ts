@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiClient } from "./api";
 
+// Re-export utility hooks from the new hooks/ directory
+export { useDebounce, useLocalStorage, useMediaQuery } from "@/hooks";
+
 /**
  * Generic data-fetching hook with loading/error states.
  * Calls fetcher on mount and provides a refresh function.

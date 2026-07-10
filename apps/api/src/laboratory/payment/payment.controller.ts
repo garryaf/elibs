@@ -13,12 +13,16 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaymentService } from './payment.service';
+import { ReceiptService } from './receipt.service';
 import { ProcessPaymentDto } from './dto/process-payment.dto';
 import { SplitPaymentDto } from './dto/split-payment.dto';
 
 @Controller('api/v1/orders/:id')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(
+    private readonly paymentService: PaymentService,
+    private readonly receiptService: ReceiptService,
+  ) {}
 
   @Post('pay')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -61,5 +65,12 @@ export class PaymentController {
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
   async getInvoice(@Param('id', ParseUUIDPipe) id: string) {
     return this.paymentService.getInvoice(id);
+  }
+
+  @Get('receipt')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  async getReceipt(@Param('id', ParseUUIDPipe) id: string) {
+    return this.receiptService.generateReceipt(id);
   }
 }

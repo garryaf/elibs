@@ -39,5 +39,9 @@ export class CreateTestDto {
 
   @IsOptional()
   @IsBoolean()
+  requiresInsurancePreAuth?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 }

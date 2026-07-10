@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { seedMasterData } from './master-data-seed';
+import { seedPermissions } from './permission-seed';
 
 const prisma = new PrismaClient();
 
@@ -92,6 +93,7 @@ async function main(): Promise<void> {
   await seedSampleUsers();
   await seedTestCategories();
   await seedMasterData();
+  await seedPermissions();
 
   console.log('\n[seed] ✅ Seeding complete!');
   console.log('[seed] Accounts available:');

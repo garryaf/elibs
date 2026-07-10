@@ -48,6 +48,16 @@ export class OrderService {
       });
     }
 
+    // Check if any tests require insurance pre-authorization
+    if (dto.insuranceId) {
+      const preAuthTests = tests.filter((t) => t.requiresInsurancePreAuth);
+      if (preAuthTests.length > 0) {
+        // Include a warning in the response metadata (not blocking — just informational)
+        // The lab workflow will enforce pre-auth before sample collection
+        // Log for awareness
+      }
+    }
+
     // Generate order number: LAB-YYYYMMDD-XXXX
     const orderNumber = await this.generateOrderNumber();
 

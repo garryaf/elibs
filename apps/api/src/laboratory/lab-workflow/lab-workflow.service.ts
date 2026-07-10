@@ -43,6 +43,37 @@ export class LabWorkflowService {
       );
     }
 
+    // Check insurance pre-authorization requirement
+    if (order.insuranceId) {
+      const testsRequiringPreAuth = await this.prisma.orderDetail.findMany({
+        where: { orderId, test: { requiresInsurancePreAuth: true } },
+        include: { test: { select: { id: true, name: true, code: true } } },
+      });
+
+      if (testsRequiringPreAuth.length > 0) {
+        // Check if BPJS detail exists and is verified
+        const bpjsDetail = await this.prisma.bpjsOrderDetail.findUnique({
+          where: { orderId },
+        });
+        const isVerified = bpjsDetail?.verificationStatus === 'VERIFIED';
+
+        // Check if any OrderInsurance claim is at least submitted
+        const orderInsurance = await this.prisma.orderInsurance.findFirst({
+          where: { orderId },
+        });
+        const hasClaimApproval = orderInsurance &&
+          ['APPROVED', 'PARTIALLY_APPROVED', 'SUBMITTED', 'UNDER_REVIEW'].includes(orderInsurance.claimStatus);
+
+        if (!isVerified && !hasClaimApproval) {
+          const testNames = testsRequiringPreAuth.map((od) => od.test.name).join(', ');
+          throw new BadRequestException({
+            errorCode: 'ERR_PRE_AUTH_REQUIRED',
+            message: `Pemeriksaan berikut memerlukan pre-otorisasi asuransi sebelum pengambilan sampel: ${testNames}. Pastikan verifikasi BPJS/asuransi telah dilakukan.`,
+          });
+        }
+      }
+    }
+
     if (!order.barcode || !order.barcodeImage) {
       throw new BadRequestException(
         'Order must have a valid barcode before sample collection',

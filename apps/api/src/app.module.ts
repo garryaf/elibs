@@ -6,6 +6,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { redisStore } from 'cache-manager-redis-yet';
 import { envValidationSchema } from './config/env.validation';
 import { PrismaModule } from './common/prisma/prisma.module';
+import { CryptoModule } from './common/crypto/crypto.module';
+import { RbacModule } from './common/rbac/rbac.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { LaboratoryModule } from './laboratory/laboratory.module';
@@ -41,6 +43,8 @@ import { HealthModule } from './health/health.module';
       },
     }),
     PrismaModule,
+    CryptoModule,
+    RbacModule,
     UsersModule,
     AuthModule,
     LaboratoryModule,

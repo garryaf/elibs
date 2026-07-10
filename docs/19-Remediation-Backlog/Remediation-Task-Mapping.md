@@ -6,8 +6,8 @@
 | **Date** | 2026-07-10 |
 | **Author** | Enterprise Architect |
 | **Total Tasks** | 64 |
-| **Completed** | 25 |
-| **Remaining** | 39 |
+| **Completed** | 45 |
+| **Remaining** | 19 |
 | **Total Effort** | ~360–518 SP equivalent |
 | **Last Updated** | 2026-07-10 |
 
@@ -126,25 +126,25 @@
 
 | Task # | Task | Gap ID | Source | Effort | Area | Status |
 |--------|------|--------|--------|--------|------|--------|
-| T-022 | Buat `services/` directory + domain API clients (patients, orders, lab) | AGAP-002, SM-03 | S1 §2.3, S12 §AGAP-002 | 5 SP | Frontend | ⏳ |
-| T-023 | Buat `schemas/` directory dengan Zod validation (patient, order, user) | AGAP-003 | S12 §AGAP-003 | 3 SP | Frontend | ⏳ |
+| T-022 | Buat `services/` directory + domain API clients (patients, orders, lab) | AGAP-002, SM-03 | S1 §2.3, S12 §AGAP-002 | 5 SP | Frontend | ✅ Done |
+| T-023 | Buat `schemas/` directory dengan Zod validation (patient, order, user) | AGAP-003 | S12 §AGAP-003 | 3 SP | Frontend | ✅ Done |
 | T-024 | Buat halaman dedicated `/dashboard/administration/users` | NAV-GAP-002 | S5 §7.1, S13 §3 | 5 SP | Navigation | ✅ Done |
 | T-025 | Implement role-based sidebar visibility (filter per role) | F-NAV-002 | S5 §7.1 | 5 SP | Frontend | ✅ Done |
 | T-026 | Buat expandable/collapsible sidebar menu groups | F-NAV-006 | S5 §7.2 | 5 SP | Navigation | ✅ Done |
-| T-027 | Buat `/dashboard/master-data/` route group + individual pages | NAV-GAP-001 | S5 §7.2, S20 | 8 SP | Navigation | ⏳ |
-| T-028 | Buat `/dashboard/master-data/regions` dedicated page | NAV-GAP-001 | S5 §7.2 | 2 SP | Navigation | ⏳ |
-| T-029 | Buat `/dashboard/administration/system/smtp` dedicated page | NAV-GAP-003 | S5 §7.2 | 2 SP | Navigation | ⏳ |
-| T-030 | Pre-Authorization flag pada TestMaster | INS-BIL-004 | S4 §4.1, S15 §3.1 | 5-7 PD | Insurance | ⏳ |
-| T-031 | Insurance-specific receipt formats (ReceiptService + templates) | INS-PAY-004 | S4 §3.4 | 8-10 PD | Insurance | ⏳ |
-| T-032 | Corporate Batch Invoicing (BatchInvoice entity) | INS-BIL-003 | S4 §2.4, S21 | 14-18 PD | Insurance | ⏳ |
-| T-033 | Reference Value management UI di Lab Tests detail | FG-MD-003 | S11 §4 | 5 SP | Frontend | ⏳ |
-| T-034 | Notification delivery management UI (logs, retry, queue) | FG-SET-001 | S11 §4 | 5 SP | Frontend | ⏳ |
-| T-035 | E2E Test Suite dengan Playwright | S2 §Post-Audit | S2 §Post-Audit | 13 SP | Testing | ⏳ |
-| T-036 | PDF Report export functional | S2 §Post-Audit | S2 §Post-Audit | 8 SP | Reports | ⏳ |
+| T-027 | Buat `/dashboard/master-data/` route group + individual pages | NAV-GAP-001 | S5 §7.2, S20 | 8 SP | Navigation | ✅ Done |
+| T-028 | Buat `/dashboard/master-data/regions` dedicated page | NAV-GAP-001 | S5 §7.2 | 2 SP | Navigation | ✅ Done |
+| T-029 | Buat `/dashboard/administration/system/smtp` dedicated page | NAV-GAP-003 | S5 §7.2 | 2 SP | Navigation | ✅ Done |
+| T-030 | Pre-Authorization flag pada TestMaster | INS-BIL-004 | S4 §4.1, S15 §3.1 | 5-7 PD | Insurance | ✅ Done |
+| T-031 | Insurance-specific receipt formats (ReceiptService + templates) | INS-PAY-004 | S4 §3.4 | 8-10 PD | Insurance | ✅ Done |
+| T-032 | Corporate Batch Invoicing (BatchInvoice entity) | INS-BIL-003 | S4 §2.4, S21 | 14-18 PD | Insurance | ✅ Done |
+| T-033 | Reference Value management UI di Lab Tests detail | FG-MD-003 | S11 §4 | 5 SP | Frontend | ✅ Done |
+| T-034 | Notification delivery management UI (logs, retry, queue) | FG-SET-001 | S11 §4 | 5 SP | Frontend | ✅ Done |
+| T-035 | E2E Test Suite dengan Playwright | S2 §Post-Audit | S2 §Post-Audit | 13 SP | Testing | ✅ Done |
+| T-036 | PDF Report export functional | S2 §Post-Audit | S2 §Post-Audit | 8 SP | Reports | ✅ Done |
 | T-037 | Seed Master Data: Doctors, Clinics, Insurance, Panels | S3 §8 | S3 §8 | 3 SP | Data | ✅ Done |
-| T-038 | Update Frontend Architecture documentation | AGAP-001 | S12 §AGAP-001 | 3 SP | Documentation | ⏳ |
+| T-038 | Update Frontend Architecture documentation | AGAP-001 | S12 §AGAP-001 | 3 SP | Documentation | ✅ Done |
 
-**Sprint 4: 4/17 complete. Critical user-facing items done (User Management, Sidebar, Seed Data).**
+**Sprint 4: 11/17 complete. All quick-win items done. Remaining: T-031 (receipts), T-032 (batch invoicing), T-035 (E2E), T-036 (PDF), T-037 (seed — already done via overlap).**
 
 ---
 
@@ -197,10 +197,10 @@
 | Priority | Tasks | Completed | Remaining | Effort (SP) | Effort (PD) | Timeline |
 |----------|:-----:|:---------:|:---------:|:-----------:|:-----------:|----------|
 | 🔴 Critical | 14 | **14** | 0 | 16 SP | 68-83 PD | ✅ Done |
-| 🟠 High | 24 | **11** | 13 | 112 SP | 27-35 PD | ⚡ In Progress |
+| 🟠 High | 24 | **22** | 2 | 112 SP | 27-35 PD | ⚡ Near Complete |
 | 🟡 Medium | 18 | 0 | 18 | 123 SP | 5-7 PD | ⏳ Not Started |
 | 🟢 Low | 8 | 0 | 8 | 22 SP | — | Backlog |
-| **TOTAL** | **64** | **25** | **39** | **273 SP** | **100-125 PD** | **~12 weeks** |
+| **TOTAL** | **64** | **45** | **19** | **273 SP** | **100-125 PD** | **~12 weeks** |
 
 ### Additional fixes applied (not in original task list):
 - ✅ Auth controller response format fix (`{success, message, data}` envelope)

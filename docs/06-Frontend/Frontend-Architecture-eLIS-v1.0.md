@@ -67,3 +67,26 @@ Aplikasi akan mengadopsi pola struktur direktori berbasis fitur (*Feature-Sliced
 
 ---
 **END OF FRONTEND ARCHITECTURE**
+
+---
+
+## Appendix: Current Implementation Status (2026-07-10)
+
+### Implemented (matching this spec):
+- ✅ Next.js App Router with TypeScript strict mode
+- ✅ Tailwind CSS for styling
+- ✅ TanStack Query (React Query) v5 — installed with QueryClientProvider
+- ✅ `services/` directory with domain-organized TanStack Query hooks (patients, orders, lab, dashboard, users)
+- ✅ `schemas/` directory with Zod validation schemas (patient, order, user, visit)
+- ✅ `providers/` directory for client-side providers (QueryProvider)
+
+### Partially Implemented:
+- ⚠️ Feature-Sliced Design — using domain-organized components under `components/` but not full FSD layers
+- ⚠️ Shadcn/UI — not yet installed, using custom Tailwind components
+- ⚠️ React Hook Form — not yet integrated with Zod schemas (schemas ready, forms use useState)
+- ⚠️ Dark Mode — CSS variables defined but no theme toggle implemented
+
+### Not Yet Implemented:
+- ❌ Zustand for client state
+- ❌ Full responsive mobile-first with hamburger menu
+- ❌ Component library (Shadcn/UI primitives)

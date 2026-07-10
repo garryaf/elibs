@@ -18,6 +18,7 @@ import {
   UserCog,
   Database,
   FlaskConical,
+  Bell,
 } from "lucide-react";
 
 // ─── Role-based menu configuration ──────────────────────────────────────────
@@ -98,7 +99,7 @@ const menuGroups: MenuGroup[] = [
       },
       {
         name: "Master Data",
-        href: "/dashboard/settings",
+        href: "/dashboard/master-data",
         icon: Database,
         roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN"],
       },
@@ -107,6 +108,12 @@ const menuGroups: MenuGroup[] = [
         href: "/dashboard/reports",
         icon: BarChart3,
         roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "KASIR"],
+      },
+      {
+        name: "Notifikasi",
+        href: "/dashboard/administration/notifications",
+        icon: Bell,
+        roles: ["SUPER_ADMIN", "OWNER", "ADMIN"],
       },
       {
         name: "Audit Trail",
