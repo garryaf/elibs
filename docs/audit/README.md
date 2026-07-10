@@ -98,8 +98,8 @@ Gap Matrix dengan kolom `Supersedes` atau `Cross-Ref`.
 |---|---|---|
 | `01-login-auth.md` | Login & Auth | ✅ Done (wave 1) |
 | `02-settings-users.md` | Pengaturan → Users | ✅ Done (wave 1) |
-| `03-patients.md` | Pasien | ⏳ Planned |
-| `04-registration.md` | Registrasi | ⏳ Planned |
+| `03-patients.md` | Pasien | ✅ Done (wave 2) |
+| `04-registration.md` | Registrasi | ✅ Done (wave 2) |
 | `05-visits.md` | Kunjungan | ⏳ Planned |
 | `06-orders-payment.md` | Order & Kasir | ⏳ Planned |
 | `07-laboratory.md` | Laboratorium | ⏳ Planned |
