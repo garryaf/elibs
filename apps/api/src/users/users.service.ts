@@ -11,6 +11,8 @@ const userSelect = {
   email: true,
   name: true,
   role: true,
+  departmentId: true,
+  positionId: true,
   createdAt: true,
   updatedAt: true,
   deletedAt: true,
@@ -116,6 +118,8 @@ export class UsersService {
     if (dto.password) {
       data.passwordHash = await bcrypt.hash(dto.password, 12);
     }
+    if (dto.departmentId !== undefined) data.departmentId = dto.departmentId;
+    if (dto.positionId !== undefined) data.positionId = dto.positionId;
 
     return this.prisma.user.update({
       where: { id },

@@ -14,9 +14,14 @@ model User {
   name         String?
   passwordHash String
   role         Role
+  departmentId String?   @db.Uuid
+  positionId   String?   @db.Uuid
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
+
+  department Department? @relation(fields: [departmentId], references: [id])
+  position   Position?   @relation(fields: [positionId], references: [id])
 
   @@map("users")
 }
@@ -239,20 +244,22 @@ model PanelTest {
 }
 
 model Tariff {
-  id          String   @id @default(uuid()) @db.Uuid
-  testId      String   @db.Uuid
-  clinicId    String?  @db.Uuid
-  insuranceId String?  @db.Uuid
-  price       Decimal  @db.Decimal(12, 2)
-  discount    Decimal  @default(0) @db.Decimal(5, 2)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String    @id @default(uuid()) @db.Uuid
+  testId        String    @db.Uuid
+  clinicId      String?   @db.Uuid
+  insuranceId   String?   @db.Uuid
+  price         Decimal   @db.Decimal(12, 2)
+  discount      Decimal   @default(0) @db.Decimal(5, 2)
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   test      TestMaster @relation(fields: [testId], references: [id])
   clinic    Clinic?    @relation(fields: [clinicId], references: [id])
   insurance Insurance? @relation(fields: [insuranceId], references: [id])
 
-  @@unique([testId, clinicId, insuranceId])
+  @@unique([testId, clinicId, insuranceId, effectiveFrom])
   @@map("tariffs")
 }
 
@@ -864,4 +871,97 @@ model SystemSetting {
   updatedAt DateTime @updatedAt
 
   @@map("system_settings")
+}
+
+// === APPROVAL WORKFLOW ===
+
+enum ApprovalType {
+  TARIFF_CHANGE
+  HIGH_VALUE_ORDER
+  MASTER_DATA_DELETE
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model ApprovalRequest {
+  id           String         @id @default(uuid()) @db.Uuid
+  requestType  ApprovalType
+  requesterId  String         @db.Uuid
+  currentLevel Int            @default(1)
+  maxLevel     Int            @default(1)
+  status       ApprovalStatus @default(PENDING)
+  payload      Json
+  reason       String?
+  createdAt    DateTime       @default(now())
+  resolvedAt   DateTime?
+
+  steps ApprovalStep[]
+
+  @@index([requestType, status])
+  @@map("approval_requests")
+}
+
+model ApprovalStep {
+  id                String   @id @default(uuid()) @db.Uuid
+  approvalRequestId String   @db.Uuid
+  level             Int
+  approverId        String   @db.Uuid
+  action            String
+  comment           String?
+  actedAt           DateTime @default(now())
+
+  request ApprovalRequest @relation(fields: [approvalRequestId], references: [id])
+
+  @@index([approvalRequestId])
+  @@map("approval_steps")
+}
+
+
+// === DEPARTMENT & POSITION ===
+
+model Department {
+  id          String    @id @default(uuid()) @db.Uuid
+  code        String    @unique
+  name        String
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  positions Position[]
+  users     User[]
+
+  @@map("departments")
+}
+
+model Position {
+  id           String   @id @default(uuid()) @db.Uuid
+  code         String   @unique
+  name         String
+  departmentId String   @db.Uuid
+  level        Int      @default(1)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  department Department @relation(fields: [departmentId], references: [id])
+  users      User[]
+
+  @@map("positions")
+}
+
+// === ROLE HIERARCHY ===
+
+model RoleHierarchy {
+  id         String @id @default(uuid()) @db.Uuid
+  role       Role   @unique
+  parentRole Role?
+  level      Int    @default(0)
+
+  @@map("role_hierarchy")
 }

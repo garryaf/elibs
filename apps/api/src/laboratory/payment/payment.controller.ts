@@ -7,6 +7,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -17,6 +18,8 @@ import { ReceiptService } from './receipt.service';
 import { ProcessPaymentDto } from './dto/process-payment.dto';
 import { SplitPaymentDto } from './dto/split-payment.dto';
 
+@ApiTags('Payments')
+@ApiBearerAuth()
 @Controller('api/v1/orders/:id')
 export class PaymentController {
   constructor(
@@ -27,6 +30,7 @@ export class PaymentController {
   @Post('pay')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Process payment for an order' })
   async processPayment(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ProcessPaymentDto,
@@ -38,6 +42,7 @@ export class PaymentController {
   @Post('split-pay')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Process split payment for an order' })
   async processSplitPayment(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: SplitPaymentDto,
@@ -49,6 +54,7 @@ export class PaymentController {
   @Get('payments')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  @ApiOperation({ summary: 'Get payment components for an order' })
   async getPaymentComponents(@Param('id', ParseUUIDPipe) id: string) {
     return this.paymentService.getPaymentComponents(id);
   }
@@ -56,6 +62,7 @@ export class PaymentController {
   @Get('barcode')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER)
+  @ApiOperation({ summary: 'Get barcode for an order' })
   async getBarcode(@Param('id', ParseUUIDPipe) id: string) {
     return this.paymentService.getBarcode(id);
   }
@@ -63,6 +70,7 @@ export class PaymentController {
   @Get('invoice')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  @ApiOperation({ summary: 'Get invoice for an order' })
   async getInvoice(@Param('id', ParseUUIDPipe) id: string) {
     return this.paymentService.getInvoice(id);
   }
@@ -70,6 +78,7 @@ export class PaymentController {
   @Get('receipt')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  @ApiOperation({ summary: 'Get receipt for an order' })
   async getReceipt(@Param('id', ParseUUIDPipe) id: string) {
     return this.receiptService.generateReceipt(id);
   }

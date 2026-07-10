@@ -10,6 +10,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -19,6 +20,8 @@ import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { AddPatientInsuranceDto, UpdatePatientInsuranceDto } from './dto/manage-patient-insurance.dto';
 
+@ApiTags('Patients')
+@ApiBearerAuth()
 @Controller('api/v1/patients')
 export class PatientController {
   constructor(private readonly patientService: PatientService) {}
@@ -26,6 +29,7 @@ export class PatientController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.KLINIK_PARTNER)
+  @ApiOperation({ summary: 'Register a new patient' })
   async register(@Body() dto: CreatePatientDto) {
     return this.patientService.register(dto);
   }
@@ -33,6 +37,7 @@ export class PatientController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
+  @ApiOperation({ summary: 'List patients with pagination and search' })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -52,6 +57,7 @@ export class PatientController {
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
+  @ApiOperation({ summary: 'Get patient by ID' })
   async findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.patientService.findById(id);
   }
@@ -59,6 +65,7 @@ export class PatientController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update patient by ID' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePatientDto,
@@ -71,6 +78,7 @@ export class PatientController {
   @Get(':id/insurances')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  @ApiOperation({ summary: 'Get patient insurance records' })
   async getPatientInsurances(@Param('id', ParseUUIDPipe) id: string) {
     return this.patientService.getPatientInsurances(id);
   }
@@ -78,6 +86,7 @@ export class PatientController {
   @Post(':id/insurances')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Add insurance to patient' })
   async addPatientInsurance(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddPatientInsuranceDto,
@@ -88,6 +97,7 @@ export class PatientController {
   @Put('insurances/:insuranceId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update patient insurance record' })
   async updatePatientInsurance(
     @Param('insuranceId', ParseUUIDPipe) insuranceId: string,
     @Body() dto: UpdatePatientInsuranceDto,
@@ -98,6 +108,7 @@ export class PatientController {
   @Delete('insurances/:insuranceId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Remove patient insurance record' })
   async removePatientInsurance(
     @Param('insuranceId', ParseUUIDPipe) insuranceId: string,
   ) {

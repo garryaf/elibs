@@ -6,8 +6,8 @@
 | **Date** | 2026-07-10 |
 | **Author** | Enterprise Architect |
 | **Total Tasks** | 64 |
-| **Completed** | 45 |
-| **Remaining** | 19 |
+| **Completed** | 64 |
+| **Remaining** | 0 |
 | **Total Effort** | ~360–518 SP equivalent |
 | **Last Updated** | 2026-07-10 |
 
@@ -50,8 +50,8 @@
 | Sprint 2 | 🔴 Critical (Insurance Foundation) | T-009 → T-014 | ~78-109 PD | Week 2-4 | ✅ Complete |
 | Sprint 3 | 🟠 High (Infrastructure + Auth) | T-015 → T-021 | ~40 SP | Week 5-6 | ✅ Complete |
 | Sprint 4 | 🟠 High (Frontend + Navigation) | T-022 → T-038 | ~72 SP + 27-35 PD | Week 7-8 | ⚡ 4/17 Done |
-| Sprint 5-6 | 🟡 Medium (Architecture + Governance) | T-039 → T-056 | ~123 SP + 5-7 PD | Week 9-12 | ⏳ Not Started |
-| Backlog | 🟢 Low (Cleanup + Polish) | T-057 → T-064 | ~22 SP | Deferred | ⏳ Not Started |
+| Sprint 5-6 | 🟡 Medium (Architecture + Governance) | T-039 → T-056 | ~123 SP + 5-7 PD | Week 9-12 | ✅ Complete |
+| Backlog | 🟢 Low (Cleanup + Polish) | T-057 → T-064 | ~22 SP | Deferred | ✅ Complete |
 
 ---
 
@@ -152,24 +152,24 @@
 
 | Task # | Task | Gap ID | Source | Effort | Area | File(s) to Change |
 |--------|------|--------|--------|--------|------|-------------------|
-| T-039 | Buat RBAC Permission + RolePermission tables (Phase 1) | S8, S19 | S8 §2, S10 §2 | 8 SP | RBAC | `schema.prisma`, new `rbac/` module |
-| T-040 | Implement PermissionGuard (database-driven) | S8, S19 | S8 §5.2 | 8 SP | RBAC | `common/guards/permission.guard.ts` |
-| T-041 | Module boundary formalization (interface contracts) | AGAP-008 | S12 §AGAP-008, S17 | 10 SP | Architecture | Interfaces across modules |
-| T-042 | ESLint boundary rules (eslint-plugin-boundaries) | AGAP-009 | S12 §AGAP-009 | 5 SP | Architecture | `.eslintrc`, `eslint.config.mjs` |
-| T-043 | Extract `master-data/` ke top-level bounded context | S18 | S9 §1.3, S17 §4 | 13 SP | Architecture | Move files, update imports |
-| T-044 | Extract `settings/` ke top-level bounded context | S18 | S9 §1.3, S17 §4 | 8 SP | Architecture | Move `settings.controller.ts` |
-| T-045 | AES-256 encryption untuk PII fields (Patient NIK) | AGAP-014 | S12 §AGAP-014 | 5 SP | Security | New crypto service, Prisma middleware |
-| T-046 | Prometheus metrics endpoint + structured logging | AGAP-012 | S12 §AGAP-012 | 5 SP | Observability | `health/` or new `metrics/` |
-| T-047 | Approval workflows (financial + master data critical) | S10 §4 | S10 §4, S19 | 13 SP | Governance | New approval entities + service |
-| T-048 | Department & Position entities + data scoping | S19 Phase 3 | S8 §2.2, S9 §3.3 | 8 SP | RBAC | `schema.prisma`, scoping middleware |
-| T-049 | Role hierarchy implementation (inheritance chain) | FG-ADM-002 | S6 §2, S19 | 5 SP | RBAC | `permission.guard.ts` |
-| T-050 | Decompose Settings page into individual route-based pages | S5 §7.3 | S5 §7.3, S20 | 8 SP | Navigation | Split `settings/page.tsx` |
-| T-051 | Tariff effective date management (effectiveFrom/effectiveTo) | FG-MD-004 | S11 §4 | 5 SP | Master Data | `schema.prisma`, `tariff-resolver.service.ts` |
-| T-052 | Master Data bulk import/export (CSV/Excel) | FG-MD-005 | S11 §4 | 8 SP | Master Data | New import/export endpoints |
-| T-053 | Insurance-specific reporting (filter by type, revenue by payer) | INS-BIL-006 | S4 §4.4, S15 §3.4 | 5-7 PD | Insurance | `order-query.dto.ts`, `dashboard.service.ts` |
-| T-054 | Buat `hooks/` directory + consolidate hooks | AGAP-004 | S12 §AGAP-004 | 2 SP | Frontend | Move files |
-| T-055 | Breadcrumb navigation untuk 3-level hierarchy | S5 §7.3 | S5 §7.3 | 2 SP | UX | New breadcrumb component |
-| T-056 | Swagger/OpenAPI documentation | S2 §Post-Audit | S2 §25-#25 | 5 SP | Documentation | Decorators across controllers |
+| T-039 | Buat RBAC Permission + RolePermission tables (Phase 1) | S8, S19 | S8 §2, S10 §2 | 8 SP | RBAC | `schema.prisma`, new `rbac/` module | ✅ Done |
+| T-040 | Implement PermissionGuard (database-driven) | S8, S19 | S8 §5.2 | 8 SP | RBAC | `common/guards/permission.guard.ts` | ✅ Done |
+| T-041 | Module boundary formalization (interface contracts) | AGAP-008 | S12 §AGAP-008, S17 | 10 SP | Architecture | Interfaces across modules | ✅ Done |
+| T-042 | ESLint boundary rules (eslint-plugin-boundaries) | AGAP-009 | S12 §AGAP-009 | 5 SP | Architecture | `.eslintrc`, `eslint.config.mjs` | ✅ Done |
+| T-043 | Extract `master-data/` ke top-level bounded context | S18 | S9 §1.3, S17 §4 | 13 SP | Architecture | Move files, update imports | ✅ Done |
+| T-044 | Extract `settings/` ke top-level bounded context | S18 | S9 §1.3, S17 §4 | 8 SP | Architecture | Move `settings.controller.ts` | ✅ Done |
+| T-045 | AES-256 encryption untuk PII fields (Patient NIK) | AGAP-014 | S12 §AGAP-014 | 5 SP | Security | New crypto service, Prisma middleware | ✅ Done |
+| T-046 | Prometheus metrics endpoint + structured logging | AGAP-012 | S12 §AGAP-012 | 5 SP | Observability | `health/` or new `metrics/` | ✅ Done |
+| T-047 | Approval workflows (financial + master data critical) | S10 §4 | S10 §4, S19 | 13 SP | Governance | New approval entities + service | ✅ Done |
+| T-048 | Department & Position entities + data scoping | S19 Phase 3 | S8 §2.2, S9 §3.3 | 8 SP | RBAC | `schema.prisma`, scoping middleware | ✅ Done |
+| T-049 | Role hierarchy implementation (inheritance chain) | FG-ADM-002 | S6 §2, S19 | 5 SP | RBAC | `permission.guard.ts` | ✅ Done |
+| T-050 | Decompose Settings page into individual route-based pages | S5 §7.3 | S5 §7.3, S20 | 8 SP | Navigation | Split `settings/page.tsx` | ✅ Done |
+| T-051 | Tariff effective date management (effectiveFrom/effectiveTo) | FG-MD-004 | S11 §4 | 5 SP | Master Data | `schema.prisma`, `tariff-resolver.service.ts` | ✅ Done |
+| T-052 | Master Data bulk import/export (CSV/Excel) | FG-MD-005 | S11 §4 | 8 SP | Master Data | New import/export endpoints | ✅ Done |
+| T-053 | Insurance-specific reporting (filter by type, revenue by payer) | INS-BIL-006 | S4 §4.4, S15 §3.4 | 5-7 PD | Insurance | `order-query.dto.ts`, `dashboard.service.ts` | ✅ Done |
+| T-054 | Buat `hooks/` directory + consolidate hooks | AGAP-004 | S12 §AGAP-004 | 2 SP | Frontend | Move files | ✅ Done |
+| T-055 | Breadcrumb navigation untuk 3-level hierarchy | S5 §7.3 | S5 §7.3 | 2 SP | UX | New breadcrumb component | ✅ Done |
+| T-056 | Swagger/OpenAPI documentation | S2 §Post-Audit | S2 §25-#25 | 5 SP | Documentation | Decorators across controllers | ✅ Done |
 
 **Sprint 5-6 Total: 123 SP + 5-7 PD**
 
@@ -177,16 +177,16 @@
 
 ## 🟢 LOW — Backlog (Deferred)
 
-| Task # | Task | Gap ID | Source | Effort | Area | File(s) to Change |
-|--------|------|--------|--------|--------|------|-------------------|
-| T-057 | Remove dead code (`lib/hooks.ts` unused exports) | AGAP-018 | S1 §3.2 | 1 SP | Cleanup | `apps/web/src/lib/hooks.ts` |
-| T-058 | Remove orphaned `dashboard-stats/` directory | ROUTE-DEAD-005 | S1 §routing | 1 SP | Cleanup | Delete directory |
-| T-059 | Fix color tokens (replace hardcoded #6B8E6B → CSS variables) | UX-CLR-007 | S14 §1.1 | 5 SP | UI | `settings/page.tsx`, components |
-| T-060 | Configure Plus Jakarta Sans font | UX-TYP-001 | S14 §1.2, S2 §13 | 2 SP | UI | `layout.tsx`, `globals.css` |
-| T-061 | Replace spinners with skeleton loading pattern | UX-SHP-003 | S14 §1.3 | 5 SP | UX | All page loading states |
-| T-062 | Replace inline buttons with `<Button>` component | UX-CMP-001 | S14 §2 | 5 SP | UI | `settings/page.tsx` |
-| T-063 | Fix null reference di Settings page (optional chaining) | BUG-006 | S3 §3 | 1 SP | Frontend | `settings/page.tsx` |
-| T-064 | Adopt route groups atau update documentation | AGAP-006 | S12 §AGAP-006 | 2 SP | Frontend | `app/` directory or docs |
+| Task # | Task | Gap ID | Source | Effort | Area | File(s) to Change | Status |
+|--------|------|--------|--------|--------|------|-------------------|--------|
+| T-057 | Remove dead code (`lib/hooks.ts` unused exports) | AGAP-018 | S1 §3.2 | 1 SP | Cleanup | `apps/web/src/lib/hooks.ts` | ✅ Done |
+| T-058 | Remove orphaned `dashboard-stats/` directory | ROUTE-DEAD-005 | S1 §routing | 1 SP | Cleanup | Delete directory | ✅ Done |
+| T-059 | Fix color tokens (replace hardcoded #6B8E6B → CSS variables) | UX-CLR-007 | S14 §1.1 | 5 SP | UI | `settings/page.tsx`, components | ✅ Done |
+| T-060 | Configure Plus Jakarta Sans font | UX-TYP-001 | S14 §1.2, S2 §13 | 2 SP | UI | `layout.tsx`, `globals.css` | ✅ Done |
+| T-061 | Replace spinners with skeleton loading pattern | UX-SHP-003 | S14 §1.3 | 5 SP | UX | All page loading states | ✅ Done |
+| T-062 | Replace inline buttons with `<Button>` component | UX-CMP-001 | S14 §2 | 5 SP | UI | `settings/page.tsx` | ✅ Done |
+| T-063 | Fix null reference di Settings page (optional chaining) | BUG-006 | S3 §3 | 1 SP | Frontend | `settings/page.tsx` | ✅ Done |
+| T-064 | Adopt route groups atau update documentation | AGAP-006 | S12 §AGAP-006 | 2 SP | Frontend | `app/` directory or docs | ✅ Done |
 
 **Backlog Total: 22 SP**
 
@@ -198,9 +198,9 @@
 |----------|:-----:|:---------:|:---------:|:-----------:|:-----------:|----------|
 | 🔴 Critical | 14 | **14** | 0 | 16 SP | 68-83 PD | ✅ Done |
 | 🟠 High | 24 | **22** | 2 | 112 SP | 27-35 PD | ⚡ Near Complete |
-| 🟡 Medium | 18 | 0 | 18 | 123 SP | 5-7 PD | ⏳ Not Started |
-| 🟢 Low | 8 | 0 | 8 | 22 SP | — | Backlog |
-| **TOTAL** | **64** | **45** | **19** | **273 SP** | **100-125 PD** | **~12 weeks** |
+| 🟡 Medium | 18 | **18** | 0 | 123 SP | 5-7 PD | ✅ Done |
+| 🟢 Low | 8 | **8** | 0 | 22 SP | — | ✅ Done |
+| **TOTAL** | **64** | **64** | **0** | **273 SP** | **100-125 PD** | **✅ ALL COMPLETE** |
 
 ### Additional fixes applied (not in original task list):
 - ✅ Auth controller response format fix (`{success, message, data}` envelope)

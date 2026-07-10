@@ -46,6 +46,10 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  /* T-059: Design system brand colors for utility class usage */
+  --color-brand: #6B8E6B;
+  --color-brand-dark: #5A7D5A;
+  --color-brand-light: oklch(0.55 0.08 145 / 15%);
 }
 
 :root {

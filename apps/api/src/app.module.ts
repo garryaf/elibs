@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
 import { BullModule } from '@nestjs/bullmq';
@@ -8,10 +8,16 @@ import { envValidationSchema } from './config/env.validation';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { CryptoModule } from './common/crypto/crypto.module';
 import { RbacModule } from './common/rbac/rbac.module';
+import { LoggingModule } from './common/logging/logging.module';
+import { TraceIdMiddleware } from './common/logging/trace-id.middleware';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { MasterDataModule } from './master-data/master-data.module';
 import { LaboratoryModule } from './laboratory/laboratory.module';
 import { HealthModule } from './health/health.module';
+import { SettingsModule } from './settings/settings.module';
+import { OrganizationModule } from './organization/organization.module';
+import { ApprovalModule } from './approval/approval.module';
 
 @Module({
   imports: [
@@ -42,13 +48,22 @@ import { HealthModule } from './health/health.module';
         port: parseInt(process.env.REDIS_PORT || '6379', 10),
       },
     }),
-    PrismaModule,
+    LoggingModule,
     CryptoModule,
+    PrismaModule,
     RbacModule,
     UsersModule,
     AuthModule,
+    MasterDataModule,
     LaboratoryModule,
     HealthModule,
+    SettingsModule,
+    OrganizationModule,
+    ApprovalModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TraceIdMiddleware).forRoutes('*');
+  }
+}

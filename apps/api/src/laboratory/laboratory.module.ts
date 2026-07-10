@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { MasterDataModule } from './master-data/master-data.module';
 import { AuditModule } from './audit/audit.module';
 import { PatientModule } from './patient/patient.module';
 import { OrderModule } from './order/order.module';
@@ -13,7 +12,6 @@ import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
-    MasterDataModule,
     AuditModule,
     PatientModule,
     OrderModule,

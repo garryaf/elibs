@@ -12,6 +12,7 @@ import {
   ParseUUIDPipe,
   Logger,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -29,6 +30,8 @@ import { SubmitClaimDto, ApproveClaimDto, RejectClaimDto } from './dto/claim.dto
 import { ProcessFallbackPaymentDto } from './dto/fallback-payment.dto';
 import { VisitIdDeprecationInterceptor } from './interceptors/visit-id-deprecation.interceptor';
 
+@ApiTags('Orders')
+@ApiBearerAuth()
 @Controller('api/v1/orders')
 export class OrderController {
   private readonly logger = new Logger(OrderController.name);
@@ -43,6 +46,7 @@ export class OrderController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @UseInterceptors(VisitIdDeprecationInterceptor)
   @Roles(Role.KASIR, Role.ADMIN, Role.KLINIK_PARTNER)
+  @ApiOperation({ summary: 'Create a new lab order' })
   async create(
     @Body() dto: CreateOrderDto,
     @CurrentUser() user: { id: string; role: Role },
@@ -53,6 +57,7 @@ export class OrderController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
+  @ApiOperation({ summary: 'List orders with pagination and filters' })
   async findAll(@Query() query: OrderQueryDto) {
     return this.orderService.findAll(query);
   }
@@ -62,6 +67,7 @@ export class OrderController {
   @Get('overdue')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  @ApiOperation({ summary: 'Get overdue orders for insurance fallback' })
   async getOverdueOrders() {
     return this.insuranceRejectionService.getOverdueOrders();
   }
@@ -69,6 +75,7 @@ export class OrderController {
   @Post('check-overdue')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Check and mark overdue payments' })
   async checkOverduePayments() {
     return this.insuranceRejectionService.checkOverduePayments();
   }
@@ -76,6 +83,7 @@ export class OrderController {
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
+  @ApiOperation({ summary: 'Get order by ID' })
   async findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.orderService.findById(id);
   }
@@ -83,6 +91,7 @@ export class OrderController {
   @Post(':id/cancel')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Cancel an order' })
   async cancel(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CancelOrderDto,
@@ -96,6 +105,7 @@ export class OrderController {
   @Get(':id/insurances')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  @ApiOperation({ summary: 'Get insurance records for an order' })
   async getOrderInsurances(@Param('id', ParseUUIDPipe) id: string) {
     return this.orderService.getOrderInsurances(id);
   }
@@ -103,6 +113,7 @@ export class OrderController {
   @Post(':id/insurances')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Add insurance coverage to an order' })
   async addOrderInsurance(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddOrderInsuranceDto,
@@ -113,6 +124,7 @@ export class OrderController {
   @Put('insurances/:insuranceId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update order insurance record' })
   async updateOrderInsurance(
     @Param('insuranceId', ParseUUIDPipe) insuranceId: string,
     @Body() dto: UpdateOrderInsuranceDto,
@@ -123,6 +135,7 @@ export class OrderController {
   @Delete('insurances/:insuranceId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Remove insurance coverage from an order' })
   async removeOrderInsurance(
     @Param('insuranceId', ParseUUIDPipe) insuranceId: string,
   ) {
@@ -134,6 +147,7 @@ export class OrderController {
   @Get(':id/bpjs')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER)
+  @ApiOperation({ summary: 'Get BPJS detail for an order' })
   async getBpjsDetail(@Param('id', ParseUUIDPipe) id: string) {
     return this.orderService.getBpjsDetail(id);
   }
@@ -141,6 +155,7 @@ export class OrderController {
   @Post(':id/bpjs')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Create BPJS detail for an order' })
   async createBpjsDetail(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreateBpjsOrderDetailDto,
@@ -151,6 +166,7 @@ export class OrderController {
   @Put(':id/bpjs')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update BPJS detail for an order' })
   async updateBpjsDetail(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateBpjsOrderDetailDto,
@@ -161,6 +177,7 @@ export class OrderController {
   @Post(':id/bpjs/verify')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Verify BPJS eligibility for an order' })
   async verifyBpjs(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: VerifyBpjsDto,
@@ -174,6 +191,7 @@ export class OrderController {
   @Get(':id/claims')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  @ApiOperation({ summary: 'Get claim history for an order' })
   async getClaimHistory(@Param('id', ParseUUIDPipe) id: string) {
     return this.claimService.getClaimHistory(id);
   }
@@ -181,6 +199,7 @@ export class OrderController {
   @Post(':id/claims/submit')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Submit an insurance claim for an order' })
   async submitClaim(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: SubmitClaimDto,
@@ -191,6 +210,7 @@ export class OrderController {
   @Put('claims/:claimId/review')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Mark claim as under review' })
   async reviewClaim(@Param('claimId', ParseUUIDPipe) claimId: string) {
     return this.claimService.reviewClaim(claimId);
   }
@@ -198,6 +218,7 @@ export class OrderController {
   @Put('claims/:claimId/approve')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Approve an insurance claim' })
   async approveClaim(
     @Param('claimId', ParseUUIDPipe) claimId: string,
     @Body() dto: ApproveClaimDto,
@@ -208,6 +229,7 @@ export class OrderController {
   @Put('claims/:claimId/partially-approve')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Partially approve an insurance claim' })
   async partiallyApproveClaim(
     @Param('claimId', ParseUUIDPipe) claimId: string,
     @Body() dto: ApproveClaimDto,
@@ -218,6 +240,7 @@ export class OrderController {
   @Put('claims/:claimId/reject')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Reject an insurance claim' })
   async rejectClaim(
     @Param('claimId', ParseUUIDPipe) claimId: string,
     @Body() dto: RejectClaimDto,
@@ -239,6 +262,7 @@ export class OrderController {
   @Put('claims/:claimId/paid')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Mark insurance claim as paid' })
   async markClaimPaid(@Param('claimId', ParseUUIDPipe) claimId: string) {
     return this.claimService.markClaimPaid(claimId);
   }
@@ -248,6 +272,7 @@ export class OrderController {
   @Post(':id/fallback-payment')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Process cash fallback payment after insurance rejection' })
   async processFallbackPayment(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ProcessFallbackPaymentDto,

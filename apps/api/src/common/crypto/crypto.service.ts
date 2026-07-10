@@ -8,8 +8,9 @@ export class CryptoService {
   private readonly key: Buffer;
 
   constructor(private configService: ConfigService) {
-    // Use JWT_SECRET as basis for encryption key (or a dedicated ENCRYPTION_KEY env var)
-    const secret = configService.get<string>('JWT_SECRET') || '';
+    // Prefer dedicated ENCRYPTION_KEY env var, fallback to JWT_SECRET derivation
+    const encryptionKey = configService.get<string>('ENCRYPTION_KEY');
+    const secret = encryptionKey || configService.get<string>('JWT_SECRET') || '';
     this.key = crypto.createHash('sha256').update(secret).digest();
   }
 

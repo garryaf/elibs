@@ -5,7 +5,6 @@ import { PdfGeneratorService } from './pdf-generator.service';
 import { EmailService } from './email.service';
 import { WhatsAppService } from './whatsapp.service';
 import { EmailProcessor, WhatsAppProcessor } from './notification.processor';
-import { SettingsController } from './settings.controller';
 import { LabWorkflowModule } from '../lab-workflow/lab-workflow.module';
 
 @Module({
@@ -17,7 +16,6 @@ import { LabWorkflowModule } from '../lab-workflow/lab-workflow.module';
     ),
     LabWorkflowModule,
   ],
-  controllers: [SettingsController],
   providers: [
     NotificationService,
     PdfGeneratorService,
