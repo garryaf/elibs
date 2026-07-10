@@ -104,6 +104,11 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
   const [errors, setErrors] = useState<Partial<Record<keyof PatientFormData | "region", string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Guard: only allow edit mode — don't render in create mode
+  if (!editData) {
+    return null;
+  }
+
   // Derive region value for the CascadingRegionSelector
   const regionValue: RegionValue = {
     provinsiId: form.provinsiId,

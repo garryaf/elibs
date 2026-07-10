@@ -1,23 +1,16 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, CheckCircle2, ChevronRight, User, FlaskConical, ArrowLeft, Tag, Loader2 } from "lucide-react";
+import { Search, X, CheckCircle2, ChevronRight, FlaskConical, ArrowLeft, Tag, Loader2, Calendar, Plus } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { VisitSelector, type VisitOption } from "@/components/orders/visit-selector";
+import { InlineVisitCreate } from "@/components/orders/inline-visit-create";
 
 type Step = 1 | 2 | 3;
 
 // ─── Local types matching API responses ─────────────────────────────────────
-
-interface PatientApi {
-  id: string;
-  name: string;
-  mrn: string;
-  nik: string;
-  phone: string;
-  gender: string;
-}
 
 interface TestApi {
   id: string;
@@ -43,7 +36,7 @@ function formatRupiah(n: number) {
 ──────────────────────────────────────────────────────────────── */
 function StepIndicator({ current }: { current: Step }) {
   const steps = [
-    { n: 1, label: "Cari Pasien", icon: User },
+    { n: 1, label: "Pilih Kunjungan", icon: Calendar },
     { n: 2, label: "Pilih Pemeriksaan", icon: FlaskConical },
     { n: 3, label: "Konfirmasi", icon: CheckCircle2 },
   ];
@@ -81,101 +74,100 @@ function StepIndicator({ current }: { current: Step }) {
 }
 
 /* ────────────────────────────────────────────────────────────────
-   STEP 1: PATIENT SEARCH (debounced API call)
+   STEP 1: VISIT SELECTION (mandatory)
 ──────────────────────────────────────────────────────────────── */
-function PatientStep({ onSelect }: { onSelect: (p: PatientApi) => void }) {
-  const [q, setQ] = useState("");
-  const [results, setResults] = useState<PatientApi[]>([]);
-  const [searching, setSearching] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+function VisitStep({
+  selectedVisit,
+  onSelect,
+  onClear,
+}: {
+  selectedVisit: VisitOption | null;
+  onSelect: (visit: VisitOption) => void;
+  onClear: () => void;
+}) {
+  const [showInlineCreate, setShowInlineCreate] = useState(false);
 
-  const searchPatients = useCallback((query: string) => {
-    if (query.trim().length < 2) {
-      setResults([]);
-      return;
+  const handleVisitChange = (visit: VisitOption | null) => {
+    if (visit) {
+      onSelect(visit);
+    } else {
+      onClear();
     }
-    setSearching(true);
-    apiClient
-      .getPatients({ search: query, limit: 10 })
-      .then((res) => {
-        const data = (res as { data: { data: PatientApi[] } }).data;
-        setResults(data.data || []);
-      })
-      .catch(() => setResults([]))
-      .finally(() => setSearching(false));
-  }, []);
+  };
 
-  const handleChange = (value: string) => {
-    setQ(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => searchPatients(value), 300);
+  const handleInlineCreated = (created: { id: string; visitNumber: string; status: string; patient: { id: string; name: string; mrn: string } }) => {
+    const visitOption: VisitOption = {
+      id: created.id,
+      visitNumber: created.visitNumber,
+      status: created.status,
+      registrationDate: new Date().toISOString(),
+      patient: {
+        id: created.patient.id,
+        name: created.patient.name,
+        mrn: created.patient.mrn,
+      },
+    };
+    onSelect(visitOption);
+    setShowInlineCreate(false);
   };
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Cari Pasien</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Ketik nama, NIK, atau MRN pasien. Minimal 2 karakter.</p>
-      </div>
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <input
-          id="new-order-patient-search"
-          type="text"
-          value={q}
-          onChange={(e) => handleChange(e.target.value)}
-          autoFocus
-          placeholder="Cari pasien..."
-          className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-        />
-        {searching && <Loader2 className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400" />}
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Pilih Kunjungan</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Cari dan pilih kunjungan pasien. Minimal 3 karakter untuk mencari.
+        </p>
       </div>
 
-      {q.trim().length >= 2 && !searching && (
-        <div className="space-y-2">
-          {results.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400 dark:border-slate-700">
-              Pasien tidak ditemukan. Pastikan pasien sudah terdaftar terlebih dahulu.
+      <VisitSelector
+        value={selectedVisit}
+        onChange={handleVisitChange}
+        onInlineCreate={() => setShowInlineCreate(true)}
+      />
+
+      {/* Inline create option */}
+      {!selectedVisit && (
+        <button
+          type="button"
+          onClick={() => setShowInlineCreate(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#6B8E6B]/50 px-4 py-3 text-sm font-medium text-[#6B8E6B] transition-colors hover:bg-[#6B8E6B]/5"
+        >
+          <Plus className="h-4 w-4" />
+          Buat Kunjungan Baru
+        </button>
+      )}
+
+      {/* Patient info from selected visit */}
+      {selectedVisit && (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
+          <p className="mb-2 text-xs font-bold tracking-wide text-slate-400 uppercase">Pasien (dari kunjungan)</p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+              {selectedVisit.patient.name.charAt(0)}
             </div>
-          ) : (
-            results.map((p) => (
-              <button
-                key={p.id}
-                id={`order-patient-${p.id}`}
-                onClick={() => onSelect(p)}
-                className="group flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-[#6B8E6B]/50 hover:bg-[#6B8E6B]/10 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-[#6B8E6B] dark:hover:bg-[#6B8E6B]/10"
-              >
-                <div className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold",
-                  p.gender === "MALE" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" : "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
-                )}>
-                  {p.name.charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-slate-900 dark:text-white truncate">{p.name}</div>
-                  <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                    <span className="font-mono text-[#6B8E6B]">{p.mrn}</span>
-                    <span>·</span>
-                    <span>{p.gender === "MALE" ? "Laki-laki" : "Perempuan"}</span>
-                    <span>·</span>
-                    <span>{p.phone}</span>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-slate-300 transition-all group-hover:text-[#6B8E6B]" />
-              </button>
-            ))
-          )}
+            <div>
+              <div className="font-semibold text-slate-900 dark:text-white">{selectedVisit.patient.name}</div>
+              <div className="font-mono text-xs text-[#6B8E6B]">{selectedVisit.patient.mrn}</div>
+            </div>
+          </div>
         </div>
       )}
 
-      {q.trim().length < 2 && (
-        <div className="flex items-start gap-3 rounded-xl bg-blue-50 p-4 dark:bg-blue-900/20">
-          <Search className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            Gunakan kotak pencarian di atas. Sistem akan menampilkan daftar pasien yang cocok secara real-time.
+      {!selectedVisit && (
+        <div className="flex items-start gap-3 rounded-xl bg-amber-50 p-4 dark:bg-amber-900/20">
+          <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            Pilih kunjungan terlebih dahulu untuk melanjutkan. Pasien akan otomatis terisi dari data kunjungan.
           </p>
         </div>
       )}
+
+      <InlineVisitCreate
+        isOpen={showInlineCreate}
+        onClose={() => setShowInlineCreate(false)}
+        onCreated={handleInlineCreated}
+      />
     </div>
   );
 }
@@ -337,12 +329,12 @@ function TestStep({
    STEP 3: CONFIRMATION
 ──────────────────────────────────────────────────────────────── */
 function ConfirmStep({
-  patient,
+  visit,
   selectedTests,
   notes,
   onNotesChange,
 }: {
-  patient: PatientApi;
+  visit: VisitOption;
   selectedTests: TestApi[];
   notes: string;
   onNotesChange: (v: string) => void;
@@ -356,17 +348,31 @@ function ConfirmStep({
         <p className="text-sm text-slate-500 dark:text-slate-400">Periksa kembali detail order sebelum disimpan.</p>
       </div>
 
-      {/* Patient summary */}
+      {/* Visit & Patient summary */}
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
+        <p className="mb-2 text-xs font-bold tracking-wide text-slate-400 uppercase">Kunjungan</p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#6B8E6B]/10 text-[#6B8E6B]">
+            <Calendar className="h-4 w-4" />
+          </div>
+          <div>
+            <div className="font-semibold text-slate-900 dark:text-white">{visit.visitNumber}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              {new Date(visit.registrationDate).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
         <p className="mb-2 text-xs font-bold tracking-wide text-slate-400 uppercase">Pasien</p>
         <div className="flex items-center gap-3">
-          <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold",
-            patient.gender === "MALE" ? "bg-blue-100 text-blue-700" : "bg-rose-100 text-rose-700")}>
-            {patient.name.charAt(0)}
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+            {visit.patient.name.charAt(0)}
           </div>
           <div>
-            <div className="font-semibold text-slate-900 dark:text-white">{patient.name}</div>
-            <div className="font-mono text-xs text-[#6B8E6B]">{patient.mrn} · {patient.phone}</div>
+            <div className="font-semibold text-slate-900 dark:text-white">{visit.patient.name}</div>
+            <div className="font-mono text-xs text-[#6B8E6B]">{visit.patient.mrn}</div>
           </div>
         </div>
       </div>
@@ -417,11 +423,12 @@ function ConfirmStep({
 export default function NewOrderPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
-  const [patient, setPatient] = useState<PatientApi | null>(null);
+  const [selectedVisit, setSelectedVisit] = useState<VisitOption | null>(null);
   const [selectedTests, setSelectedTests] = useState<TestApi[]>([]);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Tests and categories loaded on mount
   const [allTests, setAllTests] = useState<TestApi[]>([]);
@@ -457,19 +464,33 @@ export default function NewOrderPage() {
     );
   };
 
+  const handleVisitSelect = (visit: VisitOption) => {
+    setSelectedVisit(visit);
+    setErrorMessage(null);
+  };
+
+  const handleVisitClear = () => {
+    setSelectedVisit(null);
+    setSelectedTests([]);
+    setNotes("");
+    setErrorMessage(null);
+  };
+
   const handleSubmit = async () => {
-    if (!patient) return;
+    if (!selectedVisit) return;
     setIsSubmitting(true);
+    setErrorMessage(null);
     try {
       await apiClient.createOrder({
-        patientId: patient.id,
+        visitId: selectedVisit.id,
+        patientId: selectedVisit.patient.id,
         testIds: selectedTests.map((t) => t.id),
       });
       setSuccess(true);
       setTimeout(() => router.push("/dashboard/orders"), 1800);
     } catch (err: unknown) {
       const message = err && typeof err === "object" && "message" in err ? (err as { message: string }).message : "Gagal membuat order";
-      alert(message);
+      setErrorMessage(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -484,7 +505,7 @@ export default function NewOrderPage() {
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Order Berhasil Dibuat!</h2>
           <p className="mt-1 text-slate-500 dark:text-slate-400">
-            Pasien <span className="font-semibold text-slate-700 dark:text-slate-300">{patient?.name}</span> sedang diarahkan ke kasir...
+            Pasien <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedVisit?.patient.name}</span> sedang diarahkan ke kasir...
           </p>
         </div>
       </div>
@@ -514,8 +535,10 @@ export default function NewOrderPage() {
       {/* Step content */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
         {step === 1 && (
-          <PatientStep
-            onSelect={(p) => { setPatient(p); setStep(2); }}
+          <VisitStep
+            selectedVisit={selectedVisit}
+            onSelect={handleVisitSelect}
+            onClear={handleVisitClear}
           />
         )}
         {step === 2 && (
@@ -527,9 +550,9 @@ export default function NewOrderPage() {
             loadingTests={loadingTests}
           />
         )}
-        {step === 3 && patient && (
+        {step === 3 && selectedVisit && (
           <ConfirmStep
-            patient={patient}
+            visit={selectedVisit}
             selectedTests={selectedTests}
             notes={notes}
             onNotesChange={setNotes}
@@ -568,8 +591,23 @@ export default function NewOrderPage() {
         </div>
       )}
 
+      {/* Error toast */}
+      {errorMessage && (
+        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-red-800 dark:text-red-300">{errorMessage}</p>
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="rounded-lg p-1 text-red-400 transition-colors hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-800"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Navigation footer */}
-      {step === 1 && patient && (
+      {step === 1 && selectedVisit && (
         <div className="flex justify-end">
           <button
             id="new-order-step1-next"
@@ -597,7 +635,7 @@ export default function NewOrderPage() {
           <button
             id="new-order-submit"
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !selectedVisit}
             className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#5A7D5A] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? (

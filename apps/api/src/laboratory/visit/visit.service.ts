@@ -11,6 +11,7 @@ import { CreateVisitDto } from './dto/create-visit.dto';
 import { UpdateVisitDto } from './dto/update-visit.dto';
 import { CancelVisitDto } from './dto/cancel-visit.dto';
 import { VisitQueryDto } from './dto/visit-query.dto';
+import { OrderQueryDto } from '../order/dto/order-query.dto';
 
 const VISIT_INCLUDE = {
   patient: true,
@@ -279,6 +280,53 @@ export class VisitService {
       success: true,
       message: 'Visit retrieved successfully',
       data: visit,
+    };
+  }
+
+  async findOrdersByVisit(visitId: string, query: OrderQueryDto) {
+    // Verify visit exists
+    const visit = await this.prisma.visit.findUnique({
+      where: { id: visitId },
+    });
+    if (!visit) {
+      throw new NotFoundException({
+        errorCode: 'ERR_NOT_FOUND',
+        message: 'Visit not found',
+      });
+    }
+
+    const page = query.page ? parseInt(query.page, 10) : 1;
+    const limit = Math.min(query.limit ? parseInt(query.limit, 10) : 20, 100);
+    const skip = (page - 1) * limit;
+
+    const where: any = { visitId };
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          orderDetails: true,
+          patient: { select: { id: true, name: true, mrn: true } },
+        },
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return {
+      success: true,
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 

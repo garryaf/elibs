@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, ClipboardPlus, Eye } from "lucide-react";
-import type { PatientOption } from "@/components/visits/PatientSearch";
+import type { PatientOption } from "@/types/visit";
 import { WorkflowStepIndicator } from "@/components/registration/WorkflowStepIndicator";
 import { PatientSearchStep } from "@/components/registration/PatientSearchStep";
 import { PatientRegistrationStep } from "@/components/registration/PatientRegistrationStep";

@@ -3,9 +3,23 @@ import {
   IsArray,
   ArrayMinSize,
   IsOptional,
+  IsNotEmpty,
 } from 'class-validator';
 
 export class CreateOrderDto {
+  /**
+   * UUID of the Visit this order belongs to.
+   * Required — every order must be linked to a valid Visit.
+   * The referenced Visit must be in REGISTERED or IN_PROGRESS status.
+   *
+   * @required true
+   * @format uuid
+   * @example "550e8400-e29b-41d4-a716-446655440000"
+   */
+  @IsNotEmpty({ message: 'visitId is required. Create a Visit first via POST /api/v1/visits' })
+  @IsUUID('4', { message: 'visitId must be a valid UUID' })
+  visitId: string;
+
   @IsUUID()
   patientId: string;
 
@@ -20,10 +34,6 @@ export class CreateOrderDto {
   @IsUUID()
   @IsOptional()
   insuranceId?: string;
-
-  @IsUUID()
-  @IsOptional()
-  visitId?: string;
 
   @IsArray()
   @ArrayMinSize(1)

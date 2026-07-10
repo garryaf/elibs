@@ -1,4 +1,4 @@
-import { IsOptional, IsEnum, IsDateString, IsNumberString } from 'class-validator';
+import { IsOptional, IsEnum, IsDateString, IsNumberString, IsUUID } from 'class-validator';
 import { OrderStatus } from '@prisma/client';
 
 export class OrderQueryDto {
@@ -27,4 +27,8 @@ export class OrderQueryDto {
 
   @IsOptional()
   sortOrder?: 'asc' | 'desc';
+
+  @IsOptional()
+  @IsUUID()
+  visitId?: string;
 }

@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { SearchableDropdown, type DropdownOption } from "@/components/visits/SearchableDropdown";
-import type { PatientOption } from "@/components/visits/PatientSearch";
+import type { PatientOption } from "@/types/visit";
 
 type PaymentMethod = "CASH" | "BPJS" | "INSURANCE";
 

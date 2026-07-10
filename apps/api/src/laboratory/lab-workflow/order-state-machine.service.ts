@@ -10,7 +10,8 @@ export interface TransitionContext {
 }
 
 const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  [OrderStatus.PENDING_PAYMENT]: [OrderStatus.PAID, OrderStatus.CANCELLED],
+  [OrderStatus.PENDING_PAYMENT]: [OrderStatus.PAID, OrderStatus.PAYMENT_OVERDUE, OrderStatus.CANCELLED],
+  [OrderStatus.PAYMENT_OVERDUE]: [OrderStatus.PAID, OrderStatus.CANCELLED],
   [OrderStatus.PAID]: [OrderStatus.SAMPLE_COLLECTED],
   [OrderStatus.SAMPLE_COLLECTED]: [OrderStatus.IN_ANALYSIS],
   [OrderStatus.IN_ANALYSIS]: [OrderStatus.VERIFIED],

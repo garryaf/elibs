@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, User, UserPlus, Loader2, X } from "lucide-react";
 import { apiClient } from "@/lib/api";
-import type { PatientOption } from "@/components/visits/PatientSearch";
+import type { PatientOption } from "@/types/visit";
 
 /** Extended patient data for display purposes (includes phone) */
 interface PatientDisplayData extends PatientOption {

@@ -8,6 +8,6 @@ import { VisitNumberGeneratorService } from './visit-number-generator.service';
   imports: [AuditModule],
   controllers: [VisitController],
   providers: [VisitService, VisitNumberGeneratorService],
-  exports: [VisitService],
+  exports: [VisitService, VisitNumberGeneratorService],
 })
 export class VisitModule {}

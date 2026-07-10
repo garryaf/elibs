@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api";
 import type { Gender } from "@/types/patient";
 import { CascadingRegionSelector, type RegionValue } from "@/components/regions/CascadingRegionSelector";
-import type { PatientOption } from "@/components/visits/PatientSearch";
+import type { PatientOption } from "@/types/visit";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

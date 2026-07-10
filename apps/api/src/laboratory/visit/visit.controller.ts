@@ -21,6 +21,7 @@ import { CreateVisitDto } from './dto/create-visit.dto';
 import { UpdateVisitDto } from './dto/update-visit.dto';
 import { CancelVisitDto } from './dto/cancel-visit.dto';
 import { VisitQueryDto } from './dto/visit-query.dto';
+import { OrderQueryDto } from '../order/dto/order-query.dto';
 
 @Controller('api/v1/visits')
 export class VisitController {
@@ -43,6 +44,15 @@ export class VisitController {
   @UseGuards(JwtAuthGuard)
   async findAll(@Query() query: VisitQueryDto) {
     return this.visitService.findAll(query);
+  }
+
+  @Get(':id/orders')
+  @UseGuards(JwtAuthGuard)
+  async findOrdersByVisit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: OrderQueryDto,
+  ) {
+    return this.visitService.findOrdersByVisit(id, query);
   }
 
   @Get(':id')

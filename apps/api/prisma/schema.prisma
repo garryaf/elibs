@@ -58,6 +58,7 @@ enum Gender {
 
 enum OrderStatus {
   PENDING_PAYMENT
+  PAYMENT_OVERDUE
   PAID
   SAMPLE_COLLECTED
   IN_ANALYSIS
@@ -86,6 +87,9 @@ enum PaymentMethod {
   BPJS
   TRANSFER
   INSURANCE
+  EDC
+  INSURANCE_CASH_FALLBACK
+  CORPORATE_DEFERRED
 }
 
 enum VisitStatus {
@@ -280,12 +284,41 @@ model Insurance {
   updatedAt DateTime       @updatedAt
   deletedAt DateTime?
 
-  orders   Order[]
-  tariffs  Tariff[]
-  patients Patient[]
-  visits   Visit[]
+  orders             Order[]
+  tariffs            Tariff[]
+  patients           Patient[]
+  visits             Visit[]
+  patientInsurances  PatientInsurance[]
+  orderInsurances    OrderInsurance[] @relation("orderInsurances")
+  paymentComponents  PaymentComponent[] @relation("paymentComponents")
 
   @@map("insurances")
+}
+
+// === PATIENT-INSURANCE JUNCTION (M2M with priority) ===
+
+model PatientInsurance {
+  id              String         @id @default(uuid()) @db.Uuid
+  patientId       String         @db.Uuid
+  insuranceId     String         @db.Uuid
+  memberNumber    String?        @db.VarChar(50)  // Insurance member/card number
+  policyNumber    String?        @db.VarChar(50)  // Policy number
+  priority        Int            @default(1)      // 1 = primary, 2 = secondary, etc. (1-5)
+  type            InsuranceType?                  // BPJS, SWASTA, CORPORATE
+  bpjsClassLevel  Int?                            // 1, 2, or 3 (for BPJS only)
+  validFrom       DateTime?      @db.Date
+  validUntil      DateTime?      @db.Date
+  isActive        Boolean        @default(true)
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  patient   Patient   @relation(fields: [patientId], references: [id])
+  insurance Insurance @relation(fields: [insuranceId], references: [id])
+
+  @@unique([patientId, insuranceId])
+  @@index([patientId, priority])
+  @@map("patient_insurances")
 }
 
 // === MASTER DATA: EQUIPMENT ===
@@ -477,6 +510,7 @@ model Patient {
   deletedAt                  DateTime?
 
   insurance        Insurance?     @relation(fields: [insuranceId], references: [id])
+  patientInsurances PatientInsurance[]
   provinsiRef      Provinsi?      @relation(fields: [provinsiId], references: [id])
   kabupatenKotaRef KabupatenKota? @relation(fields: [kabupatenKotaId], references: [id])
   kecamatanRef     Kecamatan?     @relation(fields: [kecamatanId], references: [id])
@@ -496,7 +530,7 @@ model Order {
   clinicId          String?          @db.Uuid
   doctorId          String?          @db.Uuid
   insuranceId       String?          @db.Uuid
-  visitId           String?          @db.Uuid
+  visitId           String           @db.Uuid
   status            OrderStatus      @default(PENDING_PAYMENT)
   totalAmount       Decimal          @db.Decimal(12, 2)
   paymentMethod     PaymentMethod?
@@ -525,14 +559,118 @@ model Order {
   clinic        Clinic?           @relation(fields: [clinicId], references: [id])
   doctor        Doctor?           @relation(fields: [doctorId], references: [id])
   insurance     Insurance?        @relation(fields: [insuranceId], references: [id])
-  visit         Visit?            @relation(fields: [visitId], references: [id])
+  visit         Visit             @relation(fields: [visitId], references: [id], onDelete: Restrict)
   orderDetails  OrderDetail[]
   notifications NotificationLog[]
+  orderInsurances    OrderInsurance[]
+  bpjsDetail         BpjsOrderDetail?
+  paymentComponents  PaymentComponent[]
 
   @@index([status])
   @@index([patientId])
   @@index([createdAt])
   @@map("orders")
+}
+
+// === ORDER-INSURANCE JUNCTION (primary/secondary coverage + claim tracking) ===
+
+enum CoverageType {
+  PRIMARY
+  SECONDARY
+}
+
+enum ClaimStatus {
+  PENDING
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  PARTIALLY_APPROVED
+  REJECTED
+  PAID
+}
+
+model OrderInsurance {
+  id                String        @id @default(uuid()) @db.Uuid
+  orderId           String        @db.Uuid
+  insuranceId       String        @db.Uuid
+  coverageType      CoverageType  @default(PRIMARY)
+  claimReference    String?       @db.VarChar(50)   // Insurance claim number
+  claimStatus       ClaimStatus   @default(PENDING)
+  coveredAmount     Decimal?      @db.Decimal(12, 2) // Amount covered by this insurance
+  copayAmount       Decimal?      @db.Decimal(12, 2) // Patient co-pay for this coverage
+  memberNumber      String?       @db.VarChar(50)    // Member number used for this claim
+  submittedAt       DateTime?
+  approvedAt        DateTime?
+  rejectedAt        DateTime?
+  rejectionReason   String?
+  paidAt            DateTime?
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  order     Order     @relation(fields: [orderId], references: [id])
+  insurance Insurance @relation(fields: [insuranceId], references: [id], name: "orderInsurances")
+
+  @@unique([orderId, coverageType])
+  @@index([orderId])
+  @@index([claimStatus])
+  @@index([insuranceId, claimStatus])
+  @@map("order_insurances")
+}
+
+// === BPJS ORDER DETAIL ===
+
+enum BpjsVerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+  EXPIRED
+}
+
+model BpjsOrderDetail {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  orderId               String                   @unique @db.Uuid
+  sepNumber             String?                  @db.VarChar(19)    // SEP number, max 19 chars
+  verificationStatus    BpjsVerificationStatus   @default(PENDING)
+  referringFacilityCode String?                  @db.VarChar(20)    // Faskes perujuk code
+  referringFacilityName String?                  // Nama faskes perujuk
+  classLevel            Int?                     // 1, 2, or 3
+  diagnosisCode         String?                  @db.VarChar(10)    // ICD-10 code
+  diagnosisName         String?
+  procedureCode         String?                  @db.VarChar(10)    // INA-CBG procedure code
+  guaranteeLetterNo     String?                  @db.VarChar(50)    // Surat Jaminan number
+  coB                   Decimal?                 @db.Decimal(12, 2) // Coordination of Benefits amount
+  verifiedAt            DateTime?
+  verifiedBy            String?                  @db.Uuid
+  notes                 String?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([sepNumber])
+  @@index([verificationStatus])
+  @@map("bpjs_order_details")
+}
+
+// === PAYMENT COMPONENT (split payment support) ===
+
+model PaymentComponent {
+  id            String        @id @default(uuid()) @db.Uuid
+  orderId       String        @db.Uuid
+  paymentMethod PaymentMethod
+  amount        Decimal       @db.Decimal(12, 2)
+  insuranceId   String?       @db.Uuid
+  reference     String?       @db.VarChar(100)  // Transaction reference (e.g., bank transfer ref, EDC approval code)
+  notes         String?
+  paidAt        DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+
+  order     Order      @relation(fields: [orderId], references: [id])
+  insurance Insurance? @relation(fields: [insuranceId], references: [id], name: "paymentComponents")
+
+  @@index([orderId])
+  @@map("payment_components")
 }
 
 model OrderDetail {

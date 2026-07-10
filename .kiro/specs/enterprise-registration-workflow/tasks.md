@@ -184,3 +184,21 @@ Implement a unified, search-first registration workflow that combines patient lo
   ]
 }
 ```
+
+---
+
+## Post-Refactoring Note (Patient Registration Refactor)
+
+> **Date:** July 2026
+> **Related spec:** `.kiro/specs/patient-registration-refactor/`
+
+The standalone visit creation page at `/dashboard/visits/new` has been **removed** and replaced with a server-side redirect (HTTP 308) to `/dashboard/registration`. All patient registration and visit creation paths now flow exclusively through the unified Enterprise Registration Workflow at `/dashboard/registration`.
+
+**Key changes:**
+- `/dashboard/visits/new` → permanent redirect to `/dashboard/registration`
+- All "Registrasi Kunjungan" and "Daftarkan Pasien" buttons across the application now navigate to `/dashboard/registration`
+- `PatientFormModal` on the patients page is restricted to **edit-only** mode — it can no longer create new patients
+- The `PatientSearch` component (`apps/web/src/components/visits/PatientSearch.tsx`) has been removed as dead code
+- The `PatientOption` type has been extracted to `apps/web/src/types/visit.ts`
+
+**Important:** Patient creation is **not possible** outside the search-first workflow. This is by design to enforce deduplication and prevent duplicate patient records. All new patient registrations must go through the 3-step search-first wizard (Cari Pasien → Daftar Pasien → Buat Kunjungan) at `/dashboard/registration`.

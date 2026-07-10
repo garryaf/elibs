@@ -14,6 +14,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaymentService } from './payment.service';
 import { ProcessPaymentDto } from './dto/process-payment.dto';
+import { SplitPaymentDto } from './dto/split-payment.dto';
 
 @Controller('api/v1/orders/:id')
 export class PaymentController {
@@ -28,6 +29,24 @@ export class PaymentController {
     @CurrentUser() user: { id: string; role: Role },
   ) {
     return this.paymentService.processPayment(id, dto, user.id);
+  }
+
+  @Post('split-pay')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  async processSplitPayment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SplitPaymentDto,
+    @CurrentUser() user: { id: string; role: Role },
+  ) {
+    return this.paymentService.processSplitPayment(id, dto, user.id);
+  }
+
+  @Get('payments')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  async getPaymentComponents(@Param('id', ParseUUIDPipe) id: string) {
+    return this.paymentService.getPaymentComponents(id);
   }
 
   @Get('barcode')

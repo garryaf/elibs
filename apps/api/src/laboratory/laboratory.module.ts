@@ -9,6 +9,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { NotificationModule } from './notification/notification.module';
 import { RegionModule } from './region/region.module';
 import { VisitModule } from './visit/visit.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { VisitModule } from './visit/visit.module';
     NotificationModule,
     RegionModule,
     VisitModule,
+    ReportsModule,
   ],
   exports: [
     AuditModule,
@@ -33,6 +35,7 @@ import { VisitModule } from './visit/visit.module';
     NotificationModule,
     RegionModule,
     VisitModule,
+    ReportsModule,
   ],
 })
 export class LaboratoryModule {}

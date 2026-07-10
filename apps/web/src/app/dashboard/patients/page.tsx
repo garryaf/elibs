@@ -103,6 +103,8 @@ export default function PatientsPage() {
   };
 
   const handleSubmit = async (data: PatientFormData) => {
+    if (!editingPatient) return;
+
     // Build region payload — only include if all four are selected
     const regionPayload =
       data.provinsiId && data.kabupatenKotaId && data.kecamatanId && data.kelurahanDesaId
@@ -114,38 +116,20 @@ export default function PatientsPage() {
           }
         : {};
 
-    if (editingPatient) {
-      try {
-        await apiClient.updatePatient(editingPatient.id, {
-          name: data.name,
-          nik: data.nik,
-          dateOfBirth: data.dob,
-          gender: data.gender,
-          phone: data.phone,
-          address: data.address,
-          email: data.email || undefined,
-          ...regionPayload,
-        });
-        loadPatients();
-      } catch {
-        // Error silently handled — could add toast later
-      }
-    } else {
-      try {
-        await apiClient.createPatient({
-          name: data.name,
-          nik: data.nik,
-          dateOfBirth: data.dob,
-          gender: data.gender,
-          phone: data.phone,
-          address: data.address,
-          email: data.email || undefined,
-          ...regionPayload,
-        });
-        loadPatients();
-      } catch {
-        // Error silently handled
-      }
+    try {
+      await apiClient.updatePatient(editingPatient.id, {
+        name: data.name,
+        nik: data.nik,
+        dateOfBirth: data.dob,
+        gender: data.gender,
+        phone: data.phone,
+        address: data.address,
+        email: data.email || undefined,
+        ...regionPayload,
+      });
+      loadPatients();
+    } catch {
+      // Error silently handled — could add toast later
     }
   };
 

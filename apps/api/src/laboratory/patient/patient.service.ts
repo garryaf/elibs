@@ -11,6 +11,7 @@ import { MrnGeneratorService } from './mrn-generator.service';
 import { RegionValidationService } from '../region/region-validation.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
+import { AddPatientInsuranceDto, UpdatePatientInsuranceDto } from './dto/manage-patient-insurance.dto';
 
 const REGION_INCLUDE = {
   provinsiRef: { select: { id: true, name: true } },
@@ -227,5 +228,114 @@ export class PatientService {
     });
 
     return this.transformRegionResponse(updated);
+  }
+
+  // ─── Patient Insurance Management ──────────────────────────────────────────
+
+  async getPatientInsurances(patientId: string) {
+    const patient = await this.prisma.patient.findFirst({
+      where: { id: patientId, deletedAt: null },
+    });
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    const insurances = await this.prisma.patientInsurance.findMany({
+      where: { patientId },
+      include: {
+        insurance: { select: { id: true, code: true, name: true, type: true, isActive: true } },
+      },
+      orderBy: { priority: 'asc' },
+    });
+
+    return { data: insurances };
+  }
+
+  async addPatientInsurance(patientId: string, dto: AddPatientInsuranceDto) {
+    const patient = await this.prisma.patient.findFirst({
+      where: { id: patientId, deletedAt: null },
+    });
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    // Validate insurance exists and is active
+    const insurance = await this.prisma.insurance.findFirst({
+      where: { id: dto.insuranceId, deletedAt: null, isActive: true },
+    });
+    if (!insurance) {
+      throw new BadRequestException('Insurance not found or inactive');
+    }
+
+    // Validate priority range (1-5)
+    if (dto.priority < 1 || dto.priority > 5) {
+      throw new BadRequestException('Priority must be between 1 and 5');
+    }
+
+    // Check if this patient-insurance combination already exists
+    const existing = await this.prisma.patientInsurance.findUnique({
+      where: { patientId_insuranceId: { patientId, insuranceId: dto.insuranceId } },
+    });
+    if (existing) {
+      throw new ConflictException('Patient already has this insurance assigned');
+    }
+
+    const patientInsurance = await this.prisma.patientInsurance.create({
+      data: {
+        patientId,
+        insuranceId: dto.insuranceId,
+        memberNumber: dto.memberNumber,
+        policyNumber: dto.policyNumber,
+        priority: dto.priority,
+        type: dto.type,
+        bpjsClassLevel: dto.bpjsClassLevel,
+        validFrom: dto.validFrom ? new Date(dto.validFrom) : undefined,
+        validUntil: dto.validUntil ? new Date(dto.validUntil) : undefined,
+        notes: dto.notes,
+      },
+      include: {
+        insurance: { select: { id: true, code: true, name: true, type: true } },
+      },
+    });
+
+    return patientInsurance;
+  }
+
+  async updatePatientInsurance(patientInsuranceId: string, dto: UpdatePatientInsuranceDto) {
+    const existing = await this.prisma.patientInsurance.findUnique({
+      where: { id: patientInsuranceId },
+    });
+    if (!existing) {
+      throw new NotFoundException('Patient insurance record not found');
+    }
+
+    const data: any = { ...dto };
+    if (dto.validFrom) data.validFrom = new Date(dto.validFrom);
+    if (dto.validUntil) data.validUntil = new Date(dto.validUntil);
+
+    const updated = await this.prisma.patientInsurance.update({
+      where: { id: patientInsuranceId },
+      data,
+      include: {
+        insurance: { select: { id: true, code: true, name: true, type: true } },
+      },
+    });
+
+    return updated;
+  }
+
+  async removePatientInsurance(patientInsuranceId: string) {
+    const existing = await this.prisma.patientInsurance.findUnique({
+      where: { id: patientInsuranceId },
+    });
+    if (!existing) {
+      throw new NotFoundException('Patient insurance record not found');
+    }
+
+    await this.prisma.patientInsurance.delete({
+      where: { id: patientInsuranceId },
+    });
+
+    return { success: true, message: 'Patient insurance removed' };
   }
 }

@@ -165,7 +165,7 @@ export default function VisitsPage() {
           </p>
         </div>
         <Link
-          href="/dashboard/visits/new"
+          href="/dashboard/registration"
           id="visit-new-btn"
           className="inline-flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] hover:shadow-md active:scale-[0.98]"
         >
@@ -425,7 +425,7 @@ function EmptyState({ search }: { search: string }) {
       </div>
       {!search && (
         <Link
-          href="/dashboard/visits/new"
+          href="/dashboard/registration"
           className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5A7D5A]"
         >
           <Plus className="h-4 w-4" />

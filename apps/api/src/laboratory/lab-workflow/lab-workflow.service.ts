@@ -30,6 +30,13 @@ export class LabWorkflowService {
       throw new NotFoundException('Order not found');
     }
 
+    if (!order.visitId) {
+      throw new BadRequestException({
+        errorCode: 'ERR_VALIDATION',
+        message: `Order ${orderId} has no visit linkage. Traceability chain broken: Visit → Order required.`,
+      });
+    }
+
     if (order.status !== OrderStatus.PAID) {
       throw new BadRequestException(
         'Order must be in PAID status for sample collection',
@@ -81,6 +88,13 @@ export class LabWorkflowService {
 
     if (!order) {
       throw new NotFoundException('Order not found');
+    }
+
+    if (!order.visitId) {
+      throw new BadRequestException({
+        errorCode: 'ERR_VALIDATION',
+        message: `Order ${orderId} has no visit linkage. Traceability chain broken: Visit → Order required.`,
+      });
     }
 
     if (
@@ -170,6 +184,13 @@ export class LabWorkflowService {
       throw new NotFoundException('Order not found');
     }
 
+    if (!order.visitId) {
+      throw new BadRequestException({
+        errorCode: 'ERR_VALIDATION',
+        message: `Order ${orderId} has no visit linkage. Traceability chain broken: Visit → Order required.`,
+      });
+    }
+
     if (order.status !== OrderStatus.IN_ANALYSIS) {
       throw new BadRequestException(
         'Order must be in IN_ANALYSIS status for verification',
@@ -212,6 +233,13 @@ export class LabWorkflowService {
 
     if (!order) {
       throw new NotFoundException('Order not found');
+    }
+
+    if (!order.visitId) {
+      throw new BadRequestException({
+        errorCode: 'ERR_VALIDATION',
+        message: `Order ${orderId} has no visit linkage. Traceability chain broken: Visit → Order required.`,
+      });
     }
 
     if (order.status !== OrderStatus.VERIFIED) {

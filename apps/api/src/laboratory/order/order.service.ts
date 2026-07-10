@@ -6,10 +6,13 @@ import {
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TariffResolverService } from './tariff-resolver.service';
 import { VisitService } from '../visit/visit.service';
+import { OrderValidationGuard } from './order-validation.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
 import { OrderQueryDto } from './dto/order-query.dto';
-import { OrderStatus } from '@prisma/client';
+import { AddOrderInsuranceDto, UpdateOrderInsuranceDto } from './dto/manage-order-insurance.dto';
+import { CreateBpjsOrderDetailDto, UpdateBpjsOrderDetailDto, VerifyBpjsDto } from './dto/bpjs-order-detail.dto';
+import { OrderStatus, BpjsVerificationStatus } from '@prisma/client';
 
 @Injectable()
 export class OrderService {
@@ -17,13 +20,12 @@ export class OrderService {
     private readonly prisma: PrismaService,
     private readonly tariffResolver: TariffResolverService,
     private readonly visitService: VisitService,
+    private readonly orderValidationGuard: OrderValidationGuard,
   ) {}
 
   async create(dto: CreateOrderDto, userId: string) {
-    // Validate visit exists and is in acceptable state if visitId is provided
-    if (dto.visitId) {
-      await this.visitService.validateVisitForOrder(dto.visitId);
-    }
+    // Step 1: Centralized visit validation (always runs - visitId is required)
+    await this.orderValidationGuard.validate(dto.visitId, dto.patientId);
 
     // Validate patient exists and not soft-deleted
     const patient = await this.prisma.patient.findFirst({
@@ -65,7 +67,7 @@ export class OrderService {
           clinicId: dto.clinicId ?? null,
           doctorId: dto.doctorId ?? null,
           insuranceId: dto.insuranceId ?? null,
-          visitId: dto.visitId ?? null,
+          visitId: dto.visitId,
           status: OrderStatus.PENDING_PAYMENT,
           totalAmount: pricing.totalAmount,
         },
@@ -86,15 +88,13 @@ export class OrderService {
       return createdOrder;
     });
 
-    // After order creation: transition visit to IN_PROGRESS if visitId present
-    if (dto.visitId) {
-      await this.visitService.transitionToInProgress(dto.visitId);
-    }
+    // After order creation: transition visit to IN_PROGRESS
+    await this.visitService.transitionToInProgress(dto.visitId);
 
     // Return order with details
     return this.prisma.order.findUnique({
       where: { id: order.id },
-      include: { orderDetails: true, patient: true },
+      include: { orderDetails: true, patient: true, visit: { select: { visitNumber: true, status: true } } },
     });
   }
 
@@ -109,6 +109,10 @@ export class OrderService {
 
     if (query.status) {
       where.status = query.status;
+    }
+
+    if (query.visitId) {
+      where.visitId = query.visitId;
     }
 
     if (query.startDate || query.endDate) {
@@ -127,7 +131,7 @@ export class OrderService {
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
-        include: { patient: true, orderDetails: true },
+        include: { patient: true, orderDetails: true, visit: { select: { visitNumber: true, status: true } } },
       }),
       this.prisma.order.count({ where }),
     ]);
@@ -151,6 +155,7 @@ export class OrderService {
         orderDetails: {
           include: { test: true },
         },
+        visit: { select: { visitNumber: true, status: true } },
       },
     });
     if (!order) {
@@ -208,5 +213,215 @@ export class OrderService {
 
     const sequence = (todayCount + 1).toString().padStart(4, '0');
     return `LAB-${dateStr}-${sequence}`;
+  }
+
+  // ─── Order Insurance Coverage ──────────────────────────────────────────────
+
+  async getOrderInsurances(orderId: string) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const insurances = await this.prisma.orderInsurance.findMany({
+      where: { orderId },
+      include: {
+        insurance: { select: { id: true, code: true, name: true, type: true } },
+      },
+      orderBy: { coverageType: 'asc' },
+    });
+
+    return { data: insurances };
+  }
+
+  async addOrderInsurance(orderId: string, dto: AddOrderInsuranceDto) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Validate insurance exists and is active
+    const insurance = await this.prisma.insurance.findFirst({
+      where: { id: dto.insuranceId, deletedAt: null, isActive: true },
+    });
+    if (!insurance) {
+      throw new BadRequestException('Insurance not found or inactive');
+    }
+
+    // Check uniqueness: one coverage type per order
+    const existing = await this.prisma.orderInsurance.findUnique({
+      where: { orderId_coverageType: { orderId, coverageType: dto.coverageType } },
+    });
+    if (existing) {
+      throw new BadRequestException(`Order already has ${dto.coverageType} coverage assigned`);
+    }
+
+    const orderInsurance = await this.prisma.orderInsurance.create({
+      data: {
+        orderId,
+        insuranceId: dto.insuranceId,
+        coverageType: dto.coverageType,
+        claimReference: dto.claimReference,
+        coveredAmount: dto.coveredAmount,
+        copayAmount: dto.copayAmount,
+        memberNumber: dto.memberNumber,
+        notes: dto.notes,
+      },
+      include: {
+        insurance: { select: { id: true, code: true, name: true, type: true } },
+      },
+    });
+
+    return orderInsurance;
+  }
+
+  async updateOrderInsurance(orderInsuranceId: string, dto: UpdateOrderInsuranceDto) {
+    const existing = await this.prisma.orderInsurance.findUnique({
+      where: { id: orderInsuranceId },
+    });
+    if (!existing) {
+      throw new NotFoundException('Order insurance record not found');
+    }
+
+    const data: any = { ...dto };
+    if (dto.submittedAt) data.submittedAt = new Date(dto.submittedAt);
+    if (dto.approvedAt) data.approvedAt = new Date(dto.approvedAt);
+    if (dto.rejectedAt) data.rejectedAt = new Date(dto.rejectedAt);
+    if (dto.paidAt) data.paidAt = new Date(dto.paidAt);
+
+    const updated = await this.prisma.orderInsurance.update({
+      where: { id: orderInsuranceId },
+      data,
+      include: {
+        insurance: { select: { id: true, code: true, name: true, type: true } },
+      },
+    });
+
+    return updated;
+  }
+
+  async removeOrderInsurance(orderInsuranceId: string) {
+    const existing = await this.prisma.orderInsurance.findUnique({
+      where: { id: orderInsuranceId },
+    });
+    if (!existing) {
+      throw new NotFoundException('Order insurance record not found');
+    }
+
+    await this.prisma.orderInsurance.delete({
+      where: { id: orderInsuranceId },
+    });
+
+    return { success: true, message: 'Order insurance coverage removed' };
+  }
+
+  // ─── BPJS Order Detail ─────────────────────────────────────────────────────
+
+  async getBpjsDetail(orderId: string) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const bpjsDetail = await this.prisma.bpjsOrderDetail.findUnique({
+      where: { orderId },
+    });
+
+    return { data: bpjsDetail };
+  }
+
+  async createBpjsDetail(orderId: string, dto: CreateBpjsOrderDetailDto) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Check if BPJS detail already exists for this order
+    const existing = await this.prisma.bpjsOrderDetail.findUnique({
+      where: { orderId },
+    });
+    if (existing) {
+      throw new BadRequestException('BPJS detail already exists for this order');
+    }
+
+    // Validate SEP number format if provided
+    if (dto.sepNumber && !/^\d{1,19}$/.test(dto.sepNumber)) {
+      throw new BadRequestException('SEP number must be numeric and max 19 digits');
+    }
+
+    const bpjsDetail = await this.prisma.bpjsOrderDetail.create({
+      data: {
+        orderId,
+        sepNumber: dto.sepNumber,
+        referringFacilityCode: dto.referringFacilityCode,
+        referringFacilityName: dto.referringFacilityName,
+        classLevel: dto.classLevel,
+        diagnosisCode: dto.diagnosisCode,
+        diagnosisName: dto.diagnosisName,
+        procedureCode: dto.procedureCode,
+        guaranteeLetterNo: dto.guaranteeLetterNo,
+        notes: dto.notes,
+      },
+    });
+
+    return bpjsDetail;
+  }
+
+  async updateBpjsDetail(orderId: string, dto: UpdateBpjsOrderDetailDto) {
+    const existing = await this.prisma.bpjsOrderDetail.findUnique({
+      where: { orderId },
+    });
+    if (!existing) {
+      throw new NotFoundException('BPJS detail not found for this order');
+    }
+
+    // Validate SEP number format if provided
+    if (dto.sepNumber && !/^\d{1,19}$/.test(dto.sepNumber)) {
+      throw new BadRequestException('SEP number must be numeric and max 19 digits');
+    }
+
+    const data: any = { ...dto };
+
+    // If verifying, set verifiedAt
+    if (dto.verificationStatus === BpjsVerificationStatus.VERIFIED) {
+      data.verifiedAt = new Date();
+    }
+
+    const updated = await this.prisma.bpjsOrderDetail.update({
+      where: { orderId },
+      data,
+    });
+
+    return updated;
+  }
+
+  async verifyBpjs(orderId: string, dto: VerifyBpjsDto, userId: string) {
+    const existing = await this.prisma.bpjsOrderDetail.findUnique({
+      where: { orderId },
+    });
+    if (!existing) {
+      throw new NotFoundException('BPJS detail not found for this order');
+    }
+
+    // Validate SEP format
+    if (!/^\d{1,19}$/.test(dto.sepNumber)) {
+      throw new BadRequestException('SEP number must be numeric and max 19 digits');
+    }
+
+    // In production, this would call BPJS API for verification
+    // For now, we just update the status to VERIFIED
+    const updated = await this.prisma.bpjsOrderDetail.update({
+      where: { orderId },
+      data: {
+        sepNumber: dto.sepNumber,
+        referringFacilityCode: dto.referringFacilityCode ?? existing.referringFacilityCode,
+        classLevel: dto.classLevel ?? existing.classLevel,
+        verificationStatus: BpjsVerificationStatus.VERIFIED,
+        verifiedAt: new Date(),
+        verifiedBy: userId,
+      },
+    });
+
+    return { success: true, message: 'BPJS verification successful', data: updated };
   }
 }

@@ -25,6 +25,70 @@ export class NotificationService {
   ) {}
 
   /**
+   * Generic method to enqueue a notification for an order.
+   * Used by external modules (e.g., InsuranceRejectionService) to trigger
+   * ad-hoc notifications without the full PDF workflow.
+   */
+  async queueNotification(
+    orderId: string,
+    type: NotificationType,
+    recipient: string,
+    metadata?: { subject?: string; message?: string },
+  ): Promise<void> {
+    const log = await this.prisma.notificationLog.create({
+      data: {
+        orderId,
+        type,
+        recipient,
+        status: NotificationStatus.PENDING,
+      },
+    });
+
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { orderNumber: true },
+    });
+
+    if (!order) {
+      this.logger.warn(`Order ${orderId} not found for queued notification`);
+      return;
+    }
+
+    if (type === NotificationType.EMAIL) {
+      await this.emailQueue.add(
+        'send-email',
+        {
+          notificationLogId: log.id,
+          orderId,
+          orderNumber: order.orderNumber,
+          email: recipient,
+          pdfBase64: '', // No PDF attachment for ad-hoc notifications
+          subject: metadata?.subject,
+          message: metadata?.message,
+        },
+        { attempts: 3, backoff: { type: 'exponential', delay: 2000 } },
+      );
+    } else if (type === NotificationType.WHATSAPP) {
+      await this.whatsAppQueue.add(
+        'send-whatsapp',
+        {
+          notificationLogId: log.id,
+          orderId,
+          orderNumber: order.orderNumber,
+          phone: recipient,
+          pdfBase64: '', // No PDF attachment for ad-hoc notifications
+          message: metadata?.message,
+        },
+        { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
+      );
+    }
+
+    this.logger.log(
+      `Queued ${type} notification for order ${order.orderNumber} to ${recipient}`,
+    );
+  }
+
+  /**
    * Triggered after an order reaches APPROVED status.
    * Checks consent, generates PDF, and enqueues delivery jobs.
    */
