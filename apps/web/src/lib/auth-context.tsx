@@ -58,7 +58,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (payload: LoginPayload) => {
     const response = await apiClient.login(payload);
 
-    const { accessToken, user: userData } = response.data;
+    // After unwrapResponse(), the envelope is stripped — response contains the inner data directly.
+    // Cast needed because LoginResponse type still reflects the raw API shape.
+    const { accessToken, user: userData } = response as unknown as {
+      accessToken: string;
+      refreshToken?: string;
+      user: AuthUser;
+    };
+
+    if (!accessToken || !userData) {
+      throw new Error("Login failed: unexpected response format");
+    }
 
     localStorage.setItem(TOKEN_KEY, accessToken);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
