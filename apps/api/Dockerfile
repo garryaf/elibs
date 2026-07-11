@@ -64,9 +64,8 @@ COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
 COPY --from=builder /app/apps/api/prisma/seeds/dist ./apps/api/prisma/seeds/dist
 
-# Copy generated Prisma client from builder
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Generate Prisma client in production (prisma CLI is needed temporarily)
+RUN npx -y prisma@5.22.0 generate --schema=./apps/api/prisma/schema.prisma
 
 # Entrypoint
 COPY apps/api/docker-entrypoint.sh /usr/local/bin/
