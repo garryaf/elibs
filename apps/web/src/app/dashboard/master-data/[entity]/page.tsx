@@ -219,10 +219,12 @@ const entityConfigs: Record<string, EntityConfig> = {
     columns: [
       { key: "name", label: "Nama" },
       { key: "description", label: "Deskripsi" },
+      { key: "price", label: "Harga" },
     ],
     formFields: [
       { name: "name", label: "Nama Panel", type: "text", required: true },
       { name: "description", label: "Deskripsi", type: "text" },
+      { name: "price", label: "Harga", type: "number", required: true },
     ],
   },
   dokter: {
@@ -308,6 +310,7 @@ const entityConfigs: Record<string, EntityConfig> = {
       { key: "expiryDate", label: "Tanggal Kedaluwarsa" },
     ],
     formFields: [
+      { name: "code", label: "Kode Reagen", type: "text", required: true },
       { name: "name", label: "Nama Reagen", type: "text", required: true },
       { name: "manufacturer", label: "Manufacturer", type: "text" },
       { name: "lotNumber", label: "Nomor Lot", type: "text" },

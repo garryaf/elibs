@@ -187,7 +187,7 @@ export function PatientRegistrationStep({
       const payload: Record<string, unknown> = {
         nik: form.nik,
         name: form.name.trim(),
-        dob: form.dob,
+        dateOfBirth: form.dob,
         gender: form.gender,
       };
 

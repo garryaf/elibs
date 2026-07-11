@@ -193,8 +193,8 @@
 
 | NCR ID | Finding | Priority | Status | Resolution/Notes |
 |--------|---------|:--------:|--------|------------------|
-| NCR-03-01 | "Nonaktifkan" pasien palsu — no API call | P1 | ✅ RESOLVED | Spec sprint-next1-critical-security task 6.1; DELETE endpoint + AuditService + dependency checks |
-| NCR-03-02 | `deletedAt` column exists but never set | P1 | ✅ RESOLVED | Spec sprint-next1-critical-security task 6.1; softDelete sets deletedAt + property tests |
+| NCR-03-01 | "Nonaktifkan" pasien palsu — no API call | P1 | ✅ RESOLVED | Spec sprint-next1-critical-security task 6.1 (backend) + frontend wired to DELETE endpoint with confirmation dialog |
+| NCR-03-02 | `deletedAt` column exists but never set | P1 | ✅ RESOLVED | Spec sprint-next1-critical-security task 6.1; softDelete sets deletedAt + frontend calls API + property tests |
 | NCR-03-03 | Dual insurance source (single FK + junction) | P2 | ⚡ PARTIAL | Junction added (T-009) but old `insuranceId` FK not deprecated |
 | NCR-03-04 | Audit log for patient C/U unverified | P2 | 🆕 OPEN | Needs verification |
 | NCR-03-05 | Export button non-functional | P3 | 🆕 OPEN | Placeholder without handler |

@@ -170,6 +170,10 @@ class ApiClient {
     return this.put(`/api/v1/patients/${id}`, data);
   }
 
+  async deletePatient(id: string): Promise<ApiResponse<unknown>> {
+    return this.delete(`/api/v1/patients/${id}`);
+  }
+
   // ─── Master Data ──────────────────────────────────────────────────────────
 
   async getTestCategories(params?: {

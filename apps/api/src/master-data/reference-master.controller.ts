@@ -169,14 +169,14 @@ export class EquipmentController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  create(@Body() dto: CreateDoctorDto) {
+  create(@Body() dto: CreateEquipmentDto) {
     return this.service.create('equipment', dto);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateDoctorDto>) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateEquipmentDto>) {
     return this.service.update('equipment', id, dto);
   }
 
@@ -207,14 +207,14 @@ export class ReagentController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  create(@Body() dto: CreateDoctorDto) {
+  create(@Body() dto: CreateReagentDto) {
     return this.service.create('reagent', dto);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateDoctorDto>) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateReagentDto>) {
     return this.service.update('reagent', id, dto);
   }
 

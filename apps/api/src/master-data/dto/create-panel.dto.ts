@@ -6,7 +6,6 @@ import {
   IsArray,
   IsUUID,
   Min,
-  ArrayMinSize,
 } from 'class-validator';
 
 export class CreatePanelDto {
@@ -21,10 +20,10 @@ export class CreatePanelDto {
   @Min(0)
   price: number;
 
+  @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
   @IsUUID('4', { each: true })
-  testIds: string[];
+  testIds?: string[];
 
   @IsOptional()
   @IsBoolean()

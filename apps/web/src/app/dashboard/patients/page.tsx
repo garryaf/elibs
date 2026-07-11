@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, UserPlus, Download } from "lucide-react";
+import { Search, UserPlus, Download, AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import type { Patient, PatientFormData, PatientStatus } from "@/types/patient";
@@ -76,6 +76,16 @@ export default function PatientsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [viewingPatient, setViewingPatient] = useState<Patient | null>(null);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [deletingPatient, setDeletingPatient] = useState<Patient | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Auto-dismiss error toast after 8 seconds
+  useEffect(() => {
+    if (!updateError) return;
+    const timer = setTimeout(() => setUpdateError(null), 8000);
+    return () => clearTimeout(timer);
+  }, [updateError]);
 
   const filteredPatients = useMemo(() => {
     return patients.filter((p) => {
@@ -107,15 +117,29 @@ export default function PatientsPage() {
   };
 
   const handleDelete = (patient: Patient) => {
-    setPatients((prev) =>
-      prev.map((p) =>
-        p.id === patient.id ? { ...p, status: "INACTIVE" as PatientStatus } : p
-      )
-    );
+    setDeletingPatient(patient);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingPatient) return;
+    setDeleteLoading(true);
+    setUpdateError(null);
+    try {
+      await apiClient.deletePatient(deletingPatient.id);
+      setDeletingPatient(null);
+      loadPatients();
+    } catch (err: unknown) {
+      const apiErr = err as { message?: string };
+      setUpdateError(apiErr?.message || "Gagal menonaktifkan pasien.");
+      setDeletingPatient(null);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handleSubmit = async (data: PatientFormData) => {
     if (!editingPatient) return;
+    setUpdateError(null);
 
     // Build region payload — only include if all four are selected
     const regionPayload =
@@ -139,8 +163,9 @@ export default function PatientsPage() {
         ...regionPayload,
       });
       loadPatients();
-    } catch {
-      // Error silently handled — could add toast later
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Gagal menyimpan data pasien.";
+      setUpdateError(message);
     }
   };
 
@@ -166,6 +191,24 @@ export default function PatientsPage() {
             Daftarkan Pasien
           </button>
         </div>
+
+        {/* Error Toast */}
+        {updateError && (
+          <div
+            role="alert"
+            className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{updateError}</span>
+            <button
+              onClick={() => setUpdateError(null)}
+              className="ml-2 shrink-0 rounded-lg p-1 text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-800/50"
+              aria-label="Tutup pesan error"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-3">
@@ -334,6 +377,43 @@ export default function PatientsPage() {
                 className="rounded-xl bg-[#6B8E6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5A7D5A]"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deactivate Patient Confirmation Dialog */}
+      {deletingPatient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+            onClick={() => !deleteLoading && setDeletingPatient(null)}
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+              <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              Nonaktifkan Pasien?
+            </h3>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              Pasien <span className="font-semibold text-slate-700 dark:text-slate-300">{deletingPatient.name}</span> ({deletingPatient.mrn}) akan dinonaktifkan. Pasien dengan kunjungan atau order aktif tidak dapat dinonaktifkan.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setDeletingPatient(null)}
+                disabled={deleteLoading}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleteLoading}
+                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleteLoading ? "Memproses..." : "Ya, Nonaktifkan"}
               </button>
             </div>
           </div>
