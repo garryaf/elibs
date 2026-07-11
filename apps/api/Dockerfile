@@ -14,8 +14,15 @@ COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 
-# Install dependencies with retry for network issues
-RUN npm ci --workspace=api --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 && npm cache clean --force
+# Configure npm for slow/unstable networks
+RUN npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 60000 && \
+    npm config set fetch-retry-maxtimeout 300000 && \
+    npm config set fetch-timeout 600000 && \
+    npm config set maxsockets 5
+
+# Install ALL workspace dependencies (more reliable than --workspace filter on slow networks)
+RUN npm ci && npm cache clean --force
 
 # --- Stage 2: Build ---
 FROM node:20-alpine AS builder
