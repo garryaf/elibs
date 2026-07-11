@@ -103,6 +103,15 @@ export const masterDataKeys = {
     details: () => [...masterDataKeys.panels.all, "detail"] as const,
     detail: (id: string) => [...masterDataKeys.panels.details(), id] as const,
   },
+
+  // Tarif (tariffs)
+  tariffs: {
+    all: ["master-data", "tariffs"] as const,
+    lists: () => [...masterDataKeys.tariffs.all, "list"] as const,
+    list: (params: Record<string, unknown>) => [...masterDataKeys.tariffs.lists(), params] as const,
+    details: () => [...masterDataKeys.tariffs.all, "detail"] as const,
+    detail: (id: string) => [...masterDataKeys.tariffs.details(), id] as const,
+  },
 };
 
 // ─── Satuan (Measurement Units) ─────────────────────────────────────────────
@@ -561,6 +570,52 @@ export function useDeleteMasterPanel() {
     mutationFn: (id: string) => apiClient.delete(`/api/v1/master/panels/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: masterDataKeys.panels.lists() });
+    },
+  });
+}
+
+// ─── Tarif (Tariffs) ─────────────────────────────────────────────────────────
+
+export function useMasterTariffs(params?: { page?: number; limit?: number; search?: string }) {
+  const qs = new URLSearchParams();
+  if (params?.page) qs.set("page", String(params.page));
+  if (params?.limit) qs.set("limit", String(params.limit));
+  if (params?.search) qs.set("search", params.search);
+  const query = qs.toString() ? `?${qs.toString()}` : "";
+
+  return useQuery({
+    queryKey: masterDataKeys.tariffs.list(params ?? {}),
+    queryFn: () => apiClient.get<{ data: unknown[]; meta: { total: number; page: number; limit: number } }>(`/api/v1/master/tariffs${query}`),
+  });
+}
+
+export function useCreateMasterTariff() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: unknown) => apiClient.post("/api/v1/master/tariffs", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: masterDataKeys.tariffs.lists() });
+    },
+  });
+}
+
+export function useUpdateMasterTariff() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
+      apiClient.put(`/api/v1/master/tariffs/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: masterDataKeys.tariffs.lists() });
+    },
+  });
+}
+
+export function useDeleteMasterTariff() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.delete(`/api/v1/master/tariffs/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: masterDataKeys.tariffs.lists() });
     },
   });
 }

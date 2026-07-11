@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   FlaskConical,
   TestTube,
@@ -12,7 +14,11 @@ import {
   Beaker,
   Ruler,
   Droplets,
+  CreditCard,
+  MapPin,
+  Users as UsersIcon,
 } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 const masterDataItems = [
   {
@@ -75,9 +81,43 @@ const masterDataItems = [
     icon: Droplets,
     href: "/dashboard/master-data/jenis-sampel",
   },
+  {
+    name: "Tarif",
+    description: "Kelola tarif pemeriksaan",
+    icon: CreditCard,
+    href: "/dashboard/master-data/tarif",
+  },
+  {
+    name: "Wilayah",
+    description: "Data wilayah Indonesia (provinsi, kabupaten/kota, dll)",
+    icon: MapPin,
+    href: "/dashboard/master-data/regions",
+  },
+  {
+    name: "Users",
+    description: "Kelola pengguna dan peran akses",
+    icon: UsersIcon,
+    href: "/dashboard/master-data/users",
+  },
 ];
 
+const ALLOWED_ROLES = ["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN"];
+
 export default function MasterDataPage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user && !ALLOWED_ROLES.includes(user.role)) {
+      router.replace("/dashboard");
+    }
+  }, [user, router]);
+
+  // Show nothing while loading or if user is unauthorized
+  if (isLoading || !user || !ALLOWED_ROLES.includes(user.role)) {
+    return null;
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}

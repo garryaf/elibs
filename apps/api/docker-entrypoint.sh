@@ -16,8 +16,7 @@ if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
 
   if echo "$DEPLOY_OUTPUT" | grep -q "P3009"; then
     echo "Migration deploy failed (P3009). Attempting to resolve failed migrations..."
-    # Extract migration name from error output like:
-    # "The `20260709150654_add_insurance_type_enum` migration started at ..."
+    # Extract migration name from error output
     FAILED=$(echo "$DEPLOY_OUTPUT" | grep -o '`[0-9_a-zA-Z]*`' | tr -d '`' | head -n 5)
     if [ -n "$FAILED" ]; then
       for migration in $FAILED; do
@@ -43,6 +42,18 @@ if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
   fi
 
   echo "Migrations complete."
+  cd /app
+fi
+
+# Run seed on first deploy (idempotent — skips if data already exists)
+if [ "${RUN_SEED:-true}" = "true" ]; then
+  echo "Running database seed (idempotent)..."
+  cd /app/apps/api
+  if [ -f "prisma/seeds/dist/index.js" ]; then
+    node prisma/seeds/dist/index.js || echo "[seed] Warning: Seed failed (non-fatal, app will still start)"
+  else
+    echo "[seed] Compiled seed not found at prisma/seeds/dist/index.js — skipping"
+  fi
   cd /app
 fi
 

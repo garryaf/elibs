@@ -35,6 +35,9 @@ RUN cd apps/api && npx prisma generate
 # Build NestJS
 RUN cd apps/api && npx nest build
 
+# Compile seed scripts for production use
+RUN cd apps/api/prisma/seeds && /app/node_modules/.bin/tsc --project ./tsconfig.seed.json
+
 # Prune dev dependencies for production image
 RUN npm prune --workspace=api --omit=dev
 
@@ -56,6 +59,7 @@ COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 # Copy built application
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
+COPY --from=builder /app/apps/api/prisma/seeds/dist ./apps/api/prisma/seeds/dist
 COPY --from=builder /app/apps/api/package.json ./apps/api/
 COPY --from=builder /app/package.json ./
 

@@ -17,7 +17,7 @@ const settingsNav = [
     label: "General",
     href: "/dashboard/settings/general",
     icon: Building2,
-    description: "Pengaturan umum & master data",
+    description: "Konfigurasi sistem umum",
   },
   {
     label: "SMTP",

@@ -66,6 +66,21 @@ const EXPECTED_CARDS = [
     description: "Jenis spesimen/sampel yang diterima",
     icon: "Droplets",
   },
+  {
+    name: "Tarif",
+    description: "Kelola tarif pemeriksaan",
+    icon: "CreditCard",
+  },
+  {
+    name: "Wilayah",
+    description: "Data wilayah Indonesia (provinsi, kabupaten/kota, dll)",
+    icon: "MapPin",
+  },
+  {
+    name: "Users",
+    description: "Kelola pengguna dan peran akses",
+    icon: "UsersIcon",
+  },
 ];
 
 // ─── Existing Service Exports That Must Be Preserved ────────────────────────
@@ -227,11 +242,11 @@ describe("Preservation: Master Data Card Visual Properties", () => {
     }
   });
 
-  it("Property: Master Data page contains exactly 10 cards", () => {
+  it("Property: Master Data page contains exactly 13 cards", () => {
     /**
      * **Validates: Requirements 3.3**
      */
-    expect(parsedCards).toHaveLength(10);
+    expect(parsedCards).toHaveLength(13);
   });
 
   it("Property: For all 10 cards, visual properties (name, description, icon) remain identical", () => {

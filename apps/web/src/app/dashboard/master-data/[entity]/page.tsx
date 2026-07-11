@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MasterDataTable } from "@/components/master-data/MasterDataTable";
@@ -47,7 +48,64 @@ import {
   useCreateMasterReagent,
   useUpdateMasterReagent,
   useDeleteMasterReagent,
+  useMasterTariffs,
+  useCreateMasterTariff,
+  useUpdateMasterTariff,
+  useDeleteMasterTariff,
 } from "@/services";
+import { apiClient } from "@/lib/api";
+
+// ─── User hooks adapted for EntityConfig interface ───────────────────────────
+
+function useUsersForEntity(params?: { page?: number; limit?: number; search?: string }) {
+  return useQuery({
+    queryKey: ["users", "list", params ?? {}],
+    queryFn: () => apiClient.get<{ data: unknown[]; meta: { total: number; page: number; limit: number } }>(
+      `/api/v1/users${buildQueryString(params)}`
+    ),
+  });
+}
+
+function buildQueryString(params?: { page?: number; limit?: number; search?: string }): string {
+  if (!params) return "";
+  const qs = new URLSearchParams();
+  if (params.page) qs.set("page", String(params.page));
+  if (params.limit) qs.set("limit", String(params.limit));
+  if (params.search) qs.set("search", params.search);
+  const str = qs.toString();
+  return str ? `?${str}` : "";
+}
+
+function useCreateUserForEntity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: unknown) => apiClient.post("/api/v1/users", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users", "list"] });
+    },
+  });
+}
+
+function useUpdateUserForEntity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
+      apiClient.put(`/api/v1/users/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users", "list"] });
+    },
+  });
+}
+
+function useDeleteUserForEntity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.delete(`/api/v1/users/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users", "list"] });
+    },
+  });
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -254,6 +312,44 @@ const entityConfigs: Record<string, EntityConfig> = {
       { name: "manufacturer", label: "Manufacturer", type: "text" },
       { name: "lotNumber", label: "Nomor Lot", type: "text" },
       { name: "expiryDate", label: "Tanggal Kedaluwarsa", type: "text" },
+    ],
+  },
+  tarif: {
+    displayName: "Tarif",
+    useQuery: useMasterTariffs,
+    useCreate: useCreateMasterTariff,
+    useUpdate: useUpdateMasterTariff,
+    useDelete: useDeleteMasterTariff,
+    columns: [
+      { key: "test.name", label: "Tes" },
+      { key: "price", label: "Harga" },
+      { key: "discount", label: "Diskon" },
+    ],
+    formFields: [
+      { name: "testId", label: "Tes", type: "text", required: true },
+      { name: "clinicId", label: "Klinik", type: "text" },
+      { name: "insuranceId", label: "Asuransi", type: "text" },
+      { name: "price", label: "Harga", type: "number", required: true },
+      { name: "discount", label: "Diskon", type: "number" },
+    ],
+  },
+  users: {
+    displayName: "Users",
+    useQuery: useUsersForEntity,
+    useCreate: useCreateUserForEntity,
+    useUpdate: useUpdateUserForEntity,
+    useDelete: useDeleteUserForEntity,
+    columns: [
+      { key: "email", label: "Email" },
+      { key: "name", label: "Nama" },
+      { key: "role", label: "Role" },
+      { key: "createdAt", label: "Tanggal Dibuat" },
+    ],
+    formFields: [
+      { name: "email", label: "Email", type: "email", required: true },
+      { name: "name", label: "Nama", type: "text" },
+      { name: "password", label: "Password", type: "text" },
+      { name: "role", label: "Role", type: "select", required: true },
     ],
   },
 };

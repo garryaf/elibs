@@ -51,7 +51,7 @@ describe("Bug Condition: Master Data Navigation", () => {
       /\{\s*name:\s*"([^"]+)"[\s\S]*?href:\s*"([^"]+)"/g
     );
 
-    if (itemBlocks && itemBlocks.length === 10) {
+    if (itemBlocks && itemBlocks.length >= 10) {
       masterDataItems = itemBlocks.map((block) => {
         const nameMatch = block.match(/name:\s*"([^"]+)"/);
         const hrefMatch = block.match(/href:\s*"([^"]+)"/);
