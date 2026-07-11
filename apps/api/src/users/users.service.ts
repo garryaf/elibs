@@ -27,8 +27,10 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto) {
-    const existing = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+    // Check for active (non-deleted) user with same email.
+    // DB partial unique index enforces this at schema level too (users_email_active_unique).
+    const existing = await this.prisma.user.findFirst({
+      where: { email: dto.email, deletedAt: null },
     });
     if (existing) {
       throw new ConflictException('Email already in use');

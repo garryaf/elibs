@@ -19,6 +19,7 @@ import { PatientService } from './patient.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { AddPatientInsuranceDto, UpdatePatientInsuranceDto } from './dto/manage-patient-insurance.dto';
+import { LabHistoryQueryDto } from './dto/lab-history-query.dto';
 
 @ApiTags('Patients')
 @ApiBearerAuth()
@@ -60,6 +61,28 @@ export class PatientController {
   @ApiOperation({ summary: 'Get patient by ID' })
   async findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.patientService.findById(id);
+  }
+
+  @Get(':id/lab-history')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+    Role.SAMPLING,
+    Role.ANALIS,
+    Role.DOKTER,
+    Role.KLINIK_PARTNER,
+  )
+  @ApiOperation({ summary: 'Get patient lab history' })
+  async getLabHistory(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: LabHistoryQueryDto,
+  ) {
+    return this.patientService.getLabHistory(id, query);
   }
 
   @Put(':id')

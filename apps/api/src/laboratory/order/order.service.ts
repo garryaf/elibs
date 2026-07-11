@@ -141,7 +141,7 @@ export class OrderService {
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
-        include: { patient: true, orderDetails: true, visit: { select: { visitNumber: true, status: true } } },
+        include: { patient: true, orderDetails: { include: { test: { select: { id: true, code: true, name: true, unit: true } } } }, visit: { select: { visitNumber: true, status: true } } },
       }),
       this.prisma.order.count({ where }),
     ]);

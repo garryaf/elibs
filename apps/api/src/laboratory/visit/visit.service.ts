@@ -75,11 +75,7 @@ export class VisitService {
       ipAddress,
     );
 
-    return {
-      success: true,
-      message: 'Visit created successfully',
-      data: visit,
-    };
+    return visit;
   }
 
   private async validatePatientExists(patientId: string): Promise<void> {
@@ -197,13 +193,14 @@ export class VisitService {
     }
 
     // Date range filter: registrationDate >= startDate AND <= endDate (inclusive)
+    // Use WIB timezone (+07:00) for end-of-day to match Indonesian user expectations
     if (query.startDate || query.endDate) {
       where.registrationDate = {};
       if (query.startDate) {
-        where.registrationDate.gte = new Date(query.startDate);
+        where.registrationDate.gte = new Date(query.startDate + 'T00:00:00.000+07:00');
       }
       if (query.endDate) {
-        where.registrationDate.lte = new Date(query.endDate + 'T23:59:59.999Z');
+        where.registrationDate.lte = new Date(query.endDate + 'T23:59:59.999+07:00');
       }
     }
 
@@ -238,8 +235,6 @@ export class VisitService {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      success: true,
-      message: 'Visits retrieved successfully',
       data,
       meta: {
         total,
@@ -276,11 +271,7 @@ export class VisitService {
       });
     }
 
-    return {
-      success: true,
-      message: 'Visit retrieved successfully',
-      data: visit,
-    };
+    return visit;
   }
 
   async findOrdersByVisit(visitId: string, query: OrderQueryDto) {
@@ -319,7 +310,6 @@ export class VisitService {
     ]);
 
     return {
-      success: true,
       data,
       meta: {
         total,
@@ -434,11 +424,7 @@ export class VisitService {
       );
     }
 
-    return {
-      success: true,
-      message: 'Visit updated successfully',
-      data: updatedVisit,
-    };
+    return updatedVisit;
   }
 
   async cancel(
@@ -510,11 +496,7 @@ export class VisitService {
       ipAddress,
     );
 
-    return {
-      success: true,
-      message: 'Visit cancelled successfully',
-      data: updatedVisit,
-    };
+    return updatedVisit;
   }
 
   async validateVisitForOrder(visitId: string): Promise<void> {

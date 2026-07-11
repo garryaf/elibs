@@ -81,7 +81,7 @@ export class LabWorkflowController {
 
   @Get(':orderId/delta-check')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ANALIS, Role.DOKTER, Role.ADMIN)
+  @Roles(Role.ANALIS, Role.DOKTER, Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get delta check comparison with previous results' })
   async getDeltaCheck(
     @Param('orderId', ParseUUIDPipe) orderId: string,

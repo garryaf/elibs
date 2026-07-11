@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   LayoutDashboard,
   Users,
+  Calendar,
   FileText,
   TestTube,
   Stethoscope,
@@ -61,6 +62,12 @@ const menuGroups: MenuGroup[] = [
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { name: "Pasien", href: "/dashboard/patients", icon: Users },
+      {
+        name: "Kunjungan",
+        href: "/dashboard/visits",
+        icon: Calendar,
+        roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "KASIR", "CS", "KLINIK_PARTNER"],
+      },
       {
         name: "Order & Kasir",
         href: "/dashboard/orders",

@@ -75,6 +75,10 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+      cache_from:
+        - type=local,src=/tmp/.buildx-cache-api
+      cache_to:
+        - type=local,dest=/tmp/.buildx-cache-api,mode=max
     container_name: elis-api
     ports:
       - "${API_PORT:-3001}:3001"
@@ -102,6 +106,10 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      cache_from:
+        - type=local,src=/tmp/.buildx-cache-web
+      cache_to:
+        - type=local,dest=/tmp/.buildx-cache-web,mode=max
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
     container_name: elis-web

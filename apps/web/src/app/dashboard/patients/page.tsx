@@ -78,11 +78,7 @@ export default function PatientsPage() {
   const stats = {
     total: patients.length,
     active: patients.filter((p) => p.status === "ACTIVE").length,
-    today: patients.filter((p) => {
-      if (!p.lastVisit) return false;
-      const visitDate = new Date(p.lastVisit).toDateString();
-      return visitDate === new Date().toDateString();
-    }).length,
+    inactive: patients.filter((p) => p.status === "INACTIVE").length,
   };
 
   const handleEdit = (patient: Patient) => {
@@ -119,7 +115,6 @@ export default function PatientsPage() {
     try {
       await apiClient.updatePatient(editingPatient.id, {
         name: data.name,
-        nik: data.nik,
         dateOfBirth: data.dob,
         gender: data.gender,
         phone: data.phone,
@@ -161,7 +156,7 @@ export default function PatientsPage() {
           {[
             { label: "Total Pasien Terdaftar", value: stats.total, color: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
             { label: "Pasien Aktif", value: stats.active, color: "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]" },
-            { label: "Kunjungan Hari Ini", value: stats.today, color: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+            { label: "Pasien Nonaktif", value: stats.inactive, color: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -205,10 +200,24 @@ export default function PatientsPage() {
               ))}
             </div>
 
-            {/* Export (placeholder) */}
+            {/* Export CSV */}
             <button
               id="patient-export-btn"
-              title="Export Data"
+              title="Export Data (CSV)"
+              onClick={() => {
+                const headers = ["MRN", "NIK", "Nama", "Gender", "Telepon", "Email", "Status"];
+                const rows = filteredPatients.map((p) => [
+                  p.mrn, p.nik, p.name, p.gender, p.phone, p.email || "", p.status
+                ]);
+                const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${v}"`).join(","))].join("\n");
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `pasien-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
               className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
             >
               <Download className="h-4 w-4" />

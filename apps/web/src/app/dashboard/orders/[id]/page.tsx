@@ -8,6 +8,7 @@ import {
   FlaskConical, Clock, Loader2
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import { formatRupiah } from "@/lib/format";
 import type { PaymentMethod } from "@/types/order";
 import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
 import { cn } from "@/lib/utils";
@@ -49,10 +50,6 @@ interface OrderApi {
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-function formatRupiah(n: number) {
-  return `Rp ${n.toLocaleString("id-ID")}`;
-}
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString("id-ID", {
@@ -150,6 +147,7 @@ export default function OrderDetailPage() {
   const [discount, setDiscount] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -158,7 +156,17 @@ export default function OrderDetailPage() {
     apiClient
       .getOrder(id)
       .then((res) => {
-        const data = (res as { success: boolean; data: OrderApi }).data;
+        // unwrapResponse strips the { success, message, data } envelope
+        // so res is either the order directly or { data: order } if double-wrapped
+        const raw = res as unknown as Record<string, unknown>;
+        let data: OrderApi | null = null;
+        if (raw && typeof raw === 'object' && 'orderNumber' in raw) {
+          // Already unwrapped - res IS the order
+          data = raw as unknown as OrderApi;
+        } else if (raw && typeof raw === 'object' && 'data' in raw && raw.data && typeof raw.data === 'object') {
+          // Still wrapped: { data: OrderApi }
+          data = raw.data as OrderApi;
+        }
         setOrder(data);
       })
       .catch((err) => {
@@ -203,16 +211,23 @@ export default function OrderDetailPage() {
 
   const handlePay = async () => {
     setIsProcessing(true);
+    setPayError(null);
     try {
       await apiClient.payOrder(id, { paymentMethod, amountPaid: paymentMethod === "CASH" ? cashPaid : total });
       // Reload order to get updated state
       const res = await apiClient.getOrder(id);
-      const data = (res as { success: boolean; data: OrderApi }).data;
-      setOrder(data);
+      const raw = res as unknown as Record<string, unknown>;
+      let data: OrderApi | null = null;
+      if (raw && typeof raw === 'object' && 'orderNumber' in raw) {
+        data = raw as unknown as OrderApi;
+      } else if (raw && typeof raw === 'object' && 'data' in raw && raw.data && typeof raw.data === 'object') {
+        data = raw.data as OrderApi;
+      }
+      if (data) setOrder(data);
       setShowSuccess(true);
     } catch (err: unknown) {
       const message = err && typeof err === "object" && "message" in err ? (err as { message: string }).message : "Pembayaran gagal";
-      alert(message);
+      setPayError(message);
     } finally {
       setIsProcessing(false);
     }
@@ -403,6 +418,13 @@ export default function OrderDetailPage() {
                       </span>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Payment Error Banner */}
+              {payError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+                  {payError}
                 </div>
               )}
 

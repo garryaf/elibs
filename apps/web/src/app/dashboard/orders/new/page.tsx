@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, CheckCircle2, ChevronRight, FlaskConical, ArrowLeft, Tag, Loader2, Calendar, Plus } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { VisitSelector, type VisitOption } from "@/components/orders/visit-selector";
 import { InlineVisitCreate } from "@/components/orders/inline-visit-create";
@@ -25,10 +26,6 @@ interface TestApi {
 interface TestCategoryApi {
   id: string;
   name: string;
-}
-
-function formatRupiah(n: number) {
-  return `Rp ${n.toLocaleString("id-ID")}`;
 }
 
 /* ────────────────────────────────────────────────────────────────

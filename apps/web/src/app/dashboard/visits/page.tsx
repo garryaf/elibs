@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Search,
   Plus,
@@ -11,6 +12,7 @@ import {
   Loader2,
   FileX2,
 } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 import { apiClient } from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -58,13 +60,58 @@ const PAYMENT_LABELS: Record<string, string> = {
   BPJS: "BPJS",
   INSURANCE: "Asuransi",
   TRANSFER: "Transfer",
+  EDC: "EDC (Kartu)",
+  INSURANCE_CASH_FALLBACK: "Fallback Tunai",
+  CORPORATE_DEFERRED: "Tagihan Korporat",
 };
 
 const PAGE_SIZE = 20;
 
+// ─── RBAC ─────────────────────────────────────────────────────────────────────
+
+const AUTHORIZED_VISIT_ROLES = [
+  "KASIR",
+  "CS",
+  "ADMIN",
+  "KLINIK_PARTNER",
+  "SUPER_ADMIN",
+  "OWNER",
+  "MANAGER",
+];
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function VisitsPage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user && !AUTHORIZED_VISIT_ROLES.includes(user.role)) {
+      router.replace("/dashboard");
+    }
+  }, [user, router]);
+
+  // Loading state while auth is resolving
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-[#6B8E6B]" />
+        <p className="text-sm text-slate-500 dark:text-slate-400">Memuat...</p>
+      </div>
+    );
+  }
+
+  // Redirect unauthorized roles (render nothing while redirecting)
+  if (!user || !AUTHORIZED_VISIT_ROLES.includes(user.role)) {
+    return null;
+  }
+
+  return <VisitsPageContent />;
+}
+
+// ─── Authorized Page Content ──────────────────────────────────────────────────
+
+function VisitsPageContent() {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

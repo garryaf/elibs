@@ -140,8 +140,8 @@ function ApprovalCard({
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  const criticalCount = order.orderDetails.filter((d) => d.flag === "CRITICAL").length;
-  const abnormalCount = order.orderDetails.filter(
+  const criticalCount = (order.orderDetails ?? []).filter((d) => d.flag === "CRITICAL").length;
+  const abnormalCount = (order.orderDetails ?? []).filter(
     (d) => d.flag === "HIGH" || d.flag === "LOW"
   ).length;
 
@@ -176,9 +176,9 @@ function ApprovalCard({
             <span className="font-mono text-xs font-semibold text-primary">
               {order.orderNumber}
             </span>
-            <h3 className="mt-1 font-bold text-foreground">{order.patient.name}</h3>
+            <h3 className="mt-1 font-bold text-foreground">{order.patient?.name ?? "-"}</h3>
             <span className="text-xs text-muted-foreground">
-              MRN: {order.patient.mrn}
+              MRN: {order.patient?.mrn ?? "-"}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -219,7 +219,7 @@ function ApprovalCard({
               </tr>
             </thead>
             <tbody>
-              {order.orderDetails.map((detail) => (
+              {(order.orderDetails ?? []).map((detail) => (
                 <tr key={detail.id} className="border-b border-border last:border-0">
                   <td className="px-3 py-2">
                     <span className="font-mono text-xs font-semibold text-primary">
@@ -328,11 +328,25 @@ export default function LabApprovalPage() {
       setLoading(true);
       setError(null);
       const response = await apiClient.getApprovalQueue();
-      const result = response as {
-        success: boolean;
-        data: { data: ApprovalOrder[]; meta: { total: number } };
-      };
-      setOrders(result.data.data);
+      // After unwrapResponse, response should be { data: [...], meta: {...} }
+      // But handle cases where envelope is still present or response shape varies
+      const raw = response as unknown as Record<string, unknown>;
+      let items: ApprovalOrder[] = [];
+      
+      if (Array.isArray(raw)) {
+        // Direct array response
+        items = raw as ApprovalOrder[];
+      } else if (raw && typeof raw === 'object') {
+        if (Array.isArray(raw.data)) {
+          // Shape: { data: [...], meta: {...} }
+          items = raw.data as ApprovalOrder[];
+        } else if (raw.data && typeof raw.data === 'object' && Array.isArray((raw.data as Record<string, unknown>).data)) {
+          // Double-wrapped: { data: { data: [...], meta: {...} } }
+          items = (raw.data as Record<string, unknown>).data as ApprovalOrder[];
+        }
+      }
+
+      setOrders(items);
     } catch (err: unknown) {
       const message =
         err instanceof Error

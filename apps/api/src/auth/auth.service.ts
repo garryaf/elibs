@@ -29,6 +29,7 @@ export class AuthService {
   }
 
   async login(user: any) {
+    // TODO: NCR-01-02 — Add clinicId to JWT payload when User.clinicId column is added
     const payload = { email: user.email, sub: user.id, role: user.role };
     return {
       accessToken: this.jwtService.sign(payload),

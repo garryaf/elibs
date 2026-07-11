@@ -11,15 +11,9 @@ interface OrderTableProps {
   orders: Order[];
 }
 
-const PAGE_SIZE = 8;
+import { formatRupiah } from "@/lib/format";
 
-function formatRupiah(amount: number): string {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(amount);
-}
+const PAGE_SIZE = 8;
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("id-ID", {

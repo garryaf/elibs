@@ -6,6 +6,7 @@ apps/web/node_modules
 # Build outputs
 apps/api/dist
 apps/web/.next
+apps/web/out
 
 # Environment files (injected via docker-compose)
 .env
@@ -19,16 +20,32 @@ deploy/env/.env.*
 # IDE
 .vscode
 .idea
+.kiro
 
 # Documentation & specs (not needed in image)
 *.md
-.kiro
+!apps/api/package.json
+!apps/web/package.json
 Functiona spec
+docs
 
-# Test coverage
+# Test coverage & test files
 coverage
 apps/api/coverage
 apps/web/coverage
+**/*.spec.ts
+**/*.test.ts
+**/__tests__
 
 # Logs
 *.log
+
+# Docker files (prevent recursive context)
+docker-compose*.yml
+Makefile
+deploy/nginx
+deploy/certbot
+deploy/env
+
+# Prisma migrations SQL (not needed for build, only schema)
+# Keep migrations for entrypoint to run them

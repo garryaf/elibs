@@ -1,5 +1,5 @@
 # ============================================================================
-# eLIS API — Multi-stage Production Dockerfile
+# eLIS API — Multi-stage Production Dockerfile (Optimized)
 # Build context: monorepo root (.)
 # Usage: docker build -f apps/api/Dockerfile .
 # ============================================================================
@@ -9,20 +9,15 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat python3 make g++
 
-# Copy root workspace files for npm install
+# Copy only files needed for dependency resolution
 COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 
-# Configure npm for slow/unstable networks
-RUN npm config set fetch-retries 5 && \
-    npm config set fetch-retry-mintimeout 60000 && \
-    npm config set fetch-retry-maxtimeout 300000 && \
-    npm config set fetch-timeout 600000 && \
-    npm config set maxsockets 5
-
-# Install ALL workspace dependencies (more reliable than --workspace filter on slow networks)
-RUN npm ci && npm cache clean --force
+# Install dependencies with persistent npm cache mount
+# This avoids re-downloading packages on every build
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --workspace=api --include-workspace-root
 
 # --- Stage 2: Build ---
 FROM node:20-alpine AS builder
@@ -45,9 +40,6 @@ RUN cd apps/api && npx nest build
 # Compile seed scripts for production use
 RUN cd apps/api/prisma/seeds && /app/node_modules/.bin/tsc --project ./tsconfig.seed.json
 
-# Prune dev dependencies for production image
-RUN npm prune --workspace=api --omit=dev
-
 # --- Stage 3: Production ---
 FROM node:20-alpine AS production
 WORKDIR /app
@@ -59,22 +51,28 @@ RUN apk add --no-cache openssl libc6-compat
 RUN addgroup -g 1001 -S elis && \
     adduser -S elis -u 1001 -G elis
 
-# Copy pruned node_modules (production only)
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
+# Copy package files for production install
+COPY package.json package-lock.json ./
+COPY apps/api/package.json ./apps/api/
+
+# Install production-only dependencies with cache mount
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --workspace=api --include-workspace-root --omit=dev
 
 # Copy built application
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
 COPY --from=builder /app/apps/api/prisma/seeds/dist ./apps/api/prisma/seeds/dist
-COPY --from=builder /app/apps/api/package.json ./apps/api/
-COPY --from=builder /app/package.json ./
+
+# Copy generated Prisma client from builder
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Entrypoint
 COPY apps/api/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Fix ownership so elis user can write (prisma needs write access to engines dir)
+# Fix ownership so elis user can write
 RUN chown -R elis:elis /app
 
 USER elis

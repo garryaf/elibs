@@ -12,6 +12,7 @@ import { RegionValidationService } from '../region/region-validation.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { AddPatientInsuranceDto, UpdatePatientInsuranceDto } from './dto/manage-patient-insurance.dto';
+import { LabHistoryQueryDto } from './dto/lab-history-query.dto';
 
 const REGION_INCLUDE = {
   provinsiRef: { select: { id: true, name: true } },
@@ -272,6 +273,14 @@ export class PatientService {
       throw new BadRequestException('Priority must be between 1 and 5');
     }
 
+    // Validate priority uniqueness per patient
+    const existingPriority = await this.prisma.patientInsurance.findFirst({
+      where: { patientId, priority: dto.priority },
+    });
+    if (existingPriority) {
+      throw new ConflictException(`Patient already has insurance with priority ${dto.priority}`);
+    }
+
     // Check if this patient-insurance combination already exists
     const existing = await this.prisma.patientInsurance.findUnique({
       where: { patientId_insuranceId: { patientId, insuranceId: dto.insuranceId } },
@@ -309,6 +318,16 @@ export class PatientService {
       throw new NotFoundException('Patient insurance record not found');
     }
 
+    // Validate priority uniqueness if priority is being changed
+    if (dto.priority !== undefined && dto.priority !== existing.priority) {
+      const conflicting = await this.prisma.patientInsurance.findFirst({
+        where: { patientId: existing.patientId, priority: dto.priority, id: { not: patientInsuranceId } },
+      });
+      if (conflicting) {
+        throw new ConflictException(`Patient already has insurance with priority ${dto.priority}`);
+      }
+    }
+
     const data: any = { ...dto };
     if (dto.validFrom) data.validFrom = new Date(dto.validFrom);
     if (dto.validUntil) data.validUntil = new Date(dto.validUntil);
@@ -337,5 +356,67 @@ export class PatientService {
     });
 
     return { success: true, message: 'Patient insurance removed' };
+  }
+
+  // ─── Patient Lab History ───────────────────────────────────────────────────
+
+  async getLabHistory(patientId: string, query: LabHistoryQueryDto) {
+    // Verify patient exists
+    const patient = await this.prisma.patient.findFirst({
+      where: { id: patientId, deletedAt: null },
+    });
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+
+    const [items, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where: { patientId },
+        include: {
+          visit: { select: { visitNumber: true } },
+          orderDetails: {
+            include: { test: { select: { name: true } } },
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.order.count({ where: { patientId } }),
+    ]);
+
+    const mapped = items.map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      paymentMethod: order.paymentMethod,
+      createdAt: order.createdAt,
+      visit: order.visit ? { visitNumber: order.visit.visitNumber } : null,
+      orderDetails: order.orderDetails.map((d: any) => ({
+        id: d.id,
+        testName: d.test?.name ?? null,
+        resultValue: d.resultValue,
+        flag: d.flag,
+        status: d.status,
+      })),
+    }));
+
+    return {
+      success: true,
+      message: 'Lab history retrieved',
+      data: {
+        items: mapped,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    };
   }
 }

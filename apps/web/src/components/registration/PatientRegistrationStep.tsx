@@ -29,7 +29,7 @@ interface RegistrationFormData {
   kelurahanDesaId?: string;
 }
 
-type FormErrors = Partial<Record<keyof RegistrationFormData | "region", string>>;
+type FormErrors = Partial<Record<keyof RegistrationFormData | "region" | "general", string>>;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -236,10 +236,10 @@ export function PatientRegistrationStep({
         }
         setErrors(fieldErrors);
       } else {
-        // General error — show on the NIK field as a general form error
+        // General error — show as banner above form
         setErrors((prev) => ({
           ...prev,
-          name: error.message || "Terjadi kesalahan saat mendaftarkan pasien",
+          general: error.message || "Terjadi kesalahan saat mendaftarkan pasien",
         }));
       }
     } finally {
@@ -262,6 +262,12 @@ export function PatientRegistrationStep({
       {/* Form */}
       <form onSubmit={handleSubmit} noValidate>
         <div className="p-6 space-y-6">
+          {/* General Error Banner */}
+          {errors.general && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+              {errors.general}
+            </div>
+          )}
           {/* Section: Data Diri */}
           <div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">

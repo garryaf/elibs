@@ -2,8 +2,9 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Search, Plus, TrendingUp } from "lucide-react";
+import { Search, Plus, TrendingUp, FlaskConical } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import { formatRupiah } from "@/lib/format";
 import type { Order, OrderStatus } from "@/types/order";
 import { OrderTable } from "@/components/orders/OrderTable";
 
@@ -15,10 +16,6 @@ const STATUS_FILTERS: { value: OrderStatus | "ALL"; label: string }[] = [
   { value: "APPROVED", label: "Selesai" },
 ];
 
-function formatRupiah(amount: number): string {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
-}
-
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState("");
@@ -27,16 +24,10 @@ export default function OrdersPage() {
   const loadOrders = useCallback(async () => {
     try {
       const res = await apiClient.getOrders({ limit: 100, status: statusFilter !== "ALL" ? statusFilter : undefined });
-      // Defensive extraction: handle both { data: { data: [] } } and { data: [] } shapes
-      const envelope = (res?.data ?? res) as unknown;
-      let raw: unknown[] = [];
-      if (Array.isArray(envelope)) {
-        raw = envelope;
-      } else if (envelope && typeof envelope === "object" && "data" in envelope) {
-        const inner = (envelope as { data: unknown }).data;
-        raw = Array.isArray(inner) ? inner : [];
-      }
-      const mapped: Order[] = (raw as Record<string, unknown>[]).map((o) => ({
+      // apiClient.request() already strips the { success, message, data } envelope via unwrapResponse.
+      // Result shape is { data: Order[], meta: {...} } (PaginatedResponse).
+      const raw = (Array.isArray(res) ? res : ((res as { data?: unknown }).data ?? [])) as Record<string, unknown>[];
+      const mapped: Order[] = raw.map((o) => ({
         id: o.id as string,
         orderNumber: o.orderNumber as string,
         patientId: (o as { patient?: { id?: string } }).patient?.id || (o.patientId as string) || "",
@@ -161,7 +152,17 @@ export default function OrdersPage() {
         </p>
       )}
 
-      <OrderTable orders={filtered} />
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center">
+          <FlaskConical className="h-10 w-10 text-slate-300 dark:text-slate-600 mb-3" />
+          <h3 className="text-base font-semibold text-slate-700 dark:text-slate-300">Tidak ada order</h3>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {search ? `Tidak ditemukan order untuk "${search}"` : "Belum ada order untuk filter ini."}
+          </p>
+        </div>
+      ) : (
+        <OrderTable orders={filtered} />
+      )}
     </div>
   );
 }

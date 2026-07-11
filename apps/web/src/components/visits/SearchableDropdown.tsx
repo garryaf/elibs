@@ -47,12 +47,19 @@ export function SearchableDropdown({
     }
   }, [fetchOptions]);
 
-  // Load initial options on open
+  // Debounce query to avoid fetch on every keystroke
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Load options on open or debounced query change
   useEffect(() => {
     if (isOpen) {
-      loadOptions(query);
+      loadOptions(debouncedQuery);
     }
-  }, [isOpen, query, loadOptions]);
+  }, [isOpen, debouncedQuery, loadOptions]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -94,6 +101,10 @@ export function SearchableDropdown({
           <button
             type="button"
             onClick={handleOpen}
+            role="combobox"
+            aria-expanded={false}
+            aria-haspopup="listbox"
+            aria-controls="dropdown-listbox"
             className={`flex h-11 w-full items-center justify-between rounded-xl border px-3.5 text-sm transition-all ${
               error
                 ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/10"
@@ -105,13 +116,14 @@ export function SearchableDropdown({
             </span>
             <div className="flex items-center gap-1">
               {value && (
-                <span
-                  role="button"
+                <button
+                  type="button"
                   onClick={handleClear}
+                  aria-label={`Hapus ${label}`}
                   className="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
                 >
                   <X className="h-3.5 w-3.5" />
-                </span>
+                </button>
               )}
               <ChevronDown className="h-4 w-4 text-slate-400" />
             </div>
@@ -122,6 +134,10 @@ export function SearchableDropdown({
             <input
               ref={inputRef}
               type="text"
+              role="combobox"
+              aria-expanded={true}
+              aria-controls="dropdown-listbox"
+              aria-autocomplete="list"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={`Cari ${label.toLowerCase()}...`}
@@ -131,7 +147,7 @@ export function SearchableDropdown({
         )}
 
         {isOpen && (
-          <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          <div id="dropdown-listbox" role="listbox" className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
             <div className="max-h-48 overflow-y-auto p-1">
               {loading ? (
                 <div className="flex items-center justify-center py-3">

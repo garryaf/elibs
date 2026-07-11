@@ -202,33 +202,38 @@ export default function ResultEntryPage() {
       setError(null);
 
       try {
-        const [orderRes, deltaRes] = await Promise.all([
-          apiClient.getOrder(orderId) as Promise<{ success: boolean; data: Order }>,
-          apiClient.getDeltaCheck(orderId) as Promise<{ success: boolean; data: DeltaCheckEntry[] }>,
-        ]);
+        // apiClient.get already unwraps the { success, message, data } envelope via unwrapResponse
+        // So the response IS the inner data object directly
+        const orderRes = await apiClient.getOrder(orderId) as unknown as Order;
 
         if (cancelled) return;
 
-        if (!orderRes.success || !orderRes.data) {
+        if (!orderRes || !orderRes.id) {
           setError("Order tidak ditemukan.");
           return;
         }
 
-        const orderData = orderRes.data;
-        setOrder(orderData);
+        setOrder(orderRes);
 
-        if (deltaRes.success && deltaRes.data) {
-          setDeltaCheck(deltaRes.data);
+        // Delta check may fail (403 for non-eligible roles) - handle gracefully
+        try {
+          const deltaRes = await apiClient.getDeltaCheck(orderId) as unknown as DeltaCheckEntry[];
+          if (!cancelled && Array.isArray(deltaRes)) {
+            setDeltaCheck(deltaRes);
+          }
+        } catch {
+          // Delta check is optional - silently ignore 403 or other errors
+          if (!cancelled) setDeltaCheck([]);
         }
 
         // Initialize result form entries from order details
-        const patientAge = orderData.patient.dateOfBirth
-          ? calculateAge(orderData.patient.dateOfBirth)
+        const patientAge = orderRes.patient?.dateOfBirth
+          ? calculateAge(orderRes.patient.dateOfBirth)
           : undefined;
-        const patientGender = orderData.patient.gender;
+        const patientGender = orderRes.patient?.gender;
 
         setResults(
-          orderData.orderDetails.map((detail) => {
+          (orderRes.orderDetails ?? []).map((detail) => {
             const existingValue = detail.resultValue ?? "";
             let flag: Flag | null = detail.flag ?? null;
 
@@ -342,9 +347,9 @@ export default function ResultEntryPage() {
       );
 
       // Refresh order data after save
-      const orderRes = await apiClient.getOrder(orderId) as { success: boolean; data: Order };
-      if (orderRes.success && orderRes.data) {
-        setOrder(orderRes.data);
+      const orderData = await apiClient.getOrder(orderId) as unknown as Order;
+      if (orderData && orderData.id) {
+        setOrder(orderData);
       }
     } catch (err: unknown) {
       const message =
