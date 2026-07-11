@@ -1,6 +1,7 @@
 import {
   Injectable,
   BadRequestException,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -80,6 +81,7 @@ export class OrderService {
           visitId: dto.visitId,
           status: OrderStatus.PENDING_PAYMENT,
           totalAmount: pricing.totalAmount,
+          notes: dto.notes ?? null,
         },
       });
 
@@ -108,7 +110,7 @@ export class OrderService {
     });
   }
 
-  async findAll(query: OrderQueryDto) {
+  async findAll(query: OrderQueryDto, clinicId?: string) {
     const page = query.page ? parseInt(query.page, 10) : 1;
     const limit = query.limit ? parseInt(query.limit, 10) : 20;
     const skip = (page - 1) * limit;
@@ -116,6 +118,11 @@ export class OrderService {
     const sortOrder = query.sortOrder || 'desc';
 
     const where: any = {};
+
+    // DataScope: restrict by clinicId for KLINIK_PARTNER users
+    if (clinicId) {
+      where.clinicId = clinicId;
+    }
 
     if (query.status) {
       where.status = query.status;
@@ -157,7 +164,7 @@ export class OrderService {
     };
   }
 
-  async findById(id: string) {
+  async findById(id: string, clinicId?: string) {
     const order = await this.prisma.order.findUnique({
       where: { id },
       include: {
@@ -171,6 +178,12 @@ export class OrderService {
     if (!order) {
       throw new NotFoundException('Order not found');
     }
+
+    // DataScope: verify resource belongs to the user's clinic
+    if (clinicId && order.clinicId !== clinicId) {
+      throw new ForbiddenException('Access denied: resource belongs to another clinic');
+    }
+
     return order;
   }
 

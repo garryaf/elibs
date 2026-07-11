@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { User } from '@prisma/client';
+import { User, Role } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
@@ -22,11 +22,19 @@ const userSelect = {
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
+  private validateRoleEscalation(requestingUserRole: Role, targetRole: Role): void {
+    if (targetRole === Role.SUPER_ADMIN && requestingUserRole !== Role.SUPER_ADMIN) {
+      throw new ForbiddenException('Only SUPER_ADMIN can assign SUPER_ADMIN role');
+    }
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { email, deletedAt: null } });
   }
 
-  async create(dto: CreateUserDto) {
+  async create(dto: CreateUserDto, requestingUser: { id: string; role: Role }) {
+    this.validateRoleEscalation(requestingUser.role, dto.role);
+
     // Check for active (non-deleted) user with same email.
     // DB partial unique index enforces this at schema level too (users_email_active_unique).
     const existing = await this.prisma.user.findFirst({
@@ -100,8 +108,13 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, dto: UpdateUserDto) {
+  async update(id: string, dto: UpdateUserDto, requestingUser: { id: string; role: Role }) {
     await this.findById(id);
+
+    // Validate role escalation only when role is being changed
+    if (dto.role) {
+      this.validateRoleEscalation(requestingUser.role, dto.role);
+    }
 
     // Check email uniqueness if email is being updated
     if (dto.email) {
@@ -130,9 +143,25 @@ export class UsersService {
     });
   }
 
-  async softDelete(id: string) {
-    await this.findById(id);
+  async softDelete(id: string, requestingUserId: string) {
+    // 1. Self-delete check
+    if (id === requestingUserId) {
+      throw new ForbiddenException('Cannot delete own account');
+    }
 
+    const targetUser = await this.findById(id);
+
+    // 2. Last SUPER_ADMIN check
+    if (targetUser.role === Role.SUPER_ADMIN) {
+      const activeSuperAdminCount = await this.prisma.user.count({
+        where: { role: Role.SUPER_ADMIN, deletedAt: null, id: { not: id } },
+      });
+      if (activeSuperAdminCount === 0) {
+        throw new ConflictException('Cannot delete last super admin');
+      }
+    }
+
+    // 3. Proceed with soft-delete
     return this.prisma.user.update({
       where: { id },
       data: { deletedAt: new Date() },

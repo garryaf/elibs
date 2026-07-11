@@ -1,6 +1,7 @@
 import {
   Injectable,
   BadRequestException,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 import { PaymentMethod, VisitStatus, OrderStatus } from '@prisma/client';
@@ -171,12 +172,17 @@ export class VisitService {
     }
   }
 
-  async findAll(query: VisitQueryDto) {
+  async findAll(query: VisitQueryDto, clinicId?: string) {
     const page = query.page || 1;
     const limit = Math.min(query.limit || 20, 100);
     const skip = (page - 1) * limit;
 
     const where: any = {};
+
+    // DataScope: restrict by clinicId for KLINIK_PARTNER users
+    if (clinicId) {
+      where.clinicId = clinicId;
+    }
 
     // Search filter: case-insensitive partial match on patient.name, patient.mrn, OR visitNumber
     if (query.search) {
@@ -209,8 +215,8 @@ export class VisitService {
       where.doctorId = query.doctorId;
     }
 
-    // Clinic filter
-    if (query.clinicId) {
+    // Clinic filter (query param only applies if no dataScope clinicId is set)
+    if (query.clinicId && !clinicId) {
       where.clinicId = query.clinicId;
     }
 
@@ -245,7 +251,7 @@ export class VisitService {
     };
   }
 
-  async findById(id: string) {
+  async findById(id: string, clinicId?: string) {
     const visit = await this.prisma.visit.findUnique({
       where: { id },
       include: {
@@ -269,6 +275,11 @@ export class VisitService {
         errorCode: 'ERR_NOT_FOUND',
         message: 'Visit not found',
       });
+    }
+
+    // DataScope: verify resource belongs to the user's clinic
+    if (clinicId && visit.clinicId !== clinicId) {
+      throw new ForbiddenException('Access denied: resource belongs to another clinic');
     }
 
     return visit;

@@ -482,6 +482,7 @@ export default function NewOrderPage() {
         visitId: selectedVisit.id,
         patientId: selectedVisit.patient.id,
         testIds: selectedTests.map((t) => t.id),
+        notes: notes.trim() || undefined,
       });
       setSuccess(true);
       setTimeout(() => router.push("/dashboard/orders"), 1800);

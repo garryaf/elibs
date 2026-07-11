@@ -103,6 +103,7 @@ describe('Property 12: Auto-Approval When No Doctor Required', () => {
             id: orderId,
             orderNumber: 'LAB-20250703-0001',
             patientId: 'patient-uuid-1',
+            visitId: 'visit-uuid-1',
             status: OrderStatus.IN_ANALYSIS,
             orderDetails,
           };
@@ -189,6 +190,7 @@ describe('Property 12: Auto-Approval When No Doctor Required', () => {
             id: orderId,
             orderNumber: 'LAB-20250703-0001',
             patientId: 'patient-uuid-1',
+            visitId: 'visit-uuid-1',
             status: OrderStatus.IN_ANALYSIS,
             orderDetails,
           };

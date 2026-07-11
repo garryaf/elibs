@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Search, Plus, TrendingUp, FlaskConical } from "lucide-react";
+import { Search, Plus, TrendingUp, FlaskConical, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { formatRupiah } from "@/lib/format";
 import type { Order, OrderStatus } from "@/types/order";
@@ -16,18 +16,45 @@ const STATUS_FILTERS: { value: OrderStatus | "ALL"; label: string }[] = [
   { value: "APPROVED", label: "Selesai" },
 ];
 
+const PAGE_SIZE = 20;
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   const loadOrders = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await apiClient.getOrders({ limit: 100, status: statusFilter !== "ALL" ? statusFilter : undefined });
-      // apiClient.request() already strips the { success, message, data } envelope via unwrapResponse.
-      // Result shape is { data: Order[], meta: {...} } (PaginatedResponse).
-      const raw = (Array.isArray(res) ? res : ((res as { data?: unknown }).data ?? [])) as Record<string, unknown>[];
-      const mapped: Order[] = raw.map((o) => ({
+      const res = await apiClient.getOrders({ page, limit: PAGE_SIZE, status: statusFilter !== "ALL" ? statusFilter : undefined });
+
+      // Defensive extraction: handle { data: { data: [], meta: {} } } envelope
+      const envelope = (res?.data ?? res) as unknown;
+      let raw: unknown[] = [];
+      let meta = { total: 0, page: 1, limit: PAGE_SIZE };
+
+      if (envelope && typeof envelope === "object") {
+        if ("data" in envelope) {
+          const inner = (envelope as { data: unknown }).data;
+          raw = Array.isArray(inner) ? inner : [];
+        }
+        if ("meta" in envelope) {
+          const m = (envelope as { meta: unknown }).meta as Record<string, unknown>;
+          meta = {
+            total: Number(m.total) || 0,
+            page: Number(m.page) || 1,
+            limit: Number(m.limit) || PAGE_SIZE,
+          };
+        }
+      } else if (Array.isArray(envelope)) {
+        raw = envelope;
+      }
+
+      const mapped: Order[] = (raw as Record<string, unknown>[]).map((o) => ({
         id: o.id as string,
         orderNumber: o.orderNumber as string,
         patientId: (o as { patient?: { id?: string } }).patient?.id || (o.patientId as string) || "",
@@ -39,15 +66,27 @@ export default function OrdersPage() {
         createdAt: o.createdAt as string,
         updatedAt: o.updatedAt as string,
       }));
+
       setOrders(mapped);
+      setTotal(meta.total);
+      setTotalPages(Math.ceil(meta.total / PAGE_SIZE) || 1);
     } catch {
       setOrders([]);
+      setTotal(0);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
     }
-  }, [statusFilter]);
+  }, [page, statusFilter]);
 
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter]);
 
   const filtered = useMemo(() => {
     return orders.filter((o) => {
@@ -152,7 +191,12 @@ export default function OrdersPage() {
         </p>
       )}
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-[#6B8E6B]" />
+          <p className="text-sm text-slate-500 dark:text-slate-400">Memuat data order...</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center">
           <FlaskConical className="h-10 w-10 text-slate-300 dark:text-slate-600 mb-3" />
           <h3 className="text-base font-semibold text-slate-700 dark:text-slate-300">Tidak ada order</h3>
@@ -163,6 +207,90 @@ export default function OrdersPage() {
       ) : (
         <OrderTable orders={filtered} />
       )}
+
+      {/* Pagination */}
+      {!loading && orders.length > 0 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Halaman {page} dari {totalPages} ({total} order)
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              Sebelumnya
+            </button>
+
+            {/* Page numbers */}
+            {getPageNumbers(page, totalPages).map((p, idx) =>
+              p === "..." ? (
+                <span
+                  key={`ellipsis-${idx}`}
+                  className="px-2 text-xs text-slate-400"
+                >
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p as number)}
+                  className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                    page === p
+                      ? "bg-[#6B8E6B] text-white shadow-sm"
+                      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                  }`}
+                >
+                  {p}
+                </button>
+              )
+            )}
+
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              Berikutnya
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getPageNumbers(
+  current: number,
+  total: number
+): (number | "...")[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages: (number | "...")[] = [1];
+
+  if (current > 3) {
+    pages.push("...");
+  }
+
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (current < total - 2) {
+    pages.push("...");
+  }
+
+  pages.push(total);
+
+  return pages;
 }

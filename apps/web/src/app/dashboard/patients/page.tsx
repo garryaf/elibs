@@ -4,13 +4,29 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Search, UserPlus, Download } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import type { Patient, PatientFormData, PatientStatus } from "@/types/patient";
 import { PatientTable } from "@/components/patients/PatientTable";
 import { PatientFormModal } from "@/components/patients/PatientFormModal";
 import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
+import { PatientLabHistory } from "@/components/patients/PatientLabHistory";
+
+const LAB_HISTORY_ROLES = [
+  "KASIR",
+  "CS",
+  "ADMIN",
+  "SUPER_ADMIN",
+  "OWNER",
+  "MANAGER",
+  "SAMPLING",
+  "ANALIS",
+  "DOKTER",
+  "KLINIK_PARTNER",
+];
 
 export default function PatientsPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -257,7 +273,7 @@ export default function PatientsPage() {
             className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={() => setViewingPatient(null)}
           />
-          <div className="relative z-10 w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Detail Pasien</h2>
               <button
@@ -298,6 +314,13 @@ export default function PatientsPage() {
                   <dd className="font-semibold text-slate-900 dark:text-white">{viewingPatient.address}</dd>
                 </div>
               </dl>
+
+              {/* Riwayat Laboratorium — role-gated */}
+              {user?.role && LAB_HISTORY_ROLES.includes(user.role) && (
+                <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
+                  <PatientLabHistory patientId={viewingPatient.id} />
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-3 border-t border-slate-100 px-6 py-4 dark:border-slate-800">
               <button

@@ -99,6 +99,7 @@ describe('Result Entry Property Tests', () => {
               id: orderId,
               orderNumber: 'LAB-20250703-0001',
               patientId: 'patient-uuid-1',
+              visitId: 'visit-uuid-1',
               status: OrderStatus.SAMPLE_COLLECTED,
               patient: {
                 id: 'patient-uuid-1',
@@ -175,6 +176,7 @@ describe('Result Entry Property Tests', () => {
               id: orderId,
               orderNumber: 'LAB-20250703-0001',
               patientId: 'patient-uuid-1',
+              visitId: 'visit-uuid-1',
               status: OrderStatus.SAMPLE_COLLECTED,
               patient: {
                 id: 'patient-uuid-1',
@@ -254,6 +256,7 @@ describe('Result Entry Property Tests', () => {
               id: orderId,
               orderNumber: 'LAB-20250703-0001',
               patientId: 'patient-uuid-1',
+              visitId: 'visit-uuid-1',
               status: OrderStatus.IN_ANALYSIS,
               patient: {
                 id: 'patient-uuid-1',

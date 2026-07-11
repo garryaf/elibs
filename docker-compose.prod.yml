@@ -12,9 +12,8 @@
 services:
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
-      target: production
+      context: .
+      dockerfile: apps/api/Dockerfile
     container_name: elis-api
     ports:
       - "${API_PORT:-3001}:3001"
@@ -42,8 +41,8 @@ services:
 
   web:
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/web/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.elis.example.com}
     container_name: elis-web

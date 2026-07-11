@@ -206,11 +206,11 @@ describe('Feature: visit-management, Property 10: Query Filter Correctness', () 
             expected = expected.filter((v) => v.clinicId === filters.clinicId);
           }
           if (filters.startDate) {
-            const start = new Date(filters.startDate);
+            const start = new Date(filters.startDate + 'T00:00:00.000+07:00');
             expected = expected.filter((v) => v.registrationDate >= start);
           }
           if (filters.endDate) {
-            const end = new Date(filters.endDate + 'T23:59:59.999Z');
+            const end = new Date(filters.endDate + 'T23:59:59.999+07:00');
             expected = expected.filter((v) => v.registrationDate <= end);
           }
 
@@ -266,10 +266,10 @@ describe('Feature: visit-management, Property 10: Query Filter Correctness', () 
             expect(where.clinicId).toBe(filters.clinicId);
           }
           if (filters.startDate) {
-            expect(where.registrationDate.gte).toEqual(new Date(filters.startDate));
+            expect(where.registrationDate.gte).toEqual(new Date(filters.startDate + 'T00:00:00.000+07:00'));
           }
           if (filters.endDate) {
-            expect(where.registrationDate.lte).toEqual(new Date(filters.endDate + 'T23:59:59.999Z'));
+            expect(where.registrationDate.lte).toEqual(new Date(filters.endDate + 'T23:59:59.999+07:00'));
           }
         },
       ),

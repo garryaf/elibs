@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { apiClient } from "@/lib/api";
+import { VisitRowActions } from "@/components/visits/VisitRowActions";
+import { CancelVisitDialog } from "@/components/visits/CancelVisitDialog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -112,6 +114,8 @@ export default function VisitsPage() {
 // ─── Authorized Page Content ──────────────────────────────────────────────────
 
 function VisitsPageContent() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -122,6 +126,7 @@ function VisitsPageContent() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [cancelVisit, setCancelVisit] = useState<Visit | null>(null);
 
   // Debounce search input (300ms)
   useEffect(() => {
@@ -374,12 +379,13 @@ function VisitsPageContent() {
                     {formatDate(visit.registrationDate)}
                   </td>
                   <td className="px-4 py-3">
-                    <Link
-                      href={`/dashboard/visits/${visit.id}`}
-                      className="text-xs font-medium text-[#6B8E6B] hover:text-[#5A7D5A] hover:underline"
-                    >
-                      Detail
-                    </Link>
+                    <VisitRowActions
+                      visit={visit}
+                      userRole={user?.role || ""}
+                      onViewDetail={(v) => router.push(`/dashboard/visits/${v.id}`)}
+                      onEdit={(v) => router.push(`/dashboard/visits/${v.id}/edit`)}
+                      onCancelSuccess={() => setCancelVisit(visit)}
+                    />
                   </td>
                 </tr>
               ))}
@@ -438,6 +444,19 @@ function VisitsPageContent() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Cancel Visit Dialog */}
+      {cancelVisit && (
+        <CancelVisitDialog
+          visit={cancelVisit}
+          isOpen={!!cancelVisit}
+          onClose={() => setCancelVisit(null)}
+          onCancelSuccess={() => {
+            setCancelVisit(null);
+            loadVisits();
+          }}
+        />
       )}
     </div>
   );

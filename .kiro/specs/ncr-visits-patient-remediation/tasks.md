@@ -9,7 +9,7 @@ This plan implements three deferred NCR findings: NCR-05-08 (RBAC UI gate for Vi
 
 ## Tasks
 
-- [ ] 1. NCR-05-08 — RBAC UI Gate for Visits Page
+- [x] 1. NCR-05-08 — RBAC UI Gate for Visits Page
   - [x] 1.1 Add "Kunjungan" menu item to sidebar with role-based visibility
     - Add to `UTAMA` menu group in `apps/web/src/components/layout/sidebar.tsx` after "Pasien"
     - Use `Calendar` icon from lucide-react
@@ -26,7 +26,7 @@ This plan implements three deferred NCR findings: NCR-05-08 (RBAC UI gate for Vi
     - When user role IS in `AUTHORIZED_VISIT_ROLES`, render page content normally
     - Session expiry handled by existing auth context (redirects to login)
     - _Requirements: 1.1, 1.2, 1.4, 1.5_
-  - [-] 1.3 Write property-based test for RBAC visits page visibility
+  - [x] 1.3 Write property-based test for RBAC visits page visibility
     - Create `apps/web/src/__tests__/rbac-visits.property.spec.ts`
     - Follow pattern from existing `rbac-settings.property.spec.ts`
     - Property: For any role in the system's role enum, visits page access is granted IFF role is in `AUTHORIZED_VISIT_ROLES`
@@ -34,7 +34,7 @@ This plan implements three deferred NCR findings: NCR-05-08 (RBAC UI gate for Vi
     - Assert: authorized roles see content, unauthorized roles get redirected
     - _Requirements: 1.1, 1.2, 1.3_
 
-- [ ] 2. NCR-05-12 — Contextual Row Actions on Visits Table
+- [x] 2. NCR-05-12 — Contextual Row Actions on Visits Table
   - [x] 2.1 Create VisitRowActions component
     - Create `apps/web/src/components/visits/VisitRowActions.tsx`
     - Follow `ActionMenu` pattern from `PatientTable.tsx` (dropdown triggered by MoreVertical icon)
@@ -57,7 +57,7 @@ This plan implements three deferred NCR findings: NCR-05-08 (RBAC UI gate for Vi
     - On success: close dialog, trigger `onCancelSuccess` callback
     - On failure: display error message from API response within the dialog
     - _Requirements: 2.6, 2.7, 2.9_
-  - [-] 2.3 Integrate VisitRowActions into visits page table
+  - [x] 2.3 Integrate VisitRowActions into visits page table
     - Modify `apps/web/src/app/dashboard/visits/page.tsx`
     - Replace existing simple "Detail" link in the action column with `<VisitRowActions />`
     - Pass `user.role` from `useAuth()` as `userRole` prop
@@ -65,7 +65,7 @@ This plan implements three deferred NCR findings: NCR-05-08 (RBAC UI gate for Vi
     - Wire `onEdit` handler to navigate to visit edit page
     - Wire `onCancelSuccess` to call `loadVisits()` for data refresh
     - _Requirements: 2.8_
-  - [-] 2.4 Write property-based test for visit row action visibility
+  - [x] 2.4 Write property-based test for visit row action visibility
     - Create `apps/web/src/__tests__/visit-row-actions.property.spec.ts`
     - Use fast-check to generate arbitrary (status, role) pairs from all enum values
     - Property: For any (status, role) combination, the set of visible actions matches the visibility matrix exactly
@@ -74,7 +74,7 @@ This plan implements three deferred NCR findings: NCR-05-08 (RBAC UI gate for Vi
     - Verify: Cancel appears IFF (status === REGISTERED AND role ∈ CANCEL_VISIT_ROLES)
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 3. NCR-03-10 — Patient Lab History Display
+- [x] 3. NCR-03-10 — Patient Lab History Display
   - [x] 3.1 Create LabHistoryQueryDto and add lab-history endpoint to PatientController
     - Create `apps/api/src/laboratory/patient/dto/lab-history-query.dto.ts`
     - Fields: `page` (optional, default 1, min 1), `limit` (optional, default 10, min 1, max 50)
@@ -95,7 +95,7 @@ This plan implements three deferred NCR findings: NCR-05-08 (RBAC UI gate for Vi
     - Map response: flatten `test.name` into `testName` on each orderDetail
     - Return envelope: `{ success: true, message, data: { items, meta: { page, limit, total, totalPages } } }`
     - _Requirements: 3.7, 3.9_
-  - [-] 3.3 Create PatientLabHistory frontend component
+  - [x] 3.3 Create PatientLabHistory frontend component
     - Create `apps/web/src/components/patients/PatientLabHistory.tsx`
     - Props: `patientId: string`
     - State: `data`, `loading`, `error`, `page`
@@ -107,13 +107,13 @@ This plan implements three deferred NCR findings: NCR-05-08 (RBAC UI gate for Vi
     - Each order card shows expandable test results (test name, result value, flag with color coding)
     - Pagination controls at bottom using meta data
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
-  - [-] 3.4 Integrate PatientLabHistory into patient detail modal
+  - [x] 3.4 Integrate PatientLabHistory into patient detail modal
     - Modify `apps/web/src/app/dashboard/patients/page.tsx` (patient detail modal section)
     - Add "Riwayat Laboratorium" section below existing demographics
     - Only render section if user role is in `Lab_History_Roles`
     - Pass selected patient's ID to `<PatientLabHistory patientId={...} />`
     - _Requirements: 3.1_
-  - [-] 3.5 Write property-based test for lab history pagination
+  - [x] 3.5 Write property-based test for lab history pagination
     - Create `apps/api/src/laboratory/patient/__tests__/lab-history.property.spec.ts`
     - Use fast-check to generate arbitrary `page` (1-100) and `limit` (1-50) values
     - Property 1: For any valid (page, limit) and dataset size, `items.length ≤ limit`
@@ -122,17 +122,17 @@ This plan implements three deferred NCR findings: NCR-05-08 (RBAC UI gate for Vi
     - Mock Prisma to return generated datasets
     - _Requirements: 3.9_
 
-- [ ] 4. Checkpoint — Verification and Documentation
-  - [~] 4.1 Run TypeScript compilation check
+- [x] 4. Checkpoint — Verification and Documentation
+  - [x] 4.1 Run TypeScript compilation check
     - Run `npx tsc --noEmit` in `apps/api/`
     - Run `npx tsc --noEmit` in `apps/web/`
     - Fix any type errors introduced by new code
     - Ensure no broken imports from new components
-  - [~] 4.2 Run existing test suite
+  - [x] 4.2 Run existing test suite
     - Run `npm run test` in `apps/api/` — verify no regressions
     - Run the new property-based tests and ensure they pass
     - Fix any failing tests
-  - [~] 4.3 Update Remediation-Task-Mapping.md
+  - [x] 4.3 Update Remediation-Task-Mapping.md
     - Update NCR-05-08 entry status from `🆕 OPEN` to `✅ RESOLVED`
     - Update NCR-05-12 entry status from `🆕 OPEN` to `✅ RESOLVED`
     - Update NCR-03-10 entry status from `🆕 OPEN` to `✅ RESOLVED`

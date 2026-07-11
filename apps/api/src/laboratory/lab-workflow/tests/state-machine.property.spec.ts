@@ -15,7 +15,10 @@ describe('State Machine Property Tests', () => {
   // The complete set of valid transitions as defined in the state machine
   const VALID_TRANSITIONS = new Set([
     `${OrderStatus.PENDING_PAYMENT}->${OrderStatus.PAID}`,
+    `${OrderStatus.PENDING_PAYMENT}->${OrderStatus.PAYMENT_OVERDUE}`,
     `${OrderStatus.PENDING_PAYMENT}->${OrderStatus.CANCELLED}`,
+    `${OrderStatus.PAYMENT_OVERDUE}->${OrderStatus.PAID}`,
+    `${OrderStatus.PAYMENT_OVERDUE}->${OrderStatus.CANCELLED}`,
     `${OrderStatus.PAID}->${OrderStatus.SAMPLE_COLLECTED}`,
     `${OrderStatus.SAMPLE_COLLECTED}->${OrderStatus.IN_ANALYSIS}`,
     `${OrderStatus.IN_ANALYSIS}->${OrderStatus.VERIFIED}`,

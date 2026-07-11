@@ -31,8 +31,13 @@ COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY apps/api/ ./apps/api/
 COPY package.json package-lock.json ./
 
-# Generate Prisma Client
-RUN cd apps/api && npx prisma generate
+# Generate Prisma Client and stage to deterministic location
+RUN cd apps/api && npx prisma generate && \
+    mkdir -p /prisma-out/.prisma /prisma-out/@prisma && \
+    if [ -d /app/node_modules/.prisma ]; then cp -r /app/node_modules/.prisma/client /prisma-out/.prisma/client; \
+    elif [ -d /app/apps/api/node_modules/.prisma ]; then cp -r /app/apps/api/node_modules/.prisma/client /prisma-out/.prisma/client; fi && \
+    if [ -d /app/node_modules/@prisma/client ]; then cp -r /app/node_modules/@prisma/client /prisma-out/@prisma/client; \
+    elif [ -d /app/apps/api/node_modules/@prisma/client ]; then cp -r /app/apps/api/node_modules/@prisma/client /prisma-out/@prisma/client; fi
 
 # Build NestJS
 RUN cd apps/api && npx nest build
@@ -64,8 +69,12 @@ COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
 COPY --from=builder /app/apps/api/prisma/seeds/dist ./apps/api/prisma/seeds/dist
 
-# Generate Prisma client in production (prisma CLI is needed temporarily)
-RUN npx -y prisma@5.22.0 generate --schema=./apps/api/prisma/schema.prisma
+# Copy generated Prisma client from builder (staged to /prisma-out)
+# Must go to BOTH root and workspace node_modules since Node resolves from workspace first
+COPY --from=builder /prisma-out/.prisma ./node_modules/.prisma
+COPY --from=builder /prisma-out/@prisma/client ./node_modules/@prisma/client
+COPY --from=builder /prisma-out/.prisma ./apps/api/node_modules/.prisma
+COPY --from=builder /prisma-out/@prisma/client ./apps/api/node_modules/@prisma/client
 
 # Entrypoint
 COPY apps/api/docker-entrypoint.sh /usr/local/bin/

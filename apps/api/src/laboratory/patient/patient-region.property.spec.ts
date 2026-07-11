@@ -4,6 +4,7 @@ import { PatientService } from './patient.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { RegionValidationService } from '../region/region-validation.service';
 import { MrnGeneratorService } from './mrn-generator.service';
+import { AuditService } from '../audit/audit.service';
 
 /**
  * Property 8: Patient Region Storage Round-Trip
@@ -142,6 +143,7 @@ describe('Property 8: Patient Region Storage Round-Trip', () => {
               mockPrisma,
               mockMrnGenerator,
               mockRegionValidation,
+              { log: jest.fn() } as unknown as AuditService,
             );
 
             const result = await service.register({
@@ -186,6 +188,7 @@ describe('Property 8: Patient Region Storage Round-Trip', () => {
               mockPrisma,
               mockMrnGenerator,
               mockRegionValidation,
+              { log: jest.fn() } as unknown as AuditService,
             );
 
             const result = await service.register({
@@ -243,6 +246,7 @@ describe('Property 8: Patient Region Storage Round-Trip', () => {
               mockPrisma,
               mockMrnGenerator,
               mockRegionValidation,
+              { log: jest.fn() } as unknown as AuditService,
             );
 
             const result = await service.register({
@@ -292,6 +296,7 @@ describe('Property 8: Patient Region Storage Round-Trip', () => {
               mockPrisma,
               mockMrnGenerator,
               mockRegionValidation,
+              { log: jest.fn() } as unknown as AuditService,
             );
 
             await service.register({

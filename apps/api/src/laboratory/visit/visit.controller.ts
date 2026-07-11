@@ -8,6 +8,7 @@ import {
   Query,
   Req,
   UseGuards,
+  UseInterceptors,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import * as express from 'express';
@@ -16,6 +17,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { DataScopeInterceptor } from '../../common/interceptors/data-scope.interceptor';
 import { VisitService } from './visit.service';
 import { CreateVisitDto } from './dto/create-visit.dto';
 import { UpdateVisitDto } from './dto/update-visit.dto';
@@ -24,6 +26,7 @@ import { VisitQueryDto } from './dto/visit-query.dto';
 import { OrderQueryDto } from '../order/dto/order-query.dto';
 
 @Controller('api/v1/visits')
+@UseInterceptors(DataScopeInterceptor)
 export class VisitController {
   constructor(private readonly visitService: VisitService) {}
 
@@ -42,8 +45,9 @@ export class VisitController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  async findAll(@Query() query: VisitQueryDto) {
-    return this.visitService.findAll(query);
+  async findAll(@Query() query: VisitQueryDto, @Req() req: express.Request) {
+    const clinicId = (req as any).dataScope?.clinicId;
+    return this.visitService.findAll(query, clinicId);
   }
 
   @Get(':id/orders')
@@ -57,8 +61,9 @@ export class VisitController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  async findById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.visitService.findById(id);
+  async findById(@Param('id', ParseUUIDPipe) id: string, @Req() req: express.Request) {
+    const clinicId = (req as any).dataScope?.clinicId;
+    return this.visitService.findById(id, clinicId);
   }
 
   @Put(':id')

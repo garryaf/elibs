@@ -7,6 +7,7 @@ import { PatientService } from '../patient.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MrnGeneratorService } from '../mrn-generator.service';
 import { RegionValidationService } from '../../region/region-validation.service';
+import { AuditService } from '../../audit/audit.service';
 import { CreatePatientDto } from '../dto/create-patient.dto';
 
 /**
@@ -45,6 +46,7 @@ describe('PatientService Property Tests', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: MrnGeneratorService, useValue: mockMrnGeneratorService },
         { provide: RegionValidationService, useValue: mockRegionValidationService },
+        { provide: AuditService, useValue: { log: jest.fn() } },
       ],
     }).compile();
 

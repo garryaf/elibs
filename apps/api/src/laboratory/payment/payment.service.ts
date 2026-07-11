@@ -6,6 +6,7 @@ import {
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BarcodeService } from './barcode.service';
+import { AuditService } from '../audit/audit.service';
 import { ProcessPaymentDto } from './dto/process-payment.dto';
 import { SplitPaymentDto } from './dto/split-payment.dto';
 import { OrderStatus } from '@prisma/client';
@@ -15,6 +16,7 @@ export class PaymentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly barcodeService: BarcodeService,
+    private readonly auditService: AuditService,
   ) {}
 
   async processPayment(orderId: string, dto: ProcessPaymentDto, userId: string) {
@@ -33,6 +35,19 @@ export class PaymentService {
       });
     }
 
+    // Discount validation
+    let finalPayable = order.totalAmount;
+    if (dto.discountAmount !== undefined && dto.discountAmount !== null) {
+      const discount = new Decimal(dto.discountAmount);
+      if (discount.lte(0)) {
+        throw new BadRequestException('Discount amount must be greater than zero');
+      }
+      if (discount.gt(order.totalAmount)) {
+        throw new BadRequestException('Discount amount cannot exceed total order amount');
+      }
+      finalPayable = order.totalAmount.minus(discount);
+    }
+
     // Generate barcode
     const barcode = await this.barcodeService.generate(orderId, order.orderNumber);
 
@@ -42,7 +57,11 @@ export class PaymentService {
       data: {
         status: OrderStatus.PAID,
         paymentMethod: dto.paymentMethod,
-        amountPaid: dto.amountPaid,
+        amountPaid: dto.discountAmount !== undefined && dto.discountAmount !== null
+          ? finalPayable
+          : dto.amountPaid,
+        discountAmount: dto.discountAmount ? new Decimal(dto.discountAmount) : null,
+        discountReason: dto.discountReason || null,
         paidAt: new Date(),
         barcode: barcode.barcodeData,
         barcodeImage: barcode.barcodeImage,
@@ -52,6 +71,19 @@ export class PaymentService {
         orderDetails: true,
       },
     });
+
+    // Audit log discount application
+    if (dto.discountAmount) {
+      await this.auditService.log(
+        userId,
+        'APPLY_DISCOUNT',
+        'Order',
+        orderId,
+        null,
+        { discountAmount: dto.discountAmount, discountReason: dto.discountReason },
+        null,
+      );
+    }
 
     return updatedOrder;
   }

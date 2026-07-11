@@ -9,6 +9,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { MrnGeneratorService } from './mrn-generator.service';
 import { RegionValidationService } from '../region/region-validation.service';
+import { AuditService } from '../audit/audit.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { AddPatientInsuranceDto, UpdatePatientInsuranceDto } from './dto/manage-patient-insurance.dto';
@@ -27,6 +28,7 @@ export class PatientService {
     private readonly prisma: PrismaService,
     private readonly mrnGenerator: MrnGeneratorService,
     private readonly regionValidationService: RegionValidationService,
+    private readonly auditService: AuditService,
   ) {}
 
   private transformRegionResponse(patient: any) {
@@ -418,5 +420,53 @@ export class PatientService {
         },
       },
     };
+  }
+
+  async softDelete(id: string, userId: string, ipAddress?: string) {
+    // 1. Verify patient exists and not already deleted
+    const patient = await this.prisma.patient.findFirst({
+      where: { id, deletedAt: null },
+    });
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    // 2. Check for active visits (REGISTERED or IN_PROGRESS)
+    const activeVisits = await this.prisma.visit.count({
+      where: { patientId: id, status: { in: ['REGISTERED', 'IN_PROGRESS'] } },
+    });
+    if (activeVisits > 0) {
+      throw new ConflictException('Cannot deactivate patient with active visits');
+    }
+
+    // 3. Check for active orders (not CANCELLED, not NOTIFIED)
+    const activeOrders = await this.prisma.order.count({
+      where: {
+        patientId: id,
+        status: { notIn: ['CANCELLED', 'NOTIFIED'] },
+      },
+    });
+    if (activeOrders > 0) {
+      throw new ConflictException('Cannot deactivate patient with active orders');
+    }
+
+    // 4. Soft-delete
+    const updated = await this.prisma.patient.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    // 5. Audit
+    await this.auditService.log(
+      userId,
+      'SOFT_DELETE',
+      'Patient',
+      id,
+      null,
+      { deletedAt: updated.deletedAt },
+      ipAddress,
+    );
+
+    return updated;
   }
 }

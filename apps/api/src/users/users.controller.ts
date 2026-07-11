@@ -19,6 +19,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Role } from '@prisma/client';
 
 @ApiTags('Users')
@@ -33,8 +34,8 @@ export class UsersController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new user' })
   @ApiResponse({ status: 201, description: 'User created successfully' })
-  async create(@Body() dto: CreateUserDto) {
-    return this.usersService.create(dto);
+  async create(@Body() dto: CreateUserDto, @CurrentUser() user: any) {
+    return this.usersService.create(dto, { id: user.sub, role: user.role });
   }
 
   @Get()
@@ -70,17 +71,17 @@ export class UsersController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,
+    @CurrentUser() user: any,
   ) {
-    return this.usersService.update(id, dto);
+    return this.usersService.update(id, dto, { id: user.sub, role: user.role });
   }
 
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Soft delete user by ID' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
-    await this.usersService.softDelete(id);
-    return null;
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: any) {
+    return this.usersService.softDelete(id, user.sub);
   }
 }

@@ -7,17 +7,20 @@ import {
   Body,
   Param,
   Query,
+  Req,
   UseGuards,
   UseInterceptors,
   ParseUUIDPipe,
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import * as express from 'express';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { DataScopeInterceptor } from '../../common/interceptors/data-scope.interceptor';
 import { OrderService } from './order.service';
 import { ClaimService } from './claim.service';
 import { InsuranceRejectionService } from './insurance-rejection.service';
@@ -33,6 +36,7 @@ import { VisitIdDeprecationInterceptor } from './interceptors/visit-id-deprecati
 @ApiTags('Orders')
 @ApiBearerAuth()
 @Controller('api/v1/orders')
+@UseInterceptors(DataScopeInterceptor)
 export class OrderController {
   private readonly logger = new Logger(OrderController.name);
 
@@ -58,8 +62,9 @@ export class OrderController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
   @ApiOperation({ summary: 'List orders with pagination and filters' })
-  async findAll(@Query() query: OrderQueryDto) {
-    return this.orderService.findAll(query);
+  async findAll(@Query() query: OrderQueryDto, @Req() req: express.Request) {
+    const clinicId = (req as any).dataScope?.clinicId;
+    return this.orderService.findAll(query, clinicId);
   }
 
   // ─── Insurance Rejection Fallback Endpoints (static routes before :id) ─────
@@ -84,8 +89,9 @@ export class OrderController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
   @ApiOperation({ summary: 'Get order by ID' })
-  async findById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.orderService.findById(id);
+  async findById(@Param('id', ParseUUIDPipe) id: string, @Req() req: express.Request) {
+    const clinicId = (req as any).dataScope?.clinicId;
+    return this.orderService.findById(id, clinicId);
   }
 
   @Post(':id/cancel')

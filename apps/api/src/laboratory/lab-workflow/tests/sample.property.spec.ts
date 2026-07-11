@@ -31,6 +31,7 @@ describe('Sample Collection Property Tests', () => {
     id: 'order-uuid-1',
     orderNumber: 'LAB-20250703-0001',
     patientId: 'patient-uuid-1',
+    visitId: 'visit-uuid-1',
     status: OrderStatus.PAID,
     barcode: 'LAB-20250703-0001',
     barcodeImage: 'base64-barcode-image',

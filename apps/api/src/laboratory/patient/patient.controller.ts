@@ -7,14 +7,17 @@ import {
   Body,
   Param,
   Query,
+  Req,
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import * as express from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PatientService } from './patient.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
@@ -94,6 +97,19 @@ export class PatientController {
     @Body() dto: UpdatePatientDto,
   ) {
     return this.patientService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Soft-delete (deactivate) a patient' })
+  async softDelete(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: any,
+    @Req() req: express.Request,
+  ) {
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.ip;
+    return this.patientService.softDelete(id, user.sub, ipAddress);
   }
 
   // ─── Patient Insurance Endpoints ───────────────────────────────────────────

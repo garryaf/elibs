@@ -176,7 +176,7 @@ describe('Feature: visit-management, Property 5: Status Transition Enforcement',
                 { reason: 'test cancellation' },
                 'user-1',
               );
-              expect(result.data.status).toBe(VisitStatus.CANCELLED);
+              expect(result.status).toBe(VisitStatus.CANCELLED);
             } else {
               await expect(
                 visitService.cancel(
@@ -421,8 +421,7 @@ describe('Feature: visit-management, Property 7: Cancellation Precondition', () 
               { reason: 'test reason' },
               'user-1',
             );
-            expect(result.success).toBe(true);
-            expect(result.data.status).toBe(VisitStatus.CANCELLED);
+            expect(result.status).toBe(VisitStatus.CANCELLED);
           } else {
             await expect(
               visitService.cancel(

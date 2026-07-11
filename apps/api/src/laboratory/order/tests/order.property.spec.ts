@@ -111,14 +111,20 @@ describe('Order Creation Property Tests', () => {
             transitionToInProgress: jest.fn().mockResolvedValue(undefined),
           };
 
+          const mockOrderValidationGuard = {
+            validate: jest.fn().mockResolvedValue(undefined),
+          };
+
           const service = new OrderService(
             mockPrisma as any,
             mockTariffResolver as any,
             mockVisitService as any,
+            mockOrderValidationGuard as any,
           );
 
           const dto = {
             patientId: 'patient-1',
+            visitId: 'visit-1',
             testIds,
           };
 

@@ -120,11 +120,11 @@ describe('Feature: visit-management, Property 2: Visit Creation Produces REGISTE
           const result = await visitService.create(dto, userId);
 
           // Status must be REGISTERED
-          expect(result.data.status).toBe('REGISTERED');
+          expect(result.status).toBe('REGISTERED');
 
           // visitNumber must match format VST-YYYYMM-XXXX
           const parsed = VisitNumberGeneratorService.parse(
-            result.data.visitNumber,
+            result.visitNumber,
           );
           expect(parsed).not.toBeNull();
           expect(parsed!.year).toMatch(/^\d{4}$/);
@@ -134,7 +134,6 @@ describe('Feature: visit-management, Property 2: Visit Creation Produces REGISTE
 
           // Verify no new patient was created (Requirement 1.5)
           expect(mockPrisma.patient.findFirst).toHaveBeenCalled();
-          expect(result.success).toBe(true);
         },
       ),
       { numRuns: 100 },
@@ -236,7 +235,7 @@ describe('Feature: visit-management, Property 3: BPJS Number Validation', () => 
             const result = await visitService.create(dto, 'user-id');
             // If creation succeeded, the bpjsNumber must be valid
             expect(isValid).toBe(true);
-            expect(result.success).toBe(true);
+            expect(result.status).toBe('REGISTERED');
           } catch (error) {
             // If creation failed with validation error, bpjsNumber must be invalid
             expect(error).toBeInstanceOf(BadRequestException);
@@ -360,8 +359,7 @@ describe('Feature: visit-management, Property 4: CASH Payment Ignores Insurance 
           // CASH payment should always succeed — validatePaymentFields does not
           // enforce bpjsNumber or insuranceId requirements for CASH
           const result = await visitService.create(dto, 'user-id');
-          expect(result.success).toBe(true);
-          expect(result.data.status).toBe('REGISTERED');
+          expect(result.status).toBe('REGISTERED');
         },
       ),
       { numRuns: 100 },

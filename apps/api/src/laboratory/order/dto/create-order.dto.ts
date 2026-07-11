@@ -4,6 +4,8 @@ import {
   ArrayMinSize,
   IsOptional,
   IsNotEmpty,
+  IsString,
+  MaxLength,
 } from 'class-validator';
 
 export class CreateOrderDto {
@@ -39,4 +41,9 @@ export class CreateOrderDto {
   @ArrayMinSize(1)
   @IsUUID('4', { each: true })
   testIds: string[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  notes?: string;
 }

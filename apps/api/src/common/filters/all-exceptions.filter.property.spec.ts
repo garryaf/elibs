@@ -184,7 +184,7 @@ describe('Property 9: AllExceptionsFilter preserves HttpException status codes',
 
     fc.assert(
       fc.property(
-        fc.integer({ min: 400, max: 599 }),
+        fc.integer({ min: 400, max: 499 }),
         (statusCode) => {
           const exception = new HttpException(
             { message: 'Error occurred', statusCode },

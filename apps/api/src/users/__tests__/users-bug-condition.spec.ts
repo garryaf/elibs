@@ -152,7 +152,7 @@ describe('Bug Condition: Double-Envelope Detection in UsersController', () => {
         password: 'password123',
         role: 'ADMIN' as any,
         name: 'New User',
-      });
+      }, { sub: 'admin-uuid', role: 'SUPER_ADMIN' });
 
       const finalResponse = await simulateInterceptor(controllerResult) as any;
 
@@ -173,7 +173,7 @@ describe('Bug Condition: Double-Envelope Detection in UsersController', () => {
       const controllerResult = await controller.update('uuid-123', {
         email: 'updated@example.com',
         name: 'Updated User',
-      });
+      }, { sub: 'admin-uuid', role: 'SUPER_ADMIN' });
       const finalResponse = await simulateInterceptor(controllerResult) as any;
 
       expect(finalResponse.data).not.toHaveProperty('success');
@@ -181,7 +181,7 @@ describe('Bug Condition: Double-Envelope Detection in UsersController', () => {
     });
 
     it('DELETE /users/:id (remove) should have single-envelope response', async () => {
-      const controllerResult = await controller.remove('uuid-123');
+      const controllerResult = await controller.remove('uuid-123', { sub: 'admin-uuid', role: 'SUPER_ADMIN' });
       const finalResponse = await simulateInterceptor(controllerResult) as any;
 
       // null data is valid (no double-wrapping possible with null)
@@ -219,7 +219,7 @@ describe('Bug Condition: Double-Envelope Detection in UsersController', () => {
               password: 'password123',
               role: userData.role as any,
               name: userData.name,
-            });
+            }, { sub: 'admin-uuid', role: 'SUPER_ADMIN' });
 
             const finalResponse = await simulateInterceptor(controllerResult) as any;
 
