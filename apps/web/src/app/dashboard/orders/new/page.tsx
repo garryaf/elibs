@@ -440,10 +440,13 @@ export default function NewOrderPage() {
           apiClient.getTests({ limit: 100 }),
           apiClient.getTestCategories({ limit: 50 }),
         ]);
-        const testsData = (testsRes as { data: { data: TestApi[] } }).data;
-        const catsData = (catsRes as { data: { data: TestCategoryApi[] } }).data;
-        setAllTests(testsData.data || []);
-        setCategories(catsData.data || []);
+        // After unwrapResponse, response is { data: [...], meta: {...} }
+        const testsEnvelope = testsRes as unknown as Record<string, unknown>;
+        const catsEnvelope = catsRes as unknown as Record<string, unknown>;
+        const testsArray = Array.isArray(testsEnvelope?.data) ? testsEnvelope.data : [];
+        const catsArray = Array.isArray(catsEnvelope?.data) ? catsEnvelope.data : [];
+        setAllTests(testsArray as TestApi[]);
+        setCategories(catsArray as TestCategoryApi[]);
       } catch {
         // Silently fail, tests will be empty
       } finally {

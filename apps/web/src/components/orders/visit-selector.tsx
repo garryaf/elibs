@@ -49,7 +49,7 @@ export function VisitSelector({
         success: boolean;
         data: { data: Array<Record<string, unknown>> };
       }>(
-        `/api/v1/visits?search=${encodeURIComponent(searchTerm)}&status=REGISTERED&status=IN_PROGRESS&limit=20`
+        `/api/v1/visits?search=${encodeURIComponent(searchTerm)}&limit=20`
       );
 
       const envelope = res?.data ?? res;
@@ -60,6 +60,9 @@ export function VisitSelector({
       } else if (Array.isArray(envelope)) {
         raw = envelope as Array<Record<string, unknown>>;
       }
+
+      // Filter client-side: only show visits that can accept new orders
+      raw = raw.filter((v) => v.status === "REGISTERED" || v.status === "IN_PROGRESS");
 
       const mapped: VisitOption[] = raw.map((v) => {
         const patient = (v.patient as Record<string, unknown>) || {};

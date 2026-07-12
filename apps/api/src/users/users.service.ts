@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { AuditService, stripSensitiveFields } from '../laboratory/audit/audit.service';
 import { User, Role } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -20,7 +21,10 @@ const userSelect = {
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+  ) {}
 
   private validateRoleEscalation(requestingUserRole: Role, targetRole: Role): void {
     if (targetRole === Role.SUPER_ADMIN && requestingUserRole !== Role.SUPER_ADMIN) {
@@ -32,7 +36,7 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email, deletedAt: null } });
   }
 
-  async create(dto: CreateUserDto, requestingUser: { id: string; role: Role }) {
+  async create(dto: CreateUserDto, requestingUser: { id: string; role: Role }, ipAddress?: string) {
     this.validateRoleEscalation(requestingUser.role, dto.role);
 
     // Check for active (non-deleted) user with same email.
@@ -46,7 +50,7 @@ export class UsersService {
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
 
-    return this.prisma.user.create({
+    const createdUser = await this.prisma.user.create({
       data: {
         email: dto.email,
         name: dto.name,
@@ -55,6 +59,18 @@ export class UsersService {
       },
       select: userSelect,
     });
+
+    await this.auditService.log(
+      requestingUser.id,
+      'CREATE',
+      'User',
+      createdUser.id,
+      null,
+      stripSensitiveFields(createdUser as unknown as Record<string, unknown>),
+      ipAddress,
+    );
+
+    return createdUser;
   }
 
   async findAll(
@@ -108,8 +124,8 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, dto: UpdateUserDto, requestingUser: { id: string; role: Role }) {
-    await this.findById(id);
+  async update(id: string, dto: UpdateUserDto, requestingUser: { id: string; role: Role }, ipAddress?: string) {
+    const oldUser = await this.findById(id);
 
     // Validate role escalation only when role is being changed
     if (dto.role) {
@@ -136,14 +152,26 @@ export class UsersService {
     if (dto.departmentId !== undefined) data.departmentId = dto.departmentId;
     if (dto.positionId !== undefined) data.positionId = dto.positionId;
 
-    return this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { id },
       data,
       select: userSelect,
     });
+
+    await this.auditService.log(
+      requestingUser.id,
+      'UPDATE',
+      'User',
+      id,
+      stripSensitiveFields(oldUser as unknown as Record<string, unknown>),
+      stripSensitiveFields(updatedUser as unknown as Record<string, unknown>),
+      ipAddress,
+    );
+
+    return updatedUser;
   }
 
-  async softDelete(id: string, requestingUserId: string) {
+  async softDelete(id: string, requestingUserId: string, ipAddress?: string) {
     // 1. Self-delete check
     if (id === requestingUserId) {
       throw new ForbiddenException('Cannot delete own account');
@@ -162,10 +190,22 @@ export class UsersService {
     }
 
     // 3. Proceed with soft-delete
-    return this.prisma.user.update({
+    const deletedUser = await this.prisma.user.update({
       where: { id },
       data: { deletedAt: new Date() },
       select: userSelect,
     });
+
+    await this.auditService.log(
+      requestingUserId,
+      'DELETE',
+      'User',
+      id,
+      stripSensitiveFields(targetUser as unknown as Record<string, unknown>),
+      null,
+      ipAddress,
+    );
+
+    return deletedUser;
   }
 }

@@ -152,12 +152,15 @@ function VisitsPageContent() {
         endDate: endDate || undefined,
       });
 
-      // Defensive extraction: handle { data: { data: [], meta: {} } } envelope
-      const envelope = (res?.data ?? res) as unknown;
+      // Defensive extraction: handle unwrapped response { data: [], meta: {} }
+      // After unwrapResponse in apiClient, res = { data: [...], meta: {...} }
+      const envelope = res as unknown;
       let raw: unknown[] = [];
       let meta = { total: 0, page: 1, limit: PAGE_SIZE };
 
-      if (envelope && typeof envelope === "object") {
+      if (Array.isArray(envelope)) {
+        raw = envelope;
+      } else if (envelope && typeof envelope === "object") {
         if ("data" in envelope) {
           const inner = (envelope as { data: unknown }).data;
           raw = Array.isArray(inner) ? inner : [];
@@ -170,8 +173,6 @@ function VisitsPageContent() {
             limit: Number(m.limit) || PAGE_SIZE,
           };
         }
-      } else if (Array.isArray(envelope)) {
-        raw = envelope;
       }
 
       const mapped: Visit[] = (raw as Record<string, unknown>[]).map((v) => ({

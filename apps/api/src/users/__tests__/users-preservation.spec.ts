@@ -1,201 +1,264 @@
 /**
- * Preservation Property Tests — Backend
+ * Preservation Property Tests — NCR-02-05: Audit Preservation
  *
- * These tests capture existing CORRECT behavior that must be preserved after the fix.
- * They verify that controllers following the correct pattern (no manual wrapping)
- * continue to produce single-envelope responses via TransformInterceptor.
+ * These tests capture existing CORRECT behavior that must remain unchanged after the fix.
+ * They verify that:
+ * - Read operations (findAll, findById) work correctly without audit logging
+ * - Failed mutations throw correct exceptions without audit logging
+ * - stripSensitiveFields() correctly removes sensitive fields from any object
  *
- * **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**
+ * IMPORTANT: The UsersService on UNFIXED code does NOT have AuditService injected.
+ * These tests confirm baseline behavior that must be preserved after the fix.
  *
- * Observation (UNFIXED code):
- * - MasterDataController returns raw data → TransformInterceptor wraps once → single-envelope ✓
- * - The TransformInterceptor always wraps: { success: true, message: "Success", data: T }
- * - For any controller that does NOT manually wrap, the response is correct single-envelope
+ * These tests MUST PASS on UNFIXED code and continue to pass after the fix.
+ *
+ * **Validates: Requirements 3.4, 3.5, 3.6**
  */
 
+import { Test, TestingModule } from '@nestjs/testing';
+import { UsersService } from '../users.service';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import * as fc from 'fast-check';
+import {
+  stripSensitiveFields,
+  SENSITIVE_FIELDS,
+} from '../../laboratory/audit/audit.service';
 
-// ─── Simulate TransformInterceptor behavior (observed) ──────────────────────
+describe('Preservation: UsersService read operations and failed mutations', () => {
+  let usersService: UsersService;
+  let prismaService: any;
 
-/**
- * The TransformInterceptor wraps any controller return value with:
- * { success: true, message: "Success", data: <controllerReturn> }
- */
-function transformInterceptorWrap<T>(controllerReturn: T): {
-  success: true;
-  message: string;
-  data: T;
-} {
-  return {
-    success: true as const,
-    message: 'Success',
-    data: controllerReturn,
+  const mockUser = {
+    id: 'user-uuid-123',
+    email: 'existing@example.com',
+    name: 'Existing User',
+    role: Role.STAFF,
+    departmentId: null,
+    positionId: null,
+    createdAt: new Date('2026-01-01'),
+    updatedAt: new Date('2026-01-01'),
+    deletedAt: null,
   };
-}
 
-/**
- * Detects if a response is double-wrapped (has nested envelope).
- * A double-wrapped response has: response.data.success is boolean AND response.data.message is string AND response.data.data exists
- */
-function isDoubleWrapped(response: unknown): boolean {
-  if (response === null || typeof response !== 'object') return false;
-  const r = response as Record<string, unknown>;
-  if (typeof r.success !== 'boolean' || typeof r.message !== 'string' || !('data' in r)) return false;
+  beforeEach(async () => {
+    prismaService = {
+      user: {
+        findUnique: jest.fn(),
+        findFirst: jest.fn(),
+        findMany: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+        count: jest.fn(),
+      },
+    };
 
-  const innerData = r.data;
-  if (innerData === null || typeof innerData !== 'object') return false;
-  const inner = innerData as Record<string, unknown>;
-  return typeof inner.success === 'boolean' && typeof inner.message === 'string' && 'data' in inner;
-}
+    // Do NOT provide AuditService — it's not injected in unfixed code
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UsersService,
+        { provide: PrismaService, useValue: prismaService },
+      ],
+    }).compile();
 
-// ─── Arbitraries ────────────────────────────────────────────────────────────
-
-/**
- * Generate paginated response shape (like MasterDataController returns)
- * This simulates what a service returns: { data: T[], meta: { total, page, limit } }
- */
-/**
- * Safe ISO date string arbitrary - uses integer timestamps to avoid invalid date issues
- */
-const isoDateArb = fc
-  .integer({ min: 946684800000, max: 1924905600000 }) // 2000-01-01 to 2030-12-31 in ms
-  .map((ts) => new Date(ts).toISOString());
-
-const paginatedDataArb = fc.record({
-  data: fc.array(
-    fc.record({
-      id: fc.uuid(),
-      name: fc.string({ minLength: 1, maxLength: 50 }),
-      createdAt: isoDateArb,
-    }),
-    { minLength: 0, maxLength: 20 },
-  ),
-  meta: fc.record({
-    total: fc.nat({ max: 1000 }),
-    page: fc.integer({ min: 1, max: 100 }),
-    limit: fc.integer({ min: 1, max: 100 }),
-  }),
-});
-
-/**
- * Generate single entity responses (like MasterDataController.createCategory returns)
- */
-const singleEntityArb = fc.record({
-  id: fc.uuid(),
-  name: fc.string({ minLength: 1, maxLength: 50 }),
-  description: fc.option(fc.string({ maxLength: 200 }), { nil: undefined }),
-  createdAt: isoDateArb,
-  updatedAt: isoDateArb,
-});
-
-/**
- * Generate nested objects that do NOT have a `success` boolean field.
- * This represents legitimate data that should pass through unchanged.
- */
-const nonEnvelopeDataArb = fc.oneof(
-  paginatedDataArb,
-  singleEntityArb,
-  fc.array(fc.record({ id: fc.uuid(), value: fc.float() })),
-  fc.constant(null),
-  fc.record({
-    items: fc.array(fc.string()),
-    count: fc.nat(),
-  }),
-);
-
-// ─── Property Tests ─────────────────────────────────────────────────────────
-
-describe('Preservation: TransformInterceptor single-envelope for correct controllers', () => {
-  /**
-   * Property: For all controller return values that do NOT contain a nested envelope structure,
-   * the TransformInterceptor produces exactly one envelope layer: { success: true, message: "Success", data: T }
-   * and the result is NOT double-wrapped.
-   *
-   * **Validates: Requirements 3.1, 3.2, 3.4**
-   */
-  it('should produce single-envelope for any non-envelope controller return value', () => {
-    fc.assert(
-      fc.property(nonEnvelopeDataArb, (controllerReturn) => {
-        const response = transformInterceptorWrap(controllerReturn);
-
-        // The response always has the single-envelope shape
-        expect(response.success).toBe(true);
-        expect(response.message).toBe('Success');
-        expect(response.data).toEqual(controllerReturn);
-
-        // For data that does NOT itself look like an envelope,
-        // the wrapped result must NOT be double-wrapped
-        if (
-          controllerReturn === null ||
-          typeof controllerReturn !== 'object' ||
-          !('success' in (controllerReturn as Record<string, unknown>))
-        ) {
-          expect(isDoubleWrapped(response)).toBe(false);
-        }
-      }),
-      { numRuns: 200 },
-    );
+    usersService = module.get<UsersService>(UsersService);
   });
 
-  /**
-   * Property: For all paginated responses (like MasterDataController.findAllCategories),
-   * the TransformInterceptor preserves the exact shape of the data inside the envelope.
-   *
-   * **Validates: Requirements 3.1, 3.5**
-   */
-  it('should preserve paginated data shape exactly inside single envelope', () => {
-    fc.assert(
-      fc.property(paginatedDataArb, (paginatedResult) => {
-        const response = transformInterceptorWrap(paginatedResult);
+  describe('Read operations produce no audit logging', () => {
+    /**
+     * Preservation: findAll() returns data without any audit logging
+     * (since AuditService isn't even injected, verify service works without it)
+     *
+     * **Validates: Requirements 3.4**
+     */
+    it('findAll() should return paginated data without crashing', async () => {
+      prismaService.user.findMany.mockResolvedValue([mockUser]);
+      prismaService.user.count.mockResolvedValue(1);
 
-        // The envelope is correct
-        expect(response.success).toBe(true);
-        expect(response.message).toBe('Success');
+      const result = await usersService.findAll(1, 10);
 
-        // The data inside is identical to what the controller returned
-        expect(response.data).toStrictEqual(paginatedResult);
-        expect(Array.isArray(response.data.data)).toBe(true);
-        expect(response.data.meta).toStrictEqual(paginatedResult.meta);
+      expect(result).toBeDefined();
+      expect(result.data).toHaveLength(1);
+      expect(result.meta).toEqual({ total: 1, page: 1, limit: 10 });
+    });
 
-        // Not double-wrapped (paginated data doesn't have success/message)
-        expect(isDoubleWrapped(response)).toBe(false);
-      }),
-      { numRuns: 200 },
-    );
+    /**
+     * Preservation: findById() returns user data without any audit logging
+     *
+     * **Validates: Requirements 3.4**
+     */
+    it('findById() should return user data without crashing', async () => {
+      prismaService.user.findUnique.mockResolvedValue(mockUser);
+
+      const result = await usersService.findById('user-uuid-123');
+
+      expect(result).toBeDefined();
+      expect(result.email).toBe('existing@example.com');
+    });
   });
 
-  /**
-   * Property: For all single entity responses (like MasterDataController.createCategory),
-   * the entity shape is preserved exactly.
-   *
-   * **Validates: Requirements 3.4, 3.5**
-   */
-  it('should preserve single entity shape exactly inside single envelope', () => {
-    fc.assert(
-      fc.property(singleEntityArb, (entity) => {
-        const response = transformInterceptorWrap(entity);
+  describe('Failed mutations throw exceptions without audit logging', () => {
+    const requestingUser = { id: 'admin-uuid-001', role: Role.ADMIN };
 
-        expect(response.success).toBe(true);
-        expect(response.message).toBe('Success');
-        expect(response.data).toStrictEqual(entity);
-        expect(isDoubleWrapped(response)).toBe(false);
-      }),
-      { numRuns: 200 },
-    );
+    /**
+     * Preservation: create() with duplicate email throws ConflictException
+     *
+     * **Validates: Requirements 3.5**
+     */
+    it('create() with existing email should throw ConflictException', async () => {
+      prismaService.user.findFirst.mockResolvedValue(mockUser);
+
+      const dto = {
+        email: 'existing@example.com',
+        password: 'password123',
+        role: Role.STAFF,
+        name: 'Duplicate User',
+      };
+
+      await expect(usersService.create(dto, requestingUser)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    /**
+     * Preservation: create() with role escalation (non-super-admin assigning SUPER_ADMIN) throws ForbiddenException
+     *
+     * **Validates: Requirements 3.5**
+     */
+    it('create() with role escalation should throw ForbiddenException', async () => {
+      const dto = {
+        email: 'newuser@example.com',
+        password: 'password123',
+        role: Role.SUPER_ADMIN,
+        name: 'Escalated User',
+      };
+
+      await expect(usersService.create(dto, requestingUser)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    /**
+     * Preservation: softDelete() where id === requestingUserId throws ForbiddenException (self-delete)
+     *
+     * **Validates: Requirements 3.5**
+     */
+    it('softDelete() on self should throw ForbiddenException', async () => {
+      await expect(
+        usersService.softDelete('admin-uuid-001', 'admin-uuid-001'),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    /**
+     * Preservation: softDelete() on last SUPER_ADMIN throws ConflictException
+     *
+     * **Validates: Requirements 3.5**
+     */
+    it('softDelete() on last SUPER_ADMIN should throw ConflictException', async () => {
+      const superAdminUser = { ...mockUser, id: 'super-admin-001', role: Role.SUPER_ADMIN };
+      prismaService.user.findUnique.mockResolvedValue(superAdminUser);
+      // No other super admins exist
+      prismaService.user.count.mockResolvedValue(0);
+
+      await expect(
+        usersService.softDelete('super-admin-001', 'another-admin-002'),
+      ).rejects.toThrow(ConflictException);
+    });
   });
 
-  /**
-   * Property: For null returns (like soft-delete from MasterDataController),
-   * the envelope wraps null correctly.
-   *
-   * **Validates: Requirements 3.1**
-   */
-  it('should wrap null returns correctly in single envelope', () => {
-    const response = transformInterceptorWrap(null);
+  describe('Sensitive field stripping', () => {
+    /**
+     * Preservation: stripSensitiveFields removes passwordHash, password, token, secret, accessToken, refreshToken
+     *
+     * **Validates: Requirements 3.6**
+     */
+    it('should remove all sensitive fields from an object', () => {
+      const data = {
+        id: 'user-123',
+        email: 'test@example.com',
+        passwordHash: '$2b$12$somehash',
+        password: 'plaintext',
+        token: 'jwt-token',
+        secret: 'api-secret',
+        accessToken: 'access-token-value',
+        refreshToken: 'refresh-token-value',
+        name: 'Test User',
+        role: 'ADMIN',
+      };
 
-    expect(response.success).toBe(true);
-    expect(response.message).toBe('Success');
-    expect(response.data).toBeNull();
-    expect(isDoubleWrapped(response)).toBe(false);
+      const result = stripSensitiveFields(data);
+
+      expect(result).toBeDefined();
+      expect(result).not.toHaveProperty('passwordHash');
+      expect(result).not.toHaveProperty('password');
+      expect(result).not.toHaveProperty('token');
+      expect(result).not.toHaveProperty('secret');
+      expect(result).not.toHaveProperty('accessToken');
+      expect(result).not.toHaveProperty('refreshToken');
+      // Non-sensitive fields preserved
+      expect(result).toHaveProperty('id', 'user-123');
+      expect(result).toHaveProperty('email', 'test@example.com');
+      expect(result).toHaveProperty('name', 'Test User');
+      expect(result).toHaveProperty('role', 'ADMIN');
+    });
+
+    /**
+     * Property-based test: For all objects containing sensitive field keys,
+     * stripSensitiveFields() always removes them from the output.
+     *
+     * **Validates: Requirements 3.6**
+     */
+    it('should always remove sensitive fields from any object', () => {
+      // Generate arbitrary objects that include some sensitive fields
+      const sensitiveFieldArb = fc.constantFrom(...SENSITIVE_FIELDS);
+      const nonSensitiveKeyArb = fc
+        .string({ minLength: 1, maxLength: 20 })
+        .filter((key) => !SENSITIVE_FIELDS.includes(key));
+
+      const objectWithSensitiveFieldsArb = fc
+        .tuple(
+          // Include at least one sensitive field
+          fc.array(
+            fc.tuple(sensitiveFieldArb, fc.string({ minLength: 1, maxLength: 50 })),
+            { minLength: 1, maxLength: 6 },
+          ),
+          // Include some non-sensitive fields
+          fc.array(
+            fc.tuple(nonSensitiveKeyArb, fc.oneof(fc.string(), fc.integer(), fc.boolean())),
+            { minLength: 0, maxLength: 5 },
+          ),
+        )
+        .map(([sensitiveEntries, normalEntries]) => {
+          const obj: Record<string, unknown> = {};
+          for (const [key, value] of sensitiveEntries) {
+            obj[key] = value;
+          }
+          for (const [key, value] of normalEntries) {
+            obj[key] = value;
+          }
+          return obj;
+        });
+
+      fc.assert(
+        fc.property(objectWithSensitiveFieldsArb, (data) => {
+          const result = stripSensitiveFields(data);
+
+          // No sensitive fields should remain in the result
+          for (const sensitiveField of SENSITIVE_FIELDS) {
+            expect(result).not.toHaveProperty(sensitiveField);
+          }
+
+          // All non-sensitive fields from input should be preserved
+          for (const [key, value] of Object.entries(data)) {
+            if (!SENSITIVE_FIELDS.includes(key)) {
+              expect(key in (result as Record<string, unknown>)).toBe(true);
+              expect((result as Record<string, unknown>)[key]).toEqual(value);
+            }
+          }
+        }),
+        { numRuns: 200 },
+      );
+    });
   });
 });

@@ -1,238 +1,156 @@
 /**
- * Bug Condition Exploration Test — Double-Envelope Detection
+ * Bug Condition Exploration Test — NCR-02-05: Missing User CRUD Audit Logs
  *
- * **Validates: Requirements 1.1, 1.2, 1.4, 1.5, 2.1, 2.5**
+ * These tests encode the EXPECTED (correct) behavior:
+ * - UsersService.create() MUST call AuditService.log() with correct params
+ * - UsersService.update() MUST call AuditService.log() with old/new values
+ * - UsersService.softDelete() MUST call AuditService.log() with DELETE action
  *
- * This test is EXPECTED TO FAIL on unfixed code.
- * Failure confirms the double-envelope bug exists in UsersController.
+ * On UNFIXED code, these tests are EXPECTED TO FAIL because:
+ * - AuditService is not injected into UsersService
+ * - No audit logging calls exist in the service methods
  *
- * The test asserts the EXPECTED (correct) behavior:
- * - UsersController methods, when processed through TransformInterceptor,
- *   should produce a SINGLE envelope: { success: true, message: "Success", data: T }
- * - If the response.data has its own { success, message, data } structure,
- *   that means the response is double-wrapped (BUG).
- *
- * Counterexamples expected:
- * - GET /api/v1/users returns { success: true, message: "Success", data: { success: true, message: "Users retrieved", data: { data: [...], meta } } }
+ * Validates: Requirements 2.3, 2.4, 2.5
  */
 
-import * as fc from 'fast-check';
-import { of } from 'rxjs';
-import { lastValueFrom } from 'rxjs';
-import { UsersController } from '../users.controller';
+import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '../users.service';
-import { TransformInterceptor } from '../../common/interceptors/transform.interceptor';
-import { CallHandler, ExecutionContext } from '@nestjs/common';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { AuditService } from '../../laboratory/audit/audit.service';
+import { Role } from '@prisma/client';
 
-describe('Bug Condition: Double-Envelope Detection in UsersController', () => {
-  let controller: UsersController;
-  let mockUsersService: Partial<UsersService>;
-  let interceptor: TransformInterceptor<unknown>;
-  let mockContext: ExecutionContext;
+describe('NCR-02-05: Missing User CRUD Audit Logs Bug Condition', () => {
+  let usersService: UsersService;
+  let prismaService: any;
+  let auditService: any;
 
-  // Helper: simulate what TransformInterceptor does to a controller return value
-  async function simulateInterceptor(controllerReturnValue: unknown) {
-    const mockHandler: CallHandler = {
-      handle: () => of(controllerReturnValue),
-    };
-    const result$ = interceptor.intercept(mockContext, mockHandler);
-    return lastValueFrom(result$);
-  }
+  const mockUser = {
+    id: 'user-uuid-123',
+    email: 'newuser@example.com',
+    name: 'Test User',
+    role: Role.STAFF,
+    departmentId: null,
+    positionId: null,
+    createdAt: new Date('2026-01-01'),
+    updatedAt: new Date('2026-01-01'),
+    deletedAt: null,
+  };
 
-  // Helper: check if a response has single-envelope shape (NOT double-wrapped)
-  function isSingleEnvelope(response: any): boolean {
-    // A correct single-envelope response has { success: true, message: string, data: T }
-    // where T does NOT itself have { success: boolean, message: string, data: any }
-    if (
-      typeof response !== 'object' ||
-      response === null ||
-      response.success !== true ||
-      typeof response.message !== 'string'
-    ) {
-      return false;
-    }
+  const requestingUser = { id: 'admin-uuid-001', role: Role.SUPER_ADMIN };
 
-    const innerData = response.data;
-
-    // If innerData has its own success/message/data structure, it's double-wrapped
-    if (
-      innerData !== null &&
-      typeof innerData === 'object' &&
-      typeof innerData.success === 'boolean' &&
-      typeof innerData.message === 'string' &&
-      'data' in innerData
-    ) {
-      return false; // DOUBLE-WRAPPED — this is the bug
-    }
-
-    return true;
-  }
-
-  beforeEach(() => {
-    // Mock UsersService methods to return realistic data
-    mockUsersService = {
-      create: jest.fn().mockResolvedValue({
-        id: 'uuid-123',
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'ADMIN',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      }),
-      findAll: jest.fn().mockResolvedValue({
-        data: [
-          { id: 'uuid-1', email: 'user1@example.com', name: 'User 1', role: 'ADMIN' },
-          { id: 'uuid-2', email: 'user2@example.com', name: 'User 2', role: 'STAFF' },
-        ],
-        meta: { total: 2, page: 1, limit: 10 },
-      }),
-      findById: jest.fn().mockResolvedValue({
-        id: 'uuid-123',
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'ADMIN',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      }),
-      update: jest.fn().mockResolvedValue({
-        id: 'uuid-123',
-        email: 'updated@example.com',
-        name: 'Updated User',
-        role: 'ADMIN',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      }),
-      softDelete: jest.fn().mockResolvedValue({
-        id: 'uuid-123',
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'ADMIN',
-        deletedAt: new Date(),
-      }),
+  beforeEach(async () => {
+    // Mock PrismaService
+    prismaService = {
+      user: {
+        findUnique: jest.fn(),
+        findFirst: jest.fn(),
+        findMany: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+        count: jest.fn(),
+      },
     };
 
-    controller = new UsersController(mockUsersService as UsersService);
-    interceptor = new TransformInterceptor();
-    mockContext = {} as ExecutionContext;
+    // Mock AuditService
+    auditService = {
+      log: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UsersService,
+        { provide: PrismaService, useValue: prismaService },
+        { provide: AuditService, useValue: auditService },
+      ],
+    }).compile();
+
+    usersService = module.get<UsersService>(UsersService);
   });
 
-  describe('Test 1 — Double-Wrap Detection: findAll()', () => {
-    it('should return single-envelope response (data field should NOT contain success/message)', async () => {
-      // Call the controller method (which manually wraps)
-      const controllerResult = await controller.findAll();
+  describe('Bug Condition: User CREATE must produce audit log', () => {
+    it('should call AuditService.log() with action "CREATE" after successful user creation', async () => {
+      // Setup: no existing user with same email
+      prismaService.user.findFirst.mockResolvedValue(null);
+      // Setup: create returns mock user
+      prismaService.user.create.mockResolvedValue(mockUser);
 
-      // Simulate TransformInterceptor wrapping
-      const finalResponse = await simulateInterceptor(controllerResult);
+      const dto = {
+        email: 'newuser@example.com',
+        password: 'securePassword123',
+        role: Role.STAFF,
+        name: 'Test User',
+      };
 
-      // Assert: the final response should be single-envelope
-      // On UNFIXED code, controller returns { success, message, data: { data, meta } }
-      // Then interceptor wraps it again → { success, message, data: { success, message, data: { data, meta } } }
-      // This assertion will FAIL on unfixed code (expected behavior)
-      expect(isSingleEnvelope(finalResponse)).toBe(true);
-    });
+      await usersService.create(dto, requestingUser, '192.168.1.1');
 
-    it('should not have nested success/message fields in response.data', async () => {
-      const controllerResult = await controller.findAll();
-      const finalResponse = await simulateInterceptor(controllerResult) as any;
-
-      // The data field should be the raw paginated result { data: [...], meta: {...} }
-      // NOT another envelope { success: true, message: "...", data: { data: [...], meta } }
-      expect(finalResponse.data).not.toHaveProperty('success');
-      expect(finalResponse.data).not.toHaveProperty('message');
-    });
-  });
-
-  describe('Test 2 — All 5 Methods: single-envelope assertion', () => {
-    it('POST /users (create) should have single-envelope response', async () => {
-      const controllerResult = await controller.create({
-        email: 'new@example.com',
-        password: 'password123',
-        role: 'ADMIN' as any,
-        name: 'New User',
-      }, { sub: 'admin-uuid', role: 'SUPER_ADMIN' });
-
-      const finalResponse = await simulateInterceptor(controllerResult) as any;
-
-      // Assert no double-wrapping
-      expect(finalResponse.data).not.toHaveProperty('success');
-      expect(finalResponse.data).not.toHaveProperty('message');
-    });
-
-    it('GET /users/:id (findOne) should have single-envelope response', async () => {
-      const controllerResult = await controller.findOne('uuid-123');
-      const finalResponse = await simulateInterceptor(controllerResult) as any;
-
-      expect(finalResponse.data).not.toHaveProperty('success');
-      expect(finalResponse.data).not.toHaveProperty('message');
-    });
-
-    it('PUT /users/:id (update) should have single-envelope response', async () => {
-      const controllerResult = await controller.update('uuid-123', {
-        email: 'updated@example.com',
-        name: 'Updated User',
-      }, { sub: 'admin-uuid', role: 'SUPER_ADMIN' });
-      const finalResponse = await simulateInterceptor(controllerResult) as any;
-
-      expect(finalResponse.data).not.toHaveProperty('success');
-      expect(finalResponse.data).not.toHaveProperty('message');
-    });
-
-    it('DELETE /users/:id (remove) should have single-envelope response', async () => {
-      const controllerResult = await controller.remove('uuid-123', { sub: 'admin-uuid', role: 'SUPER_ADMIN' });
-      const finalResponse = await simulateInterceptor(controllerResult) as any;
-
-      // null data is valid (no double-wrapping possible with null)
-      if (finalResponse.data !== null && finalResponse.data !== undefined) {
-        expect(finalResponse.data).not.toHaveProperty('success');
-        expect(finalResponse.data).not.toHaveProperty('message');
-      } else {
-        // null/undefined data means no double-wrapping — this is correct
-        expect(finalResponse.data).toBeNull();
-      }
+      // Assert: AuditService.log() MUST be called with correct parameters
+      expect(auditService.log).toHaveBeenCalledTimes(1);
+      expect(auditService.log).toHaveBeenCalledWith(
+        requestingUser.id, // userId
+        'CREATE', // action
+        'User', // entityName
+        mockUser.id, // entityId
+        null, // oldValues (null for create)
+        expect.objectContaining({ email: 'newuser@example.com' }), // newValues
+        '192.168.1.1', // ipAddress
+      );
     });
   });
 
-  describe('Property: All controller methods produce single-envelope after TransformInterceptor', () => {
-    it('for any generated user data, UsersController methods should not double-wrap', async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.record({
-            email: fc.emailAddress(),
-            name: fc.string({ minLength: 1, maxLength: 50 }),
-            role: fc.constantFrom('ADMIN', 'STAFF', 'SUPER_ADMIN'),
-          }),
-          async (userData) => {
-            // Mock the service to return the user data
-            (mockUsersService.create as jest.Mock).mockResolvedValue({
-              id: 'uuid-gen',
-              ...userData,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              deletedAt: null,
-            });
+  describe('Bug Condition: User UPDATE must produce audit log', () => {
+    it('should call AuditService.log() with action "UPDATE" and old/new values after successful user update', async () => {
+      const oldUser = { ...mockUser };
+      const updatedUser = { ...mockUser, email: 'updated@example.com', updatedAt: new Date('2026-01-02') };
 
-            const controllerResult = await controller.create({
-              email: userData.email,
-              password: 'password123',
-              role: userData.role as any,
-              name: userData.name,
-            }, { sub: 'admin-uuid', role: 'SUPER_ADMIN' });
+      // Setup: findById returns existing user (for validation and old values)
+      prismaService.user.findUnique.mockResolvedValue(oldUser);
+      // Setup: no conflict on email
+      prismaService.user.findFirst.mockResolvedValue(null);
+      // Setup: update returns updated user
+      prismaService.user.update.mockResolvedValue(updatedUser);
 
-            const finalResponse = await simulateInterceptor(controllerResult) as any;
+      const dto = { email: 'updated@example.com' };
 
-            // Property: response.data should NOT have success/message (no double-wrap)
-            return (
-              finalResponse.data === undefined ||
-              finalResponse.data === null ||
-              (typeof finalResponse.data !== 'object') ||
-              (!('success' in finalResponse.data) && !('message' in finalResponse.data))
-            );
-          },
-        ),
-        { numRuns: 20 },
+      await usersService.update(mockUser.id, dto, requestingUser, '10.0.0.1');
+
+      // Assert: AuditService.log() MUST be called with correct parameters
+      expect(auditService.log).toHaveBeenCalledTimes(1);
+      expect(auditService.log).toHaveBeenCalledWith(
+        requestingUser.id, // userId
+        'UPDATE', // action
+        'User', // entityName
+        mockUser.id, // entityId
+        expect.objectContaining({ email: 'newuser@example.com' }), // oldValues (previous state)
+        expect.objectContaining({ email: 'updated@example.com' }), // newValues (updated state)
+        '10.0.0.1', // ipAddress
+      );
+    });
+  });
+
+  describe('Bug Condition: User DELETE must produce audit log', () => {
+    it('should call AuditService.log() with action "DELETE" after successful soft-delete', async () => {
+      const existingUser = { ...mockUser };
+      const deletedUser = { ...mockUser, deletedAt: new Date('2026-01-05') };
+
+      // Setup: findById returns existing user (for self-delete check and old values)
+      prismaService.user.findUnique.mockResolvedValue(existingUser);
+      // Setup: count of other super admins (for last-admin check)
+      prismaService.user.count.mockResolvedValue(1);
+      // Setup: update (soft-delete) returns deleted user
+      prismaService.user.update.mockResolvedValue(deletedUser);
+
+      await usersService.softDelete(mockUser.id, 'another-admin-uuid', '172.16.0.1');
+
+      // Assert: AuditService.log() MUST be called with correct parameters
+      expect(auditService.log).toHaveBeenCalledTimes(1);
+      expect(auditService.log).toHaveBeenCalledWith(
+        'another-admin-uuid', // userId (requesting user)
+        'DELETE', // action
+        'User', // entityName
+        mockUser.id, // entityId
+        expect.objectContaining({ email: 'newuser@example.com' }), // oldValues (user state before deletion)
+        null, // newValues (null for delete)
+        '172.16.0.1', // ipAddress
       );
     });
   });

@@ -11,8 +11,10 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import * as express from 'express';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -34,8 +36,9 @@ export class UsersController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new user' })
   @ApiResponse({ status: 201, description: 'User created successfully' })
-  async create(@Body() dto: CreateUserDto, @CurrentUser() user: any) {
-    return this.usersService.create(dto, { id: user.sub, role: user.role });
+  async create(@Body() dto: CreateUserDto, @CurrentUser() user: any, @Req() req: express.Request) {
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip;
+    return this.usersService.create(dto, { id: user.sub, role: user.role }, ipAddress);
   }
 
   @Get()
@@ -72,8 +75,10 @@ export class UsersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,
     @CurrentUser() user: any,
+    @Req() req: express.Request,
   ) {
-    return this.usersService.update(id, dto, { id: user.sub, role: user.role });
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip;
+    return this.usersService.update(id, dto, { id: user.sub, role: user.role }, ipAddress);
   }
 
   @Delete(':id')
@@ -81,7 +86,8 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Soft delete user by ID' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
-  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: any) {
-    return this.usersService.softDelete(id, user.sub);
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: any, @Req() req: Request) {
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip;
+    return this.usersService.softDelete(id, user.sub, ipAddress);
   }
 }
