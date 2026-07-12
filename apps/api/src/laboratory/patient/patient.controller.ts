@@ -34,8 +34,8 @@ export class PatientController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.KLINIK_PARTNER)
   @ApiOperation({ summary: 'Register a new patient' })
-  async register(@Body() dto: CreatePatientDto) {
-    return this.patientService.register(dto);
+  async register(@Body() dto: CreatePatientDto, @CurrentUser() user: any) {
+    return this.patientService.register(dto, user.sub);
   }
 
   @Get()
@@ -95,8 +95,9 @@ export class PatientController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePatientDto,
+    @CurrentUser() user: any,
   ) {
-    return this.patientService.update(id, dto);
+    return this.patientService.update(id, dto, user.sub);
   }
 
   @Delete(':id')

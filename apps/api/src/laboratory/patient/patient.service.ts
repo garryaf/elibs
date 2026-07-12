@@ -56,7 +56,7 @@ export class PatientService {
     }
   }
 
-  async register(dto: CreatePatientDto) {
+  async register(dto: CreatePatientDto, userId?: string) {
     // Validate NIK format (defense-in-depth)
     this.validateNikFormat(dto.nik);
 
@@ -113,6 +113,11 @@ export class PatientService {
         },
         include: REGION_INCLUDE,
       });
+
+      // Audit log patient creation
+      if (userId) {
+        await this.auditService.log(userId, 'CREATE', 'Patient', patient.id, null, { mrn, name: dto.name }, null);
+      }
 
       return this.transformRegionResponse(patient);
     } catch (error) {
@@ -201,7 +206,7 @@ export class PatientService {
     return this.transformRegionResponse(patient);
   }
 
-  async update(id: string, dto: UpdatePatientDto) {
+  async update(id: string, dto: UpdatePatientDto, userId?: string) {
     const patient = await this.prisma.patient.findFirst({
       where: { id, deletedAt: null },
     });
@@ -229,6 +234,11 @@ export class PatientService {
       data,
       include: REGION_INCLUDE,
     });
+
+    // Audit log patient update
+    if (userId) {
+      await this.auditService.log(userId, 'UPDATE', 'Patient', id, null, dto as unknown as Record<string, unknown>, null);
+    }
 
     return this.transformRegionResponse(updated);
   }

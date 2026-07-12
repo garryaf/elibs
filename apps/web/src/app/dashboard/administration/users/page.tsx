@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { UserPlus, Search, Trash2, Pencil } from "lucide-react";
+import { UserPlus, Search, Trash2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiClient } from "@/lib/api";
 
 const ROLES = [
@@ -32,30 +32,65 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({ email: "", name: "", password: "", role: "KASIR" });
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const PAGE_SIZE = 20;
+
   const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiClient.getUsers({ limit: 100, search: search || undefined, role: roleFilter || undefined });
+      const res = await apiClient.getUsers({ page, limit: PAGE_SIZE, search: search || undefined, role: roleFilter || undefined });
       const envelope = (res?.data ?? res) as any;
-      const raw = Array.isArray(envelope) ? envelope : envelope?.data ?? [];
+      let raw: unknown[] = [];
+      let meta = { total: 0, page: 1, limit: PAGE_SIZE };
+
+      if (envelope && typeof envelope === "object") {
+        if ("data" in envelope) {
+          const inner = (envelope as { data: unknown }).data;
+          raw = Array.isArray(inner) ? inner : [];
+        } else if (Array.isArray(envelope)) {
+          raw = envelope;
+        }
+        if ("meta" in envelope) {
+          const m = (envelope as { meta: unknown }).meta as Record<string, unknown>;
+          meta = {
+            total: Number(m.total) || 0,
+            page: Number(m.page) || 1,
+            limit: Number(m.limit) || PAGE_SIZE,
+          };
+        }
+      } else if (Array.isArray(envelope)) {
+        raw = envelope;
+      }
+
       setUsers(raw as User[]);
+      setTotal(meta.total);
+      setTotalPages(Math.ceil(meta.total / PAGE_SIZE) || 1);
     } catch {
       setUsers([]);
+      setTotal(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  }, [search, roleFilter]);
+  }, [search, roleFilter, page]);
 
   useEffect(() => {
     const t = setTimeout(loadUsers, 300);
     return () => clearTimeout(t);
   }, [loadUsers]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, roleFilter]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -200,6 +235,33 @@ export default function UsersPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {!loading && total > 0 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Halaman {page} dari {totalPages} ({total} user)
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              Sebelumnya
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              Berikutnya
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Create/Edit Modal */}
       {showForm && (

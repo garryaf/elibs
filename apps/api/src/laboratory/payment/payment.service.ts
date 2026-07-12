@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { BarcodeService } from './barcode.service';
+import { BarcodeService } from '../../common/barcode';
 import { AuditService } from '../audit/audit.service';
 import { ProcessPaymentDto } from './dto/process-payment.dto';
 import { SplitPaymentDto } from './dto/split-payment.dto';

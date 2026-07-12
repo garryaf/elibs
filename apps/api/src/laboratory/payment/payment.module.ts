@@ -1,16 +1,16 @@
 import { Module } from '@nestjs/common';
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
-import { BarcodeService } from './barcode.service';
+import { BarcodeModule } from '../../common/barcode';
 import { ReceiptService } from './receipt.service';
 import { BatchInvoiceController } from './batch-invoice.controller';
 import { BatchInvoiceService } from './batch-invoice.service';
 import { AuditModule } from '../audit/audit.module';
 
 @Module({
-  imports: [AuditModule],
+  imports: [AuditModule, BarcodeModule],
   controllers: [PaymentController, BatchInvoiceController],
-  providers: [PaymentService, BarcodeService, ReceiptService, BatchInvoiceService],
-  exports: [PaymentService, BarcodeService, ReceiptService, BatchInvoiceService],
+  providers: [PaymentService, ReceiptService, BatchInvoiceService],
+  exports: [PaymentService, ReceiptService, BatchInvoiceService],
 })
 export class PaymentModule {}

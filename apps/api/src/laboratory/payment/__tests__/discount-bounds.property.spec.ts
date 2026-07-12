@@ -6,7 +6,7 @@ import { BadRequestException } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PaymentService } from '../payment.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { BarcodeService } from '../barcode.service';
+import { BarcodeService } from '../../../common/barcode';
 import { AuditService } from '../../audit/audit.service';
 import { OrderStatus, PaymentMethod } from '@prisma/client';
 

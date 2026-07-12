@@ -7,7 +7,7 @@
 | **Author** | Enterprise Architect |
 | **Sources** | Per-Menu Audit (01–06), Full Application Audit V2, Kiro Specs |
 | **Total Original Tasks** | 66 |
-| **Original Completed** | 65 |
+| **Original Completed** | 66 |
 | **New Audit V2 Tasks** | 2 (T-065, T-066) |
 | **Per-Menu NCR Items** | 68 (across 6 audited menus) |
 | **Last Updated** | 2026-07-11 |
@@ -26,7 +26,7 @@
 | Sprint 4 (Frontend/Nav) | 17 | 17 | 0 | 0 | 100% |
 | Sprint 5-6 (Architecture) | 18 | 18 | 0 | 0 | 100% |
 | Backlog (Cleanup) | 8 | 8 | 0 | 0 | 100% |
-| **Audit V2 Findings** | **2** | **1** | **0** | **1** | **50%** |
+| **Audit V2 Findings** | **2** | **2** | **0** | **0** | **100%** |
 | **Per-Menu NCR (New)** | **68** | **~40** | **0** | **~28** | **~59%** |
 
 
@@ -136,7 +136,7 @@
 
 | Task # | Task | Status | Source |
 |--------|------|--------|--------|
-| T-065 | Extract barcode image generation to standalone service | 🆕 Open | FIND-001 (ORD-09) |
+| T-065 | Extract barcode image generation to standalone service | ✅ Done | Extracted to `common/barcode/` module; PaymentModule imports BarcodeModule; old file re-exports for compat |
 | T-066 | Fix 13 failing unit/property tests | ✅ Done | Spec sprint-next1-critical-security task 13.1; 264 tests passing |
 
 ---
@@ -158,13 +158,13 @@
 | NCR ID | Finding | Priority | Status | Resolution/Notes |
 |--------|---------|:--------:|--------|------------------|
 | NCR-01-01 | No refresh token endpoint | P2 | ✅ RESOLVED | T-017 implemented refresh flow; Audit V2 AUTH-13 confirms 200 |
-| NCR-01-02 | JWT payload missing `klinikId` | P3 | 🆕 OPEN | T-048 added Department/Position but `clinicId` claim not yet in JWT |
-| NCR-01-03 | No logout endpoint / JWT blocklist | P2 | 🆕 OPEN | Redis is live (T-015) but logout blocklist not implemented |
+| NCR-01-02 | JWT payload missing `klinikId` | P3 | ✅ RESOLVED | `clinicId` added to JWT payload in AuthService.login() and refresh(); JwtStrategy.validate() passes it to request.user; DataScopeInterceptor reads it at runtime |
+| NCR-01-03 | No logout endpoint / JWT blocklist | P2 | ✅ RESOLVED | POST /api/v1/auth/logout endpoint + TokenBlocklistService (in-memory with TTL cleanup); JwtStrategy checks blocklist on every request |
 | NCR-01-04 | No rate limiting `/auth/login` | P1 | ✅ RESOLVED | T-018 implemented; Audit V2 Security table confirms ✅ |
-| NCR-01-05 | Middleware only checks cookie flag | P3 | 🆕 OPEN | Low priority; server-side still enforces 401 |
+| NCR-01-05 | Middleware only checks cookie flag | P3 | ✅ RESOLVED | Middleware now decodes JWT from `elis_token` cookie and validates `exp` claim; expired tokens trigger redirect + cookie cleanup; backward compat with flag retained |
 | NCR-01-06 | `login(@Body() loginDto: any)` no DTO | P1 | ✅ RESOLVED | Spec user-admin-bugfix addressed DTO issues |
-| NCR-01-07 | Login audit log missing | P2 | 🆕 OPEN | AuditService exists but not called from AuthService |
-| NCR-01-08 | JWT_EXPIRATION default `1d` | P2 | ⚡ PARTIAL | Refresh token added (T-017) but access token still 1d default |
+| NCR-01-07 | Login audit log missing | P2 | ✅ RESOLVED | AuditService.log() called from AuthService on login (LOGIN action) and logout (LOGOUT action) with IP address; non-blocking (fire-and-forget) |
+| NCR-01-08 | JWT_EXPIRATION default `1d` | P2 | ✅ RESOLVED | Changed to 15m in .env, .env.example, .env.local (production already 15m); apiClient now auto-refreshes on 401 using stored refreshToken; auth-context stores refreshToken from login |
 | NCR-01-09 | Middleware cookie bypass | P4 | 🔄 SUPERSEDED | Covered by NCR-01-05 |
 | NCR-01-10 | Auth test suite out of sync | P3 | ✅ RESOLVED | Resolved as part of T-066 (sprint-next1-critical-security task 13.1); 264/264 tests passing |
 
@@ -177,7 +177,7 @@
 |--------|---------|:--------:|--------|------------------|
 | NCR-02-01 | Double envelope UsersController | P1 | ✅ RESOLVED | Spec user-admin-master-data-bugfix task 3.1 |
 | NCR-02-02 | ADMIN can escalate role to SUPER_ADMIN | P1 | ✅ RESOLVED | Spec sprint-next1-critical-security tasks 2.1–2.3; validateRoleEscalation guard + property test |
-| NCR-02-03 | Tab Users not paginated/search server-side | P2 | ⚡ PARTIAL | Settings page decomposed (T-050) but Users tab still limited |
+| NCR-02-03 | Tab Users not paginated/search server-side | P2 | ✅ RESOLVED | Users page now uses server-side pagination (page=1, limit=20) + search + role filter with meta parsing and prev/next controls |
 | NCR-02-04 | No self-delete / last SUPER_ADMIN protection | P1 | ✅ RESOLVED | Spec sprint-next1-critical-security tasks 3.1–3.2; self-delete guard + last-admin check + property tests |
 | NCR-02-05 | Audit log coverage user CRUD unverified | P2 | 🆕 OPEN | Needs verification |
 | NCR-02-06 | Password field `type:"text"` | P2 | ⚡ PARTIAL | Settings page rebuilt; may be fixed in new admin/users page |
@@ -186,7 +186,7 @@
 | NCR-02-09 | No `isActive` column for user suspension | P3 | 🆕 OPEN | Design decision pending |
 | NCR-02-10 | `meta` pagination discarded in shell | P2 | ✅ RESOLVED | Master data dynamic page uses pagination now |
 
-**Score: 6/10 fully resolved, 2 partial, 2 open**
+**Score: 7/10 fully resolved, 1 partial, 2 open**
 
 
 ### Menu 03: Pasien (10 NCR items)
@@ -196,7 +196,7 @@
 | NCR-03-01 | "Nonaktifkan" pasien palsu — no API call | P1 | ✅ RESOLVED | Spec sprint-next1-critical-security task 6.1 (backend) + frontend wired to DELETE endpoint with confirmation dialog |
 | NCR-03-02 | `deletedAt` column exists but never set | P1 | ✅ RESOLVED | Spec sprint-next1-critical-security task 6.1; softDelete sets deletedAt + frontend calls API + property tests |
 | NCR-03-03 | Dual insurance source (single FK + junction) | P2 | ⚡ PARTIAL | Junction added (T-009) but old `insuranceId` FK not deprecated |
-| NCR-03-04 | Audit log for patient C/U unverified | P2 | 🆕 OPEN | Needs verification |
+| NCR-03-04 | Audit log for patient C/U unverified | P2 | ✅ RESOLVED | AuditService.log() now called in PatientService.register() (CREATE) and update() (UPDATE) with userId from JWT; controller passes @CurrentUser() |
 | NCR-03-05 | Export button non-functional | P3 | 🆕 OPEN | Placeholder without handler |
 | NCR-03-06 | FE sends `nik` in update (silently stripped) | P3 | 🆕 OPEN | Low priority cosmetic |
 | NCR-03-07 | Stats "Kunjungan Hari Ini" from `updatedAt` | P3 | 🆕 OPEN | Metric misleading |
@@ -331,8 +331,8 @@
 | 24 | NCR-06-09 | PreAuth non-blocking | S | 🆕 OPEN |
 | 25 | NCR-06-16 | Test picker limit 100 in order create | S | 🆕 OPEN |
 | 26 | NCR-03-08 | Update patient error silent | XS | 🆕 OPEN |
-| 27 | NCR-02-03 | Users tab server-side pagination | M | ⚡ PARTIAL |
-| 28 | T-065 | Barcode image generation standalone | S | 🆕 OPEN |
+| 27 | NCR-02-03 | Users tab server-side pagination | M | ✅ RESOLVED |
+| ~~28~~ | ~~T-065~~ | ~~Barcode image generation standalone~~ | ~~S~~ | ✅ RESOLVED |
 | ~~29~~ | ~~T-066~~ | ~~Fix 13 failing tests~~ | ~~M~~ | ✅ RESOLVED (sprint-next1) |
 
 

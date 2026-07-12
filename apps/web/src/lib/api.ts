@@ -86,6 +86,49 @@ class ApiClient {
     return localStorage.getItem("elis_token");
   }
 
+  private isRefreshing = false;
+  private refreshPromise: Promise<boolean> | null = null;
+
+  private getRefreshToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("elis_refresh_token");
+  }
+
+  private async attemptRefresh(): Promise<boolean> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) return false;
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) return false;
+
+      const raw = await response.json();
+      const data = unwrapResponse<{ data?: { accessToken?: string; refreshToken?: string } }>(raw);
+      const inner = (data as any)?.data ?? data;
+      const accessToken = inner?.accessToken;
+      const newRefreshToken = inner?.refreshToken;
+
+      if (accessToken) {
+        localStorage.setItem("elis_token", accessToken);
+        if (newRefreshToken) {
+          localStorage.setItem("elis_refresh_token", newRefreshToken);
+        }
+        // Update cookies for middleware
+        document.cookie = `elis_token=${accessToken}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
+        document.cookie = `elis_authenticated=true; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -105,6 +148,37 @@ class ApiClient {
       ...options,
       headers,
     });
+
+    // If 401 and not the auth endpoints, try refresh
+    if (response.status === 401 && !endpoint.includes("/auth/")) {
+      // Deduplicate concurrent refresh attempts
+      if (!this.isRefreshing) {
+        this.isRefreshing = true;
+        this.refreshPromise = this.attemptRefresh().finally(() => {
+          this.isRefreshing = false;
+          this.refreshPromise = null;
+        });
+      }
+
+      const refreshed = await (this.refreshPromise ?? Promise.resolve(false));
+
+      if (refreshed) {
+        // Retry original request with new token
+        const newToken = this.getToken();
+        if (newToken) {
+          headers["Authorization"] = `Bearer ${newToken}`;
+        }
+        const retryResponse = await fetch(`${this.baseUrl}${endpoint}`, {
+          ...options,
+          headers,
+        });
+        const retryData = await retryResponse.json();
+        if (!retryResponse.ok) {
+          throw { status: retryResponse.status, ...retryData };
+        }
+        return unwrapResponse<T>(retryData);
+      }
+    }
 
     const data = await response.json();
 

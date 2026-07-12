@@ -1,7 +1,8 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UnauthorizedException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Post, Body, HttpCode, HttpStatus, UnauthorizedException, UseGuards, Req } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @ApiTags('Auth')
 @Controller('api/v1/auth')
@@ -14,12 +15,13 @@ export class AuthController {
   @ApiOperation({ summary: 'User login with email and password' })
   @ApiResponse({ status: 200, description: 'Login successful, returns access and refresh tokens' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() loginDto: any) {
+  async login(@Body() loginDto: any, @Req() req: any) {
     const user = await this.authService.validateUser(loginDto.email, loginDto.password);
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
     }
-    return this.authService.login(user);
+    const ipAddress = (req.headers?.['x-forwarded-for'] as string) || req.ip;
+    return this.authService.login(user, ipAddress);
   }
 
   @Post('refresh')
@@ -38,5 +40,29 @@ export class AuthController {
       message: 'Token refreshed',
       data: result,
     };
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout and invalidate current token' })
+  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async logout(@Req() req: any) {
+    const user = req.user;
+    const ipAddress = (req.headers?.['x-forwarded-for'] as string) || req.ip;
+    // Extract iat and exp from the raw JWT payload
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      try {
+        const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+        await this.authService.logout(decoded.sub, decoded.iat, decoded.exp, ipAddress);
+      } catch {
+        // If decoding fails, still return success (token might be malformed but user is authenticated)
+      }
+    }
+    return { success: true, message: 'Logged out successfully' };
   }
 }

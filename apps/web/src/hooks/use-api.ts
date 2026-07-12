@@ -30,6 +30,7 @@ export function useApi<T>(
         localStorage.removeItem("elis_token");
         localStorage.removeItem("elis_user");
         document.cookie = "elis_authenticated=; path=/; max-age=0";
+        document.cookie = "elis_token=; path=/; max-age=0";
         window.location.href = "/";
         return;
       }
