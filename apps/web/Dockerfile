@@ -30,7 +30,7 @@ COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY apps/web/ ./apps/web/
 COPY package.json ./
 
-ARG NEXT_PUBLIC_API_URL=http://localhost:3001
+ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 
