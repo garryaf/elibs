@@ -244,7 +244,13 @@ export function PatientLabHistory({ patientId }: { patientId: string }) {
       const response = await apiClient.get<LabHistoryResponse>(
         `/api/v1/patients/${patientId}/lab-history?page=${page}&limit=10`
       );
-      setData(response);
+      // Handle potential double-envelope: unwrap if response has nested data
+      const unwrapped = (response as any)?.data?.items
+        ? (response as any).data
+        : (response as any)?.items
+          ? response
+          : (response as any)?.data ?? response;
+      setData(unwrapped as LabHistoryResponse);
     } catch {
       setError("Gagal memuat riwayat laboratorium.");
     } finally {
@@ -292,7 +298,7 @@ export function PatientLabHistory({ patientId }: { patientId: string }) {
   }
 
   // Empty state
-  if (!data || data.items.length === 0) {
+  if (!data || !data.items || data.items.length === 0) {
     return (
       <div className="space-y-3">
         <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
