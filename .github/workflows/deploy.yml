@@ -119,7 +119,7 @@ jobs:
             set -e
             echo "=== eLIS Deploy Start ==="
             
-            APP_DIR="/opt/elis"
+            APP_DIR="/home/dinaragil/elibs"
             DEPLOY_DIR="/tmp/elis-deploy"
             
             # Extract artifacts
