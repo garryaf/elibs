@@ -86,7 +86,7 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Soft delete user by ID' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
-  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: any, @Req() req: Request) {
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: any, @Req() req: express.Request) {
     const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip;
     return this.usersService.softDelete(id, user.sub, ipAddress);
   }

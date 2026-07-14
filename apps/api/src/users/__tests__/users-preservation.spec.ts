@@ -18,6 +18,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '../users.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { AuditService } from '../../laboratory/audit/audit.service';
 import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import * as fc from 'fast-check';
@@ -54,11 +55,13 @@ describe('Preservation: UsersService read operations and failed mutations', () =
       },
     };
 
-    // Do NOT provide AuditService — it's not injected in unfixed code
+    // Provide a minimal AuditService mock to satisfy DI requirements.
+    // The mock's log() should never be called in these scenarios (read ops + failed mutations = no audit).
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         { provide: PrismaService, useValue: prismaService },
+        { provide: AuditService, useValue: { log: jest.fn() } },
       ],
     }).compile();
 

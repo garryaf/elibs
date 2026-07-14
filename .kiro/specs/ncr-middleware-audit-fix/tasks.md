@@ -54,9 +54,9 @@ Fix two NCRs: NCR-01-09 (middleware legacy cookie bypass) and NCR-02-05 (missing
   - Mark task complete when tests are written, run, and passing on unfixed code
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-- [ ] 3. Fix for NCR-01-09 Middleware Cookie Bypass & NCR-02-05 Missing User Audit Logs
+- [x] 3. Fix for NCR-01-09 Middleware Cookie Bypass & NCR-02-05 Missing User Audit Logs
 
-  - [-] 3.1 Remove legacy `elis_authenticated` cookie fallback from middleware
+  - [x] 3.1 Remove legacy `elis_authenticated` cookie fallback from middleware
     - In `apps/web/src/middleware.ts`, delete the `else if (authCookie?.value === "true")` branch (lines 52–54)
     - Authentication now depends solely on `elis_token` containing a non-expired JWT
     - Remove or repurpose the `authCookie` variable (keep only for stale cookie cleanup on redirect)
@@ -66,12 +66,12 @@ Fix two NCRs: NCR-01-09 (middleware legacy cookie bypass) and NCR-02-05 (missing
     - _Preservation: Valid elis_token access unchanged, login page behavior unchanged, route matcher unchanged_
     - _Requirements: 1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 3.3_
 
-  - [-] 3.2 Import AuditModule into UsersModule
+  - [x] 3.2 Import AuditModule into UsersModule
     - In `apps/api/src/users/users.module.ts`, add `import { AuditModule } from '../laboratory/audit/audit.module'`
     - Add `AuditModule` to the `imports` array of the `@Module` decorator
     - _Requirements: 1.3, 1.4, 1.5_
 
-  - [-] 3.3 Inject AuditService and add audit logging to UsersService
+  - [x] 3.3 Inject AuditService and add audit logging to UsersService
     - In `apps/api/src/users/users.service.ts`:
       - Import `AuditService` from `'../laboratory/audit/audit.service'`
       - Add `private auditService: AuditService` to the constructor
@@ -84,7 +84,7 @@ Fix two NCRs: NCR-01-09 (middleware legacy cookie bypass) and NCR-02-05 (missing
     - _Preservation: Read operations (findAll, findById) unchanged — no audit; failed mutations unchanged — no audit; stripSensitiveFields() applied to values_
     - _Requirements: 1.3, 1.4, 1.5, 2.3, 2.4, 2.5, 3.4, 3.5, 3.6_
 
-  - [-] 3.4 Extract ipAddress in UsersController and pass to service methods
+  - [x] 3.4 Extract ipAddress in UsersController and pass to service methods
     - In `apps/api/src/users/users.controller.ts`:
       - Import `Req` from `@nestjs/common` and `Request` from `express`
       - In `create()`: add `@Req() req: Request`, extract IP via `(req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip`, pass to `usersService.create(dto, { id: user.sub, role: user.role }, ipAddress)`
@@ -93,7 +93,7 @@ Fix two NCRs: NCR-01-09 (middleware legacy cookie bypass) and NCR-02-05 (missing
     - Follow the same pattern used in `visit.controller.ts` and `auth.controller.ts`
     - _Requirements: 2.3, 2.4, 2.5_
 
-  - [~] 3.5 Verify bug condition exploration test now passes
+  - [x] 3.5 Verify bug condition exploration test now passes
     - **Property 1: Expected Behavior** - Middleware Rejects Cookie-Only Auth & User CRUD Produces Audit Logs
     - **IMPORTANT**: Re-run the SAME test from task 1 — do NOT write a new test
     - The test from task 1 encodes the expected behavior (redirect on cookie-only, audit entries on CRUD)
@@ -104,7 +104,7 @@ Fix two NCRs: NCR-01-09 (middleware legacy cookie bypass) and NCR-02-05 (missing
     - **EXPECTED OUTCOME**: Test PASSES (confirms both bugs are fixed)
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-  - [~] 3.6 Verify preservation tests still pass
+  - [x] 3.6 Verify preservation tests still pass
     - **Property 2: Preservation** - Valid JWT Access, Read Ops No-Audit, Failed Mutations No-Audit
     - **IMPORTANT**: Re-run the SAME tests from task 2 — do NOT write new tests
     - Run preservation property tests from step 2
@@ -116,7 +116,7 @@ Fix two NCRs: NCR-01-09 (middleware legacy cookie bypass) and NCR-02-05 (missing
       - Failed mutations still do not produce audit entries
       - Sensitive fields still stripped from audit values
 
-- [~] 4. Checkpoint — Ensure all tests pass
+- [x] 4. Checkpoint — Ensure all tests pass
   - Run the full test suite: `npx jest --run` (or project-specific command)
   - Ensure all bug condition tests pass (confirming fix works)
   - Ensure all preservation tests pass (confirming no regressions)

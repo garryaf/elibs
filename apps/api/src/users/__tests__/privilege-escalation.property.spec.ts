@@ -5,6 +5,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { UsersService } from '../users.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { AuditService } from '../../laboratory/audit/audit.service';
 import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -87,6 +88,12 @@ describe('Privilege Escalation Guard Property Tests', () => {
                 }),
               ),
             },
+          },
+        },
+        {
+          provide: AuditService,
+          useValue: {
+            log: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

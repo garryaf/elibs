@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { AuditService } from '../laboratory/audit/audit.service';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -20,6 +21,12 @@ describe('UsersService', () => {
               update: jest.fn(),
               count: jest.fn(),
             },
+          },
+        },
+        {
+          provide: AuditService,
+          useValue: {
+            log: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

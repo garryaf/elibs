@@ -6,6 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, ConflictException } from '@nestjs/common';
 import { UsersService } from '../users.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { AuditService } from '../../laboratory/audit/audit.service';
 import { Role } from '@prisma/client';
 
 /**
@@ -41,6 +42,12 @@ describe('Self-Delete and Last Admin Protection Property Tests', () => {
               update: jest.fn(),
               count: jest.fn(),
             },
+          },
+        },
+        {
+          provide: AuditService,
+          useValue: {
+            log: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
