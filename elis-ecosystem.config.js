@@ -21,7 +21,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3001,
-        DATABASE_URL: 'postgresql://postgres:postgres123@localhost:5432/elis_db?schema=public',
+        DATABASE_URL: 'postgresql://postgres:postgres123@localhost:5433/elis_db?schema=public',
         JWT_SECRET: process.env.JWT_SECRET || 'CHANGE-ME-IN-PRODUCTION-32-CHARS-MIN',
         JWT_EXPIRATION: process.env.JWT_EXPIRATION || '1d',
         REDIS_HOST: 'localhost',
