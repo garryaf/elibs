@@ -68,16 +68,35 @@ mkdir -p logs
 # --- Step 3: Install dependencies + pin Prisma ---
 echo ""
 echo "[3/8] Installing dependencies..."
-cd "$APP_DIR/apps/api"
-npm install prisma@5.22.0 @prisma/client@5.22.0 --save-exact
 cd "$APP_DIR"
-npm ci --workspace=web --include-workspace-root 2>/dev/null || npm install --workspace=web
+
+# CRITICAL: Delete any global prisma cache that npm might use
+rm -rf node_modules/.prisma node_modules/@prisma node_modules/prisma 2>/dev/null || true
+rm -rf apps/api/node_modules/.prisma apps/api/node_modules/@prisma apps/api/node_modules/prisma 2>/dev/null || true
+
+# Install all workspace deps from lockfile (exact versions)
+npm ci
+
+# Force pin Prisma 5.22.0 (overrides any npm resolve to v7)
+cd "$APP_DIR/apps/api"
+npm install prisma@5.22.0 @prisma/client@5.22.0 --save-exact --install-strategy=nested
 
 # --- Step 4: Generate Prisma Client ---
 echo ""
 echo "[4/8] Generating Prisma Client..."
 cd "$APP_DIR/apps/api"
-npx prisma generate
+
+# Verify correct version is installed
+PRISMA_VER=$(npx prisma --version 2>/dev/null | grep "prisma" | head -1 || echo "unknown")
+echo "  Prisma version: $PRISMA_VER"
+
+# If still v7, force use local binary
+if echo "$PRISMA_VER" | grep -q "7\."; then
+  echo "  ERROR: Prisma v7 detected despite pinning. Using direct path..."
+  ./node_modules/.bin/prisma generate
+else
+  npx prisma generate
+fi
 
 # --- Step 5: Build API ---
 echo ""
