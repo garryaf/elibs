@@ -22,13 +22,22 @@ const PERMISSIONS: PermissionDef[] = [
   { code: 'patients.delete', name: 'Hapus Pasien', description: 'Menghapus data pasien (soft delete)', resource: 'patients', action: 'delete' },
   { code: 'patients.export', name: 'Ekspor Data Pasien', description: 'Mengekspor data pasien ke file', resource: 'patients', action: 'export' },
 
-  // === ORDERS ===
+  // === ORDERS (generic) ===
   { code: 'orders.create', name: 'Buat Order Baru', description: 'Membuat order pemeriksaan baru', resource: 'orders', action: 'create' },
   { code: 'orders.read', name: 'Lihat Order', description: 'Melihat daftar dan detail order', resource: 'orders', action: 'read' },
   { code: 'orders.update', name: 'Ubah Order', description: 'Mengubah data order', resource: 'orders', action: 'update' },
   { code: 'orders.cancel', name: 'Batalkan Order', description: 'Membatalkan order', resource: 'orders', action: 'cancel' },
   { code: 'orders.approve', name: 'Setujui Order', description: 'Menyetujui order (approval workflow)', resource: 'orders', action: 'approve' },
   { code: 'orders.export', name: 'Ekspor Data Order', description: 'Mengekspor data order ke file', resource: 'orders', action: 'export' },
+
+  // === ORDERS (endpoint-level permissions for PermissionGuard) ===
+  { code: 'orders:create', name: 'Buat Order (Endpoint)', description: 'Akses endpoint pembuatan order baru', resource: 'orders', action: 'create' },
+  { code: 'orders:read', name: 'Lihat Order (Endpoint)', description: 'Akses endpoint daftar dan detail order', resource: 'orders', action: 'read' },
+  { code: 'orders:cancel', name: 'Batalkan Order (Endpoint)', description: 'Akses endpoint pembatalan order', resource: 'orders', action: 'cancel' },
+  { code: 'orders:manage-insurance', name: 'Kelola Asuransi Order', description: 'Akses endpoint pengelolaan asuransi order (tambah, ubah, hapus)', resource: 'orders', action: 'manage-insurance' },
+  { code: 'orders:manage-bpjs', name: 'Kelola BPJS Order', description: 'Akses endpoint pengelolaan BPJS order (buat, ubah, verifikasi)', resource: 'orders', action: 'manage-bpjs' },
+  { code: 'orders:manage-claims', name: 'Kelola Klaim Order', description: 'Akses endpoint pengelolaan klaim asuransi (submit, review, approve, reject, paid, fallback)', resource: 'orders', action: 'manage-claims' },
+  { code: 'orders:admin', name: 'Admin Order', description: 'Akses endpoint administratif order (check overdue)', resource: 'orders', action: 'admin' },
 
   // === LAB WORKFLOW ===
   { code: 'lab.collect-sample', name: 'Ambil Sampel', description: 'Melakukan pengambilan sampel', resource: 'lab', action: 'create' },
@@ -128,6 +137,9 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
   KASIR: [
     'patients.create', 'patients.read', 'patients.update',
     'orders.create', 'orders.read', 'orders.update', 'orders.cancel',
+    // Order endpoint-level permissions (for PermissionGuard migration)
+    'orders:create', 'orders:read', 'orders:cancel',
+    'orders:manage-insurance', 'orders:manage-bpjs', 'orders:manage-claims',
     'batch-invoices.read',
     'dashboard.read',
     'master-data.read',
@@ -139,6 +151,8 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
   SAMPLING: [
     'patients.read',
     'orders.read',
+    // Order endpoint-level permissions (for PermissionGuard migration)
+    'orders:read',
     'lab.collect-sample', 'lab.read', 'lab.reject',
     'dashboard.read',
     'master-data.read',
@@ -148,6 +162,8 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
   ANALIS: [
     'patients.read',
     'orders.read',
+    // Order endpoint-level permissions (for PermissionGuard migration)
+    'orders:read',
     'lab.enter-result', 'lab.verify', 'lab.read',
     'dashboard.read',
     'master-data.read',
@@ -159,6 +175,8 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
   DOKTER: [
     'patients.read',
     'orders.read',
+    // Order endpoint-level permissions (for PermissionGuard migration)
+    'orders:read',
     'lab.approve', 'lab.read',
     'dashboard.read',
     'reports.read',
@@ -169,6 +187,8 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
   CS: [
     'patients.create', 'patients.read', 'patients.update',
     'orders.create', 'orders.read',
+    // Order endpoint-level permissions (for PermissionGuard migration)
+    'orders:create', 'orders:read',
     'notifications.read', 'notifications.create',
     'dashboard.read',
     'master-data.read',
@@ -179,6 +199,8 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
   OWNER: [
     'patients.read',
     'orders.read',
+    // Order endpoint-level permissions (for PermissionGuard migration)
+    'orders:read',
     'dashboard.read', 'dashboard.export',
     'reports.read', 'reports.export',
     'audit.read',
@@ -190,6 +212,8 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
   MANAGER: [
     'patients.read', 'patients.export',
     'orders.read', 'orders.export',
+    // Order endpoint-level permissions (for PermissionGuard migration)
+    'orders:read',
     'lab.read',
     'dashboard.read', 'dashboard.export',
     'reports.read', 'reports.create', 'reports.export',
@@ -214,6 +238,8 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
   KLINIK_PARTNER: [
     'patients.create', 'patients.read',
     'orders.create', 'orders.read',
+    // Order endpoint-level permissions (for PermissionGuard migration)
+    'orders:create', 'orders:read',
     'lab.read',
     'dashboard.read',
     'master-data.read',

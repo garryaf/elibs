@@ -6,7 +6,7 @@ Migrate OrderController from RolesGuard to PermissionGuard to fix 403 Forbidden 
 
 ## Tasks
 
-- [ ] 1. Write bug condition exploration test
+- [x] 1. Write bug condition exploration test
   - **Property 1: Bug Condition** - SUPER_ADMIN and DB-Permissioned Roles Get 403 on Order Endpoints
   - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
   - **DO NOT attempt to fix the test or the code when it fails**
@@ -23,7 +23,7 @@ Migrate OrderController from RolesGuard to PermissionGuard to fix 403 Forbidden 
   - Mark task complete when test is written, run, and failure is documented
   - _Requirements: 1.1, 1.2, 2.1, 2.2_
 
-- [ ] 2. Write preservation property tests (BEFORE implementing fix)
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
   - **Property 2: Preservation** - Previously-Allowed Roles Continue to Have Access
   - **IMPORTANT**: Follow observation-first methodology
   - Observe: KASIR sends POST /api/v1/orders on unfixed code → 201 (or non-403 from guard)
@@ -35,9 +35,9 @@ Migrate OrderController from RolesGuard to PermissionGuard to fix 403 Forbidden 
   - Verify tests pass on UNFIXED code (confirms baseline behavior to preserve)
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 3. Fix OrderController RBAC migration to PermissionGuard
+- [x] 3. Fix OrderController RBAC migration to PermissionGuard
 
-  - [ ] 3.1 Seed order permission records in database
+  - [x] 3.1 Seed order permission records in database
     - Create permission seed entries for: `orders:create`, `orders:read`, `orders:cancel`, `orders:manage-insurance`, `orders:manage-bpjs`, `orders:manage-claims`, `orders:admin`
     - Seed in `apps/api/prisma/seed.ts` or create a new migration
     - Map permissions to roles matching the existing hardcoded access matrix:
@@ -50,7 +50,7 @@ Migrate OrderController from RolesGuard to PermissionGuard to fix 403 Forbidden 
     - _Preservation: KASIR, ADMIN, KLINIK_PARTNER must retain same access via seeded permissions_
     - _Requirements: 2.1, 2.2, 3.1, 3.2, 3.3_
 
-  - [ ] 3.2 Replace RolesGuard with PermissionGuard on OrderController
+  - [x] 3.2 Replace RolesGuard with PermissionGuard on OrderController
     - In `apps/api/src/laboratory/order/order.controller.ts`:
     - Remove imports for `RolesGuard`, `Roles`, `Role` (if no longer needed)
     - Add imports for `PermissionGuard` from `../../common/guards/permission.guard`
@@ -84,7 +84,7 @@ Migrate OrderController from RolesGuard to PermissionGuard to fix 403 Forbidden 
     - _Preservation: JwtAuthGuard remains unchanged; DataScopeInterceptor unaffected_
     - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3_
 
-  - [ ] 3.3 Verify bug condition exploration test now passes
+  - [x] 3.3 Verify bug condition exploration test now passes
     - **Property 1: Expected Behavior** - SUPER_ADMIN and DB-Permissioned Roles Can Access Order Endpoints
     - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
     - The test from task 1 encodes the expected behavior (response != 403 for SUPER_ADMIN)
@@ -93,7 +93,7 @@ Migrate OrderController from RolesGuard to PermissionGuard to fix 403 Forbidden 
     - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 3.4 Verify preservation tests still pass
+  - [x] 3.4 Verify preservation tests still pass
     - **Property 2: Preservation** - Previously-Allowed Roles Continue to Have Access
     - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
     - Run preservation property tests from step 2
@@ -102,7 +102,7 @@ Migrate OrderController from RolesGuard to PermissionGuard to fix 403 Forbidden 
     - Confirm unauthenticated requests still get 401
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 4. Checkpoint - Ensure all tests pass
+- [x] 4. Checkpoint - Ensure all tests pass
   - Run full test suite to confirm no regressions
   - Verify bug condition test passes (SUPER_ADMIN can access order endpoints)
   - Verify preservation tests pass (previously-allowed roles unchanged)
@@ -115,11 +115,11 @@ Migrate OrderController from RolesGuard to PermissionGuard to fix 403 Forbidden 
 ```json
 {
   "waves": [
-    ["1", "2"],
-    ["3.1"],
-    ["3.2"],
-    ["3.3", "3.4"],
-    ["4"]
+    { "id": 0, "tasks": ["1", "2"] },
+    { "id": 1, "tasks": ["3.1"] },
+    { "id": 2, "tasks": ["3.2"] },
+    { "id": 3, "tasks": ["3.3", "3.4"] },
+    { "id": 4, "tasks": ["4"] }
   ]
 }
 ```
