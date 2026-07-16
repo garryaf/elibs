@@ -49,7 +49,7 @@ export class OrderController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @UseInterceptors(VisitIdDeprecationInterceptor)
-  @Roles(Role.KASIR, Role.ADMIN, Role.KLINIK_PARTNER)
+  @Roles(Role.KASIR, Role.ADMIN, Role.KLINIK_PARTNER, Role.SUPER_ADMIN, Role.CS)
   @ApiOperation({ summary: 'Create a new lab order' })
   async create(
     @Body() dto: CreateOrderDto,

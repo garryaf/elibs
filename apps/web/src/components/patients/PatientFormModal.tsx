@@ -81,7 +81,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
       ? {
           nik: editData.nik,
           name: editData.name,
-          dob: editData.dob,
+          dob: editData.dob ? editData.dob.split("T")[0] : "",
           gender: editData.gender,
           phone: editData.phone,
           address: editData.address,

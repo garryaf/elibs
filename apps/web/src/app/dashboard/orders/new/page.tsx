@@ -445,7 +445,12 @@ export default function NewOrderPage() {
         const catsEnvelope = catsRes as unknown as Record<string, unknown>;
         const testsArray = Array.isArray(testsEnvelope?.data) ? testsEnvelope.data : [];
         const catsArray = Array.isArray(catsEnvelope?.data) ? catsEnvelope.data : [];
-        setAllTests(testsArray as TestApi[]);
+        // Prisma Decimal fields serialize as strings — convert to number
+        const testsWithNumericPrice = (testsArray as TestApi[]).map((t) => ({
+          ...t,
+          price: typeof t.price === "string" ? parseFloat(t.price) : Number(t.price) || 0,
+        }));
+        setAllTests(testsWithNumericPrice);
         setCategories(catsArray as TestCategoryApi[]);
       } catch {
         // Silently fail, tests will be empty

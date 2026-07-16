@@ -61,7 +61,7 @@ scp -i ~/Documents/SSH/elib.pem elis-ecosystem.config.js dinaragil@103.196.155.1
 # ⬇️ Ketik di TERMINAL MACBOOK — ini masuk ke VPS
 ssh -i ~/Documents/SSH/elib.pem dinaragil@103.196.155.147
 
-# ⬇️ Sekarang kamu SUDAH DI DALAM VPS — ketik command ini:
+# ⬇️ Sekarang kamu SUDAH DI DALAM VPS — ketik command ini:   
 cd /opt/elis/deploy
 docker compose -f docker-compose.infra.yml up -d
 ```
