@@ -8,6 +8,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MrnGeneratorService } from '../mrn-generator.service';
 import { RegionValidationService } from '../../region/region-validation.service';
 import { AuditService } from '../../audit/audit.service';
+import { InsuranceConsolidationService } from '../../../insurance/insurance-consolidation.service';
 import { CreatePatientDto } from '../dto/create-patient.dto';
 
 /**
@@ -47,6 +48,7 @@ describe('PatientService Property Tests', () => {
         { provide: MrnGeneratorService, useValue: mockMrnGeneratorService },
         { provide: RegionValidationService, useValue: mockRegionValidationService },
         { provide: AuditService, useValue: { log: jest.fn() } },
+        { provide: InsuranceConsolidationService, useValue: { resolvePatientInsuranceId: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 

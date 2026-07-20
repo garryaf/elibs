@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   FlaskConical,
   TestTube,
@@ -18,7 +16,7 @@ import {
   MapPin,
   Users as UsersIcon,
 } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
+import { RoleGuard } from "@/components/guards/RoleGuard";
 
 const masterDataItems = [
   {
@@ -101,24 +99,9 @@ const masterDataItems = [
   },
 ];
 
-const ALLOWED_ROLES = ["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN"];
-
 export default function MasterDataPage() {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (user && !ALLOWED_ROLES.includes(user.role)) {
-      router.replace("/dashboard");
-    }
-  }, [user, router]);
-
-  // Show nothing while loading or if user is unauthorized
-  if (isLoading || !user || !ALLOWED_ROLES.includes(user.role)) {
-    return null;
-  }
-
   return (
+    <RoleGuard allowedRoles={["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN"]}>
     <div className="space-y-6">
       {/* Header */}
       <div>
@@ -138,12 +121,12 @@ export default function MasterDataPage() {
             <Link
               key={item.name}
               href={item.href}
-              className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-[#6B8E6B]/40 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:hover:border-[#6B8E6B]/40"
+              className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-brand/40 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/40"
             >
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#6B8E6B]/10">
-                <Icon className="h-5 w-5 text-[#6B8E6B]" />
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10">
+                <Icon className="h-5 w-5 text-brand" />
               </div>
-              <h3 className="text-sm font-semibold text-slate-700 group-hover:text-[#6B8E6B] dark:text-slate-200 dark:group-hover:text-[#6B8E6B]">
+              <h3 className="text-sm font-semibold text-slate-700 group-hover:text-brand dark:text-slate-200 dark:group-hover:text-brand">
                 {item.name}
               </h3>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -154,5 +137,6 @@ export default function MasterDataPage() {
         })}
       </div>
     </div>
+    </RoleGuard>
   );
 }

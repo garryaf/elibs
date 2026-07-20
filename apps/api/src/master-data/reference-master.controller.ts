@@ -93,14 +93,14 @@ export class ClinicController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  create(@Body() dto: CreateDoctorDto) {
+  create(@Body() dto: CreateClinicDto) {
     return this.service.create('clinic', dto);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateDoctorDto>) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateClinicDto>) {
     return this.service.update('clinic', id, dto);
   }
 
@@ -131,14 +131,14 @@ export class InsuranceController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  create(@Body() dto: CreateDoctorDto) {
+  create(@Body() dto: CreateInsuranceDto) {
     return this.service.create('insurance', dto);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateDoctorDto>) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateInsuranceDto>) {
     return this.service.update('insurance', id, dto);
   }
 
@@ -244,14 +244,14 @@ export class SampleTypeController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  create(@Body() dto: CreateDoctorDto) {
+  create(@Body() dto: CreateSampleTypeDto) {
     return this.service.create('sampleTypeMaster', dto);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateDoctorDto>) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateSampleTypeDto>) {
     return this.service.update('sampleTypeMaster', id, dto);
   }
 
@@ -281,14 +281,14 @@ export class MeasurementUnitController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  create(@Body() dto: CreateDoctorDto) {
+  create(@Body() dto: CreateMeasurementUnitDto) {
     return this.service.create('measurementUnit', dto);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateDoctorDto>) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateMeasurementUnitDto>) {
     return this.service.update('measurementUnit', id, dto);
   }
 

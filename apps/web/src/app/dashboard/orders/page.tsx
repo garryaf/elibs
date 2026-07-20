@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import type { SortField, SortDir } from "@/components/orders/OrderTable";
 import Link from "next/link";
-import { Search, Plus, TrendingUp, FlaskConical, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Search, Plus, TrendingUp, FlaskConical, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { formatRupiah } from "@/lib/format";
 import type { Order, OrderStatus } from "@/types/order";
 import { OrderTable } from "@/components/orders/OrderTable";
+import { RoleGuard } from "@/components/guards/RoleGuard";
 
 const STATUS_FILTERS: { value: OrderStatus | "ALL"; label: string }[] = [
   { value: "ALL", label: "Semua" },
@@ -26,8 +28,12 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<SortField>("createdAt");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const loadOrders = useCallback(async () => {
+    setError(null);
     setLoading(true);
     try {
       const res = await apiClient.getOrders({ page, limit: PAGE_SIZE, status: statusFilter !== "ALL" ? statusFilter : undefined });
@@ -74,6 +80,7 @@ export default function OrdersPage() {
       setOrders([]);
       setTotal(0);
       setTotalPages(1);
+      setError("Gagal memuat data order. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
@@ -89,7 +96,7 @@ export default function OrdersPage() {
   }, [statusFilter]);
 
   const filtered = useMemo(() => {
-    return orders.filter((o) => {
+    let result = orders.filter((o) => {
       const q = search.toLowerCase();
       const matchSearch =
         !q ||
@@ -98,7 +105,41 @@ export default function OrdersPage() {
         (o.patientMrn || "").toLowerCase().includes(q);
       return matchSearch;
     });
-  }, [orders, search]);
+
+    // Sort
+    result.sort((a, b) => {
+      let aVal: string | number;
+      let bVal: string | number;
+      switch (sortField) {
+        case "orderNumber":
+          aVal = a.orderNumber;
+          bVal = b.orderNumber;
+          break;
+        case "patientName":
+          aVal = (a.patientName || "").toLowerCase();
+          bVal = (b.patientName || "").toLowerCase();
+          break;
+        case "status":
+          aVal = a.status;
+          bVal = b.status;
+          break;
+        case "totalAmount":
+          aVal = a.totalAmount;
+          bVal = b.totalAmount;
+          break;
+        case "createdAt":
+        default:
+          aVal = a.createdAt;
+          bVal = b.createdAt;
+          break;
+      }
+      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [orders, search, sortField, sortDir]);
 
   const stats = {
     total: orders.length,
@@ -110,6 +151,7 @@ export default function OrdersPage() {
   };
 
   return (
+    <RoleGuard allowedRoles={["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "KASIR", "CS", "KLINIK_PARTNER"]}>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -124,7 +166,7 @@ export default function OrdersPage() {
         <Link
           href="/dashboard/orders/new"
           id="order-new-btn"
-          className="inline-flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] hover:shadow-md active:scale-[0.98]"
+          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" />
           Buat Order Baru
@@ -134,10 +176,10 @@ export default function OrdersPage() {
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Total Order Hari Ini", value: String(stats.total), sub: "order", color: "text-[#6B8E6B]" },
+          { label: "Total Order Hari Ini", value: String(stats.total), sub: "order", color: "text-brand" },
           { label: "Menunggu Pembayaran", value: String(stats.pending), sub: "order", color: "text-amber-600 dark:text-amber-400" },
-          { label: "Pendapatan Hari Ini", value: formatRupiah(stats.todayRevenue), sub: "lunas", color: "text-[#6B8E6B]" },
-          { label: "Order Selesai", value: String(stats.completed), sub: "order", color: "text-[#6B8E6B]" },
+          { label: "Pendapatan Hari Ini", value: formatRupiah(stats.todayRevenue), sub: "lunas", color: "text-brand" },
+          { label: "Order Selesai", value: String(stats.completed), sub: "order", color: "text-brand" },
         ].map((s) => (
           <div
             key={s.label}
@@ -163,7 +205,7 @@ export default function OrdersPage() {
             placeholder="Cari nomor order atau nama pasien..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-[#6B8E6B] focus:ring-1 focus:ring-[#6B8E6B]/30 text-foreground"
+            className="h-10 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-brand focus:ring-1 focus:ring-brand/30 text-foreground"
           />
         </div>
 
@@ -173,10 +215,10 @@ export default function OrdersPage() {
               key={f.value}
               id={`order-filter-${f.value.toLowerCase()}`}
               onClick={() => setStatusFilter(f.value)}
-              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none ${
                 statusFilter === f.value
-                  ? "bg-[#6B8E6B] text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-[#6B8E6B]/10"
+                  ? "bg-brand text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-brand/10"
               }`}
             >
               {f.label}
@@ -187,14 +229,48 @@ export default function OrdersPage() {
 
       {search && (
         <p className="text-sm text-slate-500">
-          Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{filtered.length}</span> hasil untuk &quot;<span className="font-semibold text-[#6B8E6B]">{search}</span>&quot;
+          Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{filtered.length}</span> hasil untuk &quot;<span className="font-semibold text-brand">{search}</span>&quot;
         </p>
       )}
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[#6B8E6B]" />
-          <p className="text-sm text-slate-500 dark:text-slate-400">Memuat data order...</p>
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="animate-pulse">
+            {/* Header row */}
+            <div className="flex gap-4 border-b border-border bg-muted/30 px-4 py-3">
+              <div className="h-4 w-24 rounded bg-muted" />
+              <div className="h-4 w-32 rounded bg-muted" />
+              <div className="h-4 w-20 rounded bg-muted" />
+              <div className="h-4 w-28 rounded bg-muted" />
+            </div>
+            {/* Body rows */}
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex gap-4 border-b border-border px-4 py-4 last:border-0">
+                <div className="h-4 w-24 rounded bg-muted/60" />
+                <div className="h-4 w-32 rounded bg-muted/60" />
+                <div className="h-4 w-20 rounded bg-muted/60" />
+                <div className="h-4 w-28 rounded bg-muted/60" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : error ? (
+        <div
+          role="alert"
+          className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-red-200 bg-red-50 py-16 dark:border-red-900/50 dark:bg-red-950/20"
+        >
+          <AlertCircle className="h-12 w-12 text-red-400 dark:text-red-500" />
+          <div className="text-center">
+            <p className="font-medium text-red-700 dark:text-red-300">
+              {error}
+            </p>
+          </div>
+          <button
+            onClick={() => loadOrders()}
+            className="mt-2 inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+          >
+            Coba Lagi
+          </button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center">
@@ -205,7 +281,19 @@ export default function OrdersPage() {
           </p>
         </div>
       ) : (
-        <OrderTable orders={filtered} />
+        <OrderTable
+          orders={filtered}
+          sortField={sortField}
+          sortDir={sortDir}
+          onSort={(field) => {
+            if (field === sortField) {
+              setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+            } else {
+              setSortField(field);
+              setSortDir("desc");
+            }
+          }}
+        />
       )}
 
       {/* Pagination */}
@@ -239,7 +327,7 @@ export default function OrdersPage() {
                   onClick={() => setPage(p as number)}
                   className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-medium transition-all ${
                     page === p
-                      ? "bg-[#6B8E6B] text-white shadow-sm"
+                      ? "bg-brand text-white shadow-sm"
                       : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                   }`}
                 >
@@ -260,6 +348,7 @@ export default function OrdersPage() {
         </div>
       )}
     </div>
+    </RoleGuard>
   );
 }
 

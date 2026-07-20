@@ -5,6 +5,7 @@ import { VisitService } from '../visit.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { VisitNumberGeneratorService } from '../visit-number-generator.service';
 import { AuditService } from '../../audit/audit.service';
+import { InsuranceConsolidationService } from '../../../insurance/insurance-consolidation.service';
 import { CreateVisitDto } from '../dto/create-visit.dto';
 
 // Use string literal for PaymentMethod to avoid Prisma client import issues in tests
@@ -39,6 +40,7 @@ describe('Feature: visit-management, Property 2: Visit Creation Produces REGISTE
         findFirst: jest.fn(),
       },
       visit: {
+        findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn(),
       },
     };
@@ -60,6 +62,7 @@ describe('Feature: visit-management, Property 2: Visit Creation Produces REGISTE
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 
@@ -165,6 +168,7 @@ describe('Feature: visit-management, Property 3: BPJS Number Validation', () => 
         findFirst: jest.fn(),
       },
       visit: {
+        findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn(),
       },
     };
@@ -186,6 +190,7 @@ describe('Feature: visit-management, Property 3: BPJS Number Validation', () => 
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 
@@ -272,6 +277,7 @@ describe('Feature: visit-management, Property 4: CASH Payment Ignores Insurance 
         findFirst: jest.fn(),
       },
       visit: {
+        findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn(),
       },
     };
@@ -293,6 +299,7 @@ describe('Feature: visit-management, Property 4: CASH Payment Ignores Insurance 
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 

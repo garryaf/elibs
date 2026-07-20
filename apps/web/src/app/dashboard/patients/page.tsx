@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, UserPlus, Download, AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import type { Patient, PatientFormData, PatientStatus } from "@/types/patient";
 import { PatientTable } from "@/components/patients/PatientTable";
 import { PatientFormModal } from "@/components/patients/PatientFormModal";
@@ -79,6 +80,47 @@ export default function PatientsPage() {
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [deletingPatient, setDeletingPatient] = useState<Patient | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [hasNoActiveVisit, setHasNoActiveVisit] = useState<boolean | null>(null);
+
+  const viewDetailTrapRef = useFocusTrap(!!viewingPatient, () => setViewingPatient(null));
+  const deleteTrapRef = useFocusTrap(!!deletingPatient, () => setDeletingPatient(null));
+
+  // Check if the viewed patient has an active visit
+  useEffect(() => {
+    if (!viewingPatient) {
+      setHasNoActiveVisit(null);
+      return;
+    }
+
+    let cancelled = false;
+    setHasNoActiveVisit(null);
+
+    (async () => {
+      try {
+        const res = await apiClient.getVisits({ search: viewingPatient.mrn, limit: 5 });
+        if (cancelled) return;
+        // Defensive extraction — same pattern used elsewhere
+        const envelope = (res?.data ?? res) as unknown;
+        let rows: unknown[] = [];
+        if (Array.isArray(envelope)) {
+          rows = envelope;
+        } else if (envelope && typeof envelope === "object" && "data" in envelope) {
+          const inner = (envelope as { data: unknown }).data;
+          rows = Array.isArray(inner) ? inner : [];
+        }
+        const hasActive = rows.some((v) => {
+          const visit = v as { status?: string };
+          return visit.status === "REGISTERED" || visit.status === "IN_PROGRESS";
+        });
+        if (!cancelled) setHasNoActiveVisit(!hasActive);
+      } catch {
+        // On error, don't show banner (fail open)
+        if (!cancelled) setHasNoActiveVisit(null);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [viewingPatient]);
 
   // Auto-dismiss error toast after 8 seconds
   useEffect(() => {
@@ -185,7 +227,7 @@ export default function PatientsPage() {
           <button
             id="patient-add-btn"
             onClick={() => router.push('/dashboard/registration')}
-            className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] hover:shadow-md hover:shadow-[#6B8E6B]/20 active:scale-[0.98]"
+            className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md hover:shadow-brand/20 active:scale-[0.98]"
           >
             <UserPlus className="h-4 w-4" />
             Daftarkan Pasien
@@ -214,7 +256,7 @@ export default function PatientsPage() {
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             { label: "Total Pasien Terdaftar", value: stats.total, color: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
-            { label: "Pasien Aktif", value: stats.active, color: "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]" },
+            { label: "Pasien Aktif", value: stats.active, color: "bg-brand/10 text-brand dark:bg-brand-light dark:text-brand" },
             { label: "Pasien Nonaktif", value: stats.inactive, color: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
           ].map((stat) => (
             <div
@@ -237,7 +279,7 @@ export default function PatientsPage() {
               placeholder="Cari nama, NIK, atau MRN..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -250,7 +292,7 @@ export default function PatientsPage() {
                   onClick={() => setStatusFilter(s)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                     statusFilter === s
-                      ? "bg-[#6B8E6B] text-white shadow-sm"
+                      ? "bg-brand text-white shadow-sm"
                       : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                   }`}
                 >
@@ -287,7 +329,7 @@ export default function PatientsPage() {
         {/* Results summary */}
         {search && (
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{filteredPatients.length}</span> hasil untuk &quot;<span className="font-semibold text-[#6B8E6B]">{search}</span>&quot;
+            Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{filteredPatients.length}</span> hasil untuk &quot;<span className="font-semibold text-brand">{search}</span>&quot;
           </p>
         )}
 
@@ -316,7 +358,7 @@ export default function PatientsPage() {
             className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={() => setViewingPatient(null)}
           />
-          <div className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+          <div ref={viewDetailTrapRef} role="dialog" aria-modal="true" className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Detail Pasien</h2>
               <button
@@ -334,7 +376,7 @@ export default function PatientsPage() {
                 </div>
                 <div>
                   <p className="text-lg font-bold text-slate-900 dark:text-white">{viewingPatient.name}</p>
-                  <p className="font-mono text-sm text-[#6B8E6B]">{viewingPatient.mrn}</p>
+                  <p className="font-mono text-sm text-brand">{viewingPatient.mrn}</p>
                 </div>
                 <div className="ml-auto"><PatientStatusBadge status={viewingPatient.status} /></div>
               </div>
@@ -364,6 +406,32 @@ export default function PatientsPage() {
                   <PatientLabHistory patientId={viewingPatient.id} />
                 </div>
               )}
+
+              {/* Warning: No active visit */}
+              {hasNoActiveVisit === true && (
+                <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
+                  <div className="flex items-start gap-3 rounded-xl bg-amber-50 p-4 dark:bg-amber-900/20">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                        Pasien belum memiliki kunjungan aktif
+                      </p>
+                      <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                        Pasien ini tidak akan muncul di modul Order. Buat kunjungan baru untuk melanjutkan proses order.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setViewingPatient(null);
+                          router.push('/dashboard/registration');
+                        }}
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
+                      >
+                        Buat Kunjungan Baru
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-3 border-t border-slate-100 px-6 py-4 dark:border-slate-800">
               <button
@@ -374,7 +442,7 @@ export default function PatientsPage() {
               </button>
               <button
                 onClick={() => setViewingPatient(null)}
-                className="rounded-xl bg-[#6B8E6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5A7D5A]"
+                className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
               >
                 Tutup
               </button>
@@ -390,7 +458,7 @@ export default function PatientsPage() {
             className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={() => !deleteLoading && setDeletingPatient(null)}
           />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+          <div ref={deleteTrapRef} role="dialog" aria-modal="true" className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
               <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
             </div>

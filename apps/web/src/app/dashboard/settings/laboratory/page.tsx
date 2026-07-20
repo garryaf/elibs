@@ -27,7 +27,7 @@ export default function LaboratorySettingsPage() {
             </p>
             <Link
               href="/dashboard/master-data"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#6B8E6B] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#5A7D5A]"
+              className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-dark"
             >
               Buka Master Data
               <ArrowRight className="h-4 w-4" />

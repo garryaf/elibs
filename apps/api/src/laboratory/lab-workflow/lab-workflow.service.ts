@@ -1,12 +1,16 @@
 import {
   Injectable,
+  Inject,
+  Logger,
   NotFoundException,
   BadRequestException,
+  forwardRef,
 } from '@nestjs/common';
 import { OrderStatus, SampleCondition } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { OrderStateMachineService } from './order-state-machine.service';
 import { AutoFlaggingService } from './auto-flagging.service';
+import { NotificationService } from '../notification/notification.service';
 import { ConfirmSampleDto } from './dto/confirm-sample.dto';
 import { EnterResultsDto } from './dto/enter-results.dto';
 import { VerifyResultsDto } from './dto/verify-results.dto';
@@ -14,10 +18,14 @@ import { ApproveOrderDto } from './dto/approve-order.dto';
 
 @Injectable()
 export class LabWorkflowService {
+  private readonly logger = new Logger(LabWorkflowService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly orderStateMachine: OrderStateMachineService,
     private readonly autoFlaggingService: AutoFlaggingService,
+    @Inject(forwardRef(() => NotificationService))
+    private readonly notificationService: NotificationService,
   ) {}
 
   async confirmSample(orderId: string, dto: ConfirmSampleDto, userId: string) {
@@ -38,9 +46,10 @@ export class LabWorkflowService {
     }
 
     if (order.status !== OrderStatus.PAID) {
-      throw new BadRequestException(
-        'Order must be in PAID status for sample collection',
-      );
+      throw new BadRequestException({
+        errorCode: 'ERR_INVALID_STATE',
+        message: 'Order must be in PAID status for sample collection',
+      });
     }
 
     // Check insurance pre-authorization requirement
@@ -75,9 +84,10 @@ export class LabWorkflowService {
     }
 
     if (!order.barcode || !order.barcodeImage) {
-      throw new BadRequestException(
-        'Order must have a valid barcode before sample collection',
-      );
+      throw new BadRequestException({
+        errorCode: 'ERR_VALIDATION',
+        message: 'Order must have a valid barcode before sample collection',
+      });
     }
 
     if (dto.sampleCondition === SampleCondition.ACCEPTABLE) {
@@ -132,9 +142,10 @@ export class LabWorkflowService {
       order.status !== OrderStatus.SAMPLE_COLLECTED &&
       order.status !== OrderStatus.IN_ANALYSIS
     ) {
-      throw new BadRequestException(
-        'Order must be in SAMPLE_COLLECTED or IN_ANALYSIS status for result entry',
-      );
+      throw new BadRequestException({
+        errorCode: 'ERR_INVALID_STATE',
+        message: 'Order must be in SAMPLE_COLLECTED or IN_ANALYSIS status for result entry',
+      });
     }
 
     const now = new Date();
@@ -147,9 +158,10 @@ export class LabWorkflowService {
       );
 
       if (!orderDetail) {
-        throw new BadRequestException(
-          `OrderDetail ${entry.orderDetailId} not found or does not belong to this order`,
-        );
+        throw new BadRequestException({
+          errorCode: 'ERR_VALIDATION',
+          message: `OrderDetail ${entry.orderDetailId} not found or does not belong to this order`,
+        });
       }
 
       let flag = null;
@@ -223,9 +235,10 @@ export class LabWorkflowService {
     }
 
     if (order.status !== OrderStatus.IN_ANALYSIS) {
-      throw new BadRequestException(
-        'Order must be in IN_ANALYSIS status for verification',
-      );
+      throw new BadRequestException({
+        errorCode: 'ERR_INVALID_STATE',
+        message: 'Order must be in IN_ANALYSIS status for verification',
+      });
     }
 
     const allHaveResults = order.orderDetails.every(
@@ -233,9 +246,10 @@ export class LabWorkflowService {
     );
 
     if (!allHaveResults) {
-      throw new BadRequestException(
-        'All results must be entered before verification',
-      );
+      throw new BadRequestException({
+        errorCode: 'ERR_VALIDATION',
+        message: 'All results must be entered before verification',
+      });
     }
 
     const updatedOrder = await this.orderStateMachine.transition(
@@ -247,10 +261,19 @@ export class LabWorkflowService {
     // Auto-approve if all tests do not require doctor approval
     const autoApproved = await this.autoApproveIfEligible(orderId, userId);
     if (autoApproved) {
-      return this.prisma.order.findUnique({
+      const approvedOrder = await this.prisma.order.findUnique({
         where: { id: orderId },
         include: { patient: true, orderDetails: true },
       });
+      // HIGH-014: Explicitly indicate status change in auto-approval response
+      return {
+        ...approvedOrder,
+        statusChange: {
+          from: OrderStatus.VERIFIED,
+          to: OrderStatus.APPROVED,
+          autoApproved: true,
+        },
+      };
     }
 
     return updatedOrder;
@@ -274,9 +297,10 @@ export class LabWorkflowService {
     }
 
     if (order.status !== OrderStatus.VERIFIED) {
-      throw new BadRequestException(
-        'Order must be in VERIFIED status for approval',
-      );
+      throw new BadRequestException({
+        errorCode: 'ERR_INVALID_STATE',
+        message: 'Order must be in VERIFIED status for approval',
+      });
     }
 
     if (dto.decision === 'APPROVE') {
@@ -289,7 +313,23 @@ export class LabWorkflowService {
         },
       );
 
-      return updatedOrder;
+      // Fire-and-forget: trigger notifications without blocking the approval response
+      this.notificationService.triggerNotifications(orderId).catch((error) => {
+        this.logger.error(
+          `Failed to trigger notifications for order ${orderId}: ${error.message}`,
+          error.stack,
+        );
+      });
+
+      // HIGH-014: Explicitly indicate status change in approval response
+      return {
+        ...updatedOrder,
+        statusChange: {
+          from: OrderStatus.VERIFIED,
+          to: OrderStatus.APPROVED,
+          autoApproved: false,
+        },
+      };
     }
 
     // REJECT: transition back to IN_ANALYSIS
@@ -308,6 +348,11 @@ export class LabWorkflowService {
     return {
       ...updatedOrder,
       rejectedReason: dto.rejectionReason,
+      statusChange: {
+        from: OrderStatus.VERIFIED,
+        to: OrderStatus.IN_ANALYSIS,
+        autoApproved: false,
+      },
     };
   }
 
@@ -369,6 +414,14 @@ export class LabWorkflowService {
       { userId, metadata: { interpretation: 'Auto-approved: no tests require doctor approval' } },
     );
 
+    // Fire-and-forget: trigger notifications without blocking the approval response
+    this.notificationService.triggerNotifications(orderId).catch((error) => {
+      this.logger.error(
+        `Failed to trigger notifications for auto-approved order ${orderId}: ${error.message}`,
+        error.stack,
+      );
+    });
+
     return true;
   }
 
@@ -390,7 +443,7 @@ export class LabWorkflowService {
 
     const where = {
       status: {
-        in: [OrderStatus.PAID, OrderStatus.SAMPLE_COLLECTED],
+        in: [OrderStatus.PAID, OrderStatus.SAMPLE_COLLECTED, OrderStatus.IN_ANALYSIS],
       },
     };
 

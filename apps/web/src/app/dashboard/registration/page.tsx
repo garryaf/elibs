@@ -119,8 +119,8 @@ export default function RegistrationWorkflowPage() {
         {/* Success Card */}
         <div className="mx-auto max-w-lg">
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#6B8E6B]/10">
-              <CheckCircle2 className="h-8 w-8 text-[#6B8E6B]" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand/10">
+              <CheckCircle2 className="h-8 w-8 text-brand" />
             </div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
               Kunjungan Berhasil Didaftarkan
@@ -129,7 +129,7 @@ export default function RegistrationWorkflowPage() {
               Nomor kunjungan telah dibuat
             </p>
             <div className="mt-4 inline-block rounded-xl bg-slate-100 px-6 py-3 dark:bg-slate-800">
-              <p className="font-mono text-xl font-bold text-[#6B8E6B]">
+              <p className="font-mono text-xl font-bold text-brand">
                 {state.createdVisit.visitNumber}
               </p>
             </div>
@@ -137,7 +137,7 @@ export default function RegistrationWorkflowPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <button
                 onClick={handleRegisterAnother}
-                className="flex items-center justify-center gap-2 rounded-xl bg-[#6B8E6B] px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] hover:shadow-md"
+                className="flex items-center justify-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md"
               >
                 <ClipboardPlus className="h-4 w-4" />
                 Daftar Pasien Lain

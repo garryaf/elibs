@@ -90,6 +90,10 @@ export class UpdatePatientDto {
   insuranceId?: string;
 
   @IsOptional()
+  @IsString()
+  memberNumber?: string;
+
+  @IsOptional()
   @IsBoolean()
   consentDigitalNotification?: boolean;
 }

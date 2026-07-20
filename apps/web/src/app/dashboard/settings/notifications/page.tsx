@@ -64,7 +64,7 @@ export default function NotificationsSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-[#6B8E6B]" />
+        <Loader2 className="h-6 w-6 animate-spin text-brand" />
       </div>
     );
   }
@@ -89,7 +89,7 @@ export default function NotificationsSettingsPage() {
         <div
           className={`rounded-lg px-4 py-3 text-sm ${
             message.type === "success"
-              ? "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]"
+              ? "bg-brand/10 text-brand dark:bg-brand-light dark:text-brand"
               : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300"
           }`}
         >
@@ -111,14 +111,14 @@ export default function NotificationsSettingsPage() {
                 onChange={(e) => setPreferences((prev) => ({ ...prev, [item.key]: e.target.checked }))}
                 className="peer sr-only"
               />
-              <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#6B8E6B] peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-slate-700" />
+              <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-brand peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-slate-700" />
             </label>
           </div>
         ))}
       </div>
 
       <div className="flex items-center gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
-        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#5A7D5A] disabled:opacity-50">
+        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark disabled:opacity-50">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {saving ? "Menyimpan..." : "Simpan Preferensi"}
         </button>

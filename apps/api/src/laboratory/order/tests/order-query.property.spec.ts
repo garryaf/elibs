@@ -49,6 +49,8 @@ describe('Feature: laboratory-workflow-refactor, Property 11: API Response Inclu
             {} as any,
             {} as any,
             {} as any,
+            {} as any,
+            {} as any,
           );
 
           const result = await service.findById(orderId);
@@ -97,6 +99,8 @@ describe('Feature: laboratory-workflow-refactor, Property 11: API Response Inclu
 
           const service = new OrderService(
             mockPrisma as any,
+            {} as any,
+            {} as any,
             {} as any,
             {} as any,
             {} as any,

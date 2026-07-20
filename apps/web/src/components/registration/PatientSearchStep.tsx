@@ -101,11 +101,11 @@ export function PatientSearchStep({
           placeholder="Cari pasien berdasarkan nama, NIK, MRN, telepon, atau email (min. 2 karakter)..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-12 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-12 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
         {loading && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
-            <Loader2 className="h-5 w-5 animate-spin text-[#6B8E6B]" />
+            <Loader2 className="h-5 w-5 animate-spin text-brand" />
           </div>
         )}
       </div>
@@ -143,7 +143,7 @@ export function PatientSearchStep({
                 key={patient.id}
                 type="button"
                 onClick={() => handleSelect(patient)}
-                className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-[#6B8E6B]/40 hover:bg-[#6B8E6B]/5 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-[#6B8E6B]/40 dark:hover:bg-[#6B8E6B]/5"
+                className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-brand/40 hover:bg-brand/5 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/40 dark:hover:bg-brand/5"
               >
                 {/* Avatar */}
                 <div
@@ -162,7 +162,7 @@ export function PatientSearchStep({
                     {patient.name}
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
-                    <span className="font-mono text-[#6B8E6B]">{patient.mrn}</span>
+                    <span className="font-mono text-brand">{patient.mrn}</span>
                     <span>NIK: {patient.nik}</span>
                     {patient.dateOfBirth && (
                       <span>
@@ -200,7 +200,7 @@ export function PatientSearchStep({
           <button
             type="button"
             onClick={onRegisterNew}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] hover:shadow-md"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md"
           >
             <UserPlus className="h-4 w-4" />
             Daftar Pasien Baru

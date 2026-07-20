@@ -21,6 +21,10 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsUUID()
+  clinicId?: string | null;
+
+  @IsOptional()
+  @IsUUID()
   departmentId?: string | null;
 
   @IsOptional()

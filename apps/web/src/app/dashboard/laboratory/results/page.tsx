@@ -173,7 +173,7 @@ export default function LabResultsPage() {
                 className={cn(
                   "flex whitespace-nowrap items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all",
                   isActive
-                    ? "bg-[oklch(0.55_0.08_145)] text-white shadow-sm"
+                    ? "bg-primary text-white shadow-sm"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
                 aria-pressed={isActive}
@@ -211,7 +211,7 @@ export default function LabResultsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
           <div className="col-span-full flex items-center justify-center rounded-2xl border border-dashed border-border py-12">
-            <Loader2 className="h-5 w-5 animate-spin text-[#6B8E6B]" />
+            <Loader2 className="h-5 w-5 animate-spin text-brand" />
             <span className="ml-2 text-sm text-muted-foreground">
               Memuat data...
             </span>
@@ -273,7 +273,7 @@ export default function LabResultsPage() {
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                     <div
-                      className="h-full rounded-full bg-[#6B8E6B] transition-all"
+                      className="h-full rounded-full bg-brand transition-all"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -287,7 +287,7 @@ export default function LabResultsPage() {
                       className={cn(
                         "rounded-md px-2 py-1 font-mono text-[10px] font-semibold",
                         d.resultValue !== null
-                          ? "bg-[#6B8E6B]/10 text-[#6B8E6B]"
+                          ? "bg-brand/10 text-brand"
                           : "bg-muted text-muted-foreground"
                       )}
                     >

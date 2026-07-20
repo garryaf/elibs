@@ -6,9 +6,10 @@ import { ReceiptService } from './receipt.service';
 import { BatchInvoiceController } from './batch-invoice.controller';
 import { BatchInvoiceService } from './batch-invoice.service';
 import { AuditModule } from '../audit/audit.module';
+import { LabWorkflowModule } from '../lab-workflow/lab-workflow.module';
 
 @Module({
-  imports: [AuditModule, BarcodeModule],
+  imports: [AuditModule, BarcodeModule, LabWorkflowModule],
   controllers: [PaymentController, BatchInvoiceController],
   providers: [PaymentService, ReceiptService, BatchInvoiceService],
   exports: [PaymentService, ReceiptService, BatchInvoiceService],

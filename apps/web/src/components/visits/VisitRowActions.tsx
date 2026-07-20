@@ -55,7 +55,7 @@ export function VisitRowActions({
       <button
         id={`visit-action-${visit.id}`}
         onClick={() => setOpen((v) => !v)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onBlur={() => setTimeout(() => setOpen(false), 300)}
         className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
       >
         <MoreVertical className="h-4 w-4" />
@@ -64,7 +64,7 @@ export function VisitRowActions({
         <div className="absolute right-0 top-8 z-20 min-w-36 rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
           {/* Always show "Lihat Detail" */}
           <button
-            onClick={() => {
+            onMouseDown={() => {
               onViewDetail(visit);
               setOpen(false);
             }}
@@ -76,7 +76,7 @@ export function VisitRowActions({
           {/* Conditionally show "Edit Kunjungan" */}
           {canEdit && (
             <button
-              onClick={() => {
+              onMouseDown={() => {
                 onEdit(visit);
                 setOpen(false);
               }}
@@ -91,7 +91,7 @@ export function VisitRowActions({
             <>
               <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
               <button
-                onClick={() => {
+                onMouseDown={() => {
                   onCancelSuccess();
                   setOpen(false);
                 }}

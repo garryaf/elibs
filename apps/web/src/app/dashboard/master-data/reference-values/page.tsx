@@ -132,7 +132,7 @@ export default function ReferenceValuesPage() {
             placeholder="Cari nama atau kode pemeriksaan..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           />
           {searchQuery && filteredTests.length > 0 && (
             <div className="absolute z-10 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900 max-h-48 overflow-y-auto">
@@ -142,7 +142,7 @@ export default function ReferenceValuesPage() {
                   onClick={() => handleSelectTest(test)}
                   className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
-                  <FlaskConical className="h-4 w-4 text-[#6B8E6B]" />
+                  <FlaskConical className="h-4 w-4 text-brand" />
                   <span className="text-slate-900 dark:text-white">{test.name}</span>
                   <span className="ml-auto text-xs text-slate-400">{test.code}</span>
                 </button>
@@ -153,7 +153,7 @@ export default function ReferenceValuesPage() {
 
         {selectedTest && (
           <div className="mt-3 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#6B8E6B]/10 px-3 py-1.5 text-sm font-medium text-[#6B8E6B]">
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-brand/10 px-3 py-1.5 text-sm font-medium text-brand">
               <FlaskConical className="h-3.5 w-3.5" />
               {selectedTest.name} ({selectedTest.code})
             </span>
@@ -183,7 +183,7 @@ export default function ReferenceValuesPage() {
             </h2>
             <button
               onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] hover:shadow-md active:scale-[0.98]"
+              className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
             >
               <Plus className="h-4 w-4" />
               Tambah Nilai Rujukan
@@ -395,7 +395,7 @@ export default function ReferenceValuesPage() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-[#6B8E6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5A7D5A]"
+                  className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
                 >
                   Simpan
                 </button>

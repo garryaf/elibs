@@ -49,19 +49,19 @@ function StepIndicator({ current }: { current: Step }) {
               <div
                 className={cn(
                   "flex h-9 w-9 items-center justify-center rounded-xl transition-all",
-                  active ? "bg-[#6B8E6B] text-white shadow-sm shadow-[#6B8E6B]/30"
-                    : done ? "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/20 dark:text-[#6B8E6B]"
+                  active ? "bg-brand text-white shadow-sm shadow-brand/30"
+                    : done ? "bg-brand/10 text-brand dark:bg-brand/20 dark:text-brand"
                     : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
                 )}
               >
                 <Icon className="h-4 w-4" />
               </div>
-              <span className={cn("hidden text-xs font-medium sm:block", active ? "text-[#6B8E6B]" : "text-slate-500 dark:text-slate-400")}>
+              <span className={cn("hidden text-xs font-medium sm:block", active ? "text-brand" : "text-slate-500 dark:text-slate-400")}>
                 {s.label}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={cn("h-px flex-1 mx-2 transition-all", done ? "bg-[#6B8E6B]/40 dark:bg-[#6B8E6B]/40" : "bg-slate-200 dark:bg-slate-700")} />
+              <div className={cn("h-px flex-1 mx-2 transition-all", done ? "bg-brand/40 dark:bg-brand/40" : "bg-slate-200 dark:bg-slate-700")} />
             )}
           </div>
         );
@@ -83,6 +83,7 @@ function VisitStep({
   onClear: () => void;
 }) {
   const [showInlineCreate, setShowInlineCreate] = useState(false);
+  const [inlineCreatePatientId, setInlineCreatePatientId] = useState<string | undefined>(undefined);
 
   const handleVisitChange = (visit: VisitOption | null) => {
     if (visit) {
@@ -120,15 +121,21 @@ function VisitStep({
       <VisitSelector
         value={selectedVisit}
         onChange={handleVisitChange}
-        onInlineCreate={() => setShowInlineCreate(true)}
+        onInlineCreate={(patientId?: string) => {
+          setInlineCreatePatientId(patientId);
+          setShowInlineCreate(true);
+        }}
       />
 
       {/* Inline create option */}
       {!selectedVisit && (
         <button
           type="button"
-          onClick={() => setShowInlineCreate(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#6B8E6B]/50 px-4 py-3 text-sm font-medium text-[#6B8E6B] transition-colors hover:bg-[#6B8E6B]/5"
+          onClick={() => {
+            setInlineCreatePatientId(undefined);
+            setShowInlineCreate(true);
+          }}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-brand/50 px-4 py-3 text-sm font-medium text-brand transition-colors hover:bg-brand/5"
         >
           <Plus className="h-4 w-4" />
           Buat Kunjungan Baru
@@ -145,7 +152,7 @@ function VisitStep({
             </div>
             <div>
               <div className="font-semibold text-slate-900 dark:text-white">{selectedVisit.patient.name}</div>
-              <div className="font-mono text-xs text-[#6B8E6B]">{selectedVisit.patient.mrn}</div>
+              <div className="font-mono text-xs text-brand">{selectedVisit.patient.mrn}</div>
             </div>
           </div>
         </div>
@@ -162,8 +169,12 @@ function VisitStep({
 
       <InlineVisitCreate
         isOpen={showInlineCreate}
-        onClose={() => setShowInlineCreate(false)}
+        onClose={() => {
+          setShowInlineCreate(false);
+          setInlineCreatePatientId(undefined);
+        }}
         onCreated={handleInlineCreated}
+        preselectedPatientId={inlineCreatePatientId}
       />
     </div>
   );
@@ -217,7 +228,7 @@ function TestStep({
   if (loadingTests) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-[#6B8E6B]" />
+        <Loader2 className="h-6 w-6 animate-spin text-brand" />
       </div>
     );
   }
@@ -238,7 +249,7 @@ function TestStep({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari nama atau kode pemeriksaan..."
-          className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
       </div>
 
@@ -253,7 +264,7 @@ function TestStep({
               className={cn(
                 "whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
                 activeCategoryId === cat.id
-                  ? "bg-[#6B8E6B] text-white shadow-sm"
+                  ? "bg-brand text-white shadow-sm"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               )}
             >
@@ -281,15 +292,15 @@ function TestStep({
                     className={cn(
                       "flex items-center justify-between rounded-xl border p-3.5 text-left transition-all",
                       selected
-                        ? "border-[#6B8E6B]/50 bg-[#6B8E6B]/10 ring-1 ring-[#6B8E6B]/30 dark:border-[#6B8E6B] dark:bg-[#6B8E6B]/10"
-                        : "border-slate-200 bg-white hover:border-[#6B8E6B]/30 hover:bg-[#6B8E6B]/10/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-[#6B8E6B]/50 dark:hover:bg-[#6B8E6B]/10"
+                        ? "border-brand/50 bg-brand/10 ring-1 ring-brand/30 dark:border-brand dark:bg-brand/10"
+                        : "border-slate-200 bg-white hover:border-brand/30 hover:bg-brand/10/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/50 dark:hover:bg-brand/10"
                     )}
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className={cn(
                           "rounded-md px-1.5 py-0.5 font-mono text-[11px] font-semibold",
-                          selected ? "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/20 dark:text-[#6B8E6B]" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                          selected ? "bg-brand/10 text-brand dark:bg-brand/20 dark:text-brand" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                         )}>
                           {test.code}
                         </span>
@@ -303,7 +314,7 @@ function TestStep({
                     </div>
                     <div className={cn(
                       "ml-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all",
-                      selected ? "border-[#6B8E6B] bg-[#6B8E6B]/100" : "border-slate-300 dark:border-slate-600"
+                      selected ? "border-brand bg-brand" : "border-slate-300 dark:border-slate-600"
                     )}>
                       {selected && (
                         <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none">
@@ -349,7 +360,7 @@ function ConfirmStep({
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
         <p className="mb-2 text-xs font-bold tracking-wide text-slate-400 uppercase">Kunjungan</p>
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#6B8E6B]/10 text-[#6B8E6B]">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/10 text-brand">
             <Calendar className="h-4 w-4" />
           </div>
           <div>
@@ -369,7 +380,7 @@ function ConfirmStep({
           </div>
           <div>
             <div className="font-semibold text-slate-900 dark:text-white">{visit.patient.name}</div>
-            <div className="font-mono text-xs text-[#6B8E6B]">{visit.patient.mrn}</div>
+            <div className="font-mono text-xs text-brand">{visit.patient.mrn}</div>
           </div>
         </div>
       </div>
@@ -392,7 +403,7 @@ function ConfirmStep({
         </div>
         <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
           <span className="font-semibold text-slate-700 dark:text-slate-300">Total</span>
-          <span className="text-lg font-bold text-[#6B8E6B]">{formatRupiah(subtotal)}</span>
+          <span className="text-lg font-bold text-brand">{formatRupiah(subtotal)}</span>
         </div>
       </div>
 
@@ -407,7 +418,7 @@ function ConfirmStep({
           value={notes}
           onChange={(e) => onNotesChange(e.target.value)}
           placeholder="Mis: Pasien puasa 10 jam, suspek DM tipe 2..."
-          className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
       </div>
     </div>
@@ -505,8 +516,8 @@ export default function NewOrderPage() {
   if (success) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#6B8E6B]/10 dark:bg-[#6B8E6B]/20">
-          <CheckCircle2 className="h-10 w-10 text-[#6B8E6B]" />
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand/10 dark:bg-brand/20">
+          <CheckCircle2 className="h-10 w-10 text-brand" />
         </div>
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Order Berhasil Dibuat!</h2>
@@ -568,27 +579,27 @@ export default function NewOrderPage() {
 
       {/* Selected tests floating summary (step 2) */}
       {step === 2 && selectedTests.length > 0 && (
-        <div className="rounded-2xl border border-[#6B8E6B]/30 bg-[#6B8E6B]/10 p-4 dark:border-[#6B8E6B]/50 dark:bg-[#6B8E6B]/10">
+        <div className="rounded-2xl border border-brand/30 bg-brand/10 p-4 dark:border-brand/50 dark:bg-brand/10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-[#6B8E6B] dark:text-[#6B8E6B]">
+              <p className="text-sm font-semibold text-brand dark:text-brand">
                 {selectedTests.length} pemeriksaan dipilih
               </p>
-              <p className="text-xs text-[#6B8E6B]">
+              <p className="text-xs text-brand">
                 Total: <span className="font-bold">{formatRupiah(subtotal)}</span>
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5 max-w-xs justify-end">
               {selectedTests.slice(0, 4).map((t) => (
-                <span key={t.id} className="flex items-center gap-1 rounded-full bg-[#6B8E6B]/10 pl-2 pr-1 py-0.5 text-[11px] font-semibold text-[#6B8E6B] dark:bg-[#6B8E6B]/20 dark:text-[#6B8E6B]">
+                <span key={t.id} className="flex items-center gap-1 rounded-full bg-brand/10 pl-2 pr-1 py-0.5 text-[11px] font-semibold text-brand dark:bg-brand/20 dark:text-brand">
                   {t.code}
-                  <button onClick={() => toggleTest(t)} className="rounded-full hover:bg-[#6B8E6B]/20 dark:hover:bg-[#6B8E6B]/20 p-0.5">
+                  <button onClick={() => toggleTest(t)} className="rounded-full hover:bg-brand/20 dark:hover:bg-brand/20 p-0.5">
                     <X className="h-2.5 w-2.5" />
                   </button>
                 </span>
               ))}
               {selectedTests.length > 4 && (
-                <span className="rounded-full bg-[#6B8E6B]/20 px-2 py-0.5 text-[11px] font-semibold text-[#6B8E6B] dark:bg-[#6B8E6B]/20 dark:text-[#6B8E6B]">
+                <span className="rounded-full bg-brand/20 px-2 py-0.5 text-[11px] font-semibold text-brand dark:bg-brand/20 dark:text-brand">
                   +{selectedTests.length - 4}
                 </span>
               )}
@@ -618,7 +629,7 @@ export default function NewOrderPage() {
           <button
             id="new-order-step1-next"
             onClick={() => setStep(2)}
-            className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#5A7D5A]"
+            className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
           >
             Pilih Pemeriksaan <ChevronRight className="h-4 w-4" />
           </button>
@@ -630,7 +641,7 @@ export default function NewOrderPage() {
             id="new-order-step2-next"
             onClick={() => setStep(3)}
             disabled={selectedTests.length === 0}
-            className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#5A7D5A] disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
           >
             Konfirmasi <ChevronRight className="h-4 w-4" />
           </button>
@@ -641,8 +652,8 @@ export default function NewOrderPage() {
           <button
             id="new-order-submit"
             onClick={handleSubmit}
-            disabled={isSubmitting || !selectedVisit}
-            className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#5A7D5A] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isSubmitting || !selectedVisit || selectedTests.length === 0}
+            className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? (
               <>

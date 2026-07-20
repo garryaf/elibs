@@ -86,6 +86,8 @@ model AuditLog {
   timestamp  DateTime @default(now())
   ipAddress  String?
 
+  @@index([userId])
+  @@index([entityName, entityId])
   @@map("audit_logs")
 }
 
@@ -343,45 +345,53 @@ model Insurance {
 // === PATIENT-INSURANCE JUNCTION (M2M with priority) ===
 
 model PatientInsurance {
-  id             String         @id @default(uuid()) @db.Uuid
-  patientId      String         @db.Uuid
-  insuranceId    String         @db.Uuid
-  memberNumber   String?        @db.VarChar(50) // Insurance member/card number
-  policyNumber   String?        @db.VarChar(50) // Policy number
-  priority       Int            @default(1) // 1 = primary, 2 = secondary, etc. (1-5)
-  type           InsuranceType? // BPJS, SWASTA, CORPORATE
-  bpjsClassLevel Int? // 1, 2, or 3 (for BPJS only)
-  validFrom      DateTime?      @db.Date
-  validUntil     DateTime?      @db.Date
-  isActive       Boolean        @default(true)
-  notes          String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id               String         @id @default(uuid()) @db.Uuid
+  patientId        String         @db.Uuid
+  insuranceId      String         @db.Uuid
+  memberNumber     String?        @db.VarChar(50) // Insurance member/card number
+  policyNumber     String?        @db.VarChar(50) // Policy number
+  priority         Int            @default(1) // 1 = primary, 2 = secondary, etc. (1-5)
+  type             InsuranceType? // BPJS, SWASTA, CORPORATE
+  bpjsClassLevel   Int? // 1, 2, or 3 (for BPJS only)
+  validFrom        DateTime?      @db.Date
+  validUntil       DateTime?      @db.Date
+  isActive         Boolean        @default(true)
+  notes            String?
+  migrationBatchId String?        @map("migration_batch_id") @db.VarChar(50) // Identifies records created by migration (for rollback)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   patient   Patient   @relation(fields: [patientId], references: [id])
   insurance Insurance @relation(fields: [insuranceId], references: [id])
 
   @@unique([patientId, insuranceId])
+  @@unique([patientId, priority])
   @@index([patientId, priority])
   @@map("patient_insurances")
 }
 
 // === MASTER DATA: EQUIPMENT ===
 
+enum EquipmentStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
 model Equipment {
-  id              String    @id @default(uuid()) @db.Uuid
-  code            String    @unique
+  id              String          @id @default(uuid()) @db.Uuid
+  code            String          @unique
   name            String
   manufacturer    String?
   model           String?
   serialNumber    String?
   location        String?
-  status          String    @default("ACTIVE") // ACTIVE, MAINTENANCE, RETIRED
+  status          EquipmentStatus @default(ACTIVE)
   lastCalibration DateTime?
   nextCalibration DateTime?
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
   deletedAt       DateTime?
 
   calibrations Calibration[]
@@ -395,6 +405,7 @@ model Calibration {
   id            String    @id @default(uuid()) @db.Uuid
   equipmentId   String    @db.Uuid
   calibratedAt  DateTime
+  /// External calibrators may not be system users — String intentionally used instead of FK to User.
   calibratedBy  String
   result        String // PASS, FAIL
   notes         String?
@@ -548,6 +559,7 @@ model Patient {
   bloodType                  String?
   emergencyContact           String?
   emergencyPhone             String?
+  /// @deprecated — Use PatientInsurance junction (priority=1). Will be removed in v2.
   insuranceId                String?   @db.Uuid
   consentDigitalNotification Boolean   @default(false)
   createdAt                  DateTime  @default(now())
@@ -574,6 +586,7 @@ model Order {
   patientId         String           @db.Uuid
   clinicId          String?          @db.Uuid
   doctorId          String?          @db.Uuid
+  /// @deprecated — Use OrderInsurance junction (coverageType=PRIMARY). Will be removed in v2.
   insuranceId       String?          @db.Uuid
   visitId           String           @db.Uuid
   status            OrderStatus      @default(PENDING_PAYMENT)
@@ -581,6 +594,7 @@ model Order {
   paymentMethod     PaymentMethod?
   amountPaid        Decimal?         @db.Decimal(12, 2)
   paidAt            DateTime?
+  paidBy            String?          @db.Uuid
   barcode           String?
   barcodeImage      String?
   sampleCollectedAt DateTime?
@@ -594,6 +608,9 @@ model Order {
   approvedBy        String?          @db.Uuid
   interpretation    String?
   rejectedReason    String?
+  rejectedAt        DateTime?
+  rejectedBy        String?          @db.Uuid
+  notifiedAt        DateTime?
   cancelledAt       DateTime?
   cancelledBy       String?          @db.Uuid
   cancelReason      String?
@@ -639,23 +656,24 @@ enum ClaimStatus {
 }
 
 model OrderInsurance {
-  id              String       @id @default(uuid()) @db.Uuid
-  orderId         String       @db.Uuid
-  insuranceId     String       @db.Uuid
-  coverageType    CoverageType @default(PRIMARY)
-  claimReference  String?      @db.VarChar(50) // Insurance claim number
-  claimStatus     ClaimStatus  @default(PENDING)
-  coveredAmount   Decimal?     @db.Decimal(12, 2) // Amount covered by this insurance
-  copayAmount     Decimal?     @db.Decimal(12, 2) // Patient co-pay for this coverage
-  memberNumber    String?      @db.VarChar(50) // Member number used for this claim
-  submittedAt     DateTime?
-  approvedAt      DateTime?
-  rejectedAt      DateTime?
-  rejectionReason String?
-  paidAt          DateTime?
-  notes           String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id               String       @id @default(uuid()) @db.Uuid
+  orderId          String       @db.Uuid
+  insuranceId      String       @db.Uuid
+  coverageType     CoverageType @default(PRIMARY)
+  claimReference   String?      @db.VarChar(50) // Insurance claim number
+  claimStatus      ClaimStatus  @default(PENDING)
+  coveredAmount    Decimal?     @db.Decimal(12, 2) // Amount covered by this insurance
+  copayAmount      Decimal?     @db.Decimal(12, 2) // Patient co-pay for this coverage
+  memberNumber     String?      @db.VarChar(50) // Member number used for this claim
+  migrationBatchId String?      @map("migration_batch_id") @db.VarChar(50) // Identifies records created by migration (for rollback)
+  submittedAt      DateTime?
+  approvedAt       DateTime?
+  rejectedAt       DateTime?
+  rejectionReason  String?
+  paidAt           DateTime?
+  notes            String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   order     Order     @relation(fields: [orderId], references: [id])
   insurance Insurance @relation(fields: [insuranceId], references: [id], name: "orderInsurances")
@@ -810,8 +828,8 @@ model NotificationLog {
   type      NotificationType
   recipient String
   status    NotificationStatus @default(PENDING)
-  attempts  Int                @default(0)
-  lastError String?
+  attempts  Int                @default(0) // MED-028: retry count (number of delivery attempts made)
+  lastError String?            // MED-028: last error message from failed delivery attempt
   sentAt    DateTime?
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt

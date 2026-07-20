@@ -29,7 +29,7 @@ export class LabWorkflowController {
 
   @Post(':orderId/sample')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SAMPLING, Role.ADMIN)
+  @Roles(Role.SAMPLING, Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Confirm sample collection for an order' })
   async confirmSample(
     @Param('orderId', ParseUUIDPipe) orderId: string,
@@ -41,7 +41,7 @@ export class LabWorkflowController {
 
   @Get('queue')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.SAMPLING, Role.ANALIS, Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get lab processing queue' })
   async getQueue(
     @Query('page') page?: string,
@@ -55,7 +55,7 @@ export class LabWorkflowController {
 
   @Get('approval-queue')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.DOKTER, Role.SUPER_ADMIN, Role.ADMIN)
+  @Roles(Role.DOKTER, Role.SUPER_ADMIN, Role.ADMIN, Role.OWNER, Role.MANAGER)
   @ApiOperation({ summary: 'Get doctor approval queue' })
   async getApprovalQueue(
     @Query('page') page?: string,
@@ -69,7 +69,7 @@ export class LabWorkflowController {
 
   @Put(':orderId/results')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ANALIS, Role.ADMIN)
+  @Roles(Role.ANALIS, Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Enter test results for an order' })
   async enterResults(
     @Param('orderId', ParseUUIDPipe) orderId: string,
@@ -91,7 +91,7 @@ export class LabWorkflowController {
 
   @Post(':orderId/verify')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ANALIS, Role.ADMIN)
+  @Roles(Role.ANALIS, Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Verify test results (analyst verification)' })
   async verifyResults(
     @Param('orderId', ParseUUIDPipe) orderId: string,
@@ -103,6 +103,9 @@ export class LabWorkflowController {
 
   @Post(':orderId/approve')
   @UseGuards(JwtAuthGuard, RolesGuard)
+  // Clinical safety decision: ADMIN can VIEW approval queue (see getApprovalQueue)
+  // but CANNOT approve results. Only licensed doctors (DOKTER) may approve.
+  // See: USER-MANUAL Section 8 — ADMIN role limited to queue visibility only.
   @Roles(Role.DOKTER, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Approve test results (doctor approval)' })
   async approveOrder(

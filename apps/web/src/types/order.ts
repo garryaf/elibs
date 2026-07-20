@@ -1,5 +1,6 @@
 export type OrderStatus =
   | "PENDING_PAYMENT"
+  | "PAYMENT_OVERDUE"
   | "PAID"
   | "SAMPLE_COLLECTED"
   | "IN_ANALYSIS"

@@ -24,7 +24,11 @@ export class DataScopeInterceptor implements NestInterceptor {
 
     if (user?.role === Role.KLINIK_PARTNER) {
       if (!user.clinicId) {
-        throw new ForbiddenException('No clinic assigned to this user');
+        throw new ForbiddenException({
+          errorCode: 'ERR_NO_CLINIC_ASSIGNED',
+          message: 'Klinik belum ditetapkan untuk user ini. Hubungi admin untuk menetapkan klinik.',
+          userRole: user.role,
+        });
       }
       // Attach clinicId to request for service-layer filtering
       request.dataScope = { clinicId: user.clinicId };

@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
 import { PERMISSION_KEY } from '../decorators/permission.decorator';
@@ -23,7 +23,11 @@ export class PermissionGuard implements CanActivate {
 
     const { user } = context.switchToHttp().getRequest();
     if (!user || !user.role) {
-      return false;
+      throw new ForbiddenException({
+        errorCode: 'ERR_FORBIDDEN',
+        message: 'Authentication required for this resource',
+        requiredPermission,
+      });
     }
 
     // SUPER_ADMIN bypasses permission check
@@ -40,6 +44,15 @@ export class PermissionGuard implements CanActivate {
       },
     });
 
-    return !!rolePermission;
+    if (!rolePermission) {
+      throw new ForbiddenException({
+        errorCode: 'ERR_FORBIDDEN',
+        message: `Missing permission: ${requiredPermission} for role ${user.role}`,
+        requiredPermission,
+        userRole: user.role,
+      });
+    }
+
+    return true;
   }
 }

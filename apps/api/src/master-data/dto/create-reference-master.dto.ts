@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsEmail, IsInt, IsDateString, Min } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEmail, IsInt, IsDateString, IsIn, Min } from 'class-validator';
 
 // ─── Doctor ──────────────────────────────────────────────────────────────────
 
@@ -108,7 +108,7 @@ export class CreateEquipmentDto {
   location?: string;
 
   @IsOptional()
-  @IsString()
+  @IsIn(['ACTIVE', 'MAINTENANCE', 'RETIRED'])
   status?: string;
 
   @IsOptional()

@@ -7,8 +7,24 @@ import {
   IsDateString,
   IsUUID,
   Matches,
+  MaxLength,
+  Validate,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
 } from 'class-validator';
 import { Gender } from '@prisma/client';
+
+@ValidatorConstraint({ name: 'isNotFutureDate', async: false })
+class IsNotFutureDate implements ValidatorConstraintInterface {
+  validate(value: string) {
+    const date = new Date(value);
+    return date <= new Date();
+  }
+
+  defaultMessage() {
+    return 'Tanggal lahir tidak boleh di masa depan';
+  }
+}
 
 export class CreatePatientDto {
   @IsString()
@@ -16,9 +32,11 @@ export class CreatePatientDto {
   nik: string;
 
   @IsString()
+  @MaxLength(255)
   name: string;
 
   @IsDateString()
+  @Validate(IsNotFutureDate)
   dateOfBirth: string;
 
   @IsEnum(Gender)
@@ -90,6 +108,10 @@ export class CreatePatientDto {
   @IsOptional()
   @IsUUID()
   insuranceId?: string;
+
+  @IsOptional()
+  @IsString()
+  memberNumber?: string;
 
   @IsOptional()
   @IsBoolean()

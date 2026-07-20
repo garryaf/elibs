@@ -6,14 +6,13 @@
 
 /**
  * API base URL configuration:
- * - Production (behind Nginx): NEXT_PUBLIC_API_URL is explicitly set (could be empty for same-origin)
- * - Local development: NEXT_PUBLIC_API_URL=http://localhost:3001 (set via docker-compose default)
- *
- * The fallback to http://localhost:3001 only activates when the env var is completely
- * empty/unset AND we're NOT in production. In production behind Nginx, the var is
- * explicitly configured (even if empty) via the deployment manifest.
+ * - In all environments, the frontend uses relative paths (/api/v1/...).
+ * - Routing to the actual API backend is handled by:
+ *   - Production: Nginx reverse proxy (location /api/ → :3001)
+ *   - Local Docker: Next.js rewrites in next.config.ts (→ api:3001)
+ *   - Direct access: Set NEXT_PUBLIC_API_URL to override (e.g., http://localhost:3001)
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === "production" ? "" : "http://localhost:3001");
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -177,6 +176,13 @@ class ApiClient {
           throw { status: retryResponse.status, ...retryData };
         }
         return unwrapResponse<T>(retryData);
+      }
+
+      // Refresh failed — clear tokens and redirect to login
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("elis_token");
+        localStorage.removeItem("elis_refresh_token");
+        window.location.href = "/";
       }
     }
 

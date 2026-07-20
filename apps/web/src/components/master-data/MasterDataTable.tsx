@@ -219,7 +219,7 @@ export function MasterDataTable({
                       className={cn(
                         "flex h-7 w-7 items-center justify-center rounded-lg text-sm font-medium transition-all",
                         currentPage === page
-                          ? "bg-[#6B8E6B] text-white shadow-sm shadow-[#6B8E6B]/30"
+                          ? "bg-brand text-white shadow-sm shadow-brand/30"
                           : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
                       )}
                       aria-label={`Halaman ${page}`}

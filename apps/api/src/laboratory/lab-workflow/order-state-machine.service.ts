@@ -79,12 +79,22 @@ export class OrderStateMachineService {
 
     switch (toStatus) {
       case OrderStatus.PAID:
-        return { paidAt: now };
+        return { paidAt: now, paidBy: context.userId };
       case OrderStatus.SAMPLE_COLLECTED:
         return {
           sampleCollectedAt: now,
           sampleCollectedBy: context.userId,
         };
+      case OrderStatus.IN_ANALYSIS:
+        // Only set rejection fields if coming from VERIFIED (rejection scenario)
+        if (_fromStatus === OrderStatus.VERIFIED) {
+          return {
+            rejectedAt: now,
+            rejectedBy: context.userId,
+            rejectedReason: context.reason ?? null,
+          };
+        }
+        return {};
       case OrderStatus.VERIFIED:
         return {
           verifiedAt: now,
@@ -97,6 +107,8 @@ export class OrderStateMachineService {
           approvedBy: context.userId,
           interpretation: context.metadata?.interpretation ?? null,
         };
+      case OrderStatus.NOTIFIED:
+        return { notifiedAt: now };
       case OrderStatus.CANCELLED:
         return {
           cancelledAt: now,

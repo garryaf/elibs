@@ -205,7 +205,7 @@ export default function RegionsPage() {
         <button
           onClick={handleSync}
           disabled={syncing}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#5a7a5a] disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#5a7a5a] disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
           {syncing ? "Menyinkronkan..." : "Sinkronisasi Data"}
@@ -234,7 +234,7 @@ export default function RegionsPage() {
               onClick={() => handleTabChange(tab.key)}
               className={`whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
                 activeTab === tab.key
-                  ? "border-[#6B8E6B] text-[#6B8E6B]"
+                  ? "border-brand text-brand"
                   : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
@@ -254,7 +254,7 @@ export default function RegionsPage() {
               setSelectedKabupatenKota(null);
               setSelectedKecamatan(null);
             }}
-            className="hover:text-[#6B8E6B] transition-colors"
+            className="hover:text-brand transition-colors"
           >
             Semua Provinsi
           </button>
@@ -264,7 +264,7 @@ export default function RegionsPage() {
               {bc.onClick ? (
                 <button
                   onClick={bc.onClick}
-                  className="hover:text-[#6B8E6B] transition-colors"
+                  className="hover:text-brand transition-colors"
                 >
                   {bc.label}
                 </button>
@@ -289,7 +289,7 @@ export default function RegionsPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#6B8E6B] focus:outline-none focus:ring-1 focus:ring-[#6B8E6B] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
         />
       </div>
 
@@ -316,7 +316,7 @@ export default function RegionsPage() {
                 setActiveTab(TAB_CONFIG[parentTabIndex].key);
               }
             }}
-            className="mt-3 text-sm font-medium text-[#6B8E6B] hover:underline"
+            className="mt-3 text-sm font-medium text-brand hover:underline"
           >
             ← Kembali ke {TAB_CONFIG[TAB_CONFIG.findIndex((t) => t.key === activeTab) - 1]?.label || "Provinsi"}
           </button>
@@ -326,7 +326,7 @@ export default function RegionsPage() {
       {/* Loading state */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#6B8E6B]" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-brand" />
           <span className="ml-3 text-sm text-slate-500">
             Memuat data {currentTabConfig.label.toLowerCase()}...
           </span>
@@ -388,7 +388,7 @@ export default function RegionsPage() {
                     </td>
                     {activeTab !== "kelurahan-desa" && (
                       <td className="px-4 py-3 text-right">
-                        <span className="inline-flex items-center gap-1 text-xs text-[#6B8E6B] hover:underline">
+                        <span className="inline-flex items-center gap-1 text-xs text-brand hover:underline">
                           Lihat Detail <ChevronRight className="h-3 w-3" />
                         </span>
                       </td>

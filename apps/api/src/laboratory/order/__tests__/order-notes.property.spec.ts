@@ -36,6 +36,7 @@ describe('Order Notes Property Tests', () => {
   beforeEach(() => {
     mockPrisma = {
       patient: { findFirst: jest.fn() },
+      visit: { findUnique: jest.fn() },
       testMaster: { findMany: jest.fn() },
       order: {
         create: jest.fn(),
@@ -63,6 +64,8 @@ describe('Order Notes Property Tests', () => {
       mockTariffResolver,
       mockVisitService,
       mockOrderValidationGuard,
+      { validateVisitInsurance: jest.fn() } as any,
+      { transition: jest.fn(), canTransition: jest.fn(), getValidTransitions: jest.fn().mockReturnValue([]) } as any,
     );
   });
 
@@ -97,6 +100,14 @@ describe('Order Notes Property Tests', () => {
             mockPrisma.patient.findFirst.mockResolvedValue({
               id: patientId,
               name: 'Test Patient',
+            });
+
+            // Mock: visit exists with CASH payment (no insurance validation needed)
+            mockPrisma.visit.findUnique.mockResolvedValue({
+              id: visitId,
+              patientId,
+              paymentMethod: 'CASH',
+              insuranceId: null,
             });
 
             // Mock: all tests exist and are active

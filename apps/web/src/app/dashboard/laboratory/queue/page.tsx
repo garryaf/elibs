@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import {
   Search,
   FlaskConical,
@@ -13,13 +13,15 @@ import {
   ShieldCheck,
   Barcode,
   User,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { apiClient } from "@/lib/api";
+import { useLabQueue } from "@/services/lab";
 import {
   LabStatusBadge,
   type OrderStatus,
 } from "@/components/laboratory/lab-status-badge";
+import { RoleGuard } from "@/components/guards/RoleGuard";
 
 // ---------- Types ----------
 
@@ -85,53 +87,62 @@ export default function LaboratoryQueuePage() {
   const [activeTab, setActiveTab] = useState<QueueTab>("ALL");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [orders, setOrders] = useState<LabQueueOrder[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
-  // Fetch orders from API
-  const fetchOrders = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await apiClient.getLabQueue({
-        status: activeTab !== "ALL" ? activeTab : undefined,
-        search: search.trim() || undefined,
-      });
-      // Response shape: { success, data: { data: Order[], meta: {...} } }
-      const envelope = (res?.data ?? res) as any;
-      const innerData = envelope?.data ?? envelope;
+  // ─── TanStack Query: fetch lab queue ────────────────────────────────────────
+  const { data: queryData, isLoading, error: queryError, refetch } = useLabQueue({
+    page,
+    limit: PAGE_SIZE,
+    status: activeTab !== "ALL" ? activeTab : undefined,
+  });
 
-      if (Array.isArray(innerData)) {
-        // If response is directly an array
-        const mapped = innerData.map(mapApiOrder);
-        setOrders(mapped);
-        setTotalItems(mapped.length);
-      } else if (innerData?.data && Array.isArray(innerData.data)) {
-        // Standard paginated response: { data: [...], meta: {...} }
-        const mapped = innerData.data.map(mapApiOrder);
-        setOrders(mapped);
-        setTotalItems(innerData.meta?.total ?? mapped.length);
-      } else {
-        setOrders([]);
-        setTotalItems(0);
+  // ─── Extract data from query response ──────────────────────────────────────
+  const { orders, totalItems } = useMemo(() => {
+    const envelope = queryData as unknown;
+    let items: LabQueueOrder[] = [];
+    let total = 0;
+
+    if (envelope && typeof envelope === "object") {
+      const env = envelope as Record<string, unknown>;
+
+      // Handle nested { data: { data: [], meta: {} } } or { data: [], meta: {} }
+      const inner = (env.data ?? env) as Record<string, unknown>;
+
+      if (Array.isArray(inner)) {
+        items = (inner as unknown[]).map(mapApiOrder);
+        total = items.length;
+      } else if (inner && typeof inner === "object") {
+        const dataArr = (inner as Record<string, unknown>).data;
+        if (Array.isArray(dataArr)) {
+          items = dataArr.map(mapApiOrder);
+          const meta = (inner as Record<string, unknown>).meta as Record<string, unknown> | undefined;
+          total = Number(meta?.total) || items.length;
+        }
       }
-    } catch {
-      setOrders([]);
-      setTotalItems(0);
-    } finally {
-      setIsLoading(false);
     }
-  }, [page, activeTab, search]);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    return { orders: items, totalItems: total };
+  }, [queryData]);
+
+  // Filter by search client-side (API may not support search param for queue)
+  const filteredOrders = useMemo(() => {
+    if (!search.trim()) return orders;
+    const q = search.toLowerCase().trim();
+    return orders.filter(
+      (o) =>
+        o.orderNumber.toLowerCase().includes(q) ||
+        o.patientName.toLowerCase().includes(q) ||
+        o.patientMrn.toLowerCase().includes(q)
+    );
+  }, [orders, search]);
+
+  const error = queryError ? "Gagal memuat data antrian laboratorium. Silakan coba lagi." : null;
 
   // Reset page when filter/search changes
-  useEffect(() => {
+  const handleTabChange = (tab: QueueTab) => {
+    setActiveTab(tab);
     setPage(1);
-  }, [activeTab, search]);
+  };
 
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
 
@@ -143,7 +154,6 @@ export default function LaboratoryQueuePage() {
       IN_ANALYSIS: 0,
       VERIFIED: 0,
     };
-    // When we have order data, count from the current set
     orders.forEach((o) => {
       if (o.status in counts) {
         counts[o.status as QueueTab]++;
@@ -151,13 +161,14 @@ export default function LaboratoryQueuePage() {
     });
     if (activeTab === "ALL") counts.ALL = totalItems;
     return counts;
-  }, []);
+  }, [orders, totalItems, activeTab]);
 
   const toggleExpand = (orderId: string) => {
     setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
   };
 
   return (
+    <RoleGuard allowedRoles={["SUPER_ADMIN", "ADMIN", "SAMPLING", "ANALIS"]}>
     <div className="space-y-6">
       {/* Status filter tabs & Search */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -169,12 +180,12 @@ export default function LaboratoryQueuePage() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={cn(
-                  "flex whitespace-nowrap items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all",
+                  "flex whitespace-nowrap items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none",
                   isActive
-                    ? "bg-[#6B8E6B] text-white shadow-sm"
-                    : "text-[#8B8B6B] hover:bg-[#6B8E6B]/10 hover:text-[#6B8E6B]"
+                    ? "bg-brand text-white shadow-sm"
+                    : "text-[#8B8B6B] hover:bg-brand/10 hover:text-brand"
                 )}
                 aria-pressed={isActive}
               >
@@ -185,7 +196,7 @@ export default function LaboratoryQueuePage() {
                     "ml-1 flex h-5 min-w-[20px] items-center justify-center rounded-full text-[10px] font-bold px-1.5",
                     isActive
                       ? "bg-white/20 text-white"
-                      : "bg-[#6B8E6B]/10 text-[#8B8B6B]"
+                      : "bg-brand/10 text-[#8B8B6B]"
                   )}
                 >
                   {count}
@@ -203,7 +214,7 @@ export default function LaboratoryQueuePage() {
             placeholder="Cari order, pasien, MRN..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-4 text-sm outline-none focus:border-[#6B8E6B] focus:ring-1 focus:ring-[#6B8E6B]/30 text-foreground placeholder:text-muted-foreground"
+            className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-4 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 text-foreground placeholder:text-muted-foreground"
             aria-label="Search lab queue"
           />
         </div>
@@ -213,12 +224,12 @@ export default function LaboratoryQueuePage() {
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-border bg-[#6B8E6B]/5">
-              <th className="px-4 py-3 font-semibold text-[#6B8E6B]">No. Order</th>
-              <th className="px-4 py-3 font-semibold text-[#6B8E6B]">Pasien</th>
-              <th className="px-4 py-3 font-semibold text-[#6B8E6B] hidden sm:table-cell">Status</th>
-              <th className="px-4 py-3 font-semibold text-[#6B8E6B] hidden md:table-cell">Tanggal</th>
-              <th className="px-4 py-3 font-semibold text-[#6B8E6B] text-right">Tes</th>
+            <tr className="border-b border-border bg-brand/5">
+              <th className="px-4 py-3 font-semibold text-brand">No. Order</th>
+              <th className="px-4 py-3 font-semibold text-brand">Pasien</th>
+              <th className="px-4 py-3 font-semibold text-brand hidden sm:table-cell">Status</th>
+              <th className="px-4 py-3 font-semibold text-brand hidden md:table-cell">Tanggal</th>
+              <th className="px-4 py-3 font-semibold text-brand text-right">Tes</th>
               <th className="w-10 px-4 py-3" aria-label="Expand"></th>
             </tr>
           </thead>
@@ -227,12 +238,27 @@ export default function LaboratoryQueuePage() {
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
                   <div className="flex items-center justify-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#6B8E6B] border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-brand border-t-transparent" />
                     Memuat antrian...
                   </div>
                 </td>
               </tr>
-            ) : orders.length === 0 ? (
+            ) : error ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-12 text-center">
+                  <div className="flex flex-col items-center gap-3" role="alert">
+                    <AlertCircle className="h-10 w-10 text-red-400 dark:text-red-500" />
+                    <p className="font-medium text-red-700 dark:text-red-300">{error}</p>
+                    <button
+                      onClick={() => refetch()}
+                      className="mt-1 inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+                    >
+                      Coba Lagi
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredOrders.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
@@ -242,7 +268,7 @@ export default function LaboratoryQueuePage() {
                 </td>
               </tr>
             ) : (
-              orders.map((order) => {
+              filteredOrders.map((order) => {
                 const isExpanded = expandedOrderId === order.id;
                 return (
                   <OrderRow
@@ -261,14 +287,14 @@ export default function LaboratoryQueuePage() {
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Menampilkan {orders.length > 0 ? (page - 1) * PAGE_SIZE + 1 : 0}–
+          Menampilkan {filteredOrders.length > 0 ? (page - 1) * PAGE_SIZE + 1 : 0}–
           {Math.min(page * PAGE_SIZE, totalItems)} dari {totalItems} order
         </p>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-[#6B8E6B]/10 hover:text-[#6B8E6B] disabled:opacity-40 disabled:hover:bg-card"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-brand/10 hover:text-brand disabled:opacity-40 disabled:hover:bg-card"
             aria-label="Previous page"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -279,7 +305,7 @@ export default function LaboratoryQueuePage() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-[#6B8E6B]/10 hover:text-[#6B8E6B] disabled:opacity-40 disabled:hover:bg-card"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-brand/10 hover:text-brand disabled:opacity-40 disabled:hover:bg-card"
             aria-label="Next page"
           >
             <ChevronRight className="h-4 w-4" />
@@ -287,6 +313,7 @@ export default function LaboratoryQueuePage() {
         </div>
       </div>
     </div>
+    </RoleGuard>
   );
 }
 
@@ -304,12 +331,12 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
       <tr
         onClick={onToggle}
         className={cn(
-          "cursor-pointer border-b border-border transition-colors hover:bg-[#6B8E6B]/5",
-          isExpanded && "bg-[#6B8E6B]/5"
+          "cursor-pointer border-b border-border transition-colors hover:bg-brand/5",
+          isExpanded && "bg-brand/5"
         )}
       >
         <td className="px-4 py-3">
-          <span className="font-mono text-xs font-semibold text-[#6B8E6B]">
+          <span className="font-mono text-xs font-semibold text-brand">
             {order.orderNumber}
           </span>
         </td>
@@ -336,7 +363,7 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
           </span>
         </td>
         <td className="px-4 py-3 text-right">
-          <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-[#6B8E6B]/10 px-2 text-xs font-bold text-[#6B8E6B]">
+          <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-brand/10 px-2 text-xs font-bold text-brand">
             {order.details.length}
           </span>
         </td>
@@ -351,7 +378,7 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
 
       {/* Expanded Detail Row */}
       {isExpanded && (
-        <tr className="border-b border-border bg-[#6B8E6B]/[0.02]">
+        <tr className="border-b border-border bg-brand/[0.02]">
           <td colSpan={6} className="px-4 py-4">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Patient Info */}
@@ -413,7 +440,7 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
                       className={cn(
                         "rounded-md px-2 py-1 font-mono text-[11px] font-semibold",
                         d.status === "RESULT_ENTERED" || d.status === "VERIFIED" || d.status === "APPROVED"
-                          ? "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]"
+                          ? "bg-brand/10 text-brand dark:bg-brand-light dark:text-brand"
                           : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                       )}
                       title={d.testName}

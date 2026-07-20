@@ -4,6 +4,7 @@ import { VisitService } from '../visit.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { VisitNumberGeneratorService } from '../visit-number-generator.service';
 import { AuditService } from '../../audit/audit.service';
+import { InsuranceConsolidationService } from '../../../insurance/insurance-consolidation.service';
 import { VisitQueryDto } from '../dto/visit-query.dto';
 
 // Use string literals for enums to avoid Prisma client import issues in tests
@@ -147,6 +148,7 @@ describe('Feature: visit-management, Property 10: Query Filter Correctness', () 
         { provide: PrismaService, useValue: mockPrisma },
         { provide: VisitNumberGeneratorService, useValue: mockVisitNumberGenerator },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 
@@ -317,6 +319,7 @@ describe('Feature: visit-management, Property 11: Pagination Invariants', () => 
         { provide: PrismaService, useValue: mockPrisma },
         { provide: VisitNumberGeneratorService, useValue: mockVisitNumberGenerator },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 
@@ -437,6 +440,7 @@ describe('Feature: visit-management, Property 13: Search Results Relevance', () 
         { provide: PrismaService, useValue: mockPrisma },
         { provide: VisitNumberGeneratorService, useValue: mockVisitNumberGenerator },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 

@@ -10,6 +10,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { MrnGeneratorService } from './mrn-generator.service';
 import { RegionValidationService } from '../region/region-validation.service';
 import { AuditService } from '../audit/audit.service';
+import { InsuranceConsolidationService } from '../../insurance/insurance-consolidation.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { AddPatientInsuranceDto, UpdatePatientInsuranceDto } from './dto/manage-patient-insurance.dto';
@@ -29,6 +30,7 @@ export class PatientService {
     private readonly mrnGenerator: MrnGeneratorService,
     private readonly regionValidationService: RegionValidationService,
     private readonly auditService: AuditService,
+    private readonly insuranceConsolidationService: InsuranceConsolidationService,
   ) {}
 
   private transformRegionResponse(patient: any) {
@@ -108,11 +110,24 @@ export class PatientService {
           bloodType: dto.bloodType,
           emergencyContact: dto.emergencyContact,
           emergencyPhone: dto.emergencyPhone,
-          insuranceId: dto.insuranceId,
+          // insuranceId is deprecated — use PatientInsurance junction instead
           consentDigitalNotification: dto.consentDigitalNotification ?? false,
         },
         include: REGION_INCLUDE,
       });
+
+      // Create PatientInsurance junction record if insurance is provided
+      if (dto.insuranceId) {
+        await this.prisma.patientInsurance.create({
+          data: {
+            patientId: patient.id,
+            insuranceId: dto.insuranceId,
+            priority: 1,
+            isActive: true,
+            memberNumber: dto.memberNumber ?? null,
+          },
+        });
+      }
 
       // Audit log patient creation
       if (userId) {
@@ -184,8 +199,22 @@ export class PatientService {
       this.prisma.patient.count({ where }),
     ]);
 
+    // Enrich each patient with derived insuranceId and active insurances
+    const enrichedData = await Promise.all(
+      data.map(async (p) => {
+        const transformed = this.transformRegionResponse(p);
+        const resolvedInsuranceId = await this.insuranceConsolidationService.resolvePatientInsuranceId(p.id);
+        const insurances = await this.insuranceConsolidationService.getActiveInsurances(p.id);
+        return {
+          ...transformed,
+          insuranceId: resolvedInsuranceId,
+          insurances,
+        };
+      }),
+    );
+
     return {
-      data: data.map((p) => this.transformRegionResponse(p)),
+      data: enrichedData,
       meta: {
         total,
         page,
@@ -203,7 +232,19 @@ export class PatientService {
     if (!patient) {
       throw new NotFoundException('Patient not found');
     }
-    return this.transformRegionResponse(patient);
+
+    // Derive insuranceId from junction (priority=1) with legacy fallback
+    const resolvedInsuranceId = await this.insuranceConsolidationService.resolvePatientInsuranceId(id);
+
+    // Get active PatientInsurance records
+    const insurances = await this.insuranceConsolidationService.getActiveInsurances(id);
+
+    const transformed = this.transformRegionResponse(patient);
+    return {
+      ...transformed,
+      insuranceId: resolvedInsuranceId,
+      insurances,
+    };
   }
 
   async update(id: string, dto: UpdatePatientDto, userId?: string) {
@@ -224,7 +265,10 @@ export class PatientService {
       );
     }
 
-    const data: any = { ...dto };
+    // Extract insurance fields — handled via junction table, NOT Patient.insuranceId
+    const { insuranceId, memberNumber, ...patientFields } = dto;
+
+    const data: any = { ...patientFields };
     if (dto.dateOfBirth) {
       data.dateOfBirth = new Date(dto.dateOfBirth);
     }
@@ -235,12 +279,101 @@ export class PatientService {
       include: REGION_INCLUDE,
     });
 
+    // Handle insurance update via PatientInsurance junction table
+    if (insuranceId !== undefined) {
+      await this.upsertPatientInsuranceJunction(id, insuranceId, memberNumber);
+    }
+
     // Audit log patient update
     if (userId) {
       await this.auditService.log(userId, 'UPDATE', 'Patient', id, null, dto as unknown as Record<string, unknown>, null);
     }
 
     return this.transformRegionResponse(updated);
+  }
+
+  /**
+   * Upserts the PatientInsurance junction record with priority=1.
+   * If a junction record already exists for this patient with priority=1:
+   *   - If it belongs to this same insuranceId, update it (memberNumber if provided)
+   *   - If it belongs to a different insuranceId, update the insuranceId (and memberNumber)
+   * If no priority=1 record exists, create one.
+   * Rejects with ERR_PRIORITY_CONFLICT if a unique constraint violation occurs.
+   */
+  private async upsertPatientInsuranceJunction(
+    patientId: string,
+    insuranceId: string,
+    memberNumber?: string,
+  ): Promise<void> {
+    const existingPriority1 = await this.prisma.patientInsurance.findFirst({
+      where: { patientId, priority: 1 },
+    });
+
+    if (existingPriority1) {
+      // Update existing priority=1 record with new insurance info
+      const updateData: any = { insuranceId };
+      if (memberNumber !== undefined) {
+        updateData.memberNumber = memberNumber;
+      }
+
+      try {
+        await this.prisma.patientInsurance.update({
+          where: { id: existingPriority1.id },
+          data: updateData,
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          throw new ConflictException({
+            errorCode: 'ERR_PRIORITY_CONFLICT',
+            message: 'Priority 1 already exists for this patient',
+          });
+        }
+        throw error;
+      }
+    } else {
+      // Create new PatientInsurance junction record with priority=1
+      try {
+        await this.prisma.patientInsurance.create({
+          data: {
+            patientId,
+            insuranceId,
+            priority: 1,
+            isActive: true,
+            memberNumber: memberNumber ?? null,
+          },
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          const target = (error.meta?.target as string[]) ?? [];
+          if (target.includes('priority') || target.some((t) => t.includes('priority'))) {
+            throw new ConflictException({
+              errorCode: 'ERR_PRIORITY_CONFLICT',
+              message: 'Priority 1 already exists for this patient',
+            });
+          }
+          // Could be patientId_insuranceId unique constraint
+          throw new ConflictException({
+            errorCode: 'ERR_PRIORITY_CONFLICT',
+            message: 'Priority 1 already exists for this patient',
+          });
+        }
+        throw error;
+      }
+    }
+  }
+
+  // ─── Active Insurance Options ────────────────────────────────────────────
+
+  async getActiveInsuranceOptions(patientId: string) {
+    const patient = await this.prisma.patient.findFirst({
+      where: { id: patientId, deletedAt: null },
+    });
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    const insurances = await this.insuranceConsolidationService.getActiveInsurances(patientId);
+    return { data: insurances };
   }
 
   // ─── Patient Insurance Management ──────────────────────────────────────────
@@ -285,12 +418,15 @@ export class PatientService {
       throw new BadRequestException('Priority must be between 1 and 5');
     }
 
-    // Validate priority uniqueness per patient
+    // Validate priority uniqueness per patient (only active records)
     const existingPriority = await this.prisma.patientInsurance.findFirst({
-      where: { patientId, priority: dto.priority },
+      where: { patientId, priority: dto.priority, isActive: true },
     });
     if (existingPriority) {
-      throw new ConflictException(`Patient already has insurance with priority ${dto.priority}`);
+      throw new ConflictException({
+        errorCode: 'ERR_PRIORITY_CONFLICT',
+        message: `Priority ${dto.priority} already exists for this patient`,
+      });
     }
 
     // Check if this patient-insurance combination already exists
@@ -330,13 +466,16 @@ export class PatientService {
       throw new NotFoundException('Patient insurance record not found');
     }
 
-    // Validate priority uniqueness if priority is being changed
+    // Validate priority uniqueness if priority is being changed (only active records)
     if (dto.priority !== undefined && dto.priority !== existing.priority) {
       const conflicting = await this.prisma.patientInsurance.findFirst({
-        where: { patientId: existing.patientId, priority: dto.priority, id: { not: patientInsuranceId } },
+        where: { patientId: existing.patientId, priority: dto.priority, isActive: true, id: { not: patientInsuranceId } },
       });
       if (conflicting) {
-        throw new ConflictException(`Patient already has insurance with priority ${dto.priority}`);
+        throw new ConflictException({
+          errorCode: 'ERR_PRIORITY_CONFLICT',
+          message: `Priority ${dto.priority} already exists for this patient`,
+        });
       }
     }
 

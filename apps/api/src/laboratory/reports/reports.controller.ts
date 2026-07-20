@@ -14,7 +14,7 @@ import { ReportQueryDto } from './dto/report-query.dto';
 @ApiBearerAuth()
 @Controller('api/v1/reports')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.ADMIN)
+@Roles(Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.ADMIN, Role.KASIR)
 @UseInterceptors(CacheInterceptor)
 @CacheTTL(60000) // 60 seconds default cache for reports
 export class ReportsController {
@@ -80,6 +80,27 @@ export class ReportsController {
       'Content-Length': pdfBuffer.length,
     });
     res.send(pdfBuffer);
+  }
+
+  @Get('by-referring-doctor')
+  @ApiOperation({ summary: 'Laporan per Dokter Pengirim' })
+  async getByReferringDoctor(@Query() query: ReportQueryDto) {
+    const data = await this.reportsService.getByReferringDoctor(query);
+    return { success: true, message: 'Report by referring doctor retrieved', data };
+  }
+
+  @Get('by-referring-clinic')
+  @ApiOperation({ summary: 'Laporan per Klinik Mitra' })
+  async getByReferringClinic(@Query() query: ReportQueryDto) {
+    const data = await this.reportsService.getByReferringClinic(query);
+    return { success: true, message: 'Report by referring clinic retrieved', data };
+  }
+
+  @Get('new-patients')
+  @ApiOperation({ summary: 'Laporan Pasien Baru' })
+  async getNewPatients(@Query() query: ReportQueryDto) {
+    const data = await this.reportsService.getNewPatients(query);
+    return { success: true, message: 'New patients report retrieved', data };
   }
 
   @Get('orders-by-status/pdf')

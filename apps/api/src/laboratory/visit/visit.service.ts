@@ -1,6 +1,7 @@
 import {
   Injectable,
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,6 +9,7 @@ import { PaymentMethod, VisitStatus, OrderStatus } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { VisitNumberGeneratorService } from './visit-number-generator.service';
 import { AuditService } from '../audit/audit.service';
+import { InsuranceConsolidationService } from '../../insurance/insurance-consolidation.service';
 import { CreateVisitDto } from './dto/create-visit.dto';
 import { UpdateVisitDto } from './dto/update-visit.dto';
 import { CancelVisitDto } from './dto/cancel-visit.dto';
@@ -27,11 +29,15 @@ export class VisitService {
     private readonly prisma: PrismaService,
     private readonly visitNumberGenerator: VisitNumberGeneratorService,
     private readonly auditService: AuditService,
+    private readonly consolidationService: InsuranceConsolidationService,
   ) {}
 
   async create(dto: CreateVisitDto, userId: string, ipAddress?: string) {
     // Validate patient exists and is not soft-deleted
     await this.validatePatientExists(dto.patientId);
+
+    // Validate no duplicate active visit on the same day (WIB)
+    await this.validateNoActiveVisitToday(dto.patientId);
 
     // Validate optional references
     if (dto.doctorId) {
@@ -40,7 +46,25 @@ export class VisitService {
     if (dto.clinicId) {
       await this.validateClinicExists(dto.clinicId);
     }
-    if (dto.insuranceId) {
+
+    // Insurance validation against patient enrollments (Requirement 3.1, 3.2, 3.3)
+    if (dto.paymentMethod === PaymentMethod.INSURANCE || dto.paymentMethod === PaymentMethod.BPJS) {
+      if (dto.insuranceId) {
+        // Validate that the provided insuranceId is in the patient's active enrollments
+        await this.consolidationService.validateVisitInsurance(dto.patientId, dto.insuranceId);
+      } else {
+        // Default to patient's priority=1 insurance
+        const defaultIns = await this.consolidationService.getDefaultInsurance(dto.patientId);
+        if (!defaultIns) {
+          throw new BadRequestException({
+            errorCode: 'ERR_NO_DEFAULT_INSURANCE',
+            message: 'Patient has no active insurance enrollment with priority=1',
+          });
+        }
+        dto.insuranceId = defaultIns.insuranceId;
+      }
+    } else if (dto.insuranceId) {
+      // For non-insurance payment methods, still validate the insurance reference exists
       await this.validateInsuranceExists(dto.insuranceId);
     }
 
@@ -51,18 +75,34 @@ export class VisitService {
     const visitNumber = await this.visitNumberGenerator.generate();
 
     // Create Visit record with status REGISTERED
-    const visit = await this.prisma.visit.create({
-      data: {
-        visitNumber,
-        patientId: dto.patientId,
-        paymentMethod: dto.paymentMethod,
-        doctorId: dto.doctorId ?? null,
-        clinicId: dto.clinicId ?? null,
-        insuranceId: dto.insuranceId ?? null,
-        bpjsNumber: dto.bpjsNumber ?? null,
-      },
-      include: VISIT_INCLUDE,
-    });
+    let visit;
+    try {
+      visit = await this.prisma.visit.create({
+        data: {
+          visitNumber,
+          patientId: dto.patientId,
+          paymentMethod: dto.paymentMethod,
+          doctorId: dto.doctorId ?? null,
+          clinicId: dto.clinicId ?? null,
+          insuranceId: dto.insuranceId ?? null,
+          bpjsNumber: dto.bpjsNumber ?? null,
+        },
+        include: VISIT_INCLUDE,
+      });
+    } catch (error: any) {
+      // Handle race condition: P2002 unique constraint violation on visits_patient_active_per_day
+      if (
+        error?.code === 'P2002' &&
+        error?.meta?.target?.includes('visits_patient_active_per_day')
+      ) {
+        throw new ConflictException({
+          errorCode: 'ERR_DUPLICATE_ACTIVE_VISIT',
+          message:
+            'Patient already has an active visit today. Please use the existing visit or cancel it first.',
+        });
+      }
+      throw error; // Re-throw other errors unchanged
+    }
 
     // Audit log
     const visitData: Record<string, unknown> = { ...visit };
@@ -87,6 +127,35 @@ export class VisitService {
       throw new NotFoundException({
         errorCode: 'ERR_NOT_FOUND',
         message: 'Patient not found',
+      });
+    }
+  }
+
+  private async validateNoActiveVisitToday(patientId: string): Promise<void> {
+    const now = new Date();
+    // WIB timezone (UTC+7) — consistent with findAll() date filtering
+    const startOfDayWIB = new Date(
+      now.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }) +
+        'T00:00:00.000+07:00',
+    );
+    const endOfDayWIB = new Date(
+      now.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }) +
+        'T23:59:59.999+07:00',
+    );
+
+    const existingActiveVisit = await this.prisma.visit.findFirst({
+      where: {
+        patientId,
+        registrationDate: { gte: startOfDayWIB, lte: endOfDayWIB },
+        status: { in: [VisitStatus.REGISTERED, VisitStatus.IN_PROGRESS] },
+      },
+      select: { id: true, visitNumber: true },
+    });
+
+    if (existingActiveVisit) {
+      throw new ConflictException({
+        errorCode: 'ERR_DUPLICATE_ACTIVE_VISIT',
+        message: `Patient already has an active visit today (${existingActiveVisit.visitNumber}). Please use the existing visit or cancel it first.`,
       });
     }
   }
@@ -140,14 +209,9 @@ export class VisitService {
       }
     }
 
-    if (paymentMethod === PaymentMethod.INSURANCE) {
-      if (!dto.insuranceId) {
-        throw new BadRequestException({
-          errorCode: 'ERR_VALIDATION',
-          message: 'Insurance ID is required for INSURANCE payment method',
-        });
-      }
-    }
+    // Note: INSURANCE payment method no longer requires dto.insuranceId here,
+    // because InsuranceConsolidationService handles defaulting to priority=1
+    // when no insuranceId is provided (Requirement 3.3).
 
     // CASH: no additional validation — bpjsNumber and insuranceId are ignored
   }

@@ -267,7 +267,7 @@ export function PatientLabHistory({ patientId }: { patientId: string }) {
     return (
       <div className="space-y-3">
         <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-          <FlaskConical className="h-4 w-4 text-[#6B8E6B]" />
+          <FlaskConical className="h-4 w-4 text-brand" />
           Riwayat Laboratorium
         </h3>
         <LabHistorySkeleton />
@@ -280,7 +280,7 @@ export function PatientLabHistory({ patientId }: { patientId: string }) {
     return (
       <div className="space-y-3">
         <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-          <FlaskConical className="h-4 w-4 text-[#6B8E6B]" />
+          <FlaskConical className="h-4 w-4 text-brand" />
           Riwayat Laboratorium
         </h3>
         <div className="flex flex-col items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
@@ -302,7 +302,7 @@ export function PatientLabHistory({ patientId }: { patientId: string }) {
     return (
       <div className="space-y-3">
         <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-          <FlaskConical className="h-4 w-4 text-[#6B8E6B]" />
+          <FlaskConical className="h-4 w-4 text-brand" />
           Riwayat Laboratorium
         </h3>
         <div className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-800/50">
@@ -319,7 +319,7 @@ export function PatientLabHistory({ patientId }: { patientId: string }) {
   return (
     <div className="space-y-3">
       <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-        <FlaskConical className="h-4 w-4 text-[#6B8E6B]" />
+        <FlaskConical className="h-4 w-4 text-brand" />
         Riwayat Laboratorium
       </h3>
 

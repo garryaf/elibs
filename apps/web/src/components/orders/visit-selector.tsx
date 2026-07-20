@@ -17,11 +17,18 @@ export interface VisitOption {
   };
 }
 
+interface PatientFallbackResult {
+  id: string;
+  name: string;
+  mrn: string;
+  nik?: string;
+}
+
 interface VisitSelectorProps {
   value: VisitOption | null;
   onChange: (visit: VisitOption | null) => void;
   error?: string;
-  onInlineCreate?: () => void;
+  onInlineCreate?: (patientId?: string) => void;
 }
 
 export function VisitSelector({
@@ -34,16 +41,21 @@ export function VisitSelector({
   const [results, setResults] = useState<VisitOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [patientFallbackResults, setPatientFallbackResults] = useState<PatientFallbackResult[]>([]);
+  const [patientFallbackLoading, setPatientFallbackLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const searchVisits = useCallback(async (searchTerm: string) => {
     if (searchTerm.length < 3) {
       setResults([]);
+      setPatientFallbackResults([]);
       return;
     }
 
     setLoading(true);
+    setPatientFallbackResults([]);
+    setPatientFallbackLoading(false);
     try {
       const res = await apiClient.get<{
         success: boolean;
@@ -82,10 +94,43 @@ export function VisitSelector({
 
       setResults(mapped);
       setShowDropdown(true);
+
+      // If no active visits found, trigger patient fallback search
+      if (mapped.length === 0 && searchTerm.length >= 3) {
+        searchPatientsFallback(searchTerm);
+      }
     } catch {
       setResults([]);
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const searchPatientsFallback = useCallback(async (searchTerm: string) => {
+    setPatientFallbackLoading(true);
+    try {
+      const res = await apiClient.getPatients({ search: searchTerm, limit: 10 });
+      const envelope = (res?.data ?? res) as unknown;
+      let raw: unknown[] = [];
+      if (Array.isArray(envelope)) {
+        raw = envelope;
+      } else if (envelope && typeof envelope === "object" && "data" in envelope) {
+        const inner = (envelope as { data: unknown }).data;
+        raw = Array.isArray(inner) ? inner : [];
+      }
+
+      const mapped: PatientFallbackResult[] = (raw as Record<string, unknown>[]).map((p) => ({
+        id: p.id as string,
+        name: p.name as string,
+        mrn: p.mrn as string,
+        nik: (p.nik as string) || undefined,
+      }));
+
+      setPatientFallbackResults(mapped);
+    } catch {
+      setPatientFallbackResults([]);
+    } finally {
+      setPatientFallbackLoading(false);
     }
   }, []);
 
@@ -94,6 +139,7 @@ export function VisitSelector({
     if (value) return;
     if (query.length < 3) {
       setResults([]);
+      setPatientFallbackResults([]);
       setShowDropdown(query.length > 0);
       return;
     }
@@ -130,6 +176,7 @@ export function VisitSelector({
     onChange(null);
     setQuery("");
     setResults([]);
+    setPatientFallbackResults([]);
     setShowDropdown(false);
     inputRef.current?.focus();
   };
@@ -142,12 +189,12 @@ export function VisitSelector({
           className={`rounded-xl border p-4 ${
             error
               ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/10"
-              : "border-[#6B8E6B]/30 bg-[#6B8E6B]/5"
+              : "border-brand/30 bg-brand/5"
           }`}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6B8E6B]/10 text-[#6B8E6B]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 text-brand">
                 <Calendar className="h-5 w-5" />
               </div>
               <div>
@@ -158,7 +205,7 @@ export function VisitSelector({
                   <User className="h-3 w-3" />
                   <span>{value.patient.name}</span>
                   <span>•</span>
-                  <span className="font-mono text-[#6B8E6B]">
+                  <span className="font-mono text-brand">
                     {value.patient.mrn}
                   </span>
                   <span>•</span>
@@ -198,7 +245,7 @@ export function VisitSelector({
             placeholder="Cari kunjungan berdasarkan nomor visit, nama pasien, atau MRN..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className={`h-11 w-full rounded-xl border pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:text-slate-100 ${
+            className={`h-11 w-full rounded-xl border pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 ${
               error
                 ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/10"
                 : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
@@ -206,7 +253,7 @@ export function VisitSelector({
           />
           {loading && (
             <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-[#6B8E6B]" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-brand" />
             </div>
           )}
         </div>
@@ -231,7 +278,7 @@ export function VisitSelector({
                   onClick={() => handleSelect(visit)}
                   className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
-                  <Calendar className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#6B8E6B]" />
+                  <Calendar className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-slate-900 dark:text-white">
@@ -253,7 +300,7 @@ export function VisitSelector({
                       {visit.patient.name}
                     </p>
                     <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                      <span className="font-mono text-[#6B8E6B]">
+                      <span className="font-mono text-brand">
                         {visit.patient.mrn}
                       </span>
                       <span>•</span>
@@ -271,23 +318,84 @@ export function VisitSelector({
           </div>
         )}
 
-        {/* No results */}
+        {/* No results — with patient fallback */}
         {showDropdown &&
           query.length >= 3 &&
           results.length === 0 &&
           !loading && (
-            <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white p-4 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-              <p className="text-center text-sm text-slate-500">
-                Tidak ada kunjungan ditemukan untuk &quot;{query}&quot;
-              </p>
-              {onInlineCreate && (
-                <button
-                  type="button"
-                  onClick={onInlineCreate}
-                  className="mt-2 w-full rounded-lg border border-dashed border-[#6B8E6B]/50 px-3 py-2 text-sm text-[#6B8E6B] transition-colors hover:bg-[#6B8E6B]/5"
-                >
-                  + Buat kunjungan baru
-                </button>
+            <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+              <div className="p-4">
+                <p className="text-center text-sm text-slate-500">
+                  Tidak ada kunjungan aktif ditemukan untuk &quot;{query}&quot;
+                </p>
+                {onInlineCreate && (
+                  <button
+                    type="button"
+                    onClick={() => onInlineCreate()}
+                    className="mt-2 w-full rounded-lg border border-dashed border-brand/50 px-3 py-2 text-sm text-brand transition-colors hover:bg-brand/5"
+                  >
+                    + Buat kunjungan baru
+                  </button>
+                )}
+              </div>
+
+              {/* Patient fallback section */}
+              {patientFallbackLoading && (
+                <div className="border-t border-slate-200 p-4 text-center dark:border-slate-700">
+                  <div className="inline-flex items-center gap-2 text-sm text-slate-500">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-brand" />
+                    Mencari pasien...
+                  </div>
+                </div>
+              )}
+
+              {!patientFallbackLoading && patientFallbackResults.length > 0 && (
+                <div className="border-t border-slate-200 dark:border-slate-700">
+                  <div className="px-4 pt-3 pb-1">
+                    <p className="text-xs font-semibold tracking-wide text-slate-400 uppercase">
+                      Pasien Ditemukan
+                    </p>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto p-1">
+                    {patientFallbackResults.map((patient) => (
+                      <div
+                        key={patient.id}
+                        className="flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <User className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-slate-900 dark:text-white">
+                              {patient.name}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                              <span className="font-mono text-brand">
+                                {patient.mrn}
+                              </span>
+                              {patient.nik && (
+                                <>
+                                  <span>•</span>
+                                  <span className="truncate max-w-[100px]">
+                                    NIK: {patient.nik.slice(0, 8)}...
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {onInlineCreate && (
+                          <button
+                            type="button"
+                            onClick={() => onInlineCreate(patient.id)}
+                            className="flex-shrink-0 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#5A7A5A]"
+                          >
+                            Buat Kunjungan
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           )}

@@ -12,6 +12,13 @@ const STATUS_CONFIG: Record<
     text: "text-amber-700 dark:text-amber-300",
     ring: "ring-amber-200 dark:ring-amber-700/50",
   },
+  PAYMENT_OVERDUE: {
+    label: "Jatuh Tempo",
+    dot: "bg-orange-500",
+    bg: "bg-orange-50 dark:bg-orange-900/30",
+    text: "text-orange-700 dark:text-orange-300",
+    ring: "ring-orange-200 dark:ring-orange-700/50",
+  },
   PAID: {
     label: "Lunas",
     dot: "bg-blue-400",
@@ -42,10 +49,10 @@ const STATUS_CONFIG: Record<
   },
   APPROVED: {
     label: "Selesai",
-    dot: "bg-[#6B8E6B]/100",
-    bg: "bg-[#6B8E6B]/10 dark:bg-[#6B8E6B]/15",
-    text: "text-[#6B8E6B] dark:text-[#6B8E6B]",
-    ring: "ring-[#6B8E6B]/30 dark:ring-[#6B8E6B]/30",
+    dot: "bg-brand",
+    bg: "bg-brand/10 dark:bg-brand-light",
+    text: "text-brand dark:text-brand",
+    ring: "ring-brand/30 dark:ring-brand/30",
   },
   NOTIFIED: {
     label: "Terkirim",

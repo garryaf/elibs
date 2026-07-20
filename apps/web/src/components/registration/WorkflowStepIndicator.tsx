@@ -40,7 +40,7 @@ export function WorkflowStepIndicator({
                     <div
                       className={`h-0.5 flex-1 transition-colors ${
                         isCompleted || isCurrent
-                          ? "bg-[#6B8E6B]"
+                          ? "bg-brand"
                           : "bg-slate-200 dark:bg-slate-700"
                       }`}
                     />
@@ -50,9 +50,9 @@ export function WorkflowStepIndicator({
                   <div
                     className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all ${
                       isCurrent
-                        ? "bg-[#6B8E6B] text-white ring-4 ring-[#6B8E6B]/20"
+                        ? "bg-brand text-white ring-4 ring-brand/20"
                         : isCompleted
-                          ? "bg-[#6B8E6B] text-white"
+                          ? "bg-brand text-white"
                           : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
                     }`}
                   >
@@ -68,7 +68,7 @@ export function WorkflowStepIndicator({
                     <div
                       className={`h-0.5 flex-1 transition-colors ${
                         isCompleted
-                          ? "bg-[#6B8E6B]"
+                          ? "bg-brand"
                           : "bg-slate-200 dark:bg-slate-700"
                       }`}
                     />
@@ -79,7 +79,7 @@ export function WorkflowStepIndicator({
                 <span
                   className={`text-xs font-medium transition-colors ${
                     isCurrent
-                      ? "text-[#6B8E6B]"
+                      ? "text-brand"
                       : isCompleted
                         ? "text-slate-700 dark:text-slate-300"
                         : "text-slate-400 dark:text-slate-500"

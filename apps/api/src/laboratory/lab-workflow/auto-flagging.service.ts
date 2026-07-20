@@ -85,13 +85,14 @@ export class AutoFlaggingService {
       return null;
     }
 
-    // Prefer gender-specific match over any fallback
+    // Prefer gender-specific match
     const genderSpecific = refs.find((r) => r.gender === patientGender);
     if (genderSpecific) {
       return genderSpecific;
     }
 
-    // If no gender-specific match, use the first available reference as fallback
-    return refs[0] || null;
+    // Fallback to gender-neutral references only (gender = null)
+    const genderNeutral = refs.find((r) => r.gender === null);
+    return genderNeutral ?? null;
   }
 }

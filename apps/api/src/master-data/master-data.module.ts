@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MasterDataController } from './master-data.controller';
 import { TariffController } from './tariff.controller';
+import { CalibrationController } from './calibration.controller';
 import { MasterDataService } from './master-data.service';
 import { ReferenceMasterService } from './reference-master.service';
 import { TariffResolverService } from './tariff-resolver.service';
@@ -23,6 +24,7 @@ import {
     MasterDataController,
     TariffController,
     BulkImportController,
+    CalibrationController,
     DoctorController,
     ClinicController,
     InsuranceController,

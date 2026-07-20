@@ -15,7 +15,7 @@ export const labKeys = {
 
 // ─── Hooks ───────────────────────────────────────────────────────────────────
 
-export function useLabQueue(params?: { page?: number; limit?: number; status?: string }) {
+export function useLabQueue(params?: { page?: number; limit?: number; status?: string; search?: string }) {
   return useQuery({
     queryKey: labKeys.queue(params),
     queryFn: () => {
@@ -23,6 +23,7 @@ export function useLabQueue(params?: { page?: number; limit?: number; status?: s
       if (params?.page) qs.set("page", String(params.page));
       if (params?.limit) qs.set("limit", String(params.limit));
       if (params?.status) qs.set("status", params.status);
+      if (params?.search) qs.set("search", params.search);
       return apiClient.get(`/api/v1/lab/queue?${qs.toString()}`);
     },
   });
@@ -73,8 +74,8 @@ export function useEnterResults() {
 export function useVerifyResults() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, notes }: { orderId: string; notes?: string }) =>
-      apiClient.post(`/api/v1/lab/${orderId}/verify`, { notes }),
+    mutationFn: ({ orderId, verificationNotes }: { orderId: string; verificationNotes?: string }) =>
+      apiClient.post(`/api/v1/lab/${orderId}/verify`, { verificationNotes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: labKeys.queue() });
       queryClient.invalidateQueries({ queryKey: labKeys.approvalQueue() });
@@ -82,11 +83,19 @@ export function useVerifyResults() {
   });
 }
 
+// ─── Approve/Reject Order Types ──────────────────────────────────────────────
+
+export interface ApproveOrderPayload {
+  decision: 'APPROVE' | 'REJECT';
+  interpretation?: string;
+  rejectionReason?: string;
+}
+
 export function useApproveOrder() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, interpretation }: { orderId: string; interpretation?: string }) =>
-      apiClient.post(`/api/v1/lab/${orderId}/approve`, { interpretation }),
+    mutationFn: ({ orderId, data }: { orderId: string; data: ApproveOrderPayload }) =>
+      apiClient.post(`/api/v1/lab/${orderId}/approve`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: labKeys.approvalQueue() });
     },

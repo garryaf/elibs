@@ -4,7 +4,15 @@ import { z } from "zod";
  * Visit schemas — mirrors backend CreateVisitDto validation
  */
 
-export const VisitPaymentMethod = z.enum(["CASH", "BPJS", "INSURANCE"]);
+export const VisitPaymentMethod = z.enum([
+  "CASH",
+  "BPJS",
+  "TRANSFER",
+  "INSURANCE",
+  "EDC",
+  "INSURANCE_CASH_FALLBACK",
+  "CORPORATE_DEFERRED",
+]);
 
 export const createVisitSchema = z.object({
   patientId: z.string().uuid("Patient ID wajib format UUID"),

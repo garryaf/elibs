@@ -9,14 +9,15 @@ export interface DropdownOption {
   subtitle?: string;
 }
 
-interface SearchableDropdownProps {
-  label: string;
+export interface SearchableDropdownProps {
+  label?: string;
   placeholder: string;
   value: DropdownOption | null;
   onChange: (option: DropdownOption | null) => void;
   fetchOptions: (search: string) => Promise<DropdownOption[]>;
   required?: boolean;
   error?: string;
+  disabled?: boolean;
 }
 
 export function SearchableDropdown({
@@ -27,6 +28,7 @@ export function SearchableDropdown({
   fetchOptions,
   required,
   error,
+  disabled,
 }: SearchableDropdownProps) {
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<DropdownOption[]>([]);
@@ -85,30 +87,36 @@ export function SearchableDropdown({
   };
 
   const handleOpen = () => {
+    if (disabled) return;
     setIsOpen(true);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   return (
     <div className="space-y-1.5" ref={containerRef}>
-      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-        {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
-      </label>
+      {label && (
+        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+          {label}
+          {required && <span className="ml-1 text-red-500">*</span>}
+        </label>
+      )}
 
       <div className="relative">
         {!isOpen ? (
           <button
             type="button"
             onClick={handleOpen}
+            disabled={disabled}
             role="combobox"
             aria-expanded={false}
             aria-haspopup="listbox"
             aria-controls="dropdown-listbox"
             className={`flex h-11 w-full items-center justify-between rounded-xl border px-3.5 text-sm transition-all ${
-              error
-                ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/10"
-                : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+              disabled
+                ? "cursor-not-allowed border-slate-200 bg-slate-100 opacity-60 dark:border-slate-700 dark:bg-slate-800"
+                : error
+                  ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/10"
+                  : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900"
             }`}
           >
             <span className={value ? "text-slate-900 dark:text-white" : "text-slate-400"}>
@@ -119,7 +127,7 @@ export function SearchableDropdown({
                 <button
                   type="button"
                   onClick={handleClear}
-                  aria-label={`Hapus ${label}`}
+                  aria-label={`Hapus ${label ?? "pilihan"}`}
                   className="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -140,8 +148,8 @@ export function SearchableDropdown({
               aria-autocomplete="list"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={`Cari ${label.toLowerCase()}...`}
-              className="h-11 w-full rounded-xl border border-[#6B8E6B] bg-white pl-9 pr-4 text-sm text-slate-900 outline-none ring-2 ring-[#6B8E6B]/20 dark:border-[#6B8E6B] dark:bg-slate-900 dark:text-slate-100"
+              placeholder={`Cari ${label?.toLowerCase() ?? ""}...`}
+              className="h-11 w-full rounded-xl border border-brand bg-white pl-9 pr-4 text-sm text-slate-900 outline-none ring-2 ring-brand/20 dark:border-brand dark:bg-slate-900 dark:text-slate-100"
             />
           </div>
         )}
@@ -151,7 +159,7 @@ export function SearchableDropdown({
             <div className="max-h-48 overflow-y-auto p-1">
               {loading ? (
                 <div className="flex items-center justify-center py-3">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-[#6B8E6B]" />
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-brand" />
                 </div>
               ) : options.length > 0 ? (
                 options.map((option) => (
@@ -160,7 +168,7 @@ export function SearchableDropdown({
                     type="button"
                     onClick={() => handleSelect(option)}
                     className={`flex w-full flex-col rounded-lg px-3 py-2 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 ${
-                      value?.id === option.id ? "bg-[#6B8E6B]/5" : ""
+                      value?.id === option.id ? "bg-brand/5" : ""
                     }`}
                   >
                     <span className="text-sm font-medium text-slate-900 dark:text-white">{option.name}</span>

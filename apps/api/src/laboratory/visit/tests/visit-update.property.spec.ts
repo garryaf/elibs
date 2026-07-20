@@ -5,6 +5,7 @@ import { VisitService } from '../visit.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { VisitNumberGeneratorService } from '../visit-number-generator.service';
 import { AuditService } from '../../audit/audit.service';
+import { InsuranceConsolidationService } from '../../../insurance/insurance-consolidation.service';
 import { UpdateVisitDto } from '../dto/update-visit.dto';
 
 const PaymentMethod = {
@@ -64,6 +65,7 @@ describe('Feature: visit-management, Property 8: Immutable Fields on Update', ()
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 
@@ -244,6 +246,7 @@ describe('Feature: visit-management, Property 9: Updates Only Allowed on Non-Ter
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 

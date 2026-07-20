@@ -1,12 +1,19 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { Loader2, ArrowLeft, AlertTriangle } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { SearchableDropdown, type DropdownOption } from "@/components/visits/SearchableDropdown";
 import type { PatientOption } from "@/types/visit";
 
-type PaymentMethod = "CASH" | "BPJS" | "INSURANCE";
+type PaymentMethod = "CASH" | "BPJS" | "INSURANCE" | "TRANSFER" | "EDC";
+
+interface InsuranceEnrollment {
+  id: string;
+  insuranceId: string;
+  insuranceName: string;
+  memberNumber?: string;
+}
 
 interface FormErrors {
   paymentMethod?: string;
@@ -33,10 +40,70 @@ export function VisitCreationStep({
   const [bpjsNumber, setBpjsNumber] = useState("");
   const [selectedInsurance, setSelectedInsurance] = useState<DropdownOption | null>(null);
 
+  // Insurance enrollment state
+  const [insuranceEnrollments, setInsuranceEnrollments] = useState<InsuranceEnrollment[]>([]);
+  const [enrollmentLoading, setEnrollmentLoading] = useState(false);
+  const [enrollmentChecked, setEnrollmentChecked] = useState(false);
+
   // UI state
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
+
+  // Pre-fetch patient insurance enrollments when BPJS or INSURANCE is selected
+  useEffect(() => {
+    if (paymentMethod !== "BPJS" && paymentMethod !== "INSURANCE") {
+      setEnrollmentChecked(false);
+      return;
+    }
+
+    let cancelled = false;
+    setEnrollmentLoading(true);
+
+    (async () => {
+      try {
+        const res = await apiClient.get(`/api/v1/patients/${patient.id}/insurances`);
+        if (cancelled) return;
+        const raw = res as unknown;
+        let enrollments: InsuranceEnrollment[] = [];
+
+        // Extract data from various response shapes
+        const envelope = (raw && typeof raw === "object" && "data" in (raw as object))
+          ? ((raw as Record<string, unknown>).data as unknown)
+          : raw;
+        const arr = Array.isArray(envelope) ? envelope : 
+          (envelope && typeof envelope === "object" && "data" in (envelope as object))
+            ? ((envelope as Record<string, unknown>).data as unknown[])
+            : [];
+
+        if (Array.isArray(arr)) {
+          enrollments = (arr as Record<string, unknown>[]).map((e) => ({
+            id: (e.id as string) || "",
+            insuranceId: (e.insuranceId as string) || "",
+            insuranceName: (e.insurance as Record<string, unknown>)?.name as string || (e.insuranceName as string) || "",
+            memberNumber: (e.memberNumber as string) || undefined,
+          }));
+        }
+
+        if (!cancelled) {
+          setInsuranceEnrollments(enrollments);
+          setEnrollmentChecked(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setInsuranceEnrollments([]);
+          setEnrollmentChecked(true);
+        }
+      } finally {
+        if (!cancelled) setEnrollmentLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [paymentMethod, patient.id]);
+
+  // Determine if insurance is available
+  const hasInsuranceEnrollment = insuranceEnrollments.length > 0;
 
   // Check if form has any data entered
   const hasFormData = (): boolean => {
@@ -191,11 +258,21 @@ export function VisitCreationStep({
     } catch (err: unknown) {
       const apiError = err as {
         status?: number;
+        errorCode?: string;
         message?: string;
         errors?: Array<{ field: string; message: string }>;
       };
 
-      if (apiError.errors && Array.isArray(apiError.errors)) {
+      // Handle specific known error codes with user-friendly messages
+      if (apiError.errorCode === "ERR_DUPLICATE_ACTIVE_VISIT") {
+        setGeneralError(
+          "Pasien ini sudah memiliki kunjungan aktif hari ini. Gunakan kunjungan yang sudah ada atau batalkan terlebih dahulu."
+        );
+      } else if (apiError.errorCode === "ERR_NO_DEFAULT_INSURANCE") {
+        setGeneralError(
+          "Pasien tidak memiliki asuransi aktif terdaftar. Daftarkan asuransi pasien terlebih dahulu."
+        );
+      } else if (apiError.errors && Array.isArray(apiError.errors)) {
         const fieldErrors: FormErrors = {};
         for (const fieldErr of apiError.errors) {
           if (fieldErr.field === "bpjsNumber") {
@@ -270,7 +347,7 @@ export function VisitCreationStep({
               {patient.name}
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
-              <span className="font-mono text-[#6B8E6B]">{patient.mrn}</span>
+              <span className="font-mono text-brand">{patient.mrn}</span>
               <span>{formattedDob}</span>
               <span>{genderLabel}</span>
             </div>
@@ -311,10 +388,12 @@ export function VisitCreationStep({
 
           <div className="space-y-4">
             {/* Payment options — button-style grid */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
               {(
                 [
                   { value: "CASH", label: "Tunai (Cash)" },
+                  { value: "TRANSFER", label: "Transfer" },
+                  { value: "EDC", label: "EDC (Kartu)" },
                   { value: "BPJS", label: "BPJS" },
                   { value: "INSURANCE", label: "Asuransi" },
                 ] as const
@@ -333,7 +412,7 @@ export function VisitCreationStep({
                   }}
                   className={`rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
                     paymentMethod === option.value
-                      ? "border-[#6B8E6B] bg-[#6B8E6B]/5 text-[#6B8E6B] ring-2 ring-[#6B8E6B]/20"
+                      ? "border-brand bg-brand/5 text-brand ring-2 ring-brand/20"
                       : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600"
                   }`}
                 >
@@ -347,56 +426,109 @@ export function VisitCreationStep({
 
             {/* BPJS Number (conditional) */}
             {paymentMethod === "BPJS" && (
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Nomor BPJS <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={bpjsNumber}
-                  onChange={(e) => {
-                    // Only allow digits, max 13
-                    const val = e.target.value.replace(/\D/g, "").slice(0, 13);
-                    setBpjsNumber(val);
-                    if (errors.bpjsNumber) {
-                      setErrors((prev) => ({ ...prev, bpjsNumber: undefined }));
-                    }
-                  }}
-                  placeholder="Masukkan 13 digit nomor BPJS"
-                  maxLength={13}
-                  className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none transition-all ${
-                    errors.bpjsNumber
-                      ? "border-red-300 bg-red-50 focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:border-red-700 dark:bg-red-900/10"
-                      : "border-slate-200 bg-white focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900"
-                  } text-slate-900 placeholder:text-slate-400 dark:text-slate-100`}
-                />
-                <div className="flex items-center justify-between">
-                  {errors.bpjsNumber ? (
-                    <p className="text-xs text-red-500">{errors.bpjsNumber}</p>
-                  ) : (
-                    <p className="text-xs text-slate-400">Contoh: 0001234567890</p>
-                  )}
-                  <span className="text-xs text-slate-400">{bpjsNumber.length}/13</span>
+              <div className="space-y-3">
+                {/* Enrollment check warning */}
+                {enrollmentLoading && (
+                  <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Memeriksa data BPJS pasien...
+                  </div>
+                )}
+                {enrollmentChecked && !hasInsuranceEnrollment && (
+                  <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-900/20">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                        Pasien belum memiliki data BPJS terdaftar
+                      </p>
+                      <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                        Daftarkan data asuransi BPJS pasien terlebih dahulu di menu Pasien → Detail → Asuransi, atau gunakan metode pembayaran lain.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {enrollmentChecked && hasInsuranceEnrollment && (
+                  <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300">
+                    ✓ Pasien terdaftar BPJS — {insuranceEnrollments[0]?.insuranceName}
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Nomor BPJS <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={bpjsNumber}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 13);
+                      setBpjsNumber(val);
+                      if (errors.bpjsNumber) {
+                        setErrors((prev) => ({ ...prev, bpjsNumber: undefined }));
+                      }
+                    }}
+                    placeholder="Masukkan 13 digit nomor BPJS"
+                    maxLength={13}
+                    className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none transition-all ${
+                      errors.bpjsNumber
+                        ? "border-red-300 bg-red-50 focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:border-red-700 dark:bg-red-900/10"
+                        : "border-slate-200 bg-white focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900"
+                    } text-slate-900 placeholder:text-slate-400 dark:text-slate-100`}
+                  />
+                  <div className="flex items-center justify-between">
+                    {errors.bpjsNumber ? (
+                      <p className="text-xs text-red-500">{errors.bpjsNumber}</p>
+                    ) : (
+                      <p className="text-xs text-slate-400">Contoh: 0001234567890</p>
+                    )}
+                    <span className="text-xs text-slate-400">{bpjsNumber.length}/13</span>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Insurance Selection (conditional) */}
             {paymentMethod === "INSURANCE" && (
-              <SearchableDropdown
-                label="Penyedia Asuransi"
-                placeholder="Pilih penyedia asuransi"
-                value={selectedInsurance}
-                onChange={(v) => {
-                  setSelectedInsurance(v);
-                  if (errors.insurance) {
-                    setErrors((prev) => ({ ...prev, insurance: undefined }));
-                  }
-                }}
-                fetchOptions={fetchInsurances}
-                required
-                error={errors.insurance}
-              />
+              <div className="space-y-3">
+                {/* Enrollment check warning */}
+                {enrollmentLoading && (
+                  <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Memeriksa data asuransi pasien...
+                  </div>
+                )}
+                {enrollmentChecked && !hasInsuranceEnrollment && (
+                  <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-900/20">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                        Pasien belum memiliki data asuransi terdaftar
+                      </p>
+                      <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                        Daftarkan data asuransi pasien terlebih dahulu di menu Pasien → Detail → Asuransi, atau gunakan metode pembayaran lain.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {enrollmentChecked && hasInsuranceEnrollment && (
+                  <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300">
+                    ✓ Pasien memiliki {insuranceEnrollments.length} asuransi aktif
+                  </div>
+                )}
+                <SearchableDropdown
+                  label="Penyedia Asuransi"
+                  placeholder="Pilih penyedia asuransi"
+                  value={selectedInsurance}
+                  onChange={(v) => {
+                    setSelectedInsurance(v);
+                    if (errors.insurance) {
+                      setErrors((prev) => ({ ...prev, insurance: undefined }));
+                    }
+                  }}
+                  fetchOptions={fetchInsurances}
+                  required
+                  error={errors.insurance}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -414,8 +546,8 @@ export function VisitCreationStep({
 
           <button
             type="submit"
-            disabled={submitting}
-            className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] hover:shadow-md hover:shadow-[#6B8E6B]/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-[#6B8E6B] disabled:hover:shadow-sm disabled:active:scale-100"
+            disabled={submitting || ((paymentMethod === "BPJS" || paymentMethod === "INSURANCE") && enrollmentChecked && !hasInsuranceEnrollment)}
+            className="flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md hover:shadow-brand/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-brand disabled:hover:shadow-sm disabled:active:scale-100"
           >
             {submitting ? (
               <>

@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 
 export type OrderStatus =
   | "PENDING_PAYMENT"
+  | "PAYMENT_OVERDUE"
   | "PAID"
   | "SAMPLE_COLLECTED"
   | "IN_ANALYSIS"
@@ -20,6 +21,10 @@ const STATUS_MAP: Record<OrderStatus, StatusConfig> = {
     label: "Menunggu Bayar",
     className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
   },
+  PAYMENT_OVERDUE: {
+    label: "Jatuh Tempo",
+    className: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+  },
   PAID: {
     label: "Terbayar",
     className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
@@ -31,7 +36,7 @@ const STATUS_MAP: Record<OrderStatus, StatusConfig> = {
   IN_ANALYSIS: {
     label: "Proses Analisa",
     className:
-      "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/20 dark:text-[#8FBF8F]",
+      "bg-brand/10 text-brand dark:bg-brand/20 dark:text-[#8FBF8F]",
   },
   VERIFIED: {
     label: "Terverifikasi",
@@ -40,7 +45,7 @@ const STATUS_MAP: Record<OrderStatus, StatusConfig> = {
   },
   APPROVED: {
     label: "Disetujui",
-    className: "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]",
+    className: "bg-brand/10 text-brand dark:bg-brand-light dark:text-brand",
   },
   NOTIFIED: {
     label: "Terkirim",

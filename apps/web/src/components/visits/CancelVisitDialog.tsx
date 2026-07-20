@@ -137,7 +137,7 @@ export function CancelVisitDialog({
               placeholder="Masukkan alasan pembatalan (minimal 10 karakter)..."
               rows={3}
               disabled={submitting}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {reason.trim().length}/{MIN_REASON_LENGTH} karakter minimum

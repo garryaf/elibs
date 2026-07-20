@@ -472,7 +472,7 @@ export default function MasterDataEntityPage() {
         </div>
         <Button
           onClick={handleOpenCreate}
-          className="gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-white shadow-sm shadow-[#6B8E6B]/20 hover:bg-[#5A7D5A]"
+          className="gap-2 rounded-xl bg-brand px-4 py-2.5 text-white shadow-sm shadow-brand/20 hover:bg-brand-dark"
         >
           <Plus className="h-4 w-4" />
           Tambah

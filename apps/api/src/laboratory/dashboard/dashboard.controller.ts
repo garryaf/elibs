@@ -15,16 +15,19 @@ export class DashboardController {
 
   @Get('executive-summary')
   @CacheTTL(15000) // 15 seconds - dashboard refreshes frequently
-  @Roles(Role.OWNER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN, Role.KASIR, Role.CS)
+  @Roles(Role.OWNER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN, Role.KASIR, Role.CS, Role.MARKETING)
   async getExecutiveSummary() {
     return this.dashboardService.getExecutiveSummary();
   }
 
   @Get('recent-orders')
-  @Roles(Role.OWNER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN, Role.KASIR, Role.CS)
+  @Roles(Role.OWNER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN, Role.KASIR, Role.CS, Role.MARKETING)
   async getRecentOrders() {
     return this.dashboardService.getRecentOrders();
   }
+
+  // Intentional: KASIR sees executive-summary and recent-orders but NOT lab analytics.
+  // Lab analytics are for management roles only (OWNER, MANAGER, ADMIN, SUPER_ADMIN).
 
   @Get('lab-summary')
   @Roles(Role.OWNER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN)

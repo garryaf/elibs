@@ -15,9 +15,9 @@ export class BatchInvoiceService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createBatchInvoice(dto: CreateBatchInvoiceDto) {
-    // Validate insurance exists and is CORPORATE type
-    const insurance = await this.prisma.insurance.findUnique({
-      where: { id: dto.insuranceId },
+    // Validate insurance exists, is not soft-deleted, and is CORPORATE type
+    const insurance = await this.prisma.insurance.findFirst({
+      where: { id: dto.insuranceId, deletedAt: null },
     });
 
     if (!insurance) {

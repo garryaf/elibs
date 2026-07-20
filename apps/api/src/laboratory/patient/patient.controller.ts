@@ -40,7 +40,7 @@ export class PatientController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER, Role.MARKETING)
   @ApiOperation({ summary: 'List patients with pagination and search' })
   async findAll(
     @Query('page') page?: string,
@@ -60,7 +60,7 @@ export class PatientController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER, Role.MARKETING)
   @ApiOperation({ summary: 'Get patient by ID' })
   async findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.patientService.findById(id);
@@ -79,6 +79,7 @@ export class PatientController {
     Role.ANALIS,
     Role.DOKTER,
     Role.KLINIK_PARTNER,
+    Role.MARKETING,
   )
   @ApiOperation({ summary: 'Get patient lab history' })
   async getLabHistory(
@@ -114,6 +115,14 @@ export class PatientController {
   }
 
   // ─── Patient Insurance Endpoints ───────────────────────────────────────────
+
+  @Get(':id/insurances/active')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER, Role.MARKETING)
+  @ApiOperation({ summary: 'Get patient active insurance options for visit registration' })
+  async getActiveInsuranceOptions(@Param('id', ParseUUIDPipe) id: string) {
+    return this.patientService.getActiveInsuranceOptions(id);
+  }
 
   @Get(':id/insurances')
   @UseGuards(JwtAuthGuard, RolesGuard)

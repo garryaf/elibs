@@ -7,6 +7,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BarcodeService } from '../../common/barcode';
 import { AuditService } from '../audit/audit.service';
+import { OrderStateMachineService } from '../lab-workflow/order-state-machine.service';
 import { ProcessPaymentDto } from './dto/process-payment.dto';
 import { SplitPaymentDto } from './dto/split-payment.dto';
 import { OrderStatus } from '@prisma/client';
@@ -17,6 +18,7 @@ export class PaymentService {
     private readonly prisma: PrismaService,
     private readonly barcodeService: BarcodeService,
     private readonly auditService: AuditService,
+    private readonly orderStateMachine: OrderStateMachineService,
   ) {}
 
   async processPayment(orderId: string, dto: ProcessPaymentDto, userId: string) {
@@ -28,10 +30,16 @@ export class PaymentService {
       throw new NotFoundException('Order not found');
     }
 
-    if (order.status !== OrderStatus.PENDING_PAYMENT) {
+    if (order.status !== OrderStatus.PENDING_PAYMENT && order.status !== OrderStatus.PAYMENT_OVERDUE) {
       throw new BadRequestException({
         errorCode: 'ERR_INVALID_STATE',
-        message: `Order is in ${order.status} status, expected PENDING_PAYMENT`,
+        message: `Cannot transition from ${order.status} to PAID`,
+        errors: [
+          {
+            field: 'status',
+            constraint: `Valid transitions from ${order.status}: ${this.orderStateMachine.getValidTransitions(order.status).join(', ')}`,
+          },
+        ],
       });
     }
 
@@ -51,18 +59,19 @@ export class PaymentService {
     // Generate barcode
     const barcode = await this.barcodeService.generate(orderId, order.orderNumber);
 
-    // Update order with payment info and barcode
+    // Transition via state machine (handles status + paidAt timestamp)
+    await this.orderStateMachine.transition(orderId, OrderStatus.PAID, { userId });
+
+    // Update payment-specific fields separately
     const updatedOrder = await this.prisma.order.update({
       where: { id: orderId },
       data: {
-        status: OrderStatus.PAID,
         paymentMethod: dto.paymentMethod,
         amountPaid: dto.discountAmount !== undefined && dto.discountAmount !== null
           ? finalPayable
           : dto.amountPaid,
         discountAmount: dto.discountAmount ? new Decimal(dto.discountAmount) : null,
         discountReason: dto.discountReason || null,
-        paidAt: new Date(),
         barcode: barcode.barcodeData,
         barcodeImage: barcode.barcodeImage,
       },
@@ -97,10 +106,16 @@ export class PaymentService {
       throw new NotFoundException('Order not found');
     }
 
-    if (order.status !== OrderStatus.PENDING_PAYMENT) {
+    if (order.status !== OrderStatus.PENDING_PAYMENT && order.status !== OrderStatus.PAYMENT_OVERDUE) {
       throw new BadRequestException({
         errorCode: 'ERR_INVALID_STATE',
-        message: `Order is in ${order.status} status, expected PENDING_PAYMENT`,
+        message: `Cannot transition from ${order.status} to PAID`,
+        errors: [
+          {
+            field: 'status',
+            constraint: `Valid transitions from ${order.status}: ${this.orderStateMachine.getValidTransitions(order.status).join(', ')}`,
+          },
+        ],
       });
     }
 
@@ -120,7 +135,10 @@ export class PaymentService {
     // Generate barcode
     const barcode = await this.barcodeService.generate(orderId, order.orderNumber);
 
-    // Create payment components and update order in a transaction
+    // Transition via state machine (handles status + paidAt timestamp)
+    await this.orderStateMachine.transition(orderId, OrderStatus.PAID, { userId });
+
+    // Create payment components and update payment-specific fields in a transaction
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
       // Create PaymentComponent records
       await tx.paymentComponent.createMany({
@@ -134,13 +152,11 @@ export class PaymentService {
         })),
       });
 
-      // Update order status to PAID
+      // Update payment-specific fields (status already transitioned by state machine)
       return tx.order.update({
         where: { id: orderId },
         data: {
-          status: OrderStatus.PAID,
           amountPaid: order.totalAmount,
-          paidAt: new Date(),
           barcode: barcode.barcodeData,
           barcodeImage: barcode.barcodeImage,
         },

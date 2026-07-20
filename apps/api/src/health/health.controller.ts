@@ -1,8 +1,9 @@
-import { Controller, Get, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Res, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { MetricsService } from './metrics.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @ApiTags('Health')
 @Controller('api/v1/health')
@@ -33,7 +34,9 @@ export class HealthController {
   }
 
   @Get('metrics')
-  @ApiOperation({ summary: 'Get Prometheus metrics' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get Prometheus metrics (requires authentication)' })
   async getMetrics(@Res() res: Response) {
     const metrics = await this.metricsService.getMetrics();
     res.set('Content-Type', this.metricsService.getContentType());

@@ -208,7 +208,7 @@ export function MasterDataFormModal({
                     onChange={(e) => handleChange(field.name, e.target.value)}
                     aria-invalid={!!errors[field.name]}
                     aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
-                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-[#6B8E6B]"
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand"
                   />
                 ) : field.type === "select" ? (
                   <select
@@ -218,7 +218,7 @@ export function MasterDataFormModal({
                     onChange={(e) => handleChange(field.name, e.target.value)}
                     aria-invalid={!!errors[field.name]}
                     aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
-                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-all focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-[#6B8E6B]"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand"
                   >
                     <option value="">— Pilih —</option>
                     {field.options?.map((opt) => (
@@ -237,7 +237,7 @@ export function MasterDataFormModal({
                     onChange={(e) => handleChange(field.name, field.type === "number" ? e.target.valueAsNumber || "" : e.target.value)}
                     aria-invalid={!!errors[field.name]}
                     aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
-                    className="h-10 rounded-xl border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-[#6B8E6B]"
+                    className="h-10 rounded-xl border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand"
                   />
                 )}
 
@@ -263,7 +263,7 @@ export function MasterDataFormModal({
             <Button
               type="submit"
               disabled={isLoading}
-              className="rounded-xl bg-[#6B8E6B] px-5 py-2.5 text-white shadow-sm shadow-[#6B8E6B]/20 hover:bg-[#5A7D5A] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-xl bg-brand px-5 py-2.5 text-white shadow-sm shadow-brand/20 hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">

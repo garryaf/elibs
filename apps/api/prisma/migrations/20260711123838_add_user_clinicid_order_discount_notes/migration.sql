@@ -7,6 +7,8 @@ ADD COLUMN IF NOT EXISTS "notes" TEXT;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "clinicId" UUID;
 
 -- CreateIndex (only if not exists)
+-- NOTE: This is a historical no-op. The partial index from migration 22 supersedes this.
+-- Kept for migration sequence integrity. No functional impact.
 CREATE UNIQUE INDEX IF NOT EXISTS "users_email_key" ON "users"("email");
 
 -- AddForeignKey (only if not exists)

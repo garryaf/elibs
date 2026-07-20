@@ -13,6 +13,7 @@
 export * from "./patients";
 export * from "./orders";
 export * from "./lab";
+export * from "./visits";
 export * from "./dashboard";
 export * from "./users";
 export * from "./master-data";

@@ -18,6 +18,7 @@ import { HealthModule } from './health/health.module';
 import { SettingsModule } from './settings/settings.module';
 import { OrganizationModule } from './organization/organization.module';
 import { ApprovalModule } from './approval/approval.module';
+import { InsuranceModule } from './insurance/insurance.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { ApprovalModule } from './approval/approval.module';
     SettingsModule,
     OrganizationModule,
     ApprovalModule,
+    InsuranceModule,
   ],
 })
 export class AppModule implements NestModule {

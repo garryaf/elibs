@@ -52,7 +52,7 @@ export default function AppearanceSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-[#6B8E6B]" />
+        <Loader2 className="h-6 w-6 animate-spin text-brand" />
       </div>
     );
   }
@@ -73,7 +73,7 @@ export default function AppearanceSettingsPage() {
       </div>
 
       {message && (
-        <div className={`rounded-lg px-4 py-3 text-sm ${message.type === "success" ? "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]" : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300"}`}>
+        <div className={`rounded-lg px-4 py-3 text-sm ${message.type === "success" ? "bg-brand/10 text-brand dark:bg-brand-light dark:text-brand" : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300"}`}>
           {message.text}
         </div>
       )}
@@ -91,12 +91,12 @@ export default function AppearanceSettingsPage() {
                   onClick={() => setTheme(option.value)}
                   className={`flex flex-col items-center gap-2 rounded-xl border p-4 text-center transition-all ${
                     isSelected
-                      ? "border-[#6B8E6B] bg-[#6B8E6B]/5 ring-2 ring-[#6B8E6B]/20 dark:border-[#6B8E6B] dark:bg-[#6B8E6B]/10"
+                      ? "border-brand bg-brand/5 ring-2 ring-brand/20 dark:border-brand dark:bg-brand/10"
                       : "border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:border-slate-600 dark:hover:bg-slate-800"
                   }`}
                 >
-                  <Icon className={`h-6 w-6 ${isSelected ? "text-[#6B8E6B]" : "text-slate-500 dark:text-slate-400"}`} />
-                  <span className={`text-sm font-medium ${isSelected ? "text-[#6B8E6B]" : "text-slate-700 dark:text-slate-300"}`}>{option.label}</span>
+                  <Icon className={`h-6 w-6 ${isSelected ? "text-brand" : "text-slate-500 dark:text-slate-400"}`} />
+                  <span className={`text-sm font-medium ${isSelected ? "text-brand" : "text-slate-700 dark:text-slate-300"}`}>{option.label}</span>
                   <span className="text-xs text-slate-500 dark:text-slate-400">{option.description}</span>
                 </button>
               );
@@ -111,13 +111,13 @@ export default function AppearanceSettingsPage() {
           </div>
           <label className="relative inline-flex shrink-0 cursor-pointer items-center">
             <input type="checkbox" checked={compactMode} onChange={(e) => setCompactMode(e.target.checked)} className="peer sr-only" />
-            <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#6B8E6B] peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-slate-700" />
+            <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-brand peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-slate-700" />
           </label>
         </div>
       </div>
 
       <div className="flex items-center gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
-        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#5A7D5A] disabled:opacity-50">
+        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark disabled:opacity-50">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {saving ? "Menyimpan..." : "Simpan Pengaturan"}
         </button>

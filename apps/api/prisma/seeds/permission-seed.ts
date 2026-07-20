@@ -89,6 +89,11 @@ const PERMISSIONS: PermissionDef[] = [
   { code: 'notifications.create', name: 'Kirim Notifikasi', description: 'Mengirim notifikasi ke pasien', resource: 'notifications', action: 'create' },
   { code: 'notifications.update', name: 'Ubah Pengaturan Notifikasi', description: 'Mengubah pengaturan notifikasi', resource: 'notifications', action: 'update' },
 
+  // === PAYMENTS (endpoint-level permissions for PermissionGuard) ===
+  { code: 'payments:process', name: 'Proses Pembayaran (Endpoint)', description: 'Akses endpoint pemrosesan pembayaran order', resource: 'payments', action: 'process' },
+  { code: 'payments:read', name: 'Lihat Pembayaran (Endpoint)', description: 'Akses endpoint lihat komponen pembayaran, invoice, dan receipt', resource: 'payments', action: 'read' },
+  { code: 'payments:barcode', name: 'Lihat Barcode (Endpoint)', description: 'Akses endpoint lihat barcode order', resource: 'payments', action: 'barcode' },
+
   // === BATCH INVOICES ===
   { code: 'batch-invoices.create', name: 'Buat Invoice Batch', description: 'Membuat invoice batch untuk asuransi', resource: 'batch-invoices', action: 'create' },
   { code: 'batch-invoices.read', name: 'Lihat Invoice Batch', description: 'Melihat daftar invoice batch', resource: 'batch-invoices', action: 'read' },
@@ -140,6 +145,8 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
     // Order endpoint-level permissions (for PermissionGuard migration)
     'orders:create', 'orders:read', 'orders:cancel',
     'orders:manage-insurance', 'orders:manage-bpjs', 'orders:manage-claims',
+    // Payment endpoint-level permissions (for PermissionGuard migration)
+    'payments:process', 'payments:read', 'payments:barcode',
     'batch-invoices.read',
     'dashboard.read',
     'master-data.read',
@@ -153,6 +160,8 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
     'orders.read',
     // Order endpoint-level permissions (for PermissionGuard migration)
     'orders:read',
+    // Payment endpoint-level permissions (for PermissionGuard migration)
+    'payments:barcode',
     'lab.collect-sample', 'lab.read', 'lab.reject',
     'dashboard.read',
     'master-data.read',
@@ -164,6 +173,8 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
     'orders.read',
     // Order endpoint-level permissions (for PermissionGuard migration)
     'orders:read',
+    // Payment endpoint-level permissions (for PermissionGuard migration)
+    'payments:barcode',
     'lab.enter-result', 'lab.verify', 'lab.read',
     'dashboard.read',
     'master-data.read',
@@ -177,6 +188,8 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
     'orders.read',
     // Order endpoint-level permissions (for PermissionGuard migration)
     'orders:read',
+    // Payment endpoint-level permissions (for PermissionGuard migration)
+    'payments:barcode',
     'lab.approve', 'lab.read',
     'dashboard.read',
     'reports.read',
@@ -189,18 +202,22 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
     'orders.create', 'orders.read',
     // Order endpoint-level permissions (for PermissionGuard migration)
     'orders:create', 'orders:read',
+    // Payment endpoint-level permissions (for PermissionGuard migration)
+    'payments:read', 'payments:barcode',
     'notifications.read', 'notifications.create',
     'dashboard.read',
     'master-data.read',
     'regions.read',
   ],
 
-  // OWNER: read-only dashboard + reports
+  // OWNER: dashboard + reports + visit/order creation (per USER-MANUAL)
   OWNER: [
     'patients.read',
     'orders.read',
     // Order endpoint-level permissions (for PermissionGuard migration)
-    'orders:read',
+    'orders:create', 'orders:read',
+    // Payment endpoint-level permissions (for PermissionGuard migration)
+    'payments:read', 'payments:barcode',
     'dashboard.read', 'dashboard.export',
     'reports.read', 'reports.export',
     'audit.read',
@@ -208,12 +225,14 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
     'batch-invoices.read',
   ],
 
-  // MANAGER: broad read + some management
+  // MANAGER: broad read + some management + order creation (per USER-MANUAL)
   MANAGER: [
     'patients.read', 'patients.export',
     'orders.read', 'orders.export',
     // Order endpoint-level permissions (for PermissionGuard migration)
-    'orders:read',
+    'orders:create', 'orders:read',
+    // Payment endpoint-level permissions (for PermissionGuard migration)
+    'payments:read', 'payments:barcode',
     'lab.read',
     'dashboard.read', 'dashboard.export',
     'reports.read', 'reports.create', 'reports.export',
@@ -240,6 +259,8 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
     'orders.create', 'orders.read',
     // Order endpoint-level permissions (for PermissionGuard migration)
     'orders:create', 'orders:read',
+    // Payment endpoint-level permissions (for PermissionGuard migration)
+    'payments:barcode',
     'lab.read',
     'dashboard.read',
     'master-data.read',

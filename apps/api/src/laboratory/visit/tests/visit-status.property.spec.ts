@@ -5,6 +5,7 @@ import { VisitService } from '../visit.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { VisitNumberGeneratorService } from '../visit-number-generator.service';
 import { AuditService } from '../../audit/audit.service';
+import { InsuranceConsolidationService } from '../../../insurance/insurance-consolidation.service';
 
 // Use string literals for enums to avoid Prisma client import issues in tests
 const VisitStatus = {
@@ -93,6 +94,12 @@ describe('Feature: visit-management, Property 5: Status Transition Enforcement',
       log: jest.fn().mockResolvedValue(undefined),
     };
 
+    const mockConsolidationService = {
+      validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+      getDefaultInsurance: jest.fn().mockResolvedValue(null),
+      getActiveInsurances: jest.fn().mockResolvedValue([]),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         VisitService,
@@ -102,6 +109,7 @@ describe('Feature: visit-management, Property 5: Status Transition Enforcement',
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: InsuranceConsolidationService, useValue: mockConsolidationService },
       ],
     }).compile();
 
@@ -272,6 +280,7 @@ describe('Feature: visit-management, Property 6: Order Addition Transitions to I
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 
@@ -358,6 +367,7 @@ describe('Feature: visit-management, Property 7: Cancellation Precondition', () 
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 

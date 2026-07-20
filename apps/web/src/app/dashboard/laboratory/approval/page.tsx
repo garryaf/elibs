@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { RoleGuard } from "@/components/guards/RoleGuard";
 
 /* ─── Types ─── */
 interface TestInfo {
@@ -74,11 +76,13 @@ function ConfirmDialog({
   onCancel: () => void;
   children?: React.ReactNode;
 }) {
+  const focusTrapRef = useFocusTrap(open, onCancel);
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-xl">
+      <div ref={focusTrapRef} role="dialog" aria-modal="true" className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-xl">
         <h3 className="text-lg font-bold text-foreground">{title}</h3>
         <p className="mt-2 text-sm text-muted-foreground">{description}</p>
         {children}
@@ -271,7 +275,7 @@ function ApprovalCard({
           </button>
           <button
             onClick={() => setShowApproveDialog(true)}
-            className="flex items-center gap-2 rounded-lg bg-[oklch(0.55_0.08_145)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[oklch(0.50_0.08_145)]"
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-dark"
           >
             <CheckCircle2 className="h-4 w-4" />
             Setujui
@@ -285,7 +289,7 @@ function ApprovalCard({
         title="Konfirmasi Approval"
         description="Apakah Anda yakin ingin menyetujui hasil pemeriksaan ini? Hasil akan dikirim ke pasien."
         confirmLabel="Ya, Setujui"
-        confirmClassName="bg-[oklch(0.55_0.08_145)] hover:bg-[oklch(0.50_0.08_145)]"
+        confirmClassName="bg-primary hover:bg-brand-dark"
         loading={actionLoading}
         onConfirm={handleApproveConfirm}
         onCancel={() => setShowApproveDialog(false)}
@@ -381,12 +385,13 @@ export default function LabApprovalPage() {
   };
 
   return (
+    <RoleGuard allowedRoles={["SUPER_ADMIN", "ADMIN", "DOKTER", "OWNER", "MANAGER"]}>
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[oklch(0.55_0.08_145)]/10">
-            <ClipboardCheck className="h-5 w-5 text-[oklch(0.55_0.08_145)]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <ClipboardCheck className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-foreground">Doctor Approval</h2>
@@ -438,5 +443,6 @@ export default function LabApprovalPage() {
         )}
       </div>
     </div>
+    </RoleGuard>
   );
 }

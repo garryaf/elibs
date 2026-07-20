@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { NotificationService } from './notification.service';
+import { NotificationController } from './notification.controller';
 import { PdfGeneratorService } from './pdf-generator.service';
 import { EmailService } from './email.service';
 import { WhatsAppService } from './whatsapp.service';
@@ -14,8 +15,9 @@ import { LabWorkflowModule } from '../lab-workflow/lab-workflow.module';
       { name: 'lab-email-delivery' },
       { name: 'lab-whatsapp-delivery' },
     ),
-    LabWorkflowModule,
+    forwardRef(() => LabWorkflowModule),
   ],
+  controllers: [NotificationController],
   providers: [
     NotificationService,
     PdfGeneratorService,

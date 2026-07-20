@@ -2,18 +2,37 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ExternalLink } from "lucide-react";
 import type { Order } from "@/types/order";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 import { cn } from "@/lib/utils";
+import { formatRupiah } from "@/lib/format";
+
+// ─── Sort Types ───────────────────────────────────────────────────────────────
+
+export type SortField = "orderNumber" | "patientName" | "status" | "totalAmount" | "createdAt";
+export type SortDir = "asc" | "desc";
 
 interface OrderTableProps {
   orders: Order[];
+  sortField?: SortField;
+  sortDir?: SortDir;
+  onSort?: (field: SortField) => void;
 }
 
-import { formatRupiah } from "@/lib/format";
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 8;
+
+const SORTABLE_COLUMNS: { key: SortField; label: string; hiddenClass?: string }[] = [
+  { key: "orderNumber", label: "NO. ORDER" },
+  { key: "patientName", label: "PASIEN" },
+  { key: "totalAmount", label: "TOTAL" },
+  { key: "status", label: "STATUS" },
+  { key: "createdAt", label: "TGL. BUAT", hiddenClass: "hidden md:table-cell" },
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("id-ID", {
@@ -25,7 +44,18 @@ function formatDateTime(iso: string): string {
   });
 }
 
-export function OrderTable({ orders }: OrderTableProps) {
+function SortIcon({ field, activeField, dir }: { field: SortField; activeField?: SortField; dir?: SortDir }) {
+  if (field !== activeField) {
+    return <ChevronDown className="h-3 w-3 opacity-30" />;
+  }
+  return dir === "asc"
+    ? <ChevronUp className="h-3 w-3 text-brand" />
+    : <ChevronDown className="h-3 w-3 text-brand" />;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function OrderTable({ orders, sortField, sortDir, onSort }: OrderTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
   const paginated = orders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -35,19 +65,66 @@ export function OrderTable({ orders }: OrderTableProps) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-[#6B8E6B]/5">
-              {["NO. ORDER", "PASIEN", "PEMERIKSAAN", "TOTAL", "STATUS", "TGL. BUAT", "AKSI"].map((h) => (
+            <tr className="border-b border-border bg-brand/5">
+              {/* Sortable columns */}
+              {SORTABLE_COLUMNS.slice(0, 2).map((col) => (
                 <th
-                  key={h}
+                  key={col.key}
+                  onClick={() => onSort?.(col.key)}
                   className={cn(
-                    "px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-[#6B8E6B]",
-                    (h === "PEMERIKSAAN") && "hidden lg:table-cell",
-                    (h === "TGL. BUAT") && "hidden md:table-cell",
+                    "px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-brand",
+                    onSort && "cursor-pointer select-none hover:text-brand-dark",
+                    col.hiddenClass,
                   )}
                 >
-                  {h}
+                  <span className="inline-flex items-center gap-1">
+                    {col.label}
+                    {onSort && <SortIcon field={col.key} activeField={sortField} dir={sortDir} />}
+                  </span>
                 </th>
               ))}
+
+              {/* Non-sortable: PEMERIKSAAN */}
+              <th className="hidden px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-brand lg:table-cell">
+                PEMERIKSAAN
+              </th>
+
+              {/* Sortable: TOTAL, STATUS */}
+              {SORTABLE_COLUMNS.slice(2, 4).map((col) => (
+                <th
+                  key={col.key}
+                  onClick={() => onSort?.(col.key)}
+                  className={cn(
+                    "px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-brand",
+                    onSort && "cursor-pointer select-none hover:text-brand-dark",
+                    col.hiddenClass,
+                  )}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    {col.label}
+                    {onSort && <SortIcon field={col.key} activeField={sortField} dir={sortDir} />}
+                  </span>
+                </th>
+              ))}
+
+              {/* Sortable: TGL. BUAT */}
+              <th
+                onClick={() => onSort?.("createdAt")}
+                className={cn(
+                  "hidden px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-brand md:table-cell",
+                  onSort && "cursor-pointer select-none hover:text-brand-dark",
+                )}
+              >
+                <span className="inline-flex items-center gap-1">
+                  TGL. BUAT
+                  {onSort && <SortIcon field="createdAt" activeField={sortField} dir={sortDir} />}
+                </span>
+              </th>
+
+              {/* Non-sortable: AKSI */}
+              <th className="px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-brand">
+                AKSI
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -68,7 +145,7 @@ export function OrderTable({ orders }: OrderTableProps) {
                 >
                   {/* Order Number */}
                   <td className="px-5 py-4">
-                    <span className="font-mono text-xs font-semibold text-[#6B8E6B]">
+                    <span className="font-mono text-xs font-semibold text-brand">
                       {order.orderNumber}
                     </span>
                   </td>
@@ -104,7 +181,7 @@ export function OrderTable({ orders }: OrderTableProps) {
                       {formatRupiah(order.totalAmount)}
                     </div>
                     {order.invoice?.discountAmount ? (
-                      <div className="text-xs text-[#6B8E6B]">
+                      <div className="text-xs text-brand">
                         -{formatRupiah(order.invoice.discountAmount)}
                       </div>
                     ) : null}
@@ -124,7 +201,7 @@ export function OrderTable({ orders }: OrderTableProps) {
                   <td className="px-5 py-4">
                     <Link
                       href={order.status === "APPROVED" || order.status === "NOTIFIED" ? `/dashboard/orders/${order.id}/report` : `/dashboard/orders/${order.id}`}
-                      className="flex w-max items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-[#6B8E6B]/50 hover:bg-[#6B8E6B]/10 hover:text-[#6B8E6B]"
+                      className="flex w-max items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-brand/50 hover:bg-brand/10 hover:text-brand"
                     >
                       <ExternalLink className="h-3 w-3" />
                       {order.status === "APPROVED" || order.status === "NOTIFIED" ? "Hasil" : "Detail"}
@@ -164,8 +241,8 @@ export function OrderTable({ orders }: OrderTableProps) {
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-all",
                   currentPage === i + 1
-                    ? "bg-[#6B8E6B] text-white shadow-sm"
-                    : "border border-border bg-card text-muted-foreground hover:bg-[#6B8E6B]/10"
+                    ? "bg-brand text-white shadow-sm"
+                    : "border border-border bg-card text-muted-foreground hover:bg-brand/10"
                 )}
               >
                 {i + 1}

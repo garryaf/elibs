@@ -53,9 +53,9 @@ const STATUS_COLORS: Record<string, string> = {
   PENDING_PAYMENT: "bg-amber-500",
   PAID: "bg-blue-500",
   SAMPLE_COLLECTED: "bg-indigo-500",
-  IN_ANALYSIS: "bg-[oklch(0.55_0.08_145)]",
+  IN_ANALYSIS: "bg-primary",
   VERIFIED: "bg-[oklch(0.55_0.06_90)]",
-  APPROVED: "bg-[#6B8E6B]/100",
+  APPROVED: "bg-brand",
   NOTIFIED: "bg-green-500",
   CANCELLED: "bg-red-400",
 };
@@ -90,7 +90,7 @@ function MetricCard({
     <div
       className={cn(
         "flex flex-col gap-2 rounded-2xl border border-border bg-card p-6 transition-shadow hover:shadow-md",
-        accent && "border-[oklch(0.55_0.08_145)]/30"
+        accent && "border-primary/30"
       )}
     >
       <div className="flex items-center gap-2 text-muted-foreground">
@@ -102,7 +102,7 @@ function MetricCard({
       <span
         className={cn(
           "text-3xl font-bold tracking-tight",
-          accent ? "text-[oklch(0.55_0.08_145)]" : "text-foreground"
+          accent ? "text-primary" : "text-foreground"
         )}
       >
         {value}
@@ -138,7 +138,7 @@ function VolumeChart({ data }: { data: VolumePoint[] }) {
               </span>
             </div>
             <div
-              className="w-full rounded-t bg-[oklch(0.55_0.08_145)] opacity-80 hover:opacity-100 transition-opacity min-h-[2px]"
+              className="w-full rounded-t bg-primary opacity-80 hover:opacity-100 transition-opacity min-h-[2px]"
               style={{ height: `${heightPct}%` }}
             />
           </div>

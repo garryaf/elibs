@@ -84,7 +84,7 @@ const menuGroups: MenuGroup[] = [
         name: "Laboratorium",
         href: "/dashboard/laboratory",
         icon: TestTube,
-        roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "SAMPLING", "ANALIS"],
+        roles: ["SUPER_ADMIN", "ADMIN", "SAMPLING", "ANALIS"],
       },
       {
         name: "Validasi Dokter",
@@ -116,6 +116,8 @@ const menuGroups: MenuGroup[] = [
         icon: BarChart3,
         roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "KASIR"],
       },
+      // NOTE: Notifikasi is not in USER-MANUAL Section 2.1 matrix.
+      // Treated as sub-feature of administration (SUPER_ADMIN, OWNER, ADMIN only).
       {
         name: "Notifikasi",
         href: "/dashboard/administration/notifications",
@@ -140,7 +142,12 @@ const menuGroups: MenuGroup[] = [
 
 // ─── Sidebar Component ───────────────────────────────────────────────────────
 
-export function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
   const userRole = (user?.role || "KASIR") as RoleKey;
@@ -173,8 +180,8 @@ export function Sidebar() {
     );
   };
 
-  return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-200 bg-slate-50 pt-16 transition-all duration-300 dark:border-slate-800 dark:bg-slate-950">
+  const sidebarContent = (
+    <>
       <nav aria-label="Menu Utama" className="flex h-full flex-col overflow-y-auto px-4 py-6">
         {menuGroups.map((group) => {
           const visibleItems = group.items.filter(isItemVisible);
@@ -209,16 +216,17 @@ export function Sidebar() {
                       <li key={item.name}>
                         <Link
                           href={item.href}
+                          onClick={onMobileClose}
                           className={cn(
-                            "group flex items-center rounded-xl px-3 py-2.5 text-slate-600 hover:bg-white hover:text-[#6B8E6B] hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-[#6B8E6B] transition-all duration-200 ease-in-out",
+                            "group flex items-center rounded-xl px-3 py-2.5 text-slate-600 hover:bg-white hover:text-brand hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-brand transition-all duration-200 ease-in-out",
                             isActive &&
-                              "bg-white text-[#6B8E6B] shadow-sm ring-1 ring-[#6B8E6B]/20 dark:bg-slate-900 dark:text-[#6B8E6B] dark:ring-[#6B8E6B]/30"
+                              "bg-white text-brand shadow-sm ring-1 ring-brand/20 dark:bg-slate-900 dark:text-brand dark:ring-brand/30"
                           )}
                         >
                           <Icon
                             className={cn(
-                              "h-5 w-5 text-slate-400 transition-colors duration-200 group-hover:text-[#6B8E6B] dark:text-slate-500 dark:group-hover:text-[#6B8E6B]",
-                              isActive && "text-[#6B8E6B]"
+                              "h-5 w-5 text-slate-400 transition-colors duration-200 group-hover:text-brand dark:text-slate-500 dark:group-hover:text-brand",
+                              isActive && "text-brand"
                             )}
                           />
                           <span className="ml-3 text-sm">{item.name}</span>
@@ -235,6 +243,31 @@ export function Sidebar() {
       <div className="p-4 border-t border-slate-200 dark:border-slate-800 text-center">
         <p className="text-[10px] font-medium tracking-wider text-slate-400">eLIS ENTERPRISE v1.0</p>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar - always visible on lg+ */}
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-slate-200 bg-slate-50 pt-16 transition-all duration-300 dark:border-slate-800 dark:bg-slate-950 lg:flex">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile sidebar overlay - visible when mobileOpen is true on <lg */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={onMobileClose}
+            aria-hidden="true"
+          />
+          {/* Drawer */}
+          <aside className="fixed inset-y-0 left-0 z-50 w-64 flex-col border-r border-slate-200 bg-white shadow-xl overflow-y-auto dark:border-slate-800 dark:bg-slate-950">
+            {sidebarContent}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
+import { DiscardChangesDialog } from "@/components/ui/DiscardChangesDialog";
 import { X, Plus, Search, User } from "lucide-react";
 import { apiClient } from "@/lib/api";
 
@@ -27,17 +30,21 @@ interface InlineVisitCreateProps {
   isOpen: boolean;
   onClose: () => void;
   onCreated: (visit: CreatedVisit) => void;
+  preselectedPatientId?: string;
 }
 
 type PaymentMethod = "CASH" | "BPJS" | "INSURANCE";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function InlineVisitCreate({ isOpen, onClose, onCreated }: InlineVisitCreateProps) {
+export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatientId }: InlineVisitCreateProps) {
+  const { setDirty, guardedClose, showConfirmDiscard, confirmDiscard, cancelDiscard, reset } = useUnsavedChangesGuard(onClose);
+  const focusTrapRef = useFocusTrap(isOpen, guardedClose);
   const [selectedPatient, setSelectedPatient] = useState<PatientOption | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadingPreselected, setLoadingPreselected] = useState(false);
 
   // Patient search state
   const [patientQuery, setPatientQuery] = useState("");
@@ -56,8 +63,32 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated }: InlineVisitCre
       setPatientQuery("");
       setPatientResults([]);
       setShowPatientDropdown(false);
+      setLoadingPreselected(false);
+      reset();
+
+      // Load preselected patient if provided
+      if (preselectedPatientId) {
+        setLoadingPreselected(true);
+        apiClient.getPatient(preselectedPatientId)
+          .then((res) => {
+            const data = (res?.data ?? res) as Record<string, unknown> | undefined;
+            if (data && data.id) {
+              setSelectedPatient({
+                id: data.id as string,
+                name: data.name as string,
+                mrn: data.mrn as string,
+              });
+            }
+          })
+          .catch(() => {
+            setError("Gagal memuat data pasien");
+          })
+          .finally(() => {
+            setLoadingPreselected(false);
+          });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, preselectedPatientId, reset]);
 
   // Close patient dropdown on outside click
   useEffect(() => {
@@ -128,6 +159,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated }: InlineVisitCre
     setShowPatientDropdown(false);
     setPatientResults([]);
     setError(null);
+    setDirty();
   };
 
   const handlePatientClear = () => {
@@ -174,6 +206,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated }: InlineVisitCre
         },
       };
 
+      reset();
       onCreated(createdVisit);
     } catch (err: unknown) {
       const apiErr = err as { message?: string; errors?: Array<{ message: string }> };
@@ -196,16 +229,16 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated }: InlineVisitCre
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={guardedClose}
       />
 
       {/* Dialog */}
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div ref={focusTrapRef} role="dialog" aria-modal="true" className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
         {/* Header */}
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6B8E6B]/10">
-              <Plus className="h-4 w-4 text-[#6B8E6B]" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
+              <Plus className="h-4 w-4 text-brand" />
             </div>
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
               Buat Kunjungan Baru
@@ -213,7 +246,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated }: InlineVisitCre
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={guardedClose}
             className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
           >
             <X className="h-4 w-4" />
@@ -228,15 +261,22 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated }: InlineVisitCre
               Pasien <span className="text-red-500">*</span>
             </label>
 
-            {selectedPatient ? (
-              <div className="flex items-center justify-between rounded-xl border border-[#6B8E6B]/30 bg-[#6B8E6B]/5 px-3.5 py-2.5">
+            {loadingPreselected ? (
+              <div className="flex items-center justify-center rounded-xl border border-slate-200 px-3.5 py-3 dark:border-slate-700">
+                <div className="inline-flex items-center gap-2 text-sm text-slate-500">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-brand" />
+                  Memuat data pasien...
+                </div>
+              </div>
+            ) : selectedPatient ? (
+              <div className="flex items-center justify-between rounded-xl border border-brand/30 bg-brand/5 px-3.5 py-2.5">
                 <div className="flex items-center gap-2.5">
-                  <User className="h-4 w-4 text-[#6B8E6B]" />
+                  <User className="h-4 w-4 text-brand" />
                   <div>
                     <p className="text-sm font-medium text-slate-900 dark:text-white">
                       {selectedPatient.name}
                     </p>
-                    <p className="text-xs font-mono text-[#6B8E6B]">
+                    <p className="text-xs font-mono text-brand">
                       {selectedPatient.mrn}
                     </p>
                   </div>
@@ -259,11 +299,11 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated }: InlineVisitCre
                     placeholder="Cari pasien (nama, MRN)..."
                     value={patientQuery}
                     onChange={(e) => setPatientQuery(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                   />
                   {patientLoading && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-[#6B8E6B]" />
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-brand" />
                     </div>
                   )}
                 </div>
@@ -283,7 +323,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated }: InlineVisitCre
                             <p className="truncate text-sm font-medium text-slate-900 dark:text-white">
                               {patient.name}
                             </p>
-                            <p className="text-xs font-mono text-[#6B8E6B]">
+                            <p className="text-xs font-mono text-brand">
                               {patient.mrn}
                             </p>
                           </div>
@@ -309,8 +349,8 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated }: InlineVisitCre
             </label>
             <select
               value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-all focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              onChange={(e) => { setPaymentMethod(e.target.value as PaymentMethod); setDirty(); }}
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             >
               <option value="CASH">Tunai (Cash)</option>
               <option value="BPJS">BPJS</option>
@@ -329,7 +369,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated }: InlineVisitCre
           <div className="flex items-center justify-end gap-2 pt-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={guardedClose}
               disabled={submitting}
               className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             >
@@ -338,7 +378,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated }: InlineVisitCre
             <button
               type="submit"
               disabled={submitting || !selectedPatient}
-              className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#5A7A5A] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#5A7A5A] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? (
                 <>
@@ -355,6 +395,13 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated }: InlineVisitCre
           </div>
         </form>
       </div>
+
+      {/* Unsaved changes confirmation */}
+      <DiscardChangesDialog
+        open={showConfirmDiscard}
+        onConfirm={confirmDiscard}
+        onCancel={cancelDiscard}
+      />
     </div>
   );
 }

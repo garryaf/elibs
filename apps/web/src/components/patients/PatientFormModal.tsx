@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, User, Phone, MapPin, Mail, Hash, Calendar, Shield, Heart, Building } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
+import { DiscardChangesDialog } from "@/components/ui/DiscardChangesDialog";
 import type { Patient, PatientFormData, Gender } from "@/types/patient";
 import { CascadingRegionSelector, type RegionValue } from "@/components/regions/CascadingRegionSelector";
 
@@ -58,7 +61,7 @@ function FormField({ label, id, icon: Icon, error, required, children }: FormInp
   );
 }
 
-const inputClass = "mt-0 h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-[#6B8E6B]";
+const inputClass = "mt-0 h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand";
 
 /**
  * Validates region selection: if any region level is selected, all four must be selected.
@@ -76,6 +79,8 @@ function validateRegion(region: RegionValue): string | undefined {
 }
 
 export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: PatientFormModalProps) {
+  const { setDirty, guardedClose, showConfirmDiscard, confirmDiscard, cancelDiscard, reset } = useUnsavedChangesGuard(onClose);
+  const focusTrapRef = useFocusTrap(isOpen, guardedClose);
   const [form, setForm] = useState<PatientFormData>(() =>
     editData
       ? {
@@ -104,6 +109,13 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
   const [errors, setErrors] = useState<Partial<Record<keyof PatientFormData | "region", string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Reset dirty state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      reset();
+    }
+  }, [isOpen, reset]);
+
   // Guard: only allow edit mode — don't render in create mode
   if (!editData) {
     return null;
@@ -125,6 +137,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
       kecamatanId: value.kecamatanId,
       kelurahanDesaId: value.kelurahanDesaId,
     }));
+    setDirty();
     // Clear region error when user makes a change
     if (errors.region) {
       setErrors((prev) => {
@@ -161,6 +174,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
     setIsSubmitting(true);
     onSubmit(form);
     setIsSubmitting(false);
+    reset();
     onClose();
   };
 
@@ -173,9 +187,9 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
       aria-modal="true"
       aria-labelledby="patient-modal-title"
     >
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={guardedClose} />
 
-      <div className="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+      <div ref={focusTrapRef} className="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 backdrop-blur-sm px-6 py-4 dark:border-slate-800 dark:bg-slate-900/95">
           <div>
@@ -187,7 +201,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={guardedClose}
             id="patient-modal-close"
             className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
           >
@@ -201,7 +215,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
             {/* Section: Data Diri */}
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                <User className="h-4 w-4 text-[#6B8E6B]" />
+                <User className="h-4 w-4 text-brand" />
                 Data Diri
               </h3>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -213,7 +227,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                     maxLength={16}
                     placeholder="16 digit NIK"
                     value={form.nik}
-                    onChange={(e) => setForm({ ...form, nik: e.target.value.replace(/\D/g, "") })}
+                    onChange={(e) => { setForm({ ...form, nik: e.target.value.replace(/\D/g, "") }); setDirty(); }}
                     className={cn(inputClass, errors.nik && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
                   />
                 </FormField>
@@ -224,7 +238,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                     type="text"
                     placeholder="Nama lengkap sesuai KTP"
                     value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, name: e.target.value }); setDirty(); }}
                     className={cn(inputClass, errors.name && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
                   />
                 </FormField>
@@ -235,7 +249,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                     type="date"
                     value={form.dob}
                     max={new Date().toISOString().split("T")[0]}
-                    onChange={(e) => setForm({ ...form, dob: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, dob: e.target.value }); setDirty(); }}
                     className={cn(inputClass, errors.dob && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
                   />
                 </FormField>
@@ -248,7 +262,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                         className={cn(
                           "flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-all",
                           form.gender === g
-                            ? "border-[#6B8E6B] bg-[#6B8E6B]/10 text-[#6B8E6B] ring-1 ring-[#6B8E6B]/30 dark:border-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]"
+                            ? "border-brand bg-brand/10 text-brand ring-1 ring-brand/30 dark:border-brand dark:bg-brand-light dark:text-brand"
                             : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
                         )}
                       >
@@ -257,7 +271,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                           name="gender"
                           value={g}
                           checked={form.gender === g}
-                          onChange={() => setForm({ ...form, gender: g })}
+                          onChange={() => { setForm({ ...form, gender: g }); setDirty(); }}
                           className="sr-only"
                         />
                         {g === "MALE" ? "♂ Laki-laki" : "♀ Perempuan"}
@@ -272,7 +286,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                     type="tel"
                     placeholder="08xxxxxxxxxx"
                     value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })}
+                    onChange={(e) => { setForm({ ...form, phone: e.target.value.replace(/\D/g, "") }); setDirty(); }}
                     className={cn(inputClass, errors.phone && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
                   />
                 </FormField>
@@ -283,7 +297,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                     type="email"
                     placeholder="email@contoh.com (opsional)"
                     value={form.email ?? ""}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, email: e.target.value }); setDirty(); }}
                     className={cn(inputClass, errors.email && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
                   />
                 </FormField>
@@ -292,7 +306,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                   <select
                     id="patient-blood"
                     value={form.bloodType ?? ""}
-                    onChange={(e) => setForm({ ...form, bloodType: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, bloodType: e.target.value }); setDirty(); }}
                     className={inputClass}
                   >
                     <option value="">— Pilih —</option>
@@ -312,7 +326,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
             {/* Section: Alamat */}
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-[#6B8E6B]" />
+                <MapPin className="h-4 w-4 text-brand" />
                 Alamat
               </h3>
               <div className="space-y-4">
@@ -323,9 +337,9 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                     rows={2}
                     placeholder="Jl. nama jalan, No. RT/RW"
                     value={form.address}
-                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, address: e.target.value }); setDirty(); }}
                     className={cn(
-                      "mt-0 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-[#6B8E6B]",
+                      "mt-0 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand",
                       errors.address && "border-red-400 focus:border-red-400 focus:ring-red-400/20"
                     )}
                   />
@@ -357,7 +371,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                       maxLength={5}
                       placeholder="Kode pos"
                       value={form.postalCode ?? ""}
-                      onChange={(e) => setForm({ ...form, postalCode: e.target.value.replace(/\D/g, "") })}
+                      onChange={(e) => { setForm({ ...form, postalCode: e.target.value.replace(/\D/g, "") }); setDirty(); }}
                       className={inputClass}
                     />
                   </FormField>
@@ -368,7 +382,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
             {/* Section: Kontak Darurat */}
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                <Shield className="h-4 w-4 text-[#6B8E6B]" />
+                <Shield className="h-4 w-4 text-brand" />
                 Kontak Darurat
               </h3>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -378,7 +392,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                     type="text"
                     placeholder="Nama keluarga/kerabat"
                     value={form.emergencyContact ?? ""}
-                    onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, emergencyContact: e.target.value }); setDirty(); }}
                     className={inputClass}
                   />
                 </FormField>
@@ -389,7 +403,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                     type="tel"
                     placeholder="08xxxxxxxxxx"
                     value={form.emergencyPhone ?? ""}
-                    onChange={(e) => setForm({ ...form, emergencyPhone: e.target.value.replace(/\D/g, "") })}
+                    onChange={(e) => { setForm({ ...form, emergencyPhone: e.target.value.replace(/\D/g, "") }); setDirty(); }}
                     className={inputClass}
                   />
                 </FormField>
@@ -402,7 +416,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
             <button
               type="button"
               id="patient-modal-cancel"
-              onClick={onClose}
+              onClick={guardedClose}
               className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
             >
               Batal
@@ -411,7 +425,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
               type="submit"
               id="patient-modal-submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? (
                 <>
@@ -428,6 +442,13 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
           </div>
         </form>
       </div>
+
+      {/* Unsaved changes confirmation */}
+      <DiscardChangesDialog
+        open={showConfirmDiscard}
+        onConfirm={confirmDiscard}
+        onCancel={cancelDiscard}
+      />
     </div>
   );
 }

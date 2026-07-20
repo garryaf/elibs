@@ -184,7 +184,7 @@ export default function VisitDetailPage() {
   if (authLoading || loading) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-[#6B8E6B]" />
+        <Loader2 className="h-8 w-8 animate-spin text-brand" />
         <p className="text-sm text-slate-500 dark:text-slate-400">Memuat detail kunjungan...</p>
       </div>
     );
@@ -208,7 +208,7 @@ export default function VisitDetailPage() {
           </p>
           <Link
             href="/dashboard/visits"
-            className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5A7D5A]"
+            className="mt-2 inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
           >
             Kembali ke Daftar Kunjungan
           </Link>
@@ -309,8 +309,8 @@ function PatientCard({ patient }: { patient: Patient }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <div className="mb-4 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6B8E6B]/10">
-          <User className="h-4 w-4 text-[#6B8E6B]" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
+          <User className="h-4 w-4 text-brand" />
         </div>
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
           Informasi Pasien
@@ -379,8 +379,8 @@ function PaymentCard({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <div className="mb-4 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6B8E6B]/10">
-          <CreditCard className="h-4 w-4 text-[#6B8E6B]" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
+          <CreditCard className="h-4 w-4 text-brand" />
         </div>
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
           Pembayaran & Rujukan
@@ -399,7 +399,7 @@ function PaymentCard({
           <div>
             <p className="text-sm text-slate-500 dark:text-slate-400">Asuransi</p>
             <div className="flex items-center gap-2">
-              <Shield className="h-3.5 w-3.5 text-[#6B8E6B]" />
+              <Shield className="h-3.5 w-3.5 text-brand" />
               <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 {insurance.name}
               </p>
@@ -457,8 +457,8 @@ function StatusTimeline({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <div className="mb-4 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6B8E6B]/10">
-          <Clock className="h-4 w-4 text-[#6B8E6B]" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
+          <Clock className="h-4 w-4 text-brand" />
         </div>
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
           Status Timeline
@@ -477,9 +477,9 @@ function StatusTimeline({
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold transition-colors ${
                     isCurrent
-                      ? "border-[#6B8E6B] bg-[#6B8E6B] text-white"
+                      ? "border-brand bg-brand text-white"
                       : isActive
-                      ? "border-[#6B8E6B] bg-[#6B8E6B]/10 text-[#6B8E6B]"
+                      ? "border-brand bg-brand/10 text-brand"
                       : "border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500"
                   }`}
                 >
@@ -488,7 +488,7 @@ function StatusTimeline({
                 <p
                   className={`mt-2 text-center text-xs font-medium ${
                     isActive
-                      ? "text-[#6B8E6B]"
+                      ? "text-brand"
                       : "text-slate-400 dark:text-slate-500"
                   }`}
                 >
@@ -499,7 +499,7 @@ function StatusTimeline({
                 <div
                   className={`mx-2 h-0.5 flex-1 ${
                     idx < stepIndex
-                      ? "bg-[#6B8E6B]"
+                      ? "bg-brand"
                       : "bg-slate-200 dark:bg-slate-700"
                   }`}
                 />
@@ -536,8 +536,8 @@ function OrdersList({ orders }: { orders: VisitOrder[] }) {
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6B8E6B]/10">
-            <ClipboardList className="h-4 w-4 text-[#6B8E6B]" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
+            <ClipboardList className="h-4 w-4 text-brand" />
           </div>
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
             Daftar Order
@@ -561,10 +561,10 @@ function OrdersList({ orders }: { orders: VisitOrder[] }) {
             <Link
               key={order.id}
               href={`/dashboard/orders/${order.id}`}
-              className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-4 transition-all hover:border-[#6B8E6B]/30 hover:bg-[#6B8E6B]/5 dark:border-slate-800 dark:bg-slate-900/50 dark:hover:border-[#6B8E6B]/30"
+              className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-4 transition-all hover:border-brand/30 hover:bg-brand/5 dark:border-slate-800 dark:bg-slate-900/50 dark:hover:border-brand/30"
             >
               <div className="space-y-1">
-                <p className="font-mono text-sm font-medium text-[#6B8E6B]">
+                <p className="font-mono text-sm font-medium text-brand">
                   {order.orderNumber}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">

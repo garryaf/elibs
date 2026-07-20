@@ -3,6 +3,8 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  MaxLength,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -12,6 +14,8 @@ export class ResultEntryItem {
   orderDetailId: string;
 
   @IsString()
+  @MinLength(1)
+  @MaxLength(200)
   resultValue: string;
 
   @IsOptional()

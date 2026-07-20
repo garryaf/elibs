@@ -188,6 +188,125 @@ export class ReportsService {
   }
 
   /**
+   * Orders grouped by referring doctor.
+   */
+  async getByReferringDoctor(query: ReportQueryDto) {
+    const { gte, lte } = this.getDateRange(query);
+
+    const results = await this.prisma.order.groupBy({
+      by: ['doctorId'],
+      where: {
+        createdAt: { gte, lte },
+        doctorId: { not: null },
+        status: { not: 'CANCELLED' },
+      },
+      _count: { id: true },
+      _sum: { totalAmount: true },
+    });
+
+    // Enrich with doctor names
+    const doctorIds = results
+      .map((r) => r.doctorId!)
+      .filter(Boolean);
+    const doctors = await this.prisma.doctor.findMany({
+      where: { id: { in: doctorIds } },
+      select: { id: true, name: true, code: true, specialization: true },
+    });
+    const doctorMap = new Map(doctors.map((d) => [d.id, d]));
+
+    const data = results.map((r) => ({
+      doctor: doctorMap.get(r.doctorId!) ?? { id: r.doctorId, name: 'Unknown' },
+      orderCount: r._count.id,
+      totalRevenue: Number(r._sum.totalAmount ?? 0),
+    }));
+
+    return {
+      startDate: gte.toISOString().split('T')[0],
+      endDate: lte.toISOString().split('T')[0],
+      total: data.length,
+      data,
+    };
+  }
+
+  /**
+   * Orders grouped by referring clinic.
+   */
+  async getByReferringClinic(query: ReportQueryDto) {
+    const { gte, lte } = this.getDateRange(query);
+
+    const results = await this.prisma.order.groupBy({
+      by: ['clinicId'],
+      where: {
+        createdAt: { gte, lte },
+        clinicId: { not: null },
+        status: { not: 'CANCELLED' },
+      },
+      _count: { id: true },
+      _sum: { totalAmount: true },
+    });
+
+    // Enrich with clinic names
+    const clinicIds = results
+      .map((r) => r.clinicId!)
+      .filter(Boolean);
+    const clinics = await this.prisma.clinic.findMany({
+      where: { id: { in: clinicIds } },
+      select: { id: true, name: true, code: true },
+    });
+    const clinicMap = new Map(clinics.map((c) => [c.id, c]));
+
+    const data = results.map((r) => ({
+      clinic: clinicMap.get(r.clinicId!) ?? { id: r.clinicId, name: 'Unknown' },
+      orderCount: r._count.id,
+      totalRevenue: Number(r._sum.totalAmount ?? 0),
+    }));
+
+    return {
+      startDate: gte.toISOString().split('T')[0],
+      endDate: lte.toISOString().split('T')[0],
+      total: data.length,
+      data,
+    };
+  }
+
+  /**
+   * New patient registrations within the date range.
+   */
+  async getNewPatients(query: ReportQueryDto) {
+    const { gte, lte } = this.getDateRange(query);
+    const limit = query.limit ?? 100;
+
+    const where = {
+      createdAt: { gte, lte },
+      deletedAt: null,
+    };
+
+    const [patients, total] = await Promise.all([
+      this.prisma.patient.findMany({
+        where,
+        select: {
+          id: true,
+          mrn: true,
+          name: true,
+          gender: true,
+          dateOfBirth: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      }),
+      this.prisma.patient.count({ where }),
+    ]);
+
+    return {
+      startDate: gte.toISOString().split('T')[0],
+      endDate: lte.toISOString().split('T')[0],
+      total,
+      data: patients,
+    };
+  }
+
+  /**
    * Average turnaround time from order creation to result approval.
    */
   async getTurnaroundTime(query: ReportQueryDto) {

@@ -81,6 +81,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
 
       errorCode = this.mapStatusToErrorCode(status);
+
+      // Preserve custom errorCode from the exception response (e.g., ERR_DUPLICATE_ACTIVE_VISIT)
+      if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+        const resp = exceptionResponse as Record<string, unknown>;
+        if (typeof resp.errorCode === 'string') {
+          errorCode = resp.errorCode;
+        }
+      }
     } else {
       // Unknown/unhandled exception
       status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -126,6 +134,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
         return 'FORBIDDEN';
       case HttpStatus.NOT_FOUND:
         return 'NOT_FOUND';
+      case HttpStatus.CONFLICT:
+        return 'CONFLICT';
       default:
         return 'INTERNAL_SERVER_ERROR';
     }

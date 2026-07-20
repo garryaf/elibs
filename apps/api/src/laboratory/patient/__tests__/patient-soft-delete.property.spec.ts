@@ -7,6 +7,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MrnGeneratorService } from '../mrn-generator.service';
 import { RegionValidationService } from '../../region/region-validation.service';
 import { AuditService } from '../../audit/audit.service';
+import { InsuranceConsolidationService } from '../../../insurance/insurance-consolidation.service';
 
 /**
  * **Validates: Requirements 1.3, 1.4**
@@ -51,11 +52,13 @@ function createService(mockPrisma: any): PatientService {
   const mockMrnGenerator = { generate: jest.fn() } as unknown as MrnGeneratorService;
   const mockRegionValidation = { validateHierarchy: jest.fn() } as unknown as RegionValidationService;
   const mockAuditService = { log: jest.fn().mockResolvedValue(undefined) } as unknown as AuditService;
+  const mockInsuranceConsolidation = { resolvePatientInsuranceId: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } as unknown as InsuranceConsolidationService;
   return new PatientService(
     mockPrisma as PrismaService,
     mockMrnGenerator,
     mockRegionValidation,
     mockAuditService,
+    mockInsuranceConsolidation,
   );
 }
 

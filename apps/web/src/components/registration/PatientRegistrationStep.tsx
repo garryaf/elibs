@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { User, Phone, MapPin, Mail, Hash, Calendar, Building, ArrowLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api";
@@ -48,7 +48,7 @@ const initialForm: RegistrationFormData = {
 };
 
 const inputClass =
-  "mt-0 h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-[#6B8E6B]";
+  "mt-0 h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -110,6 +110,19 @@ export function PatientRegistrationStep({
     kecamatanId: form.kecamatanId,
     kelurahanDesaId: form.kelurahanDesaId,
   };
+
+  // Compute whether all required fields are valid (for disabling the submit button)
+  const isFormValid = useMemo(() => {
+    // NIK must be exactly 16 digits
+    if (!form.nik || !/^\d{16}$/.test(form.nik)) return false;
+    // Name must be non-empty
+    if (!form.name || form.name.trim().length < 1) return false;
+    // DOB must be non-empty
+    if (!form.dob) return false;
+    // Gender must be set to a valid value
+    if (!form.gender || !["MALE", "FEMALE"].includes(form.gender)) return false;
+    return true;
+  }, [form.nik, form.name, form.dob, form.gender]);
 
   const handleRegionChange = (value: RegionValue) => {
     setForm((prev) => ({
@@ -200,7 +213,12 @@ export function PatientRegistrationStep({
       if (form.kelurahanDesaId) payload.kelurahanDesaId = form.kelurahanDesaId;
 
       const response = await apiClient.createPatient(payload);
-      const result = response?.data as Record<string, unknown> | undefined;
+      // unwrapResponse already strips the { success, message, data } envelope,
+      // so `response` is either the patient object directly or { data: patient }
+      const raw = response as unknown as Record<string, unknown>;
+      const result = raw?.data
+        ? (raw.data as Record<string, unknown>)
+        : raw;
 
       // Extract patient data from the response
       const newPatient: PatientOption = {
@@ -271,7 +289,7 @@ export function PatientRegistrationStep({
           {/* Section: Data Diri */}
           <div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-              <User className="h-4 w-4 text-[#6B8E6B]" />
+              <User className="h-4 w-4 text-brand" />
               Data Diri
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -333,7 +351,7 @@ export function PatientRegistrationStep({
                       className={cn(
                         "flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-all",
                         form.gender === g
-                          ? "border-[#6B8E6B] bg-[#6B8E6B]/10 text-[#6B8E6B] ring-1 ring-[#6B8E6B]/30 dark:border-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]"
+                          ? "border-brand bg-brand/10 text-brand ring-1 ring-brand/30 dark:border-brand dark:bg-brand-light dark:text-brand"
                           : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
                       )}
                     >
@@ -356,7 +374,7 @@ export function PatientRegistrationStep({
           {/* Section: Kontak */}
           <div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-              <Phone className="h-4 w-4 text-[#6B8E6B]" />
+              <Phone className="h-4 w-4 text-brand" />
               Kontak
               <span className="text-xs text-slate-400 font-normal">(opsional)</span>
             </h3>
@@ -390,7 +408,7 @@ export function PatientRegistrationStep({
           {/* Section: Alamat */}
           <div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-[#6B8E6B]" />
+              <MapPin className="h-4 w-4 text-brand" />
               Alamat
               <span className="text-xs text-slate-400 font-normal">(opsional)</span>
             </h3>
@@ -404,7 +422,7 @@ export function PatientRegistrationStep({
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
                   className={cn(
-                    "mt-0 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-[#6B8E6B]",
+                    "mt-0 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand",
                     errors.address && "border-red-400 focus:border-red-400 focus:ring-red-400/20"
                   )}
                 />
@@ -443,8 +461,8 @@ export function PatientRegistrationStep({
 
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isSubmitting || !isFormValid}
+            className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? (
               <>

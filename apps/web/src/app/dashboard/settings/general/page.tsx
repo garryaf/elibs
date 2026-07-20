@@ -1,31 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Info } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
+import { RoleGuard } from "@/components/guards/RoleGuard";
 
 export default function GeneralSettingsPage() {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    const allowed = ["SUPER_ADMIN", "ADMIN"];
-    if (user && !allowed.includes(user.role)) {
-      router.replace("/dashboard");
-    }
-  }, [user, router]);
-
-  if (isLoading || !user) {
-    return null;
-  }
-
-  const allowed = ["SUPER_ADMIN", "ADMIN"];
-  if (!allowed.includes(user.role)) {
-    return null;
-  }
-
   return (
+    <RoleGuard allowedRoles={["SUPER_ADMIN", "ADMIN"]}>
     <div className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -47,5 +27,7 @@ export default function GeneralSettingsPage() {
         </div>
       </div>
     </div>
+    </RoleGuard>
   );
 }
+

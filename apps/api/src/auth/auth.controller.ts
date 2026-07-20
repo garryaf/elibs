@@ -2,6 +2,7 @@ import { Controller, Post, Body, HttpCode, HttpStatus, UnauthorizedException, Us
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @ApiTags('Auth')
@@ -15,7 +16,7 @@ export class AuthController {
   @ApiOperation({ summary: 'User login with email and password' })
   @ApiResponse({ status: 200, description: 'Login successful, returns access and refresh tokens' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() loginDto: any, @Req() req: any) {
+  async login(@Body() loginDto: LoginDto, @Req() req: any) {
     const user = await this.authService.validateUser(loginDto.email, loginDto.password);
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');

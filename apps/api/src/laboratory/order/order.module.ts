@@ -9,9 +9,11 @@ import { MigrationService } from './migration.service';
 import { MigrationController } from './migration.controller';
 import { VisitModule } from '../visit/visit.module';
 import { AuditModule } from '../audit/audit.module';
+import { InsuranceModule } from '../../insurance/insurance.module';
+import { LabWorkflowModule } from '../lab-workflow/lab-workflow.module';
 
 @Module({
-  imports: [VisitModule, AuditModule],
+  imports: [VisitModule, AuditModule, InsuranceModule, LabWorkflowModule],
   controllers: [OrderController, MigrationController],
   providers: [OrderService, ClaimService, InsuranceRejectionService, TariffResolverService, OrderValidationGuard, MigrationService],
   exports: [OrderService, ClaimService, InsuranceRejectionService, TariffResolverService, OrderValidationGuard, MigrationService],

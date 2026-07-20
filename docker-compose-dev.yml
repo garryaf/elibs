@@ -74,12 +74,15 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:3001
+        NEXT_PUBLIC_API_URL: ""
     container_name: elis-dev-web
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001
+      # Server-side rewrite target (internal Docker network)
+      API_URL: http://api:3001
+      # Client-side: empty = relative paths, proxied by Next.js rewrites
+      NEXT_PUBLIC_API_URL: ""
     depends_on:
       - api
     restart: unless-stopped

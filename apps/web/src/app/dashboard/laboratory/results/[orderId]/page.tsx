@@ -471,7 +471,7 @@ export default function ResultEntryPage() {
                 {/* Test Info */}
                 <div className="flex-1 space-y-3">
                   <div className="flex items-center gap-3">
-                    <span className="rounded-md bg-[#6B8E6B]/10 px-2 py-1 font-mono text-xs font-bold text-[#6B8E6B]">
+                    <span className="rounded-md bg-brand/10 px-2 py-1 font-mono text-xs font-bold text-brand">
                       {detail.test?.code ?? "-"}
                     </span>
                     <h3 className="font-semibold text-foreground">
@@ -600,7 +600,7 @@ export default function ResultEntryPage() {
           disabled={submitting}
           className={cn(
             "inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all",
-            "border border-[#6B8E6B] text-[#6B8E6B] hover:bg-[#6B8E6B]/10",
+            "border border-brand text-brand hover:bg-brand/10",
             submitting && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -619,7 +619,7 @@ export default function ResultEntryPage() {
             disabled={verifying}
             className={cn(
               "inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all",
-              "bg-[#6B8E6B] text-white hover:bg-[#5A7D5A] shadow-sm",
+              "bg-brand text-white hover:bg-brand-dark shadow-sm",
               verifying && "opacity-50 cursor-not-allowed"
             )}
           >

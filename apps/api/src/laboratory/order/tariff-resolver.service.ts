@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { InsuranceConsolidationService } from '../../insurance/insurance-consolidation.service';
 import { Decimal } from '@prisma/client/runtime/library';
 
 export interface TariffResult {
@@ -24,7 +25,12 @@ export interface OrderPricing {
 
 @Injectable()
 export class TariffResolverService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(TariffResolverService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly consolidationService: InsuranceConsolidationService,
+  ) {}
 
   /**
    * Resolves the price for a test using priority-based tariff lookup:
@@ -33,16 +39,34 @@ export class TariffResolverService {
    * 3. INSURANCE_ONLY: insurance match, no clinic
    * 4. DEFAULT: no clinic, no insurance
    * 5. FALLBACK: TestMaster.price with 0 discount
+   *
+   * Only tariffs within their effective date range are considered.
+   * When multiple valid tariffs match, the most recent effectiveFrom is selected.
    */
   async resolvePrice(
     testId: string,
     clinicId?: string,
     insuranceId?: string,
   ): Promise<TariffResult> {
+    const now = new Date();
+
+    // Date filter: effectiveFrom <= now AND (effectiveTo is null OR effectiveTo >= now)
+    const dateFilter = {
+      effectiveFrom: { lte: now },
+      OR: [
+        { effectiveTo: null },
+        { effectiveTo: { gte: now } },
+      ],
+    };
+
+    // Order by most recent effectiveFrom to pick the latest valid tariff
+    const orderByEffective = { effectiveFrom: 'desc' as const };
+
     // Step 1: Specific (clinic + insurance)
     if (clinicId && insuranceId) {
       const tariff = await this.prisma.tariff.findFirst({
-        where: { testId, clinicId, insuranceId },
+        where: { testId, clinicId, insuranceId, ...dateFilter },
+        orderBy: orderByEffective,
       });
       if (tariff) {
         return this.buildResult(tariff.id, tariff.price, tariff.discount, 'SPECIFIC');
@@ -52,7 +76,8 @@ export class TariffResolverService {
     // Step 2: Clinic-only
     if (clinicId) {
       const tariff = await this.prisma.tariff.findFirst({
-        where: { testId, clinicId, insuranceId: null },
+        where: { testId, clinicId, insuranceId: null, ...dateFilter },
+        orderBy: orderByEffective,
       });
       if (tariff) {
         return this.buildResult(tariff.id, tariff.price, tariff.discount, 'CLINIC_ONLY');
@@ -62,7 +87,8 @@ export class TariffResolverService {
     // Step 3: Insurance-only
     if (insuranceId) {
       const tariff = await this.prisma.tariff.findFirst({
-        where: { testId, clinicId: null, insuranceId },
+        where: { testId, clinicId: null, insuranceId, ...dateFilter },
+        orderBy: orderByEffective,
       });
       if (tariff) {
         return this.buildResult(tariff.id, tariff.price, tariff.discount, 'INSURANCE_ONLY');
@@ -71,7 +97,8 @@ export class TariffResolverService {
 
     // Step 4: Default tariff (no clinic, no insurance)
     const defaultTariff = await this.prisma.tariff.findFirst({
-      where: { testId, clinicId: null, insuranceId: null },
+      where: { testId, clinicId: null, insuranceId: null, ...dateFilter },
+      orderBy: orderByEffective,
     });
     if (defaultTariff) {
       return this.buildResult(
@@ -118,6 +145,27 @@ export class TariffResolverService {
       totalDiscount,
       totalAmount,
     };
+  }
+
+  /**
+   * Resolves pricing for an order by resolving insurance from OrderInsurance PRIMARY (with fallback).
+   * Logs deprecation warning when legacy Order.insuranceId is used.
+   */
+  async resolveOrderTotalForOrder(
+    orderId: string,
+    testIds: string[],
+    clinicId?: string,
+  ): Promise<OrderPricing> {
+    const { insuranceId, source } =
+      await this.consolidationService.getOrderPrimaryInsurance(orderId);
+
+    if (source === 'ORDER_LEGACY_FK') {
+      this.logger.warn(
+        `[DEPRECATED] Tariff resolved via legacy Order.insuranceId for order ${orderId}`,
+      );
+    }
+
+    return this.resolveOrderTotal(testIds, clinicId, insuranceId);
   }
 
   private buildResult(

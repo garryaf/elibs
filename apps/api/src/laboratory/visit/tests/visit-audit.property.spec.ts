@@ -4,6 +4,7 @@ import { VisitService } from '../visit.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { VisitNumberGeneratorService } from '../visit-number-generator.service';
 import { AuditService, SENSITIVE_FIELDS } from '../../audit/audit.service';
+import { InsuranceConsolidationService } from '../../../insurance/insurance-consolidation.service';
 import { CreateVisitDto } from '../dto/create-visit.dto';
 import { UpdateVisitDto } from '../dto/update-visit.dto';
 import { CancelVisitDto } from '../dto/cancel-visit.dto';
@@ -48,6 +49,7 @@ describe('Feature: visit-management, Property 12: Audit Log Completeness', () =>
         findFirst: jest.fn(),
       },
       visit: {
+        findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn(),
         findUnique: jest.fn(),
         update: jest.fn(),
@@ -74,6 +76,7 @@ describe('Feature: visit-management, Property 12: Audit Log Completeness', () =>
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 

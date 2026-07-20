@@ -9,19 +9,50 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
+import {
+  IsString,
+  IsNumber,
+  IsBoolean,
+  IsEmail,
+  IsOptional,
+  MaxLength,
+  Min,
+  Max,
+} from 'class-validator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { SettingsService } from './settings.service';
 import { EmailService } from '../laboratory/notification/email.service';
 
-interface SmtpSettingsDto {
+export class SmtpSettingsDto {
+  @IsString()
+  @MaxLength(255)
   host: string;
+
+  @IsNumber()
+  @Min(1)
+  @Max(65535)
   port: number;
+
+  @IsBoolean()
   secure: boolean;
+
+  @IsString()
+  @MaxLength(255)
   user: string;
-  pass: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  pass?: string;
+
+  @IsString()
+  @MaxLength(255)
   senderName: string;
+
+  @IsEmail()
+  @MaxLength(255)
   senderEmail: string;
 }
 

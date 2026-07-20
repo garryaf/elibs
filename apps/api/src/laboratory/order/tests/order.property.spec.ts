@@ -63,6 +63,14 @@ describe('Order Creation Property Tests', () => {
                 deletedAt: null,
               }),
             },
+            visit: {
+              findUnique: jest.fn().mockResolvedValue({
+                id: 'visit-1',
+                patientId: 'patient-1',
+                paymentMethod: 'INSURANCE',
+                insuranceId: null,
+              }),
+            },
             testMaster: {
               findMany: jest.fn().mockResolvedValue(
                 testIds.map((id) => ({
@@ -120,6 +128,8 @@ describe('Order Creation Property Tests', () => {
             mockTariffResolver as any,
             mockVisitService as any,
             mockOrderValidationGuard as any,
+            { validateVisitInsurance: jest.fn() } as any,
+            { transition: jest.fn(), canTransition: jest.fn(), getValidTransitions: jest.fn().mockReturnValue([]) } as any,
           );
 
           const dto = {

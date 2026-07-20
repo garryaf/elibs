@@ -8,9 +8,5 @@ export default function DoctorPage() {
   useEffect(() => {
     router.replace("/dashboard/laboratory/approval");
   }, [router]);
-  return (
-    <div className="flex items-center justify-center p-12 text-sm text-muted-foreground">
-      Mengalihkan ke halaman approval...
-    </div>
-  );
+  return null;
 }

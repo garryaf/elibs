@@ -8,12 +8,14 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { TariffResolverService } from './tariff-resolver.service';
 import { VisitService } from '../visit/visit.service';
 import { OrderValidationGuard } from './order-validation.guard';
+import { InsuranceConsolidationService } from '../../insurance/insurance-consolidation.service';
+import { OrderStateMachineService } from '../lab-workflow/order-state-machine.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
 import { OrderQueryDto } from './dto/order-query.dto';
 import { AddOrderInsuranceDto, UpdateOrderInsuranceDto } from './dto/manage-order-insurance.dto';
 import { CreateBpjsOrderDetailDto, UpdateBpjsOrderDetailDto, VerifyBpjsDto } from './dto/bpjs-order-detail.dto';
-import { OrderStatus, BpjsVerificationStatus } from '@prisma/client';
+import { OrderStatus, BpjsVerificationStatus, PaymentMethod } from '@prisma/client';
 
 @Injectable()
 export class OrderService {
@@ -22,6 +24,8 @@ export class OrderService {
     private readonly tariffResolver: TariffResolverService,
     private readonly visitService: VisitService,
     private readonly orderValidationGuard: OrderValidationGuard,
+    private readonly consolidationService: InsuranceConsolidationService,
+    private readonly orderStateMachine: OrderStateMachineService,
   ) {}
 
   async create(dto: CreateOrderDto, userId: string) {
@@ -35,6 +39,24 @@ export class OrderService {
     if (!patient) {
       throw new NotFoundException('Patient not found');
     }
+
+    // Step 2: Fetch visit to determine paymentMethod and default insurance
+    const visit = await this.prisma.visit.findUnique({
+      where: { id: dto.visitId },
+    });
+
+    // Determine effective insurance:
+    // - Default from Visit.insuranceId
+    // - Override from dto.insuranceId (must be validated against patient enrollments)
+    const insuranceId = dto.insuranceId ?? visit?.insuranceId ?? null;
+
+    // Validate override: if dto.insuranceId is provided and differs from visit's insurance
+    if (insuranceId && dto.insuranceId && dto.insuranceId !== visit?.insuranceId) {
+      await this.consolidationService.validateVisitInsurance(dto.patientId, insuranceId);
+    }
+
+    // For CASH visits, no insurance is required (allow no OrderInsurance records)
+    const isCashVisit = visit?.paymentMethod === PaymentMethod.CASH;
 
     // Validate all testIds exist and are active (not deleted)
     const tests = await this.prisma.testMaster.findMany({
@@ -50,12 +72,11 @@ export class OrderService {
     }
 
     // Check if any tests require insurance pre-authorization
-    if (dto.insuranceId) {
+    if (insuranceId) {
       const preAuthTests = tests.filter((t) => t.requiresInsurancePreAuth);
       if (preAuthTests.length > 0) {
         // Include a warning in the response metadata (not blocking — just informational)
         // The lab workflow will enforce pre-auth before sample collection
-        // Log for awareness
       }
     }
 
@@ -66,7 +87,7 @@ export class OrderService {
     const pricing = await this.tariffResolver.resolveOrderTotal(
       dto.testIds,
       dto.clinicId,
-      dto.insuranceId,
+      insuranceId ?? undefined,
     );
 
     // Create order with details in a transaction
@@ -77,7 +98,7 @@ export class OrderService {
           patientId: dto.patientId,
           clinicId: dto.clinicId ?? null,
           doctorId: dto.doctorId ?? null,
-          insuranceId: dto.insuranceId ?? null,
+          // insuranceId: NOT written (deprecated — use OrderInsurance junction)
           visitId: dto.visitId,
           status: OrderStatus.PENDING_PAYMENT,
           totalAmount: pricing.totalAmount,
@@ -96,6 +117,19 @@ export class OrderService {
       }));
 
       await tx.orderDetail.createMany({ data: orderDetailsData });
+
+      // Create OrderInsurance PRIMARY record within the transaction
+      // Only if there's an insurance to assign (skip for CASH visits with no insurance)
+      if (insuranceId && !isCashVisit) {
+        await tx.orderInsurance.create({
+          data: {
+            orderId: createdOrder.id,
+            insuranceId,
+            coverageType: 'PRIMARY',
+            claimStatus: 'PENDING',
+          },
+        });
+      }
 
       return createdOrder;
     });
@@ -148,13 +182,30 @@ export class OrderService {
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
-        include: { patient: true, orderDetails: { include: { test: { select: { id: true, code: true, name: true, unit: true } } } }, visit: { select: { visitNumber: true, status: true } } },
+        include: {
+          patient: true,
+          orderDetails: { include: { test: { select: { id: true, code: true, name: true, unit: true } } } },
+          visit: { select: { visitNumber: true, status: true } },
+          orderInsurances: true,
+        },
       }),
       this.prisma.order.count({ where }),
     ]);
 
+    // Derive insuranceId from OrderInsurance PRIMARY for each order (backward compatibility)
+    const enrichedData = data.map((order) => {
+      const primaryInsurance = order.orderInsurances?.find(
+        (oi) => oi.coverageType === 'PRIMARY',
+      );
+      return {
+        ...order,
+        // Override insuranceId: junction PRIMARY takes precedence, fall back to legacy FK
+        insuranceId: primaryInsurance?.insuranceId ?? order.insuranceId ?? null,
+      };
+    });
+
     return {
-      data,
+      data: enrichedData,
       meta: {
         total,
         page,
@@ -173,6 +224,7 @@ export class OrderService {
           include: { test: true },
         },
         visit: { select: { visitNumber: true, status: true } },
+        orderInsurances: true,
       },
     });
     if (!order) {
@@ -184,7 +236,16 @@ export class OrderService {
       throw new ForbiddenException('Access denied: resource belongs to another clinic');
     }
 
-    return order;
+    // Derive insuranceId from OrderInsurance PRIMARY (backward compatibility)
+    const primaryInsurance = order.orderInsurances?.find(
+      (oi) => oi.coverageType === 'PRIMARY',
+    );
+
+    return {
+      ...order,
+      // Override insuranceId: junction PRIMARY takes precedence, fall back to legacy FK
+      insuranceId: primaryInsurance?.insuranceId ?? order.insuranceId ?? null,
+    };
   }
 
   async cancel(orderId: string, dto: CancelOrderDto, userId: string) {
@@ -195,21 +256,28 @@ export class OrderService {
       throw new NotFoundException('Order not found');
     }
 
-    if (order.status !== OrderStatus.PENDING_PAYMENT) {
+    if (order.status !== OrderStatus.PENDING_PAYMENT && order.status !== OrderStatus.PAYMENT_OVERDUE) {
       throw new BadRequestException({
         errorCode: 'ERR_INVALID_STATE',
-        message: `Order cannot be cancelled in status ${order.status}. Only orders in PENDING_PAYMENT status can be cancelled.`,
+        message: `Cannot transition from ${order.status} to CANCELLED`,
+        errors: [
+          {
+            field: 'status',
+            constraint: `Valid transitions from ${order.status}: ${this.orderStateMachine.getValidTransitions(order.status).join(', ')}`,
+          },
+        ],
       });
     }
 
-    return this.prisma.order.update({
+    // Transition via state machine (handles status + cancelledAt + cancelledBy)
+    await this.orderStateMachine.transition(orderId, OrderStatus.CANCELLED, {
+      userId,
+      reason: dto.reason,
+    });
+
+    // Return order with includes
+    return this.prisma.order.findUnique({
       where: { id: orderId },
-      data: {
-        status: OrderStatus.CANCELLED,
-        cancelReason: dto.reason,
-        cancelledBy: userId,
-        cancelledAt: new Date(),
-      },
       include: { patient: true, orderDetails: true },
     });
   }

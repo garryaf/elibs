@@ -79,13 +79,13 @@ export default function SmtpSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-[#6B8E6B]" />
+        <Loader2 className="h-6 w-6 animate-spin text-brand" />
       </div>
     );
   }
 
   const inputCls =
-    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
+    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
 
   return (
     <div className="max-w-xl space-y-6">
@@ -100,7 +100,7 @@ export default function SmtpSettingsPage() {
         <div
           className={`rounded-lg px-4 py-3 text-sm ${
             message.type === "success"
-              ? "bg-[#6B8E6B]/10 text-[#6B8E6B] dark:bg-[#6B8E6B]/15 dark:text-[#6B8E6B]"
+              ? "bg-brand/10 text-brand dark:bg-brand-light dark:text-brand"
               : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300"
           }`}
         >
@@ -143,14 +143,14 @@ export default function SmtpSettingsPage() {
         <div className="flex items-center gap-3">
           <label className="relative inline-flex cursor-pointer items-center">
             <input type="checkbox" checked={config.secure} onChange={(e) => setConfig({ ...config, secure: e.target.checked })} className="peer sr-only" />
-            <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#6B8E6B] peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-slate-700" />
+            <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-brand peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-slate-700" />
           </label>
           <span className="text-sm text-slate-700 dark:text-slate-300">Gunakan TLS/SSL (port 465)</span>
         </div>
       </div>
 
       <div className="flex items-center gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
-        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#5A7D5A] disabled:opacity-50">
+        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark disabled:opacity-50">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {saving ? "Menyimpan..." : "Simpan Konfigurasi"}
         </button>
@@ -161,7 +161,7 @@ export default function SmtpSettingsPage() {
         <h4 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">Kirim Email Test</h4>
         <div className="flex gap-2">
           <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="test@example.com" className={`flex-1 ${inputCls}`} />
-          <button onClick={handleTest} disabled={testing} className="flex items-center gap-2 rounded-xl border border-[#6B8E6B]/30 bg-[#6B8E6B]/10 px-4 py-2.5 text-sm font-semibold text-[#6B8E6B] hover:bg-[#6B8E6B]/20 disabled:opacity-50 dark:border-[#6B8E6B]/50 dark:bg-[#6B8E6B]/10 dark:text-[#6B8E6B]">
+          <button onClick={handleTest} disabled={testing} className="flex items-center gap-2 rounded-xl border border-brand/30 bg-brand/10 px-4 py-2.5 text-sm font-semibold text-brand hover:bg-brand/20 disabled:opacity-50 dark:border-brand/50 dark:bg-brand/10 dark:text-brand">
             {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {testing ? "Mengirim..." : "Kirim Test"}
           </button>

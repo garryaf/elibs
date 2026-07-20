@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { MoreVertical, Pencil, Trash2, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useMemo } from "react";
+import { MoreVertical, Pencil, Trash2, Eye, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
 import type { Patient } from "@/types/patient";
 import { PatientStatusBadge } from "./PatientStatusBadge";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,9 @@ interface PatientTableProps {
 }
 
 const PAGE_SIZE = 6;
+
+type PatientSortField = "name" | "mrn" | "dob" | "lastVisit" | "status";
+type SortDir = "asc" | "desc";
 
 function calculateAge(dob: string): number {
   const today = new Date();
@@ -56,7 +59,7 @@ function ActionMenu({
         <MoreVertical className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute right-0 bottom-full mb-2 z-50 min-w-36 rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <div className="absolute right-0 top-full mt-2 z-50 min-w-36 rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
           <button
             onMouseDown={() => { onView(); setOpen(false); }}
             className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -82,10 +85,67 @@ function ActionMenu({
   );
 }
 
+function SortIcon({ field, activeField, dir }: { field: string; activeField: string; dir: SortDir }) {
+  if (field !== activeField) {
+    return <ChevronDown className="h-3 w-3 opacity-30" />;
+  }
+  return dir === "asc"
+    ? <ChevronUp className="h-3 w-3 text-brand" />
+    : <ChevronDown className="h-3 w-3 text-brand" />;
+}
+
 export function PatientTable({ patients, onEdit, onView, onDelete }: PatientTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = Math.max(1, Math.ceil(patients.length / PAGE_SIZE));
-  const paginated = patients.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const [sortField, setSortField] = useState<PatientSortField>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  const handleSort = (field: PatientSortField) => {
+    if (field === sortField) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+    setCurrentPage(1);
+  };
+
+  const sortedPatients = useMemo(() => {
+    const sorted = [...patients];
+    sorted.sort((a, b) => {
+      let aVal: string;
+      let bVal: string;
+      switch (sortField) {
+        case "name":
+          aVal = a.name;
+          bVal = b.name;
+          break;
+        case "mrn":
+          aVal = a.mrn;
+          bVal = b.mrn;
+          break;
+        case "dob":
+          aVal = a.dob;
+          bVal = b.dob;
+          break;
+        case "lastVisit":
+          aVal = a.lastVisit || "";
+          bVal = b.lastVisit || "";
+          break;
+        case "status":
+          aVal = a.status;
+          bVal = b.status;
+          break;
+        default:
+          return 0;
+      }
+      const cmp = aVal.localeCompare(bVal);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [patients, sortField, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedPatients.length / PAGE_SIZE));
+  const paginated = sortedPatients.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -94,20 +154,50 @@ export function PatientTable({ patients, onEdit, onView, onDelete }: PatientTabl
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/50">
-              <th className="px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400">
-                PASIEN
+              <th
+                className="px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 cursor-pointer select-none hover:text-brand"
+                onClick={() => handleSort("name")}
+              >
+                <span className="inline-flex items-center gap-1">
+                  PASIEN
+                  <SortIcon field="name" activeField={sortField} dir={sortDir} />
+                </span>
               </th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400">
-                NIK / MRN
+              <th
+                className="px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 cursor-pointer select-none hover:text-brand"
+                onClick={() => handleSort("mrn")}
+              >
+                <span className="inline-flex items-center gap-1">
+                  NIK / MRN
+                  <SortIcon field="mrn" activeField={sortField} dir={sortDir} />
+                </span>
               </th>
-              <th className="hidden px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 md:table-cell">
-                USIA / GENDER
+              <th
+                className="hidden px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 md:table-cell cursor-pointer select-none hover:text-brand"
+                onClick={() => handleSort("dob")}
+              >
+                <span className="inline-flex items-center gap-1">
+                  USIA / GENDER
+                  <SortIcon field="dob" activeField={sortField} dir={sortDir} />
+                </span>
               </th>
-              <th className="hidden px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 lg:table-cell">
-                KUNJUNGAN TERAKHIR
+              <th
+                className="hidden px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 lg:table-cell cursor-pointer select-none hover:text-brand"
+                onClick={() => handleSort("lastVisit")}
+              >
+                <span className="inline-flex items-center gap-1">
+                  KUNJUNGAN TERAKHIR
+                  <SortIcon field="lastVisit" activeField={sortField} dir={sortDir} />
+                </span>
               </th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400">
-                STATUS
+              <th
+                className="px-5 py-3.5 text-left text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 cursor-pointer select-none hover:text-brand"
+                onClick={() => handleSort("status")}
+              >
+                <span className="inline-flex items-center gap-1">
+                  STATUS
+                  <SortIcon field="status" activeField={sortField} dir={sortDir} />
+                </span>
               </th>
               <th className="px-5 py-3.5 text-right text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400">
                 AKSI
@@ -153,7 +243,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete }: PatientTabl
                   {/* NIK / MRN */}
                   <td className="px-5 py-4">
                     <div className="font-mono text-xs text-slate-700 dark:text-slate-300">{patient.nik}</div>
-                    <div className="font-mono text-xs font-semibold text-[#6B8E6B]">{patient.mrn}</div>
+                    <div className="font-mono text-xs font-semibold text-brand">{patient.mrn}</div>
                   </td>
 
                   {/* Age / Gender */}
@@ -200,7 +290,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete }: PatientTabl
             <span className="font-semibold text-slate-700 dark:text-slate-300">
               {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, patients.length)}
             </span>{" "}
-            dari <span className="font-semibold text-slate-700 dark:text-slate-300">{patients.length}</span> pasien
+            dari <span className="font-semibold text-slate-700 dark:text-slate-300">{sortedPatients.length}</span> pasien
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -219,7 +309,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete }: PatientTabl
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-all",
                   currentPage === i + 1
-                    ? "bg-[#6B8E6B] text-white shadow-sm shadow-[#6B8E6B]/30"
+                    ? "bg-brand text-white shadow-sm shadow-brand/30"
                     : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
                 )}
               >

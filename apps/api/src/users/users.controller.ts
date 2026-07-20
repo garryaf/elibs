@@ -67,6 +67,9 @@ export class UsersController {
     return this.usersService.findById(id);
   }
 
+  // TODO: LOW-016 — Dedicated POST /api/v1/users/:id/reset-password endpoint planned for v2.0
+  // Currently, admin resets password via PUT /users/:id with new password field.
+
   @Put(':id')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Update user by ID' })

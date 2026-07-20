@@ -32,6 +32,8 @@ COPY package.json ./
 
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ARG API_URL=http://api:3001
+ENV API_URL=${API_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build Next.js with standalone output for smaller image
@@ -47,6 +49,7 @@ RUN addgroup -g 1001 -S elis && \
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV API_URL=http://api:3001
 
 # Copy only production node_modules
 COPY --from=deps /app/node_modules ./node_modules

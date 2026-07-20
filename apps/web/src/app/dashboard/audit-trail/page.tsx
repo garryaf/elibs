@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Shield, ChevronDown, ChevronRight, Search } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Shield, ChevronDown, ChevronUp, ChevronRight, Search } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import { RoleGuard } from "@/components/guards/RoleGuard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -143,6 +144,48 @@ export default function AuditTrailPage() {
     entityId: "",
   });
 
+  // ─── Sorting ────────────────────────────────────────────────────────────────
+  type AuditSortField = "timestamp" | "action" | "entityName";
+  type SortDir = "asc" | "desc";
+  const [sortField, setSortField] = useState<AuditSortField>("timestamp");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const handleSort = (field: AuditSortField) => {
+    if (field === sortField) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("desc");
+    }
+  };
+
+  const sortedLogs = useMemo(() => {
+    const sorted = [...logs];
+    sorted.sort((a, b) => {
+      let aVal: string;
+      let bVal: string;
+      switch (sortField) {
+        case "timestamp":
+          aVal = a.timestamp;
+          bVal = b.timestamp;
+          break;
+        case "action":
+          aVal = a.action;
+          bVal = b.action;
+          break;
+        case "entityName":
+          aVal = a.entityName;
+          bVal = b.entityName;
+          break;
+        default:
+          return 0;
+      }
+      const cmp = aVal.localeCompare(bVal);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [logs, sortField, sortDir]);
+
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
@@ -195,12 +238,13 @@ export default function AuditTrailPage() {
   };
 
   return (
+    <RoleGuard allowedRoles={["SUPER_ADMIN", "OWNER", "ADMIN"]}>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6B8E6B]/10">
-            <Shield className="h-5 w-5 text-[#6B8E6B]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
+            <Shield className="h-5 w-5 text-brand" />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -224,7 +268,7 @@ export default function AuditTrailPage() {
             <select
               value={filters.entityName}
               onChange={(e) => handleFilterChange("entityName", e.target.value)}
-              className="h-9 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-[#6B8E6B] focus:ring-1 focus:ring-[#6B8E6B]/30 text-foreground"
+              className="h-9 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 text-foreground"
             >
               <option value="">Semua Entitas</option>
               {ENTITY_OPTIONS.map((e) => (
@@ -241,7 +285,7 @@ export default function AuditTrailPage() {
             <select
               value={filters.action}
               onChange={(e) => handleFilterChange("action", e.target.value)}
-              className="h-9 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-[#6B8E6B] focus:ring-1 focus:ring-[#6B8E6B]/30 text-foreground"
+              className="h-9 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 text-foreground"
             >
               <option value="">Semua Aksi</option>
               {ACTION_OPTIONS.map((a) => (
@@ -259,7 +303,7 @@ export default function AuditTrailPage() {
               type="date"
               value={filters.dateFrom}
               onChange={(e) => handleFilterChange("dateFrom", e.target.value)}
-              className="h-9 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-[#6B8E6B] focus:ring-1 focus:ring-[#6B8E6B]/30 text-foreground"
+              className="h-9 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 text-foreground"
             />
           </div>
 
@@ -272,7 +316,7 @@ export default function AuditTrailPage() {
               type="date"
               value={filters.dateTo}
               onChange={(e) => handleFilterChange("dateTo", e.target.value)}
-              className="h-9 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-[#6B8E6B] focus:ring-1 focus:ring-[#6B8E6B]/30 text-foreground"
+              className="h-9 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 text-foreground"
             />
           </div>
 
@@ -288,7 +332,7 @@ export default function AuditTrailPage() {
                 placeholder="Cari ID..."
                 value={filters.entityId}
                 onChange={(e) => handleFilterChange("entityId", e.target.value)}
-                className="h-9 w-full rounded-xl border border-border bg-card pl-8 pr-3 text-sm outline-none focus:border-[#6B8E6B] focus:ring-1 focus:ring-[#6B8E6B]/30 text-foreground placeholder:text-muted-foreground"
+                className="h-9 w-full rounded-xl border border-border bg-card pl-8 pr-3 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 text-foreground placeholder:text-muted-foreground"
               />
             </div>
           </div>
@@ -321,17 +365,35 @@ export default function AuditTrailPage() {
             <thead>
               <tr className="border-b border-border bg-slate-50 dark:bg-slate-900/50">
                 <th className="w-8 px-3 py-3"></th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
-                  Tanggal/Waktu
+                <th
+                  className="whitespace-nowrap px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400 cursor-pointer select-none hover:text-brand"
+                  onClick={() => handleSort("timestamp")}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Tanggal/Waktu
+                    {sortField === "timestamp" ? (sortDir === "asc" ? <ChevronUp className="h-3 w-3 text-brand" /> : <ChevronDown className="h-3 w-3 text-brand" />) : <ChevronDown className="h-3 w-3 opacity-30" />}
+                  </span>
                 </th>
                 <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
                   User ID
                 </th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
-                  Aksi
+                <th
+                  className="whitespace-nowrap px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400 cursor-pointer select-none hover:text-brand"
+                  onClick={() => handleSort("action")}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Aksi
+                    {sortField === "action" ? (sortDir === "asc" ? <ChevronUp className="h-3 w-3 text-brand" /> : <ChevronDown className="h-3 w-3 text-brand" />) : <ChevronDown className="h-3 w-3 opacity-30" />}
+                  </span>
                 </th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
-                  Entitas
+                <th
+                  className="whitespace-nowrap px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400 cursor-pointer select-none hover:text-brand"
+                  onClick={() => handleSort("entityName")}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Entitas
+                    {sortField === "entityName" ? (sortDir === "asc" ? <ChevronUp className="h-3 w-3 text-brand" /> : <ChevronDown className="h-3 w-3 text-brand" />) : <ChevronDown className="h-3 w-3 opacity-30" />}
+                  </span>
                 </th>
                 <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
                   ID Entitas
@@ -342,7 +404,7 @@ export default function AuditTrailPage() {
               </tr>
             </thead>
             <tbody>
-              {logs.map((log) => {
+              {sortedLogs.map((log) => {
                 const isExpanded = expandedRow === log.id;
                 const changeCount =
                   new Set([
@@ -438,5 +500,6 @@ export default function AuditTrailPage() {
         </div>
       )}
     </div>
+    </RoleGuard>
   );
 }

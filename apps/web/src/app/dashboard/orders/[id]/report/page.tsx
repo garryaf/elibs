@@ -71,7 +71,7 @@ export default function ReportPreviewPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#6B8E6B]" />
+        <Loader2 className="h-8 w-8 animate-spin text-brand" />
       </div>
     );
   }
@@ -80,7 +80,7 @@ export default function ReportPreviewPage() {
     return (
       <div className="p-8 text-center text-slate-500">
         {error || "Order tidak ditemukan."}{" "}
-        <button onClick={() => router.back()} className="text-[#6B8E6B] hover:underline">Kembali</button>
+        <button onClick={() => router.back()} className="text-brand hover:underline">Kembali</button>
       </div>
     );
   }
@@ -97,11 +97,11 @@ export default function ReportPreviewPage() {
             <Share2 className="h-4 w-4 text-blue-500" /> Kirim via WA
           </button>
           <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
-            <Download className="h-4 w-4 text-[#6B8E6B]" /> Download PDF
+            <Download className="h-4 w-4 text-brand" /> Download PDF
           </button>
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5A7D5A]"
+            className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
           >
             <Printer className="h-4 w-4" /> Cetak Hasil
           </button>
@@ -113,20 +113,20 @@ export default function ReportPreviewPage() {
         <div className="relative min-h-[1000px] w-full max-w-[794px] bg-white p-12 shadow-xl ring-1 ring-slate-900/5">
           
           {/* Header Kop Surat */}
-          <div className="flex items-center justify-between border-b-2 border-[#6B8E6B]/50 pb-6">
+          <div className="flex items-center justify-between border-b-2 border-brand/50 pb-6">
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#6B8E6B] text-xl font-black text-white">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-xl font-black text-white">
                 eL
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-[#6B8E6B]">eLIS Laboratory</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-brand">eLIS Laboratory</h1>
                 <p className="text-xs text-slate-500">Jl. Kesehatan No. 123, Jakarta Selatan</p>
                 <p className="text-xs text-slate-500">Telp: (021) 1234-5678 | Email: info@elis.com</p>
               </div>
             </div>
             <div className="text-right">
               <h2 className="text-lg font-bold text-slate-900">HASIL PEMERIKSAAN</h2>
-              <p className="font-mono text-sm font-semibold text-[#6B8E6B]">{order.orderNumber}</p>
+              <p className="font-mono text-sm font-semibold text-brand">{order.orderNumber}</p>
             </div>
           </div>
 

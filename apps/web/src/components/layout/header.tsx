@@ -4,7 +4,11 @@ import { Search, Bell, Menu, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 
-export function Header() {
+interface HeaderProps {
+  onMenuToggle?: () => void;
+}
+
+export function Header({ onMenuToggle }: HeaderProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
 
@@ -20,12 +24,16 @@ export function Header() {
   return (
     <header className="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80 sm:px-6">
       <div className="flex items-center gap-4">
-        {/* Mobile menu button (placeholder) */}
-        <button className="rounded-md p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 lg:hidden">
+        {/* Mobile menu button */}
+        <button
+          onClick={onMenuToggle}
+          aria-label="Toggle navigation menu"
+          className="rounded-md p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 lg:hidden"
+        >
           <Menu className="h-5 w-5" />
         </button>
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 font-bold text-white shadow-sm">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand font-bold text-white shadow-sm">
             e
           </div>
           <span className="hidden text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:inline-block">
@@ -41,7 +49,7 @@ export function Header() {
             <input
               type="text"
               placeholder="Search patients, orders, or results..."
-              className="w-full rounded-full border border-slate-200 bg-slate-50 py-2 pl-10 pr-4 text-sm outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:focus:border-blue-500 dark:focus:bg-slate-950"
+              className="w-full rounded-full border border-slate-200 bg-slate-50 py-2 pl-10 pr-4 text-sm outline-none transition-all focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20 dark:border-slate-800 dark:bg-slate-900 dark:focus:border-brand dark:focus:bg-slate-950"
             />
           </div>
         </div>

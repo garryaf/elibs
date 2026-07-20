@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -8,13 +8,15 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
   Calendar,
   Loader2,
   FileX2,
   AlertCircle,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { apiClient } from "@/lib/api";
+import { useVisits } from "@/services/visits";
 import { VisitRowActions } from "@/components/visits/VisitRowActions";
 import { CancelVisitDialog } from "@/components/visits/CancelVisitDialog";
 
@@ -98,7 +100,7 @@ export default function VisitsPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-[#6B8E6B]" />
+        <Loader2 className="h-8 w-8 animate-spin text-brand" />
         <p className="text-sm text-slate-500 dark:text-slate-400">Memuat...</p>
       </div>
     );
@@ -117,18 +119,28 @@ export default function VisitsPage() {
 function VisitsPageContent() {
   const { user } = useAuth();
   const router = useRouter();
-  const [visits, setVisits] = useState<Visit[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<VisitStatus | "ALL">("ALL");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [error, setError] = useState<string | null>(null);
   const [cancelVisit, setCancelVisit] = useState<Visit | null>(null);
+
+  // ─── Sorting ────────────────────────────────────────────────────────────────
+  type VisitSortField = "visitNumber" | "patientName" | "status" | "paymentMethod" | "registrationDate";
+  type SortDir = "asc" | "desc";
+  const [sortField, setSortField] = useState<VisitSortField>("registrationDate");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const handleSort = (field: VisitSortField) => {
+    if (field === sortField) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("desc");
+    }
+  };
 
   // Debounce search input (300ms)
   useEffect(() => {
@@ -139,75 +151,104 @@ function VisitsPageContent() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const loadVisits = useCallback(async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await apiClient.getVisits({
-        page,
-        limit: PAGE_SIZE,
-        search: debouncedSearch || undefined,
-        status: statusFilter !== "ALL" ? statusFilter : undefined,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
-      });
-
-      // Defensive extraction: handle unwrapped response { data: [], meta: {} }
-      // After unwrapResponse in apiClient, res = { data: [...], meta: {...} }
-      const envelope = res as unknown;
-      let raw: unknown[] = [];
-      let meta = { total: 0, page: 1, limit: PAGE_SIZE };
-
-      if (Array.isArray(envelope)) {
-        raw = envelope;
-      } else if (envelope && typeof envelope === "object") {
-        if ("data" in envelope) {
-          const inner = (envelope as { data: unknown }).data;
-          raw = Array.isArray(inner) ? inner : [];
-        }
-        if ("meta" in envelope) {
-          const m = (envelope as { meta: unknown }).meta as Record<string, unknown>;
-          meta = {
-            total: Number(m.total) || 0,
-            page: Number(m.page) || 1,
-            limit: Number(m.limit) || PAGE_SIZE,
-          };
-        }
-      }
-
-      const mapped: Visit[] = (raw as Record<string, unknown>[]).map((v) => ({
-        id: v.id as string,
-        visitNumber: v.visitNumber as string,
-        status: v.status as VisitStatus,
-        registrationDate: v.registrationDate as string,
-        paymentMethod: v.paymentMethod as string,
-        bpjsNumber: v.bpjsNumber as string | null | undefined,
-        patient: v.patient as Visit["patient"],
-        doctor: v.doctor as Visit["doctor"],
-        clinic: v.clinic as Visit["clinic"],
-      }));
-
-      setVisits(mapped);
-      setTotal(meta.total);
-      setTotalPages(Math.ceil(meta.total / PAGE_SIZE) || 1);
-    } catch {
-      setVisits([]);
-      setTotal(0);
-      setTotalPages(1);
-      setError("Gagal memuat data kunjungan. Silakan coba lagi.");
-    } finally {
-      setLoading(false);
-    }
-  }, [page, debouncedSearch, statusFilter, startDate, endDate]);
-
-  useEffect(() => {
-    loadVisits();
-  }, [loadVisits]);
-
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [statusFilter, startDate, endDate]);
+
+  // ─── TanStack Query: fetch visits ─────────────────────────────────────────
+  const { data: queryData, isLoading: loading, error: queryError, refetch } = useVisits({
+    page,
+    limit: PAGE_SIZE,
+    search: debouncedSearch || undefined,
+    status: statusFilter !== "ALL" ? statusFilter : undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+  });
+
+  // ─── Extract data from query response ─────────────────────────────────────
+  const visits: Visit[] = (() => {
+    const envelope = queryData as unknown;
+    let raw: unknown[] = [];
+
+    if (Array.isArray(envelope)) {
+      raw = envelope;
+    } else if (envelope && typeof envelope === "object") {
+      if ("data" in envelope) {
+        const inner = (envelope as { data: unknown }).data;
+        raw = Array.isArray(inner) ? inner : [];
+      }
+    }
+
+    return (raw as Record<string, unknown>[]).map((v) => ({
+      id: v.id as string,
+      visitNumber: v.visitNumber as string,
+      status: v.status as VisitStatus,
+      registrationDate: v.registrationDate as string,
+      paymentMethod: v.paymentMethod as string,
+      bpjsNumber: v.bpjsNumber as string | null | undefined,
+      patient: v.patient as Visit["patient"],
+      doctor: v.doctor as Visit["doctor"],
+      clinic: v.clinic as Visit["clinic"],
+    }));
+  })();
+
+  const { total, totalPages } = (() => {
+    const envelope = queryData as unknown;
+    let meta = { total: 0, page: 1, limit: PAGE_SIZE };
+
+    if (envelope && typeof envelope === "object" && "meta" in envelope) {
+      const m = (envelope as { meta: unknown }).meta as Record<string, unknown>;
+      meta = {
+        total: Number(m.total) || 0,
+        page: Number(m.page) || 1,
+        limit: Number(m.limit) || PAGE_SIZE,
+      };
+    }
+
+    return {
+      total: meta.total,
+      totalPages: Math.ceil(meta.total / PAGE_SIZE) || 1,
+    };
+  })();
+
+  const error = queryError ? "Gagal memuat data kunjungan. Silakan coba lagi." : null;
+
+  // ─── Sorted visits ──────────────────────────────────────────────────────────
+  const sortedVisits = useMemo(() => {
+    const sorted = [...visits];
+    sorted.sort((a, b) => {
+      let aVal: string;
+      let bVal: string;
+      switch (sortField) {
+        case "visitNumber":
+          aVal = a.visitNumber;
+          bVal = b.visitNumber;
+          break;
+        case "patientName":
+          aVal = a.patient?.name || "";
+          bVal = b.patient?.name || "";
+          break;
+        case "status":
+          aVal = a.status;
+          bVal = b.status;
+          break;
+        case "paymentMethod":
+          aVal = a.paymentMethod;
+          bVal = b.paymentMethod;
+          break;
+        case "registrationDate":
+          aVal = a.registrationDate;
+          bVal = b.registrationDate;
+          break;
+        default:
+          return 0;
+      }
+      const cmp = aVal.localeCompare(bVal);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [visits, sortField, sortDir]);
 
   return (
     <div className="space-y-6">
@@ -224,7 +265,7 @@ function VisitsPageContent() {
         <Link
           href="/dashboard/registration"
           id="visit-new-btn"
-          className="inline-flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] hover:shadow-md active:scale-[0.98]"
+          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" />
           Registrasi Kunjungan
@@ -243,7 +284,7 @@ function VisitsPageContent() {
               placeholder="Cari nama pasien, MRN, atau nomor kunjungan..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
           </div>
 
@@ -253,9 +294,9 @@ function VisitsPageContent() {
                 key={f.value}
                 id={`visit-filter-${f.value.toLowerCase()}`}
                 onClick={() => setStatusFilter(f.value)}
-                className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none ${
                   statusFilter === f.value
-                    ? "bg-[#6B8E6B] text-white shadow-sm"
+                    ? "bg-brand text-white shadow-sm"
                     : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
                 }`}
               >
@@ -274,7 +315,7 @@ function VisitsPageContent() {
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-[#6B8E6B] focus:ring-1 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
           />
           <span className="text-xs text-slate-400">s/d</span>
           <input
@@ -282,7 +323,7 @@ function VisitsPageContent() {
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-[#6B8E6B] focus:ring-1 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
           />
           {(startDate || endDate) && (
             <button
@@ -303,7 +344,7 @@ function VisitsPageContent() {
             {total}
           </span>{" "}
           hasil untuk &quot;
-          <span className="font-semibold text-[#6B8E6B]">{debouncedSearch}</span>
+          <span className="font-semibold text-brand">{debouncedSearch}</span>
           &quot;
         </p>
       )}
@@ -323,8 +364,8 @@ function VisitsPageContent() {
             </p>
           </div>
           <button
-            onClick={() => loadVisits()}
-            className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5A7D5A]"
+            onClick={() => refetch()}
+            className="mt-2 inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
           >
             Coba Lagi
           </button>
@@ -336,20 +377,44 @@ function VisitsPageContent() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800">
-                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
-                  No. Kunjungan
+                <th
+                  className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400 cursor-pointer select-none hover:text-brand"
+                  onClick={() => handleSort("visitNumber")}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    No. Kunjungan
+                    <SortIndicator field="visitNumber" activeField={sortField} dir={sortDir} />
+                  </span>
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
-                  Pasien
+                <th
+                  className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400 cursor-pointer select-none hover:text-brand"
+                  onClick={() => handleSort("patientName")}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Pasien
+                    <SortIndicator field="patientName" activeField={sortField} dir={sortDir} />
+                  </span>
                 </th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
                   MRN
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
-                  Status
+                <th
+                  className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400 cursor-pointer select-none hover:text-brand"
+                  onClick={() => handleSort("status")}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Status
+                    <SortIndicator field="status" activeField={sortField} dir={sortDir} />
+                  </span>
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
-                  Pembayaran
+                <th
+                  className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400 cursor-pointer select-none hover:text-brand"
+                  onClick={() => handleSort("paymentMethod")}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Pembayaran
+                    <SortIndicator field="paymentMethod" activeField={sortField} dir={sortDir} />
+                  </span>
                 </th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
                   Dokter
@@ -357,8 +422,14 @@ function VisitsPageContent() {
                 <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
                   Klinik
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
-                  Tgl. Registrasi
+                <th
+                  className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400 cursor-pointer select-none hover:text-brand"
+                  onClick={() => handleSort("registrationDate")}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Tgl. Registrasi
+                    <SortIndicator field="registrationDate" activeField={sortField} dir={sortDir} />
+                  </span>
                 </th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">
                   Aksi
@@ -366,12 +437,12 @@ function VisitsPageContent() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-              {visits.map((visit) => (
+              {sortedVisits.map((visit) => (
                 <tr
                   key={visit.id}
                   className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-900/50"
                 >
-                  <td className="px-4 py-3 font-mono text-xs font-medium text-[#6B8E6B]">
+                  <td className="px-4 py-3 font-mono text-xs font-medium text-brand">
                     {visit.visitNumber}
                   </td>
                   <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
@@ -448,7 +519,7 @@ function VisitsPageContent() {
                   onClick={() => setPage(p as number)}
                   className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-medium transition-all ${
                     page === p
-                      ? "bg-[#6B8E6B] text-white shadow-sm"
+                      ? "bg-brand text-white shadow-sm"
                       : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                   }`}
                 >
@@ -477,7 +548,7 @@ function VisitsPageContent() {
           onClose={() => setCancelVisit(null)}
           onCancelSuccess={() => {
             setCancelVisit(null);
-            loadVisits();
+            refetch();
           }}
         />
       )}
@@ -487,13 +558,36 @@ function VisitsPageContent() {
 
 // ─── Helper Components ────────────────────────────────────────────────────────
 
+function SortIndicator({ field, activeField, dir }: { field: string; activeField: string; dir: "asc" | "desc" }) {
+  if (field !== activeField) {
+    return <ChevronDown className="h-3 w-3 opacity-30" />;
+  }
+  return dir === "asc"
+    ? <ChevronUp className="h-3 w-3 text-brand" />
+    : <ChevronDown className="h-3 w-3 text-brand" />;
+}
+
 function LoadingSkeleton() {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-16 dark:border-slate-800 dark:bg-slate-950">
-      <Loader2 className="h-8 w-8 animate-spin text-[#6B8E6B]" />
-      <p className="text-sm text-slate-500 dark:text-slate-400">
-        Memuat data kunjungan...
-      </p>
+    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="animate-pulse">
+        {/* Header row */}
+        <div className="flex gap-4 border-b border-border bg-muted/30 px-4 py-3">
+          <div className="h-4 w-24 rounded bg-muted" />
+          <div className="h-4 w-32 rounded bg-muted" />
+          <div className="h-4 w-20 rounded bg-muted" />
+          <div className="h-4 w-28 rounded bg-muted" />
+        </div>
+        {/* Body rows */}
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex gap-4 border-b border-border px-4 py-4 last:border-0">
+            <div className="h-4 w-24 rounded bg-muted/60" />
+            <div className="h-4 w-32 rounded bg-muted/60" />
+            <div className="h-4 w-20 rounded bg-muted/60" />
+            <div className="h-4 w-28 rounded bg-muted/60" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -515,7 +609,7 @@ function EmptyState({ search }: { search: string }) {
       {!search && (
         <Link
           href="/dashboard/registration"
-          className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5A7D5A]"
+          className="mt-2 inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
         >
           <Plus className="h-4 w-4" />
           Registrasi Kunjungan

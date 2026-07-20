@@ -107,7 +107,7 @@ npx nest build
 echo ""
 echo "[6/8] Building Web (Next.js)..."
 cd "$APP_DIR/apps/web"
-NEXT_PUBLIC_API_URL=https://elibs.jizo.my.id NEXT_TELEMETRY_DISABLED=1 npm run build
+NEXT_PUBLIC_API_URL="" NEXT_TELEMETRY_DISABLED=1 npm run build
 
 # --- Step 7: Run migrations + seed ---
 echo ""
@@ -117,7 +117,12 @@ cd "$APP_DIR/apps/api"
 # Set DATABASE_URL for prisma CLI (port 5433!)
 export DATABASE_URL="postgresql://postgres:postgres123@localhost:5433/elis_db?schema=public"
 
+# Apply all pending migrations (includes sprint4_schema_additions)
+echo "  Applying pending migrations..."
 npx prisma migrate deploy || echo "[migrate] Warning: check manually"
+
+# Re-seed permissions (RBAC changes from CRIT-003: new payments:* permissions)
+echo "  Running permission seed..."
 
 if [ -f "prisma/seeds/dist/index.js" ]; then
   node prisma/seeds/dist/index.js || echo "[seed] Warning: non-fatal"

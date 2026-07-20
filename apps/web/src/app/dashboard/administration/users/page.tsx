@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { UserPlus, Search, Trash2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { RoleGuard } from "@/components/guards/RoleGuard";
 
 const ROLES = [
   { value: "SUPER_ADMIN", label: "Super Admin" },
@@ -39,9 +41,12 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({ email: "", name: "", password: "", role: "KASIR" });
   const [formError, setFormError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const PAGE_SIZE = 20;
+
+  const userFormTrapRef = useFocusTrap(showForm, () => setShowForm(false));
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -129,11 +134,12 @@ export default function UsersPage() {
 
   const handleDelete = async (user: User) => {
     if (!confirm(`Hapus user ${user.name || user.email}?`)) return;
+    setDeleteError("");
     try {
       await apiClient.delete(`/api/v1/users/${user.id}`);
       loadUsers();
     } catch {
-      alert("Gagal menghapus user");
+      setDeleteError("Gagal menghapus user");
     }
   };
 
@@ -145,6 +151,7 @@ export default function UsersPage() {
   };
 
   return (
+    <RoleGuard allowedRoles={["SUPER_ADMIN", "OWNER", "ADMIN"]}>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -158,7 +165,7 @@ export default function UsersPage() {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 rounded-xl bg-[#6B8E6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#6B8E6B]/20 transition-all hover:bg-[#5A7D5A] hover:shadow-md active:scale-[0.98]"
+          className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
         >
           <UserPlus className="h-4 w-4" />
           Tambah User
@@ -174,7 +181,7 @@ export default function UsersPage() {
             placeholder="Cari email atau nama..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#6B8E6B] focus:ring-2 focus:ring-[#6B8E6B]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           />
         </div>
         <select
@@ -188,6 +195,14 @@ export default function UsersPage() {
           ))}
         </select>
       </div>
+
+      {/* Delete Error Toast */}
+      {deleteError && (
+        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400 flex items-center justify-between">
+          <span>{deleteError}</span>
+          <button onClick={() => setDeleteError("")} className="ml-4 text-red-400 hover:text-red-600 font-medium">✕</button>
+        </div>
+      )}
 
       {/* Table */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 overflow-hidden">
@@ -212,7 +227,7 @@ export default function UsersPage() {
                   <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{user.email}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{user.name || "—"}</td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex rounded-lg bg-[#6B8E6B]/10 px-2 py-0.5 text-xs font-medium text-[#6B8E6B]">
+                    <span className="inline-flex rounded-lg bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand">
                       {ROLES.find((r) => r.value === user.role)?.label || user.role}
                     </span>
                   </td>
@@ -267,7 +282,7 @@ export default function UsersPage() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowForm(false)} />
-          <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+          <div ref={userFormTrapRef} role="dialog" aria-modal="true" className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
               {editingUser ? "Edit User" : "Tambah User"}
             </h2>
@@ -334,7 +349,7 @@ export default function UsersPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-xl bg-[#6B8E6B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5A7D5A] disabled:opacity-50"
+                  className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
                 >
                   {submitting ? "Menyimpan..." : "Simpan"}
                 </button>
@@ -344,5 +359,6 @@ export default function UsersPage() {
         </div>
       )}
     </div>
+    </RoleGuard>
   );
 }

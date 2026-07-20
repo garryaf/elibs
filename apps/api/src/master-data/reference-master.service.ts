@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { paginate } from '../common/interfaces/pagination.interface';
 
 type EntityType =
   | 'doctor'
@@ -51,10 +52,7 @@ export class ReferenceMasterService {
       model.count({ where }),
     ]);
 
-    return {
-      data,
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
-    };
+    return paginate(data, total, page, limit);
   }
 
   async create(entity: EntityType, dto: any) {
@@ -66,6 +64,10 @@ export class ReferenceMasterService {
     const model = this.getModel(entity);
     const existing = await model.findUnique({ where: { id } });
     if (!existing) {
+      throw new NotFoundException(`${entity} not found`);
+    }
+    // MED-003: Prevent updating soft-deleted records
+    if (this.hasSoftDelete(entity) && existing.deletedAt !== null) {
       throw new NotFoundException(`${entity} not found`);
     }
     return model.update({ where: { id }, data: dto });

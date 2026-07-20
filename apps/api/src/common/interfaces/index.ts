@@ -11,3 +11,4 @@ export * from './visit.interface';
 export * from './payment.interface';
 export * from './notification.interface';
 export * from './claim.interface';
+export * from './pagination.interface';

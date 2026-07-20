@@ -128,7 +128,7 @@ export default function NotificationsPage() {
                     {notif.orderNumber}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex rounded-lg bg-[#6B8E6B]/10 px-2 py-0.5 text-xs font-medium text-[#6B8E6B]">
+                    <span className="inline-flex rounded-lg bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand">
                       {notif.type}
                     </span>
                   </td>

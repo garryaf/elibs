@@ -88,8 +88,8 @@ export function LabNavTabs({ userRole = "ADMIN" }: LabNavTabsProps) {
             className={cn(
               "flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all",
               isActive
-                ? "bg-[#6B8E6B] text-white shadow-sm"
-                : "text-[#8B8B6B] hover:bg-[#6B8E6B]/10 hover:text-[#6B8E6B]"
+                ? "bg-brand text-white shadow-sm"
+                : "text-[#8B8B6B] hover:bg-brand/10 hover:text-brand"
             )}
             aria-current={isActive ? "page" : undefined}
           >

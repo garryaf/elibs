@@ -12,6 +12,7 @@ const userSelect = {
   email: true,
   name: true,
   role: true,
+  clinicId: true,
   departmentId: true,
   positionId: true,
   createdAt: true,
@@ -56,6 +57,7 @@ export class UsersService {
         name: dto.name,
         passwordHash,
         role: dto.role,
+        clinicId: dto.clinicId,
       },
       select: userSelect,
     });
@@ -149,6 +151,7 @@ export class UsersService {
     if (dto.password) {
       data.passwordHash = await bcrypt.hash(dto.password, 12);
     }
+    if (dto.clinicId !== undefined) data.clinicId = dto.clinicId;
     if (dto.departmentId !== undefined) data.departmentId = dto.departmentId;
     if (dto.positionId !== undefined) data.positionId = dto.positionId;
 

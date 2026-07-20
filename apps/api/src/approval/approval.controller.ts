@@ -9,9 +9,10 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { ApprovalType, ApprovalStatus } from '@prisma/client';
+import { ApprovalType, ApprovalStatus, Role } from '@prisma/client';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { ApprovalService } from './approval.service';
 import { CreateApprovalDto } from './dto/create-approval.dto';
 import { ApproveApprovalDto } from './dto/approve-approval.dto';
@@ -25,12 +26,14 @@ export class ApprovalController {
   constructor(private readonly approvalService: ApprovalService) {}
 
   @Post()
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OWNER, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Create a new approval request' })
   async create(@Body() dto: CreateApprovalDto) {
     return this.approvalService.create(dto);
   }
 
   @Post(':id/approve')
+  @Roles(Role.DOKTER, Role.MANAGER, Role.OWNER, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Approve the current level of an approval request' })
   async approve(
     @Param('id', ParseUUIDPipe) id: string,
@@ -40,6 +43,7 @@ export class ApprovalController {
   }
 
   @Post(':id/reject')
+  @Roles(Role.DOKTER, Role.MANAGER, Role.OWNER, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Reject an approval request with a reason' })
   async reject(
     @Param('id', ParseUUIDPipe) id: string,
@@ -49,6 +53,7 @@ export class ApprovalController {
   }
 
   @Get()
+  @Roles(Role.DOKTER, Role.ADMIN, Role.MANAGER, Role.OWNER, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'List approval requests with optional filters' })
   async findAll(
     @Query('type') type?: ApprovalType,
@@ -61,6 +66,7 @@ export class ApprovalController {
   }
 
   @Get(':id')
+  @Roles(Role.DOKTER, Role.ADMIN, Role.MANAGER, Role.OWNER, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get a single approval request with all steps' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.approvalService.findOne(id);

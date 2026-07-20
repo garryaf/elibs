@@ -10,8 +10,8 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { PermissionGuard } from '../../common/guards/permission.guard';
+import { RequirePermission } from '../../common/decorators/permission.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaymentService } from './payment.service';
 import { ReceiptService } from './receipt.service';
@@ -28,8 +28,8 @@ export class PaymentController {
   ) {}
 
   @Post('pay')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('payments:process')
   @ApiOperation({ summary: 'Process payment for an order' })
   async processPayment(
     @Param('id', ParseUUIDPipe) id: string,
@@ -40,8 +40,8 @@ export class PaymentController {
   }
 
   @Post('split-pay')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('payments:process')
   @ApiOperation({ summary: 'Process split payment for an order' })
   async processSplitPayment(
     @Param('id', ParseUUIDPipe) id: string,
@@ -52,32 +52,32 @@ export class PaymentController {
   }
 
   @Get('payments')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('payments:read')
   @ApiOperation({ summary: 'Get payment components for an order' })
   async getPaymentComponents(@Param('id', ParseUUIDPipe) id: string) {
     return this.paymentService.getPaymentComponents(id);
   }
 
   @Get('barcode')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('payments:barcode')
   @ApiOperation({ summary: 'Get barcode for an order' })
   async getBarcode(@Param('id', ParseUUIDPipe) id: string) {
     return this.paymentService.getBarcode(id);
   }
 
   @Get('invoice')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('payments:read')
   @ApiOperation({ summary: 'Get invoice for an order' })
   async getInvoice(@Param('id', ParseUUIDPipe) id: string) {
     return this.paymentService.getInvoice(id);
   }
 
   @Get('receipt')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('payments:read')
   @ApiOperation({ summary: 'Get receipt for an order' })
   async getReceipt(@Param('id', ParseUUIDPipe) id: string) {
     return this.receiptService.generateReceipt(id);
