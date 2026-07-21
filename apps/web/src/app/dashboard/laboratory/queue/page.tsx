@@ -14,9 +14,12 @@ import {
   Barcode,
   User,
   AlertCircle,
+  Loader2,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLabQueue } from "@/services/lab";
+import { apiClient } from "@/lib/api";
 import {
   LabStatusBadge,
   type OrderStatus,
@@ -326,6 +329,27 @@ interface OrderRowProps {
 }
 
 function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
+  const [confirming, setConfirming] = useState(false);
+  const [confirmSuccess, setConfirmSuccess] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+
+  const handleConfirmSample = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirming(true);
+    setConfirmError(null);
+    try {
+      await apiClient.post(`/api/v1/lab/${order.id}/sample`, { sampleCondition: "ACCEPTABLE" });
+      setConfirmSuccess(true);
+      // Reload page after short delay to show updated status
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (err: unknown) {
+      const apiErr = err as { message?: string };
+      setConfirmError(apiErr?.message || "Gagal konfirmasi sampel");
+    } finally {
+      setConfirming(false);
+    }
+  };
+
   return (
     <>
       <tr
@@ -450,6 +474,59 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* Action Buttons based on order status */}
+            <div className="mt-4 flex items-center gap-3">
+              {confirmError && (
+                <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {confirmError}
+                </div>
+              )}
+              {confirmSuccess && (
+                <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-xs text-green-700 dark:bg-green-900/20 dark:text-green-300">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Sampel dikonfirmasi! Memuat ulang...
+                </div>
+              )}
+              {order.status === "PAID" && !confirmSuccess && (
+                <button
+                  onClick={handleConfirmSample}
+                  disabled={confirming}
+                  className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {confirming ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Mengkonfirmasi...
+                    </>
+                  ) : (
+                    <>
+                      <Barcode className="h-4 w-4" />
+                      Konfirmasi Sampel
+                    </>
+                  )}
+                </button>
+              )}
+              {(order.status === "SAMPLE_COLLECTED" || order.status === "IN_ANALYSIS") && (
+                <a
+                  href={`/dashboard/laboratory/results/${order.id}`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
+                >
+                  <FlaskConical className="h-4 w-4" />
+                  Input Hasil
+                </a>
+              )}
+              {order.status === "VERIFIED" && (
+                <a
+                  href={`/dashboard/laboratory/approval`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-600 hover:shadow-md active:scale-[0.98]"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  Menunggu Approval Dokter
+                </a>
+              )}
             </div>
           </td>
         </tr>

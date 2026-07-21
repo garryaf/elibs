@@ -38,26 +38,37 @@ export default function OrdersPage() {
     try {
       const res = await apiClient.getOrders({ page, limit: PAGE_SIZE, status: statusFilter !== "ALL" ? statusFilter : undefined });
 
-      // Defensive extraction: handle { data: { data: [], meta: {} } } envelope
-      const envelope = (res?.data ?? res) as unknown;
+      // After unwrapResponse, res is typically { data: [...], meta: {...} }
+      // But could also be the raw array if double-unwrapped
+      const raw_response = res as unknown as Record<string, unknown>;
       let raw: unknown[] = [];
       let meta = { total: 0, page: 1, limit: PAGE_SIZE };
 
-      if (envelope && typeof envelope === "object") {
-        if ("data" in envelope) {
-          const inner = (envelope as { data: unknown }).data;
-          raw = Array.isArray(inner) ? inner : [];
+      // Case 1: { data: [...], meta: {...} } — standard paginated response
+      if (raw_response && typeof raw_response === "object" && !Array.isArray(raw_response)) {
+        const innerData = raw_response.data;
+        const innerMeta = raw_response.meta as Record<string, unknown> | undefined;
+
+        if (Array.isArray(innerData)) {
+          raw = innerData;
+        } else if (innerData && typeof innerData === "object" && "data" in (innerData as object)) {
+          // Nested: { data: { data: [...], meta: {...} } }
+          const nested = innerData as Record<string, unknown>;
+          raw = Array.isArray(nested.data) ? nested.data as unknown[] : [];
+          if (nested.meta) {
+            const m = nested.meta as Record<string, unknown>;
+            meta = { total: Number(m.total) || 0, page: Number(m.page) || 1, limit: Number(m.limit) || PAGE_SIZE };
+          }
         }
-        if ("meta" in envelope) {
-          const m = (envelope as { meta: unknown }).meta as Record<string, unknown>;
-          meta = {
-            total: Number(m.total) || 0,
-            page: Number(m.page) || 1,
-            limit: Number(m.limit) || PAGE_SIZE,
-          };
+
+        if (innerMeta) {
+          meta = { total: Number(innerMeta.total) || 0, page: Number(innerMeta.page) || 1, limit: Number(innerMeta.limit) || PAGE_SIZE };
         }
-      } else if (Array.isArray(envelope)) {
-        raw = envelope;
+      }
+      // Case 2: response is directly an array
+      else if (Array.isArray(raw_response)) {
+        raw = raw_response;
+        meta = { total: raw_response.length, page: 1, limit: PAGE_SIZE };
       }
 
       const mapped: Order[] = (raw as Record<string, unknown>[]).map((o) => ({
