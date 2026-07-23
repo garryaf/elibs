@@ -65,6 +65,10 @@ echo ""
 echo "[2/8] Creating directories..."
 mkdir -p logs
 
+# Clean stale .next cache to prevent permission issues
+echo "  Cleaning stale .next cache..."
+rm -rf "$APP_DIR/apps/web/.next" 2>/dev/null || sudo rm -rf "$APP_DIR/apps/web/.next" 2>/dev/null || true
+
 # --- Step 3: Install dependencies + pin Prisma ---
 echo ""
 echo "[3/8] Installing dependencies..."
