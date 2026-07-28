@@ -11,9 +11,13 @@ interface PatientTableProps {
   onEdit: (patient: Patient) => void;
   onView: (patient: Patient) => void;
   onDelete: (patient: Patient) => void;
+  // Server-side pagination (optional)
+  serverPage?: number;
+  serverTotalPages?: number;
+  onServerPageChange?: (page: number) => void;
 }
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 20;
 
 type PatientSortField = "name" | "mrn" | "dob" | "lastVisit" | "status";
 type SortDir = "asc" | "desc";
@@ -94,7 +98,7 @@ function SortIcon({ field, activeField, dir }: { field: string; activeField: str
     : <ChevronDown className="h-3 w-3 text-brand" />;
 }
 
-export function PatientTable({ patients, onEdit, onView, onDelete }: PatientTableProps) {
+export function PatientTable({ patients, onEdit, onView, onDelete, serverPage, serverTotalPages, onServerPageChange }: PatientTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<PatientSortField>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -282,44 +286,40 @@ export function PatientTable({ patients, onEdit, onView, onDelete }: PatientTabl
         </table>
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
+      {/* Pagination — server-side if available, otherwise client-side */}
+      {(serverTotalPages ? serverTotalPages > 1 : totalPages > 1) && (
         <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3.5 dark:border-slate-800">
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Menampilkan{" "}
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
-              {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, patients.length)}
-            </span>{" "}
-            dari <span className="font-semibold text-slate-700 dark:text-slate-300">{sortedPatients.length}</span> pasien
+            Halaman {serverPage ?? currentPage} dari {serverTotalPages ?? totalPages}
           </p>
           <div className="flex items-center gap-2">
             <button
               id="patient-table-prev"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
+              onClick={() => {
+                if (onServerPageChange && serverPage) {
+                  onServerPageChange(Math.max(1, serverPage - 1));
+                } else {
+                  setCurrentPage((p) => Math.max(1, p - 1));
+                }
+              }}
+              disabled={(serverPage ?? currentPage) === 1}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                id={`patient-table-page-${i + 1}`}
-                onClick={() => setCurrentPage(i + 1)}
-                className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-all",
-                  currentPage === i + 1
-                    ? "bg-brand text-white shadow-sm shadow-brand/30"
-                    : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
-                )}
-              >
-                {i + 1}
-              </button>
-            ))}
+            <span className="px-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+              {serverPage ?? currentPage} / {serverTotalPages ?? totalPages}
+            </span>
             <button
               id="patient-table-next"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
+              onClick={() => {
+                if (onServerPageChange && serverPage && serverTotalPages) {
+                  onServerPageChange(Math.min(serverTotalPages, serverPage + 1));
+                } else {
+                  setCurrentPage((p) => Math.min(totalPages, p + 1));
+                }
+              }}
+              disabled={(serverPage ?? currentPage) === (serverTotalPages ?? totalPages)}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
             >
               <ChevronRight className="h-4 w-4" />

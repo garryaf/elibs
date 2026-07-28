@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { User, Phone, MapPin, Mail, Hash, Calendar, Building, ArrowLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { apiClient } from "@/lib/api";
+import { apiClient, parseApiErrors } from "@/lib/api";
 import type { Gender } from "@/types/patient";
 import { CascadingRegionSelector, type RegionValue } from "@/components/regions/CascadingRegionSelector";
 import type { PatientOption } from "@/types/visit";
@@ -232,34 +232,12 @@ export function PatientRegistrationStep({
 
       onPatientRegistered(newPatient);
     } catch (err: unknown) {
-      const error = err as {
-        status?: number;
-        errorCode?: string;
-        message?: string;
-        errors?: Array<{ field: string; message: string }>;
-      };
-
-      // Handle NIK duplicate error specifically
-      if (
-        error.errorCode === "ERR_VALIDATION" &&
-        error.message?.toLowerCase().includes("nik")
-      ) {
-        setErrors((prev) => ({ ...prev, nik: "NIK sudah terdaftar dalam sistem" }));
-      } else if (error.errors && Array.isArray(error.errors)) {
-        // Handle field-level validation errors
-        const fieldErrors: FormErrors = {};
-        for (const fieldErr of error.errors) {
-          const fieldName = fieldErr.field as keyof RegistrationFormData;
-          fieldErrors[fieldName] = fieldErr.message;
-        }
-        setErrors(fieldErrors);
-      } else {
-        // General error — show as banner above form
-        setErrors((prev) => ({
-          ...prev,
-          general: error.message || "Terjadi kesalahan saat mendaftarkan pasien",
-        }));
-      }
+      const parsed = parseApiErrors(err);
+      setErrors((prev) => ({
+        ...prev,
+        ...parsed.fields,
+        general: parsed.global || "Terjadi kesalahan saat mendaftarkan pasien",
+      }));
     } finally {
       setIsSubmitting(false);
     }

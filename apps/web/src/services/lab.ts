@@ -49,10 +49,30 @@ export function useDeltaCheck(orderId: string) {
   });
 }
 
+// ─── Mutation Payload Types ───────────────────────────────────────────────────
+
+export type SampleCondition = 'ACCEPTABLE' | 'LIPEMIC' | 'HEMOLYTIC' | 'CLOTTED' | 'INSUFFICIENT';
+
+export interface ConfirmSamplePayload {
+  sampleCondition: SampleCondition;
+  notes?: string;
+}
+
+export interface ResultEntry {
+  orderDetailId: string;
+  resultValue: string;
+}
+
+export interface EnterResultsPayload {
+  results: ResultEntry[];
+}
+
+// ─── Mutations ───────────────────────────────────────────────────────────────
+
 export function useConfirmSample() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, data }: { orderId: string; data: unknown }) =>
+    mutationFn: ({ orderId, data }: { orderId: string; data: ConfirmSamplePayload }) =>
       apiClient.post(`/api/v1/lab/${orderId}/sample`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: labKeys.queue() });
@@ -63,7 +83,7 @@ export function useConfirmSample() {
 export function useEnterResults() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, data }: { orderId: string; data: unknown }) =>
+    mutationFn: ({ orderId, data }: { orderId: string; data: EnterResultsPayload }) =>
       apiClient.put(`/api/v1/lab/${orderId}/results`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: labKeys.queue() });

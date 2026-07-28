@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Loader2, ArrowLeft, AlertTriangle } from "lucide-react";
-import { apiClient } from "@/lib/api";
+import { apiClient, parseApiErrors } from "@/lib/api";
 import { SearchableDropdown, type DropdownOption } from "@/components/visits/SearchableDropdown";
 import type { PatientOption } from "@/types/visit";
 
@@ -217,6 +217,13 @@ export function VisitCreationStep({
     return Object.keys(newErrors).length === 0;
   };
 
+  const isFormValid = (() => {
+    if (!paymentMethod) return false;
+    if (paymentMethod === "BPJS" && (!bpjsNumber || !/^\d{13}$/.test(bpjsNumber))) return false;
+    if (paymentMethod === "INSURANCE" && !selectedInsurance) return false;
+    return true;
+  })();
+
   // Form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -256,12 +263,8 @@ export function VisitCreationStep({
         visitNumber: visitData.visitNumber as string,
       });
     } catch (err: unknown) {
-      const apiError = err as {
-        status?: number;
-        errorCode?: string;
-        message?: string;
-        errors?: Array<{ field: string; message: string }>;
-      };
+      const parsed = parseApiErrors(err);
+      const apiError = err as { errorCode?: string };
 
       // Handle specific known error codes with user-friendly messages
       if (apiError.errorCode === "ERR_DUPLICATE_ACTIVE_VISIT") {
@@ -272,27 +275,20 @@ export function VisitCreationStep({
         setGeneralError(
           "Pasien tidak memiliki asuransi aktif terdaftar. Daftarkan asuransi pasien terlebih dahulu."
         );
-      } else if (apiError.errors && Array.isArray(apiError.errors)) {
+      } else if (Object.keys(parsed.fields).length > 0) {
         const fieldErrors: FormErrors = {};
-        for (const fieldErr of apiError.errors) {
-          if (fieldErr.field === "bpjsNumber") {
-            fieldErrors.bpjsNumber = fieldErr.message;
-          } else if (fieldErr.field === "insuranceId") {
-            fieldErrors.insurance = fieldErr.message;
-          } else if (fieldErr.field === "paymentMethod") {
-            fieldErrors.paymentMethod = fieldErr.message;
+        for (const [field, msg] of Object.entries(parsed.fields)) {
+          if (field === "bpjsNumber") {
+            fieldErrors.bpjsNumber = msg;
+          } else if (field === "insuranceId") {
+            fieldErrors.insurance = msg;
           } else {
-            fieldErrors.general = fieldErr.message;
+            fieldErrors.paymentMethod = msg; // fallback
           }
         }
         setErrors(fieldErrors);
-        if (fieldErrors.general) {
-          setGeneralError(fieldErrors.general);
-        }
       } else {
-        setGeneralError(
-          apiError.message || "Terjadi kesalahan saat mendaftarkan kunjungan. Silakan coba lagi."
-        );
+        setGeneralError(parsed.global || "Terjadi kesalahan saat mendaftarkan kunjungan. Silakan coba lagi.");
       }
     } finally {
       setSubmitting(false);
@@ -546,7 +542,7 @@ export function VisitCreationStep({
 
           <button
             type="submit"
-            disabled={submitting || ((paymentMethod === "BPJS" || paymentMethod === "INSURANCE") && enrollmentChecked && !hasInsuranceEnrollment)}
+            disabled={submitting || !isFormValid || ((paymentMethod === "BPJS" || paymentMethod === "INSURANCE") && enrollmentChecked && !hasInsuranceEnrollment)}
             className="flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md hover:shadow-brand/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-brand disabled:hover:shadow-sm disabled:active:scale-100"
           >
             {submitting ? (

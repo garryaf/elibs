@@ -87,14 +87,52 @@ export default function ReportsPage() {
 
   useEffect(() => {
     setLoading(true);
-    apiClient
-      .getLabSummary()
-      .then((res) => {
-        setSummary((res?.data ?? res) as Record<string, unknown>);
-      })
-      .catch(() => setSummary(null))
-      .finally(() => setLoading(false));
-  }, []);
+    let type: Parameters<typeof apiClient.getReport>[0] | null = null;
+    
+    switch (selectedReport) {
+      case "revenue": type = "revenue-summary"; break;
+      case "monthly": type = "orders-by-payment-method"; break;
+      case "daily": type = "orders-by-status"; break;
+      case "test": type = "top-tests"; break;
+      case "patient": type = "new-patients"; break;
+      case "tat": type = "turnaround-time"; break;
+    }
+
+    if (type) {
+      apiClient
+        .getReport(type, { startDate: dateFrom, endDate: dateTo })
+        .then((res) => {
+          setSummary((res?.data ?? res) as Record<string, unknown>);
+        })
+        .catch(() => setSummary(null))
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, [selectedReport, dateFrom, dateTo]);
+
+  const handleDownloadPdf = async () => {
+    let type: "revenue-summary" | "orders-by-status" | null = null;
+    if (selectedReport === "revenue") type = "revenue-summary";
+    else if (selectedReport === "daily") type = "orders-by-status";
+    
+    if (!type) {
+      alert("Export PDF hanya tersedia untuk Laporan Pendapatan dan Harian.");
+      return;
+    }
+    
+    try {
+      const blob = await apiClient.getReportPdf(type, { startDate: dateFrom, endDate: dateTo });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${type}-${dateFrom}-to-${dateTo}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Gagal mengunduh PDF.");
+    }
+  };
 
   const config = REPORT_CONFIGS.find((r) => r.id === selectedReport)!;
 
@@ -111,7 +149,9 @@ export default function ReportsPage() {
             Generate dan unduh laporan operasional laboratorium.
           </p>
         </div>
-        <button className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark active:scale-[0.98]">
+        <button 
+          onClick={handleDownloadPdf}
+          className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark active:scale-[0.98]">
           <Download className="h-4 w-4" />
           Export PDF
         </button>
@@ -214,6 +254,19 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
 }
 
 function ReportContent({ summary }: { summary: Record<string, unknown> }) {
+  const isLegacyLabSummary = summary.totalOrdersToday !== undefined || summary.averageTatMinutes !== undefined;
+
+  if (!isLegacyLabSummary) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Data Laporan</h3>
+        <div className="overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs font-mono text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+          <pre>{JSON.stringify(summary, null, 2)}</pre>
+        </div>
+      </div>
+    );
+  }
+
   const ordersByStatus = summary.ordersByStatus as Record<string, number> | undefined;
   return (
     <div className="space-y-6">

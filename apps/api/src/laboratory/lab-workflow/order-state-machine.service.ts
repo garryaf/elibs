@@ -44,7 +44,7 @@ export class OrderStateMachineService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
     }
 
     if (!this.canTransition(order.status, toStatus)) {

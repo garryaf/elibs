@@ -196,12 +196,12 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
     'master-data.read',
   ],
 
-  // CS: patient registration + order status checking
+  // CS: patient registration + order status checking + cancel
   CS: [
     'patients.create', 'patients.read', 'patients.update',
     'orders.create', 'orders.read',
     // Order endpoint-level permissions (for PermissionGuard migration)
-    'orders:create', 'orders:read',
+    'orders:create', 'orders:read', 'orders:cancel',
     // Payment endpoint-level permissions (for PermissionGuard migration)
     'payments:read', 'payments:barcode',
     'notifications.read', 'notifications.create',

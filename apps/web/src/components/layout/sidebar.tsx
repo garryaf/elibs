@@ -88,8 +88,9 @@ const menuGroups: MenuGroup[] = [
       },
       {
         name: "Validasi Dokter",
-        href: "/dashboard/doctor",
+        href: "/dashboard/laboratory/approval",
         icon: Stethoscope,
+        // Intentional supervisory access for OWNER and MANAGER (matches backend approval-queue roles)
         roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "DOKTER"],
       },
     ],

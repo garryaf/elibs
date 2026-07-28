@@ -68,7 +68,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: React.Elemen
    NUMPAD COMPONENT
 ──────────────────────────────────────────────────────────────── */
 function Numpad({ onPress }: { onPress: (v: string) => void }) {
-  const keys = ["7","8","9","4","5","6","1","2","3","000","0","⌫"];
+  const keys = ["7", "8", "9", "4", "5", "6", "1", "2", "3", "000", "0", "⌫"];
   return (
     <div className="grid grid-cols-3 gap-2">
       {keys.map((k) => (

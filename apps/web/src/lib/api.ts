@@ -71,6 +71,33 @@ export function unwrapResponse<T>(data: unknown): T {
   return data as T;
 }
 
+export function parseApiErrors(err: unknown): { global?: string; fields: Record<string, string> } {
+  const result = { fields: {} as Record<string, string>, global: undefined as string | undefined };
+  if (err && typeof err === "object") {
+    const apiErr = err as { message?: string; errors?: Array<{ field?: string; constraint: string }> };
+    result.global = apiErr.message;
+    
+    if (Array.isArray(apiErr.errors)) {
+      for (const e of apiErr.errors) {
+        if (e.field) {
+          result.fields[e.field] = e.constraint;
+        } else if (typeof e.constraint === "string") {
+          // Fallback: guess field name from the first word of the constraint string
+          const parts = e.constraint.split(" ");
+          if (parts.length > 0) {
+            const possibleField = parts[0];
+            // Only map if it looks like a camelCase or snake_case field name
+            if (/^[a-zA-Z0-9_]+$/.test(possibleField)) {
+              result.fields[possibleField] = e.constraint;
+            }
+          }
+        }
+      }
+    }
+  }
+  return result;
+}
+
 // ─── API Client ───────────────────────────────────────────────────────────────
 
 class ApiClient {
@@ -391,6 +418,41 @@ class ApiClient {
 
   async getRecentOrders(): Promise<ApiResponse<unknown>> {
     return this.get("/api/v1/dashboard/recent-orders");
+  }
+
+  // ─── Reports ───────────────────────────────────────────────────────────────
+
+  async getReport(
+    type: "revenue-summary" | "orders-by-status" | "orders-by-payment-method" | "top-tests" | "insurance-claims" | "turnaround-time" | "by-referring-doctor" | "by-referring-clinic" | "new-patients",
+    params?: { startDate?: string; endDate?: string }
+  ): Promise<ApiResponse<unknown>> {
+    const qs = new URLSearchParams();
+    if (params?.startDate) qs.set("startDate", params.startDate);
+    if (params?.endDate) qs.set("endDate", params.endDate);
+    const query = qs.toString() ? `?${qs.toString()}` : "";
+    return this.get(`/api/v1/reports/${type}${query}`);
+  }
+
+  async getReportPdf(
+    type: "revenue-summary" | "orders-by-status",
+    params?: { startDate?: string; endDate?: string }
+  ): Promise<Blob> {
+    const qs = new URLSearchParams();
+    if (params?.startDate) qs.set("startDate", params.startDate);
+    if (params?.endDate) qs.set("endDate", params.endDate);
+    const query = qs.toString() ? `?${qs.toString()}` : "";
+    
+    // Custom fetch for blob since apiClient usually expects JSON
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const response = await fetch(`${this.baseUrl}/api/v1/reports/${type}/pdf${query}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to download report PDF: ${response.statusText}`);
+    }
+    
+    return await response.blob();
   }
 
   // ─── Users ─────────────────────────────────────────────────────────────────

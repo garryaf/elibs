@@ -1,5 +1,7 @@
 "use client";
 
+import { useFocusTrap } from "@/hooks/use-focus-trap";
+
 interface DiscardChangesDialogProps {
   open: boolean;
   onConfirm: () => void;
@@ -7,12 +9,19 @@ interface DiscardChangesDialogProps {
 }
 
 export function DiscardChangesDialog({ open, onConfirm, onCancel }: DiscardChangesDialogProps) {
+  const focusTrapRef = useFocusTrap(open, onCancel);
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/30" onClick={onCancel} />
-      <div className="relative z-10 w-full max-w-xs rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+      <div 
+        ref={focusTrapRef}
+        role="dialog"
+        aria-modal="true"
+        className="relative z-10 w-full max-w-xs rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+      >
         <h3 className="text-base font-bold text-slate-900 dark:text-white">Buang Perubahan?</h3>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Anda memiliki perubahan yang belum disimpan. Yakin ingin menutup?

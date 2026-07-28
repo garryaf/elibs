@@ -35,6 +35,9 @@ export class InsuranceConsolidationService {
             OR: [{ validUntil: null }, { validUntil: { gte: today } }],
           },
         ],
+        insurance: {
+          deletedAt: null,
+        },
       },
       orderBy: { priority: 'asc' },
       include: { insurance: true },
@@ -81,6 +84,9 @@ export class InsuranceConsolidationService {
             OR: [{ validUntil: null }, { validUntil: { gte: today } }],
           },
         ],
+        insurance: {
+          deletedAt: null,
+        },
       },
       include: { insurance: true },
     });

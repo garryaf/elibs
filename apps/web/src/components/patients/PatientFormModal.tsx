@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, User, Phone, MapPin, Mail, Hash, Calendar, Shield, Heart, Building } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { parseApiErrors } from "@/lib/api";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { DiscardChangesDialog } from "@/components/ui/DiscardChangesDialog";
@@ -12,7 +13,7 @@ import { CascadingRegionSelector, type RegionValue } from "@/components/regions/
 interface PatientFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: PatientFormData) => void;
+  onSubmit: (data: PatientFormData) => Promise<void> | void;
   editData?: Patient | null;
 }
 
@@ -106,7 +107,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
         }
       : initialForm
   );
-  const [errors, setErrors] = useState<Partial<Record<keyof PatientFormData | "region", string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof PatientFormData | "region" | "global", string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Reset dirty state when modal opens
@@ -148,7 +149,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
   };
 
   const validate = (): boolean => {
-    const newErrors: Partial<Record<keyof PatientFormData | "region", string>> = {};
+    const newErrors: Partial<Record<keyof PatientFormData | "region" | "global", string>> = {};
     if (!form.nik || form.nik.length !== 16) newErrors.nik = "NIK harus 16 digit";
     if (!form.name || form.name.trim().length < 3) newErrors.name = "Nama minimal 3 karakter";
     if (!form.dob) newErrors.dob = "Tanggal lahir wajib diisi";
@@ -168,14 +169,35 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
     return Object.keys(newErrors).length === 0;
   };
 
+  const isFormValid = (() => {
+    if (!form.nik || form.nik.length !== 16) return false;
+    if (!form.name || form.name.trim().length < 3) return false;
+    if (!form.dob) return false;
+    if (!form.phone) return false;
+    if (!form.address || form.address.trim().length < 5) return false;
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return false;
+    if (validateRegion(regionValue)) return false;
+    return true;
+  })();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setIsSubmitting(true);
-    onSubmit(form);
-    setIsSubmitting(false);
-    reset();
-    onClose();
+    try {
+      await onSubmit(form);
+      reset();
+      onClose();
+    } catch (err: unknown) {
+      const parsed = parseApiErrors(err);
+      setErrors((prev) => ({
+        ...prev,
+        ...parsed.fields,
+        global: parsed.global,
+      }));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -211,6 +233,11 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
 
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate>
+          {errors.global && (
+            <div className="mx-6 mt-6 rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200">
+              {errors.global}
+            </div>
+          )}
           <div className="p-6 space-y-6">
             {/* Section: Data Diri */}
             <div>
@@ -424,7 +451,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
             <button
               type="submit"
               id="patient-modal-submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isFormValid}
               className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? (

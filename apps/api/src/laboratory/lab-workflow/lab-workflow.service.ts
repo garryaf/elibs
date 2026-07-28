@@ -35,7 +35,7 @@ export class LabWorkflowService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
     }
 
     if (!order.visitId) {
@@ -128,7 +128,7 @@ export class LabWorkflowService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
     }
 
     if (!order.visitId) {
@@ -224,7 +224,7 @@ export class LabWorkflowService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
     }
 
     if (!order.visitId) {
@@ -286,7 +286,7 @@ export class LabWorkflowService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
     }
 
     if (!order.visitId) {
@@ -481,7 +481,7 @@ export class LabWorkflowService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
     }
 
     const results = [];

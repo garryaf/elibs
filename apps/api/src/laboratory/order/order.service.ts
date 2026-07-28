@@ -151,7 +151,9 @@ export class OrderService {
     const sortBy = query.sortBy || 'createdAt';
     const sortOrder = query.sortOrder || 'desc';
 
-    const where: any = {};
+    const where: any = {
+      patient: { deletedAt: null },
+    };
 
     // DataScope: restrict by clinicId for KLINIK_PARTNER users
     if (clinicId) {

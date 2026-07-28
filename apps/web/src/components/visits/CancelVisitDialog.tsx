@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, AlertTriangle } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,8 @@ export function CancelVisitDialog({
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const focusTrapRef = useFocusTrap(isOpen, onClose);
 
   const isReasonValid = reason.trim().length >= MIN_REASON_LENGTH;
 
@@ -76,6 +79,7 @@ export function CancelVisitDialog({
 
       {/* Dialog */}
       <div
+        ref={focusTrapRef}
         className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
         role="dialog"
         aria-modal="true"

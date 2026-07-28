@@ -97,6 +97,13 @@ export default function UsersPage() {
     setPage(1);
   }, [search, roleFilter]);
 
+  const isFormValid = (() => {
+    if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return false;
+    if (!editingUser && (!formData.password || formData.password.length < 8)) return false;
+    if (!formData.role) return false;
+    return true;
+  })();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
@@ -348,8 +355,8 @@ export default function UsersPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+                  disabled={submitting || !isFormValid}
+                  className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? "Menyimpan..." : "Simpan"}
                 </button>

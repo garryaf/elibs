@@ -29,6 +29,9 @@ echo ""
 # --- Step 1: Start Docker infrastructure ---
 echo "[1/8] Starting Docker infrastructure (postgres, redis, nginx, certbot)..."
 
+# Stop PM2 first to release file locks on .next and dist folders
+pm2 kill 2>/dev/null || true
+
 # Recreate nginx with extra_hosts for host.docker.internal
 sudo docker compose -f docker-compose.yml up -d postgres redis certbot
 # Nginx needs special handling for host.docker.internal
@@ -111,6 +114,10 @@ npx nest build
 echo ""
 echo "[6/8] Building Web (Next.js)..."
 cd "$APP_DIR/apps/web"
+
+# Clean old .next build cache to avoid EACCES permission errors
+rm -rf .next
+
 NEXT_PUBLIC_API_URL="" NEXT_TELEMETRY_DISABLED=1 npm run build
 
 # --- Step 7: Run migrations + seed ---

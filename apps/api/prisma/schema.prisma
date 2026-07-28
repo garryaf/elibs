@@ -560,6 +560,8 @@ model Patient {
   emergencyContact           String?
   emergencyPhone             String?
   /// @deprecated — Use PatientInsurance junction (priority=1). Will be removed in v2.
+  /// Migration plan: (1) All reads use consolidation service ✅ (2) Writes populate both legacy + junction ✅
+  /// (3) Remove field after confirming no direct reads remain — target: v2.0 release
   insuranceId                String?   @db.Uuid
   consentDigitalNotification Boolean   @default(false)
   createdAt                  DateTime  @default(now())
@@ -575,6 +577,7 @@ model Patient {
   orders            Order[]
   visits            Visit[]
 
+  @@index([phone])
   @@map("patients")
 }
 
@@ -587,6 +590,8 @@ model Order {
   clinicId          String?          @db.Uuid
   doctorId          String?          @db.Uuid
   /// @deprecated — Use OrderInsurance junction (coverageType=PRIMARY). Will be removed in v2.
+  /// Migration plan: (1) All reads use orderInsurances relation ✅ (2) Writes populate both legacy + junction ✅
+  /// (3) Remove field after confirming no direct reads remain — target: v2.0 release
   insuranceId       String?          @db.Uuid
   visitId           String           @db.Uuid
   status            OrderStatus      @default(PENDING_PAYMENT)

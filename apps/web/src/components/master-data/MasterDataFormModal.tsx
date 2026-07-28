@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { parseApiErrors } from "@/lib/api";
 
 interface FormField {
   name: string;
@@ -17,7 +18,7 @@ interface FormField {
 interface MasterDataFormModalProps {
   fields: FormField[];
   initialData?: Record<string, unknown>;
-  onSubmit: (data: Record<string, unknown>) => void;
+  onSubmit: (data: Record<string, unknown>) => Promise<void>;
   isOpen: boolean;
   onClose: () => void;
   title?: string;
@@ -44,6 +45,8 @@ export function MasterDataFormModal({
     return empty;
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null>(null);
 
@@ -62,6 +65,7 @@ export function MasterDataFormModal({
       setFormData(empty);
     }
     setErrors({});
+    setGlobalError(null);
   }, [initialData, fields]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -111,6 +115,7 @@ export function MasterDataFormModal({
 
   const handleChange = useCallback((name: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setGlobalError(null);
     setErrors((prev) => {
       if (prev[name]) {
         const rest = { ...prev };
@@ -135,10 +140,34 @@ export function MasterDataFormModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const isFormValid = (() => {
+    for (const field of fields) {
+      if (field.required) {
+        const value = formData[field.name];
+        if (value === undefined || value === null || String(value).trim() === "") {
+          return false;
+        }
+      }
+    }
+    return true;
+  })();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    onSubmit(formData);
+    setIsSubmitting(true);
+    setGlobalError(null);
+    try {
+      await onSubmit(formData);
+    } catch (err: unknown) {
+      const parsed = parseApiErrors(err);
+      setErrors((prev) => ({ ...prev, ...parsed.fields }));
+      if (parsed.global) {
+        setGlobalError(parsed.global);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -188,6 +217,11 @@ export function MasterDataFormModal({
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate>
           <div className="p-6 space-y-4">
+            {globalError && (
+              <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-200">
+                {globalError}
+              </div>
+            )}
             {fields.map((field, index) => (
               <div key={field.name}>
                 <label
@@ -256,16 +290,17 @@ export function MasterDataFormModal({
               type="button"
               variant="outline"
               onClick={onClose}
+              disabled={isSubmitting}
               className="rounded-xl px-5 py-2.5"
             >
               Batal
             </Button>
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isSubmitting || !isFormValid}
               className="rounded-xl bg-brand px-5 py-2.5 text-white shadow-sm shadow-brand/20 hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isLoading ? (
+              {(isLoading || isSubmitting) ? (
                 <span className="flex items-center gap-2">
                   <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

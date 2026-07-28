@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { CheckCircle2, ClipboardPlus, Eye } from "lucide-react";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { CheckCircle2, ClipboardPlus, Eye, Loader2 } from "lucide-react";
 import type { PatientOption } from "@/types/visit";
 import { WorkflowStepIndicator } from "@/components/registration/WorkflowStepIndicator";
 import { PatientSearchStep } from "@/components/registration/PatientSearchStep";
 import { PatientRegistrationStep } from "@/components/registration/PatientRegistrationStep";
 import { VisitCreationStep } from "@/components/registration/VisitCreationStep";
+import { apiClient } from "@/lib/api";
 
 interface WorkflowState {
   currentStep: "search" | "register" | "visit-creation";
@@ -31,9 +32,58 @@ const initialState: WorkflowState = {
   error: null,
 };
 
-export default function RegistrationWorkflowPage() {
+// ─── Inner component (reads useSearchParams — must be inside <Suspense>) ──────
+function RegistrationWorkflow() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const patientId = searchParams.get("patientId");
+
   const [state, setState] = useState<WorkflowState>(initialState);
+  const [loadingPreselect, setLoadingPreselect] = useState(false);
+
+  // If patientId is in the URL, fetch patient data and skip to visit-creation step
+  useEffect(() => {
+    if (!patientId) return;
+
+    let cancelled = false;
+    setLoadingPreselect(true);
+
+    (async () => {
+      try {
+        const res = await apiClient.getPatient(patientId);
+        if (cancelled) return;
+
+        const data = (res?.data ?? res) as Record<string, unknown> | undefined;
+        if (!data || !data.id) {
+          // Patient not found — fall back to normal search flow
+          setLoadingPreselect(false);
+          return;
+        }
+
+        const patient: PatientOption = {
+          id: data.id as string,
+          name: data.name as string,
+          mrn: data.mrn as string,
+          nik: (data.nik as string) || "",
+          dateOfBirth: (data.dateOfBirth as string) || "",
+          gender: (data.gender as "MALE" | "FEMALE") || "MALE",
+        };
+
+        setState((prev) => ({
+          ...prev,
+          selectedPatient: patient,
+          currentStep: "visit-creation",
+          error: null,
+        }));
+      } catch {
+        // On error fall back gracefully — user can search manually
+      } finally {
+        if (!cancelled) setLoadingPreselect(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [patientId]);
 
   // Compute completed steps for the indicator
   const completedSteps: ("search" | "register")[] = [];
@@ -95,6 +145,28 @@ export default function RegistrationWorkflowPage() {
   const handleRegisterAnother = () => {
     setState({ ...initialState });
   };
+
+  // --- Loading state while pre-fetching patient from query param ---
+  if (loadingPreselect) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Pendaftaran Pasien
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Alur pendaftaran pasien dan kunjungan terpadu
+          </p>
+        </div>
+        <div className="flex items-center justify-center py-16">
+          <div className="flex flex-col items-center gap-3 text-slate-500 dark:text-slate-400">
+            <Loader2 className="h-8 w-8 animate-spin text-brand" />
+            <p className="text-sm">Memuat data pasien...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // --- Success confirmation view ---
   if (state.createdVisit) {
@@ -213,5 +285,31 @@ export default function RegistrationWorkflowPage() {
         />
       )}
     </div>
+  );
+}
+
+// ─── Page export — wraps inner component in Suspense (required by Next.js for
+//     components that call useSearchParams during SSR / static generation) ─────
+export default function RegistrationWorkflowPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Pendaftaran Pasien
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Alur pendaftaran pasien dan kunjungan terpadu
+            </p>
+          </div>
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-brand" />
+          </div>
+        </div>
+      }
+    >
+      <RegistrationWorkflow />
+    </Suspense>
   );
 }

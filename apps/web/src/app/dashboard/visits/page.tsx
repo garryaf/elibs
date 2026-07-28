@@ -19,6 +19,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useVisits } from "@/services/visits";
 import { VisitRowActions } from "@/components/visits/VisitRowActions";
 import { CancelVisitDialog } from "@/components/visits/CancelVisitDialog";
+import { RoleGuard } from "@/components/guards/RoleGuard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,31 +88,11 @@ const AUTHORIZED_VISIT_ROLES = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function VisitsPage() {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (user && !AUTHORIZED_VISIT_ROLES.includes(user.role)) {
-      router.replace("/dashboard");
-    }
-  }, [user, router]);
-
-  // Loading state while auth is resolving
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-3 py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-brand" />
-        <p className="text-sm text-slate-500 dark:text-slate-400">Memuat...</p>
-      </div>
-    );
-  }
-
-  // Redirect unauthorized roles (render nothing while redirecting)
-  if (!user || !AUTHORIZED_VISIT_ROLES.includes(user.role)) {
-    return null;
-  }
-
-  return <VisitsPageContent />;
+  return (
+    <RoleGuard allowedRoles={AUTHORIZED_VISIT_ROLES}>
+      <VisitsPageContent />
+    </RoleGuard>
+  );
 }
 
 // ─── Authorized Page Content ──────────────────────────────────────────────────

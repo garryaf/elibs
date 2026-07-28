@@ -40,6 +40,10 @@ export class UsersService {
   async create(dto: CreateUserDto, requestingUser: { id: string; role: Role }, ipAddress?: string) {
     this.validateRoleEscalation(requestingUser.role, dto.role);
 
+    if (dto.role === Role.KLINIK_PARTNER && !dto.clinicId) {
+      throw new ConflictException('clinicId wajib diisi untuk role KLINIK_PARTNER');
+    }
+
     // Check for active (non-deleted) user with same email.
     // DB partial unique index enforces this at schema level too (users_email_active_unique).
     const existing = await this.prisma.user.findFirst({
@@ -142,6 +146,13 @@ export class UsersService {
       if (existing) {
         throw new ConflictException('Email already in use');
       }
+    }
+
+    const finalRole = dto.role || oldUser.role;
+    const finalClinicId = dto.clinicId !== undefined ? dto.clinicId : oldUser.clinicId;
+
+    if (finalRole === Role.KLINIK_PARTNER && !finalClinicId) {
+      throw new ConflictException('clinicId wajib diisi untuk role KLINIK_PARTNER');
     }
 
     const data: any = {};

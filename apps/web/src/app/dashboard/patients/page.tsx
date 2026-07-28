@@ -11,6 +11,12 @@ import { PatientTable } from "@/components/patients/PatientTable";
 import { PatientFormModal } from "@/components/patients/PatientFormModal";
 import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
 import { PatientLabHistory } from "@/components/patients/PatientLabHistory";
+import { RoleGuard } from "@/components/guards/RoleGuard";
+
+const ALL_ROLES = [
+  "SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "KASIR", "CS",
+  "SAMPLING", "ANALIS", "DOKTER", "MARKETING", "KLINIK_PARTNER"
+];
 
 const LAB_HISTORY_ROLES = [
   "KASIR",
@@ -32,20 +38,43 @@ export default function PatientsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<PatientStatus | "ALL">("ALL");
+  const [page, setPage] = useState(1);
+  const [totalPatients, setTotalPatients] = useState(0);
+
+  const PAGE_SIZE = 20;
 
   const loadPatients = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiClient.getPatients({ limit: 200, search: search || undefined });
-      // Defensive extraction: handle both { data: { data: [] } } and { data: [] } shapes
-      const envelope = (res?.data ?? res) as unknown;
+      const res = await apiClient.getPatients({ page, limit: PAGE_SIZE, search: search || undefined });
+      // Defensive extraction: handle paginated response { data: [...], meta: {...} }
+      const raw_response = res as unknown as Record<string, unknown>;
       let raw: unknown[] = [];
-      if (Array.isArray(envelope)) {
-        raw = envelope;
-      } else if (envelope && typeof envelope === "object" && "data" in envelope) {
-        const inner = (envelope as { data: unknown }).data;
-        raw = Array.isArray(inner) ? inner : [];
+      let total = 0;
+
+      if (raw_response && typeof raw_response === "object" && !Array.isArray(raw_response)) {
+        const innerData = raw_response.data;
+        const innerMeta = raw_response.meta as Record<string, unknown> | undefined;
+
+        if (Array.isArray(innerData)) {
+          raw = innerData;
+        } else if (innerData && typeof innerData === "object" && "data" in (innerData as object)) {
+          const nested = innerData as Record<string, unknown>;
+          raw = Array.isArray(nested.data) ? nested.data as unknown[] : [];
+          if (nested.meta) {
+            const m = nested.meta as Record<string, unknown>;
+            total = Number(m.total) || 0;
+          }
+        }
+
+        if (innerMeta) {
+          total = Number(innerMeta.total) || 0;
+        }
+      } else if (Array.isArray(raw_response)) {
+        raw = raw_response;
+        total = raw_response.length;
       }
+
       // Map backend Patient model to frontend Patient type
       const mapped: Patient[] = (raw as Record<string, unknown>[]).map((p) => ({
         id: p.id as string,
@@ -62,18 +91,26 @@ export default function PatientsPage() {
         lastVisit: p.updatedAt as string,
       }));
       setPatients(mapped);
+      setTotalPatients(total || mapped.length);
     } catch {
       // If API fails, show empty state
       setPatients([]);
+      setTotalPatients(0);
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, page]);
 
   useEffect(() => {
     const debounce = setTimeout(loadPatients, 300);
     return () => clearTimeout(debounce);
   }, [loadPatients]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [viewingPatient, setViewingPatient] = useState<Patient | null>(null);
@@ -144,7 +181,7 @@ export default function PatientsPage() {
   }, [patients, search, statusFilter]);
 
   const stats = {
-    total: patients.length,
+    total: totalPatients,
     active: patients.filter((p) => p.status === "ACTIVE").length,
     inactive: patients.filter((p) => p.status === "INACTIVE").length,
   };
@@ -194,25 +231,20 @@ export default function PatientsPage() {
           }
         : {};
 
-    try {
-      await apiClient.updatePatient(editingPatient.id, {
-        name: data.name,
-        dateOfBirth: data.dob,
-        gender: data.gender,
-        phone: data.phone,
-        address: data.address,
-        email: data.email || undefined,
-        ...regionPayload,
-      });
-      loadPatients();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Gagal menyimpan data pasien.";
-      setUpdateError(message);
-    }
+    await apiClient.updatePatient(editingPatient.id, {
+      name: data.name,
+      dateOfBirth: data.dob,
+      gender: data.gender,
+      phone: data.phone,
+      address: data.address,
+      email: data.email || undefined,
+      ...regionPayload,
+    });
+    loadPatients();
   };
 
   return (
-    <>
+    <RoleGuard allowedRoles={ALL_ROLES}>
       <div className="space-y-6">
         {/* Page Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -339,6 +371,9 @@ export default function PatientsPage() {
           onEdit={handleEdit}
           onView={handleView}
           onDelete={handleDelete}
+          serverPage={page}
+          serverTotalPages={Math.ceil(totalPatients / PAGE_SIZE) || 1}
+          onServerPageChange={setPage}
         />
       </div>
 
@@ -421,8 +456,9 @@ export default function PatientsPage() {
                       </p>
                       <button
                         onClick={() => {
+                          const patientId = viewingPatient.id;
                           setViewingPatient(null);
-                          router.push('/dashboard/registration');
+                          router.push(`/dashboard/registration?patientId=${patientId}`);
                         }}
                         className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
                       >
@@ -433,13 +469,26 @@ export default function PatientsPage() {
                 </div>
               )}
             </div>
-            <div className="flex justify-end gap-3 border-t border-slate-100 px-6 py-4 dark:border-slate-800">
+            <div className="flex flex-wrap justify-end gap-3 border-t border-slate-100 px-6 py-4 dark:border-slate-800">
               <button
                 onClick={() => { setViewingPatient(null); handleEdit(viewingPatient); }}
                 className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
               >
                 Edit Data
               </button>
+              {hasNoActiveVisit === true && (
+                <button
+                  id="patient-create-visit-btn"
+                  onClick={() => {
+                    const patientId = viewingPatient.id;
+                    setViewingPatient(null);
+                    router.push(`/dashboard/registration?patientId=${patientId}`);
+                  }}
+                  className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600"
+                >
+                  Buat Kunjungan
+                </button>
+              )}
               <button
                 onClick={() => setViewingPatient(null)}
                 className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
@@ -487,6 +536,6 @@ export default function PatientsPage() {
           </div>
         </div>
       )}
-    </>
+    </RoleGuard>
   );
 }

@@ -59,7 +59,13 @@ export default function ReportPreviewPage() {
     apiClient
       .getOrder(id)
       .then((res) => {
-        const data = (res as { success: boolean; data: OrderApi }).data;
+        const raw = res as unknown as Record<string, unknown>;
+        let data: OrderApi | null = null;
+        if (raw && typeof raw === "object" && "orderNumber" in raw) {
+          data = raw as unknown as OrderApi;
+        } else if (raw && typeof raw === "object" && "data" in raw && raw.data && typeof raw.data === "object") {
+          data = raw.data as OrderApi;
+        }
         setOrder(data);
       })
       .catch((err) => {
