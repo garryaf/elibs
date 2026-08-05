@@ -48,6 +48,7 @@ export class PatientController {
     @Query('search') search?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+    @Query('status') status?: string,
   ) {
     return this.patientService.findAll({
       page: page ? parseInt(page, 10) : undefined,
@@ -55,6 +56,7 @@ export class PatientController {
       search,
       sortBy,
       sortOrder,
+      status,
     });
   }
 

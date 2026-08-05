@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  ShieldCheck,
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -425,10 +426,18 @@ export default function LabApprovalPage() {
             </button>
           </div>
         ) : orders.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border py-16 text-center">
-            <CheckCircle2 className="mx-auto h-10 w-10 text-muted-foreground/50" />
-            <p className="mt-3 text-sm text-muted-foreground">
-              Tidak ada order yang menunggu approval
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-16 px-4 text-center">
+            <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <ShieldCheck className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+              <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              </div>
+            </div>
+            <h3 className="text-base font-bold text-foreground">
+              Antrean Approval Kosong
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground max-w-xs leading-relaxed">
+              Tidak ada order hasil laboratorium yang menunggu persetujuan dokter saat ini. Semua pemeriksaan telah diproses.
             </p>
           </div>
         ) : (

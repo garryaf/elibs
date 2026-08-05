@@ -146,31 +146,26 @@ function calculateAge(dateOfBirth: string): number {
 function getFlagConfig(flag: Flag | null) {
   switch (flag) {
     case "NORMAL":
-      return {
-        label: "Normal",
-        className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-        borderColor: "border-green-200 dark:border-green-800",
-        icon: CheckCircle2,
-      };
+      return null; // Don't show badge for normal values to reduce visual noise
     case "HIGH":
       return {
-        label: "Tinggi",
-        className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-        borderColor: "border-amber-200 dark:border-amber-800",
+        label: "H",
+        className: "bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/50 font-bold",
+        borderColor: "border-red-300 dark:border-red-800",
         icon: TrendingUp,
       };
     case "LOW":
       return {
-        label: "Rendah",
-        className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-        borderColor: "border-amber-200 dark:border-amber-800",
+        label: "L",
+        className: "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/50 font-bold",
+        borderColor: "border-blue-300 dark:border-blue-800",
         icon: TrendingDown,
       };
     case "CRITICAL":
       return {
-        label: "Kritis",
-        className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-        borderColor: "border-red-200 dark:border-red-800",
+        label: "CRITICAL",
+        className: "bg-red-600 text-white dark:bg-red-700 dark:text-white font-extrabold animate-pulse",
+        borderColor: "border-red-600 dark:border-red-500",
         icon: AlertTriangle,
       };
     default:
@@ -192,6 +187,7 @@ export default function ResultEntryPage() {
   const [results, setResults] = useState<ResultFormEntry[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [toast, setToast] = useState<{ title: string; description: string; autoApproved?: boolean } | null>(null);
 
   // Load order and delta check data
   useEffect(() => {
@@ -369,15 +365,33 @@ export default function ResultEntryPage() {
     }
     setVerifying(true);
     try {
-      await apiClient.verifyResults(orderId);
-      router.push("/dashboard/laboratory/results");
+      const res = (await apiClient.verifyResults(orderId)) as any;
+      const statusChange = res?.statusChange ?? res?.data?.statusChange;
+      if (statusChange?.autoApproved) {
+        setToast({
+          title: "Hasil Disetujui Otomatis (Auto-Approved)!",
+          description: "Semua parameter hasil pemeriksaan berada dalam rentang normal. Order otomatis disetujui tanpa perlu antrean persetujuan dokter.",
+          autoApproved: true,
+        });
+        setTimeout(() => {
+          router.push("/dashboard/laboratory/results?autoApproved=true");
+        }, 1800);
+      } else {
+        setToast({
+          title: "Hasil Diverifikasi",
+          description: "Hasil telah diverifikasi dan diteruskan ke antrean persetujuan dokter.",
+          autoApproved: false,
+        });
+        setTimeout(() => {
+          router.push("/dashboard/laboratory/results?verified=true");
+        }, 1200);
+      }
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "message" in err
           ? (err as { message: string }).message
           : "Gagal memverifikasi hasil.";
       alert(message);
-    } finally {
       setVerifying(false);
     }
   };
@@ -632,6 +646,30 @@ export default function ResultEntryPage() {
           </button>
         )}
       </div>
+
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={cn(
+            "fixed bottom-6 right-6 z-50 flex items-start space-x-3 rounded-2xl border p-4 shadow-2xl transition-all duration-300 max-w-md animate-in fade-in slide-in-from-bottom-4",
+            toast.autoApproved
+              ? "border-emerald-500/30 bg-emerald-50 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800"
+              : "border-blue-500/30 bg-blue-50 text-blue-900 dark:bg-blue-950 dark:text-blue-100 dark:border-blue-800"
+          )}
+        >
+          <CheckCircle2
+            className={cn(
+              "h-6 w-6 shrink-0 mt-0.5",
+              toast.autoApproved ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"
+            )}
+          />
+          <div>
+            <h4 className="font-bold text-sm">{toast.title}</h4>
+            <p className="text-xs mt-1 leading-relaxed opacity-90">{toast.description}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

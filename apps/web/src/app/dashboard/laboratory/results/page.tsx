@@ -8,6 +8,8 @@ import {
   Droplets,
   ChevronRight,
   Loader2,
+  CheckCircle2,
+  RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api";
@@ -77,6 +79,26 @@ export default function LabResultsPage() {
     IN_ANALYSIS: 0,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ title: string; description: string; autoApproved?: boolean } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("autoApproved") === "true") {
+        setToastMessage({
+          title: "Hasil Disetujui Otomatis (Auto-Approved)!",
+          description: "Order telah diverifikasi dan disetujui secara otomatis karena semua hasil tes normal.",
+          autoApproved: true,
+        });
+      } else if (params.get("verified") === "true") {
+        setToastMessage({
+          title: "Hasil Diverifikasi",
+          description: "Order telah diverifikasi dan dipindahkan ke antrean persetujuan dokter.",
+          autoApproved: false,
+        });
+      }
+    }
+  }, []);
 
   // Fetch orders based on active tab
   const fetchOrders = useCallback(async () => {
@@ -159,6 +181,38 @@ export default function LabResultsPage() {
 
   return (
     <div className="space-y-6">
+      {toastMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={cn(
+            "flex items-start justify-between rounded-xl border p-4 shadow-md transition-all",
+            toastMessage.autoApproved
+              ? "border-emerald-500/30 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-100 dark:border-emerald-800"
+              : "border-blue-500/30 bg-blue-50 text-blue-900 dark:bg-blue-950/80 dark:text-blue-100 dark:border-blue-800"
+          )}
+        >
+          <div className="flex items-start gap-3">
+            <CheckCircle2
+              className={cn(
+                "h-5 w-5 shrink-0 mt-0.5",
+                toastMessage.autoApproved ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"
+              )}
+            />
+            <div>
+              <h4 className="font-semibold text-sm">{toastMessage.title}</h4>
+              <p className="text-xs mt-0.5 opacity-90">{toastMessage.description}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="text-xs font-semibold hover:underline opacity-70 hover:opacity-100"
+          >
+            Tutup
+          </button>
+        </div>
+      )}
+
       {/* Status filter tabs & Search */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-border bg-card p-1">
@@ -217,9 +271,30 @@ export default function LabResultsPage() {
             </span>
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border py-12 text-center text-muted-foreground">
-            <FlaskConical className="h-8 w-8 text-muted-foreground/50" />
-            <p>Tidak ada order yang siap diinput hasil</p>
+          <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-16 px-4 text-center">
+            <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <FlaskConical className="h-8 w-8 text-primary" />
+              <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              </div>
+            </div>
+            <h3 className="text-base font-bold text-foreground">
+              {search ? "Hasil Tidak Ditemukan" : "Tidak Ada Order Menunggu"}
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground max-w-xs leading-relaxed">
+              {search
+                ? `Tidak ada order yang cocok dengan pencarian "${search}".`
+                : "Saat ini tidak ada order yang siap untuk diinput hasil laboratorium."}
+            </p>
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-all shadow-sm"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Bersihkan Pencarian
+              </button>
+            )}
           </div>
         ) : (
           filteredOrders.map((order) => {

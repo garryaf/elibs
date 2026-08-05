@@ -7,6 +7,8 @@ import {
   Body,
   Query,
   UseGuards,
+  UseInterceptors,
+  Req,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -15,6 +17,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { DataScopeInterceptor } from '../../common/interceptors/data-scope.interceptor';
 import { LabWorkflowService } from './lab-workflow.service';
 import { ConfirmSampleDto } from './dto/confirm-sample.dto';
 import { EnterResultsDto } from './dto/enter-results.dto';
@@ -24,6 +27,7 @@ import { ApproveOrderDto } from './dto/approve-order.dto';
 @ApiTags('Lab Workflow')
 @ApiBearerAuth()
 @Controller('api/v1/lab')
+@UseInterceptors(DataScopeInterceptor)
 export class LabWorkflowController {
   constructor(private readonly labWorkflowService: LabWorkflowService) {}
 
@@ -46,10 +50,15 @@ export class LabWorkflowController {
   async getQueue(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Req() req?: any,
   ) {
+    const clinicId = req?.dataScope?.clinicId;
     return this.labWorkflowService.getQueue(
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 20,
+      clinicId,
+      search,
     );
   }
 
@@ -60,10 +69,15 @@ export class LabWorkflowController {
   async getApprovalQueue(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Req() req?: any,
   ) {
+    const clinicId = req?.dataScope?.clinicId;
     return this.labWorkflowService.getApprovalQueue(
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 20,
+      clinicId,
+      search,
     );
   }
 

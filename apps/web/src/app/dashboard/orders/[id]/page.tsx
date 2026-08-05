@@ -5,12 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, Printer, User,
   CreditCard, Banknote, Building2, ReceiptText,
-  FlaskConical, Clock, Loader2
+  FlaskConical, Clock, Loader2, Split
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { formatRupiah } from "@/lib/format";
 import type { PaymentMethod } from "@/types/order";
 import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
+import { BpjsForm } from "@/components/orders/bpjs-form";
+import { ClaimsForm } from "@/components/orders/claims-form";
+import { SplitPaymentForm } from "@/components/orders/split-payment-form";
 import { cn } from "@/lib/utils";
 
 // ─── Local types matching API response ──────────────────────────────────────
@@ -46,6 +49,7 @@ interface OrderApi {
     mrn: string;
   };
   orderDetails: OrderDetailApi[];
+  orderInsurances?: Array<{ claimStatus: string }>;
   createdAt: string;
 }
 
@@ -148,6 +152,7 @@ export default function OrderDetailPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
+  const [payMode, setPayMode] = useState<"single" | "split">("single");
 
   useEffect(() => {
     if (!id) return;
@@ -283,8 +288,32 @@ export default function OrderDetailPage() {
               </div>
             </div>
 
+            {/* BPJS Details */}
+            {order.paymentMethod === "BPJS" && (
+              <BpjsForm orderId={order.id} />
+            )}
+
+            {/* Claims Form */}
+            <ClaimsForm orderId={order.id} orderTotal={order.totalAmount} />
+
+            {/* Fallback Payment – shown when at least one claim was rejected */}
+            {order.orderInsurances?.some((oi) => oi.claimStatus === "rejected") && (
+              <SplitPaymentForm
+                orderId={order.id}
+                orderTotal={order.totalAmount}
+                isFallback
+                onSuccess={() => {
+                  apiClient.getOrder(id).then((res) => {
+                    const raw = res as unknown as Record<string, unknown>;
+                    if (raw && "orderNumber" in raw) setOrder(raw as unknown as OrderApi);
+                    else if (raw?.data && typeof raw.data === "object") setOrder(raw.data as OrderApi);
+                  });
+                }}
+              />
+            )}
+
             {/* Test items */}
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 mt-4">
               <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 dark:border-slate-800">
                 <FlaskConical className="h-4 w-4 text-slate-400" />
                 <span className="text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
@@ -368,6 +397,48 @@ export default function OrderDetailPage() {
           {/* RIGHT: Payment panel */}
           {!alreadyPaid && (
             <div className="space-y-4 lg:col-span-2">
+              {/* Mode toggle */}
+              <div className="flex overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                <button
+                  id="pay-mode-single"
+                  onClick={() => setPayMode("single")}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-semibold transition",
+                    payMode === "single"
+                      ? "bg-brand text-white"
+                      : "bg-white text-slate-500 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-400"
+                  )}
+                >
+                  <CreditCard className="h-3.5 w-3.5" /> Bayar Penuh
+                </button>
+                <button
+                  id="pay-mode-split"
+                  onClick={() => setPayMode("split")}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-semibold transition border-l border-slate-200 dark:border-slate-700",
+                    payMode === "split"
+                      ? "bg-brand text-white"
+                      : "bg-white text-slate-500 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-400"
+                  )}
+                >
+                  <Split className="h-3.5 w-3.5" /> Split / Parsial
+                </button>
+              </div>
+
+              {payMode === "split" ? (
+                <SplitPaymentForm
+                  orderId={order.id}
+                  orderTotal={total}
+                  onSuccess={() => {
+                    apiClient.getOrder(id).then((res) => {
+                      const raw = res as unknown as Record<string, unknown>;
+                      if (raw && "orderNumber" in raw) { setOrder(raw as unknown as OrderApi); setShowSuccess(true); }
+                      else if (raw?.data && typeof raw.data === "object") { setOrder(raw.data as OrderApi); setShowSuccess(true); }
+                    });
+                  }}
+                />
+              ) : (
+              <>
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                   Metode Pembayaran
@@ -444,6 +515,8 @@ export default function OrderDetailPage() {
                   `Bayar ${formatRupiah(total)}`
                 )}
               </button>
+              </>
+              )}
             </div>
           )}
         </div>

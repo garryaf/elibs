@@ -356,19 +356,30 @@ export class LabWorkflowService {
     };
   }
 
-  async getApprovalQueue(page: number = 1, limit: number = 20) {
+  async getApprovalQueue(page: number = 1, limit: number = 20, clinicId?: string, search?: string) {
     const skip = (page - 1) * limit;
 
-    const where = {
+    const where: any = {
       status: OrderStatus.VERIFIED,
     };
+
+    if (clinicId) {
+      where.clinicId = clinicId;
+    }
+
+    if (search) {
+      where.OR = [
+        { orderNumber: { contains: search, mode: 'insensitive' } },
+        { patient: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.order.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'asc' },
         include: {
           patient: true,
           orderDetails: {
@@ -438,14 +449,25 @@ export class LabWorkflowService {
     return age;
   }
 
-  async getQueue(page: number = 1, limit: number = 20) {
+  async getQueue(page: number = 1, limit: number = 20, clinicId?: string, search?: string) {
     const skip = (page - 1) * limit;
 
-    const where = {
+    const where: any = {
       status: {
         in: [OrderStatus.PAID, OrderStatus.SAMPLE_COLLECTED, OrderStatus.IN_ANALYSIS],
       },
     };
+
+    if (clinicId) {
+      where.clinicId = clinicId;
+    }
+
+    if (search) {
+      where.OR = [
+        { orderNumber: { contains: search, mode: 'insensitive' } },
+        { patient: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.order.findMany({

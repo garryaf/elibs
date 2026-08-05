@@ -72,3 +72,121 @@ export function useOrderInsurances(orderId: string) {
     enabled: !!orderId,
   });
 }
+
+export function useOrderBpjs(orderId: string) {
+  return useQuery({
+    queryKey: orderKeys.bpjs(orderId),
+    queryFn: () => apiClient.get(`/api/v1/orders/${orderId}/bpjs`),
+    enabled: !!orderId,
+  });
+}
+
+export function useCreateBpjsDetail() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      apiClient.post(`/api/v1/orders/${id}/bpjs`, data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.bpjs(variables.id) });
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.id) });
+    },
+  });
+}
+
+export function useUpdateBpjsDetail() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      apiClient.put(`/api/v1/orders/${id}/bpjs`, data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.bpjs(variables.id) });
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.id) });
+    },
+  });
+}
+
+export function useVerifyBpjs() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      apiClient.post(`/api/v1/orders/${id}/bpjs/verify`, data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.bpjs(variables.id) });
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.id) });
+    },
+  });
+}
+
+// ─── Claim Hooks ─────────────────────────────────────────────────────────────
+
+export function useSubmitClaim() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orderId, data }: { orderId: string; data: { orderInsuranceId: string; claimReference?: string } }) =>
+      apiClient.post(`/api/v1/orders/${orderId}/claims/submit`, data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.claims(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.orderId) });
+    },
+  });
+}
+
+export function useReviewClaim() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ claimId, orderId }: { claimId: string; orderId: string }) =>
+      apiClient.put(`/api/v1/orders/claims/${claimId}/review`, {}),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.claims(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.orderId) });
+    },
+  });
+}
+
+export function useApproveClaim() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ claimId, orderId, data }: { claimId: string; orderId: string; data: { coveredAmount: number; copayAmount?: number; notes?: string } }) =>
+      apiClient.put(`/api/v1/orders/claims/${claimId}/approve`, data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.claims(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.orderId) });
+    },
+  });
+}
+
+export function usePartiallyApproveClaim() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ claimId, orderId, data }: { claimId: string; orderId: string; data: { coveredAmount: number; copayAmount?: number; notes?: string } }) =>
+      apiClient.put(`/api/v1/orders/claims/${claimId}/partially-approve`, data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.claims(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.orderId) });
+    },
+  });
+}
+
+export function useRejectClaim() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ claimId, orderId, data }: { claimId: string; orderId: string; data: { rejectionReason: string } }) =>
+      apiClient.put(`/api/v1/orders/claims/${claimId}/reject`, data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.claims(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.orderId) });
+    },
+  });
+}
+
+export function useMarkClaimPaid() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ claimId, orderId }: { claimId: string; orderId: string }) =>
+      apiClient.put(`/api/v1/orders/claims/${claimId}/paid`, {}),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.claims(variables.orderId) });
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.orderId) });
+    },
+  });
+}

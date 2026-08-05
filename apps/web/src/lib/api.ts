@@ -256,11 +256,13 @@ class ApiClient {
     page?: number;
     limit?: number;
     search?: string;
+    status?: string;
   }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
     const qs = new URLSearchParams();
     if (params?.page) qs.set("page", String(params.page));
     if (params?.limit) qs.set("limit", String(params.limit));
     if (params?.search) qs.set("search", params.search);
+    if (params?.status) qs.set("status", params.status);
     const query = qs.toString() ? `?${qs.toString()}` : "";
     return this.get(`/api/v1/patients${query}`);
   }
@@ -339,6 +341,26 @@ class ApiClient {
     data: { paymentMethod: string; amountPaid: number }
   ): Promise<ApiResponse<unknown>> {
     return this.post(`/api/v1/orders/${id}/pay`, data);
+  }
+
+  async splitPay(
+    id: string,
+    components: Array<{
+      paymentMethod: string;
+      amount: number;
+      insuranceId?: string;
+      reference?: string;
+      notes?: string;
+    }>
+  ): Promise<ApiResponse<unknown>> {
+    return this.post(`/api/v1/orders/${id}/split-pay`, { components });
+  }
+
+  async fallbackPayment(
+    id: string,
+    data: { amount: number; reference?: string; notes?: string }
+  ): Promise<ApiResponse<unknown>> {
+    return this.post(`/api/v1/orders/${id}/fallback-payment`, data);
   }
 
   async getBarcode(id: string): Promise<ApiResponse<unknown>> {

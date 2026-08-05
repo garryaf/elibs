@@ -40,17 +40,26 @@ export default function PatientsPage() {
   const [statusFilter, setStatusFilter] = useState<PatientStatus | "ALL">("ALL");
   const [page, setPage] = useState(1);
   const [totalPatients, setTotalPatients] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
+  const [inactiveCount, setInactiveCount] = useState(0);
 
   const PAGE_SIZE = 20;
 
   const loadPatients = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiClient.getPatients({ page, limit: PAGE_SIZE, search: search || undefined });
+      const res = await apiClient.getPatients({ 
+        page, 
+        limit: PAGE_SIZE, 
+        search: search || undefined,
+        status: statusFilter !== "ALL" ? statusFilter : undefined,
+      });
       // Defensive extraction: handle paginated response { data: [...], meta: {...} }
       const raw_response = res as unknown as Record<string, unknown>;
       let raw: unknown[] = [];
       let total = 0;
+      let actCount = 0;
+      let inactCount = 0;
 
       if (raw_response && typeof raw_response === "object" && !Array.isArray(raw_response)) {
         const innerData = raw_response.data;
@@ -64,15 +73,21 @@ export default function PatientsPage() {
           if (nested.meta) {
             const m = nested.meta as Record<string, unknown>;
             total = Number(m.total) || 0;
+            actCount = Number(m.activeCount) || 0;
+            inactCount = Number(m.inactiveCount) || 0;
           }
         }
 
         if (innerMeta) {
           total = Number(innerMeta.total) || 0;
+          actCount = Number(innerMeta.activeCount) || 0;
+          inactCount = Number(innerMeta.inactiveCount) || 0;
         }
       } else if (Array.isArray(raw_response)) {
         raw = raw_response;
         total = raw_response.length;
+        actCount = raw_response.filter((p: any) => !p.deletedAt).length;
+        inactCount = raw_response.filter((p: any) => p.deletedAt).length;
       }
 
       // Map backend Patient model to frontend Patient type
@@ -92,24 +107,28 @@ export default function PatientsPage() {
       }));
       setPatients(mapped);
       setTotalPatients(total || mapped.length);
+      setActiveCount(actCount);
+      setInactiveCount(inactCount);
     } catch {
       // If API fails, show empty state
       setPatients([]);
       setTotalPatients(0);
+      setActiveCount(0);
+      setInactiveCount(0);
     } finally {
       setLoading(false);
     }
-  }, [search, page]);
+  }, [search, page, statusFilter]);
 
   useEffect(() => {
     const debounce = setTimeout(loadPatients, 300);
     return () => clearTimeout(debounce);
   }, [loadPatients]);
 
-  // Reset page when search changes
+  // Reset page when search or statusFilter changes
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, statusFilter]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
@@ -166,24 +185,12 @@ export default function PatientsPage() {
     return () => clearTimeout(timer);
   }, [updateError]);
 
-  const filteredPatients = useMemo(() => {
-    return patients.filter((p) => {
-      const q = search.toLowerCase();
-      const matchSearch =
-        !q ||
-        p.name.toLowerCase().includes(q) ||
-        p.nik.includes(q) ||
-        p.mrn.toLowerCase().includes(q) ||
-        p.phone.includes(q);
-      const matchStatus = statusFilter === "ALL" || p.status === statusFilter;
-      return matchSearch && matchStatus;
-    });
-  }, [patients, search, statusFilter]);
+  const filteredPatients = patients;
 
   const stats = {
     total: totalPatients,
-    active: patients.filter((p) => p.status === "ACTIVE").length,
-    inactive: patients.filter((p) => p.status === "INACTIVE").length,
+    active: activeCount,
+    inactive: inactiveCount,
   };
 
   const handleEdit = (patient: Patient) => {

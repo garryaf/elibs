@@ -72,11 +72,15 @@ export class OrderService {
     }
 
     // Check if any tests require insurance pre-authorization
+    const preAuthWarnings: string[] = [];
     if (insuranceId) {
       const preAuthTests = tests.filter((t) => t.requiresInsurancePreAuth);
       if (preAuthTests.length > 0) {
         // Include a warning in the response metadata (not blocking — just informational)
         // The lab workflow will enforce pre-auth before sample collection
+        preAuthWarnings.push(
+          ...preAuthTests.map((t) => `Pre-authorization required for test: ${t.name}`)
+        );
       }
     }
 
@@ -138,10 +142,15 @@ export class OrderService {
     await this.visitService.transitionToInProgress(dto.visitId);
 
     // Return order with details
-    return this.prisma.order.findUnique({
+    const resultOrder = await this.prisma.order.findUnique({
       where: { id: order.id },
       include: { orderDetails: true, patient: true, visit: { select: { visitNumber: true, status: true } } },
     });
+
+    return {
+      ...resultOrder,
+      preAuthWarnings,
+    };
   }
 
   async findAll(query: OrderQueryDto, clinicId?: string) {

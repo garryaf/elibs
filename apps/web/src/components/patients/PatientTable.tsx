@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { MoreVertical, Pencil, Trash2, Eye, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, Eye, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, UserX, SearchX } from "lucide-react";
 import type { Patient } from "@/types/patient";
 import { PatientStatusBadge } from "./PatientStatusBadge";
 import { cn } from "@/lib/utils";
@@ -211,8 +211,21 @@ export function PatientTable({ patients, onEdit, onView, onDelete, serverPage, s
           <tbody>
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-sm text-slate-400 dark:text-slate-500">
-                  Tidak ada data pasien yang ditemukan.
+                <td colSpan={6} className="py-16 text-center">
+                  <div className="mx-auto flex max-w-sm flex-col items-center justify-center text-center">
+                    <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10 text-brand dark:bg-brand/20">
+                      <UserX className="h-8 w-8 text-brand" />
+                      <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                        <SearchX className="h-3.5 w-3.5" />
+                      </div>
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                      Pasien Tidak Ditemukan
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Tidak ada data pasien yang sesuai dengan kata kunci pencarian atau filter status yang dipilih.
+                    </p>
+                  </div>
                 </td>
               </tr>
             ) : (

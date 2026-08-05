@@ -45,7 +45,7 @@ export class VisitController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.ADMIN, Role.KASIR, Role.CS, Role.KLINIK_PARTNER)
+  @Roles(Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.ADMIN, Role.KASIR, Role.CS, Role.KLINIK_PARTNER, Role.SAMPLING, Role.ANALIS, Role.DOKTER)
   async findAll(@Query() query: VisitQueryDto, @Req() req: express.Request) {
     const clinicId = (req as any).dataScope?.clinicId;
     return this.visitService.findAll(query, clinicId);
@@ -63,7 +63,7 @@ export class VisitController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.ADMIN, Role.KASIR, Role.CS, Role.KLINIK_PARTNER)
+  @Roles(Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.ADMIN, Role.KASIR, Role.CS, Role.KLINIK_PARTNER, Role.SAMPLING, Role.ANALIS, Role.DOKTER)
   async findById(@Param('id', ParseUUIDPipe) id: string, @Req() req: express.Request) {
     const clinicId = (req as any).dataScope?.clinicId;
     return this.visitService.findById(id, clinicId);

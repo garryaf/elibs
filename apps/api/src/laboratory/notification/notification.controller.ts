@@ -1,10 +1,11 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Post, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { NotificationService } from './notification.service';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -12,7 +13,10 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.SUPER_ADMIN, Role.OWNER, Role.ADMIN)
 export class NotificationController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'List notification logs with pagination' })
@@ -52,5 +56,12 @@ export class NotificationController {
         totalPages: Math.ceil(total / limitNum),
       },
     };
+  }
+
+  @Post(':id/retry')
+  @ApiOperation({ summary: 'Manually retry a failed notification delivery' })
+  async retry(@Param('id', ParseUUIDPipe) id: string) {
+    await this.notificationService.retryNotification(id);
+    return { success: true, message: 'Notification delivery retried' };
   }
 }

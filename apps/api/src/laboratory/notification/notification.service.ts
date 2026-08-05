@@ -254,4 +254,88 @@ export class NotificationService {
       }
     }
   }
+
+  /**
+   * Manually retry a failed notification delivery.
+   */
+  async retryNotification(notificationId: string): Promise<void> {
+    const log = await this.prisma.notificationLog.findUnique({
+      where: { id: notificationId },
+      include: {
+        order: {
+          include: {
+            patient: true,
+            orderDetails: {
+              include: {
+                test: {
+                  include: {
+                    referenceValues: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!log) {
+      throw new Error(`Notification log ${notificationId} not found`);
+    }
+
+    // Reset status to PENDING
+    await this.prisma.notificationLog.update({
+      where: { id: notificationId },
+      data: {
+        status: NotificationStatus.PENDING,
+        attempts: 0,
+        lastError: null,
+      },
+    });
+
+    // Generate PDF report dynamically
+    const pdfBuffer = await this.pdfGeneratorService.generateReport(
+      log.order as unknown as OrderWithDetails,
+    );
+
+    if (log.type === NotificationType.EMAIL) {
+      await this.emailQueue.add(
+        'send-email',
+        {
+          notificationLogId: log.id,
+          orderId: log.orderId,
+          orderNumber: log.order.orderNumber,
+          email: log.recipient,
+          pdfBase64: pdfBuffer.toString('base64'),
+        },
+        {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 2000,
+          },
+        },
+      );
+    } else if (log.type === NotificationType.WHATSAPP) {
+      await this.whatsAppQueue.add(
+        'send-whatsapp',
+        {
+          notificationLogId: log.id,
+          orderId: log.orderId,
+          orderNumber: log.order.orderNumber,
+          phone: log.recipient,
+          pdfBase64: pdfBuffer.toString('base64'),
+        },
+        {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 5000,
+          },
+        },
+      );
+    }
+
+    this.logger.log(`Retried ${log.type} notification for order ${log.order.orderNumber}`);
+  }
 }

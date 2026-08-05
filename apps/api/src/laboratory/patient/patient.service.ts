@@ -163,6 +163,7 @@ export class PatientService {
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    status?: string;
   }) {
     const page = query.page || 1;
     const limit = query.limit || 20;
@@ -170,7 +171,13 @@ export class PatientService {
     const sortBy = query.sortBy || 'createdAt';
     const sortOrder = query.sortOrder || 'desc';
 
-    const where: any = { deletedAt: null };
+    const where: any = {};
+
+    if (query.status === 'ACTIVE') {
+      where.deletedAt = null;
+    } else if (query.status === 'INACTIVE') {
+      where.deletedAt = { not: null };
+    }
 
     if (query.search) {
       const searchConditions: any[] = [
@@ -188,7 +195,10 @@ export class PatientService {
       where.OR = searchConditions;
     }
 
-    const [data, total] = await Promise.all([
+    const countWhereBase = { ...where };
+    delete countWhereBase.deletedAt;
+
+    const [data, total, activeCount, inactiveCount] = await Promise.all([
       this.prisma.patient.findMany({
         where,
         skip,
@@ -197,6 +207,8 @@ export class PatientService {
         include: REGION_INCLUDE,
       }),
       this.prisma.patient.count({ where }),
+      this.prisma.patient.count({ where: { ...countWhereBase, deletedAt: null } }),
+      this.prisma.patient.count({ where: { ...countWhereBase, deletedAt: { not: null } } }),
     ]);
 
     // Enrich each patient with derived insuranceId and active insurances
@@ -220,6 +232,8 @@ export class PatientService {
         page,
         limit,
         totalPages: Math.ceil(total / limit),
+        activeCount,
+        inactiveCount,
       },
     };
   }

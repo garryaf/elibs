@@ -16,6 +16,9 @@ import {
   AlertCircle,
   Loader2,
   CheckCircle2,
+  Printer,
+  RotateCcw,
+  SearchX,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLabQueue } from "@/services/lab";
@@ -263,10 +266,31 @@ export default function LaboratoryQueuePage() {
               </tr>
             ) : filteredOrders.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
-                  <div className="flex flex-col items-center gap-2">
-                    <FlaskConical className="h-8 w-8 text-muted-foreground/50" />
-                    <p>Tidak ada order dalam antrian</p>
+                <td colSpan={6} className="px-4 py-16 text-center text-muted-foreground">
+                  <div className="mx-auto flex max-w-md flex-col items-center justify-center text-center">
+                    <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10 text-brand dark:bg-brand/20">
+                      <FlaskConical className="h-8 w-8 text-brand" />
+                      <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      </div>
+                    </div>
+                    <h3 className="text-base font-bold text-foreground">
+                      {search || activeTab !== "ALL" ? "Antrean Tidak Ditemukan" : "Antrean Laboratorium Kosong"}
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed max-w-xs">
+                      {search || activeTab !== "ALL"
+                        ? "Tidak ada sampel atau order yang sesuai dengan kata kunci pencarian atau filter status yang dipilih."
+                        : "Semua sampel dan pemeriksaan laboratorium saat ini sudah diproses."}
+                    </p>
+                    {(search || activeTab !== "ALL") && (
+                      <button
+                        onClick={() => { setSearch(""); handleTabChange("ALL"); }}
+                        className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-all shadow-sm"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Reset Filter & Search
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -348,6 +372,60 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
     } finally {
       setConfirming(false);
     }
+  };
+
+  const handlePrintBarcode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!order.barcodeImage) return;
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Popup blocker menghalangi pencetakan barcode");
+      return;
+    }
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Barcode - ${order.orderNumber}</title>
+          <style>
+            body {
+              margin: 0;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              font-family: monospace;
+            }
+            img {
+              max-width: 100%;
+              height: auto;
+            }
+            .label {
+              margin-top: 5px;
+              font-size: 12px;
+              font-weight: bold;
+            }
+            @page {
+              size: auto;
+              margin: 0mm;
+            }
+          </style>
+        </head>
+        <body>
+          <img src="data:image/png;base64,${order.barcodeImage}" alt="Barcode" />
+          <div class="label">${order.orderNumber}</div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   return (
@@ -437,12 +515,20 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
                 </div>
                 {order.barcodeImage ? (
                   <div className="flex flex-col items-center gap-2">
-                    <div className="flex h-12 w-full items-center justify-center rounded-lg bg-white">
-                      <span className="font-mono text-xs text-gray-600">
-                        {order.orderNumber}
-                      </span>
+                    <div className="flex h-16 w-full items-center justify-center rounded-lg bg-white p-2">
+                      <img 
+                        src={`data:image/png;base64,${order.barcodeImage}`} 
+                        alt={`Barcode ${order.orderNumber}`} 
+                        className="max-h-full object-contain"
+                      />
                     </div>
-                    <span className="text-xs text-muted-foreground">Barcode tersedia</span>
+                    <button
+                      onClick={handlePrintBarcode}
+                      className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                      Cetak Barcode
+                    </button>
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
