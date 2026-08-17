@@ -10,11 +10,13 @@ import { VisitService } from '../visit/visit.service';
 import { OrderValidationGuard } from './order-validation.guard';
 import { InsuranceConsolidationService } from '../../insurance/insurance-consolidation.service';
 import { OrderStateMachineService } from '../lab-workflow/order-state-machine.service';
+import { OrderSequenceService } from './order-sequence.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
 import { OrderQueryDto } from './dto/order-query.dto';
 import { AddOrderInsuranceDto, UpdateOrderInsuranceDto } from './dto/manage-order-insurance.dto';
 import { CreateBpjsOrderDetailDto, UpdateBpjsOrderDetailDto, VerifyBpjsDto } from './dto/bpjs-order-detail.dto';
+import { BpjsApiService } from './bpjs-api.service';
 import { OrderStatus, BpjsVerificationStatus, PaymentMethod } from '@prisma/client';
 
 @Injectable()
@@ -26,6 +28,8 @@ export class OrderService {
     private readonly orderValidationGuard: OrderValidationGuard,
     private readonly consolidationService: InsuranceConsolidationService,
     private readonly orderStateMachine: OrderStateMachineService,
+    private readonly orderSequenceService: OrderSequenceService,
+    private readonly bpjsApiService: BpjsApiService,
   ) {}
 
   async create(dto: CreateOrderDto, userId: string) {
@@ -58,13 +62,51 @@ export class OrderService {
     // For CASH visits, no insurance is required (allow no OrderInsurance records)
     const isCashVisit = visit?.paymentMethod === PaymentMethod.CASH;
 
+    // Step 2.5: Expand panelIds into constituent testIds via PanelTest junction
+    let resolvedTestIds = [...(dto.testIds ?? [])];
+
+    if (dto.panelIds && dto.panelIds.length > 0) {
+      // Validate panels exist and are active
+      const panels = await this.prisma.panel.findMany({
+        where: { id: { in: dto.panelIds }, deletedAt: null, isActive: true },
+      });
+      if (panels.length !== dto.panelIds.length) {
+        const foundPanelIds = panels.map((p) => p.id);
+        const missingPanelIds = dto.panelIds.filter((id) => !foundPanelIds.includes(id));
+        throw new BadRequestException({
+          errorCode: 'ERR_VALIDATION',
+          message: `Panels not found or inactive: ${missingPanelIds.join(', ')}`,
+        });
+      }
+
+      // Expand panels into constituent tests via PanelTest junction
+      const panelTests = await this.prisma.panelTest.findMany({
+        where: { panelId: { in: dto.panelIds } },
+        select: { testId: true },
+      });
+
+      const panelTestIds = panelTests.map((pt) => pt.testId);
+      resolvedTestIds = [...resolvedTestIds, ...panelTestIds];
+    }
+
+    // Deduplicate testIds
+    resolvedTestIds = [...new Set(resolvedTestIds)];
+
+    // Ensure at least one test is present after expansion
+    if (resolvedTestIds.length === 0) {
+      throw new BadRequestException({
+        errorCode: 'ERR_VALIDATION',
+        message: 'Order must contain at least one test. Provide testIds or panelIds with constituent tests.',
+      });
+    }
+
     // Validate all testIds exist and are active (not deleted)
     const tests = await this.prisma.testMaster.findMany({
-      where: { id: { in: dto.testIds }, deletedAt: null, isActive: true },
+      where: { id: { in: resolvedTestIds }, deletedAt: null, isActive: true },
     });
-    if (tests.length !== dto.testIds.length) {
+    if (tests.length !== resolvedTestIds.length) {
       const foundIds = tests.map((t) => t.id);
-      const missingIds = dto.testIds.filter((id) => !foundIds.includes(id));
+      const missingIds = resolvedTestIds.filter((id) => !foundIds.includes(id));
       throw new BadRequestException({
         errorCode: 'ERR_VALIDATION',
         message: `Tests not found or inactive: ${missingIds.join(', ')}`,
@@ -84,12 +126,12 @@ export class OrderService {
       }
     }
 
-    // Generate order number: LAB-YYYYMMDD-XXXX
-    const orderNumber = await this.generateOrderNumber();
+    // Generate order number via dedicated OrderSequenceService (SERIALIZABLE isolation)
+    const orderNumber = await this.orderSequenceService.generateOrderNumber();
 
     // Resolve pricing via TariffResolverService
     const pricing = await this.tariffResolver.resolveOrderTotal(
-      dto.testIds,
+      resolvedTestIds,
       dto.clinicId,
       insuranceId ?? undefined,
     );
@@ -105,8 +147,10 @@ export class OrderService {
           // insuranceId: NOT written (deprecated — use OrderInsurance junction)
           visitId: dto.visitId,
           status: OrderStatus.PENDING_PAYMENT,
+          priority: dto.priority ?? undefined,
           totalAmount: pricing.totalAmount,
           notes: dto.notes ?? null,
+          barcodeText: orderNumber, // Store deterministic text for on-demand barcode regeneration (Req 18.1)
         },
       });
 
@@ -259,6 +303,17 @@ export class OrderService {
     };
   }
 
+  /**
+   * Retrieve the barcodeText (or orderNumber) for on-demand barcode image generation.
+   * Returns null if the order does not exist.
+   */
+  async findBarcodeText(id: string) {
+    return this.prisma.order.findUnique({
+      where: { id },
+      select: { id: true, orderNumber: true, barcodeText: true },
+    });
+  }
+
   async cancel(orderId: string, dto: CancelOrderDto, userId: string) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
@@ -291,30 +346,6 @@ export class OrderService {
       where: { id: orderId },
       include: { patient: true, orderDetails: true },
     });
-  }
-
-  private async generateOrderNumber(): Promise<string> {
-    const today = new Date();
-    const yyyy = today.getFullYear().toString();
-    const mm = (today.getMonth() + 1).toString().padStart(2, '0');
-    const dd = today.getDate().toString().padStart(2, '0');
-    const dateStr = `${yyyy}${mm}${dd}`;
-
-    // Count today's orders to determine the next sequential number
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
-
-    const todayCount = await this.prisma.order.count({
-      where: {
-        createdAt: {
-          gte: startOfDay,
-          lt: endOfDay,
-        },
-      },
-    });
-
-    const sequence = (todayCount + 1).toString().padStart(4, '0');
-    return `LAB-${dateStr}-${sequence}`;
   }
 
   // ─── Order Insurance Coverage ──────────────────────────────────────────────
@@ -510,20 +541,65 @@ export class OrderService {
       throw new BadRequestException('SEP number must be numeric and max 19 digits');
     }
 
-    // In production, this would call BPJS API for verification
-    // For now, we just update the status to VERIFIED
+    // Look up the visit's BPJS number for eligibility check
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { visit: true },
+    });
+    const bpjsNumber = order?.visit?.bpjsNumber ?? undefined;
+
+    // Call real BPJS VClaim/PCare API with retry logic
+    const verificationResult = await this.bpjsApiService.verifyEligibility(
+      dto.sepNumber,
+      bpjsNumber,
+    );
+
+    if (!verificationResult.success) {
+      // Update status to FAILED with error details
+      await this.prisma.bpjsOrderDetail.update({
+        where: { orderId },
+        data: {
+          sepNumber: dto.sepNumber,
+          verificationStatus: BpjsVerificationStatus.FAILED,
+          notes: verificationResult.message,
+        },
+      });
+
+      throw new BadRequestException({
+        errorCode: verificationResult.errorCode || 'BPJS_VERIFICATION_FAILED',
+        message: verificationResult.message,
+      });
+    }
+
+    // Update with verified data from BPJS API response
+    const apiData = verificationResult.data;
     const updated = await this.prisma.bpjsOrderDetail.update({
       where: { orderId },
       data: {
         sepNumber: dto.sepNumber,
-        referringFacilityCode: dto.referringFacilityCode ?? existing.referringFacilityCode,
-        classLevel: dto.classLevel ?? existing.classLevel,
+        referringFacilityCode:
+          dto.referringFacilityCode ??
+          apiData?.ppiPenerima?.kode ??
+          existing.referringFacilityCode,
+        referringFacilityName:
+          apiData?.ppiPenerima?.nama ?? existing.referringFacilityName,
+        classLevel:
+          dto.classLevel ??
+          (apiData?.peserta?.hakKelas?.kode
+            ? parseInt(apiData.peserta.hakKelas.kode, 10)
+            : existing.classLevel),
+        diagnosisCode: apiData?.diagnosa?.kode ?? existing.diagnosisCode,
+        diagnosisName: apiData?.diagnosa?.nama ?? existing.diagnosisName,
         verificationStatus: BpjsVerificationStatus.VERIFIED,
         verifiedAt: new Date(),
         verifiedBy: userId,
       },
     });
 
-    return { success: true, message: 'BPJS verification successful', data: updated };
+    return {
+      success: true,
+      message: 'Verifikasi BPJS berhasil',
+      data: updated,
+    };
   }
 }

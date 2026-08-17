@@ -189,7 +189,7 @@ export default function OrdersPage() {
         {[
           { label: "Total Order Hari Ini", value: String(stats.total), sub: "order", color: "text-brand" },
           { label: "Menunggu Pembayaran", value: String(stats.pending), sub: "order", color: "text-amber-600 dark:text-amber-400" },
-          { label: "Pendapatan Hari Ini", value: formatRupiah(stats.todayRevenue), sub: "lunas", color: "text-brand" },
+          { label: "Pendapatan Hari Ini", value: formatRupiah(Number(stats.todayRevenue)), sub: "lunas", color: "text-brand" },
           { label: "Order Selesai", value: String(stats.completed), sub: "order", color: "text-brand" },
         ].map((s) => (
           <div

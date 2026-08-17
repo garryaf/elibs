@@ -4,6 +4,7 @@ import {
   IsString,
   IsUUID,
   Matches,
+  MaxLength,
 } from 'class-validator';
 import { PaymentMethod } from '@prisma/client';
 
@@ -28,4 +29,22 @@ export class UpdateVisitDto {
   @IsString()
   @Matches(/^\d{13}$/, { message: 'BPJS number must be exactly 13 digits' })
   bpjsNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  referringDoctorName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  referralLetterNo?: string;
+
+  @IsOptional()
+  @IsString()
+  encounterReason?: string;
+
+  @IsOptional()
+  @IsString()
+  chiefComplaint?: string;
 }

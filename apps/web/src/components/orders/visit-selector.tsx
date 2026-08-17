@@ -387,7 +387,7 @@ export function VisitSelector({
                           <button
                             type="button"
                             onClick={() => onInlineCreate(patient.id)}
-                            className="flex-shrink-0 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#5A7A5A]"
+                            className="flex-shrink-0 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-dark"
                           >
                             Buat Kunjungan
                           </button>

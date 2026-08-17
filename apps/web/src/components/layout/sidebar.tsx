@@ -20,6 +20,7 @@ import {
   Database,
   FlaskConical,
   Bell,
+  Receipt,
 } from "lucide-react";
 
 // ─── Role-based menu configuration ──────────────────────────────────────────
@@ -92,6 +93,24 @@ const menuGroups: MenuGroup[] = [
         icon: Stethoscope,
         // Intentional supervisory access for OWNER and MANAGER (matches backend approval-queue roles)
         roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "DOKTER"],
+      },
+      {
+        name: "Riwayat & Cetak",
+        href: "/dashboard/laboratory/history",
+        icon: FileText,
+        roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "KASIR", "CS", "DOKTER"],
+      },
+    ],
+  },
+  {
+    label: "BILLING",
+    defaultOpen: false,
+    items: [
+      {
+        name: "Invoice Batch",
+        href: "/dashboard/billing/batch-invoices",
+        icon: Receipt,
+        roles: ["SUPER_ADMIN", "ADMIN", "KASIR"],
       },
     ],
   },

@@ -191,7 +191,7 @@ export default function LaboratoryQueuePage() {
                   "flex whitespace-nowrap items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none",
                   isActive
                     ? "bg-brand text-white shadow-sm"
-                    : "text-[#8B8B6B] hover:bg-brand/10 hover:text-brand"
+                    : "text-muted-foreground hover:bg-brand/10 hover:text-brand"
                 )}
                 aria-pressed={isActive}
               >
@@ -202,7 +202,7 @@ export default function LaboratoryQueuePage() {
                     "ml-1 flex h-5 min-w-[20px] items-center justify-center rounded-full text-[10px] font-bold px-1.5",
                     isActive
                       ? "bg-white/20 text-white"
-                      : "bg-brand/10 text-[#8B8B6B]"
+                      : "bg-brand/10 text-muted-foreground"
                   )}
                 >
                   {count}
@@ -356,6 +356,7 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
   const [confirming, setConfirming] = useState(false);
   const [confirmSuccess, setConfirmSuccess] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [barcodeError, setBarcodeError] = useState<string | null>(null);
 
   const handleConfirmSample = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -376,11 +377,12 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
 
   const handlePrintBarcode = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!order.barcodeImage) return;
+    // Use on-demand barcode endpoint (Requirement 18.1) — generates image from barcodeText
+    const barcodeUrl = `/api/v1/orders/${order.id}/barcode.png`;
 
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      alert("Popup blocker menghalangi pencetakan barcode");
+      setBarcodeError("Popup blocker menghalangi pencetakan barcode");
       return;
     }
 
@@ -414,7 +416,7 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
           </style>
         </head>
         <body>
-          <img src="data:image/png;base64,${order.barcodeImage}" alt="Barcode" />
+          <img src="${barcodeUrl}" alt="Barcode" />
           <div class="label">${order.orderNumber}</div>
           <script>
             window.onload = function() {
@@ -485,7 +487,7 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Patient Info */}
               <div className="rounded-xl border border-border bg-card p-4">
-                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#8B8B6B]">
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   <User className="h-3.5 w-3.5" />
                   Informasi Pasien
                 </div>
@@ -509,15 +511,15 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
 
               {/* Barcode Info */}
               <div className="rounded-xl border border-border bg-card p-4">
-                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#8B8B6B]">
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   <Barcode className="h-3.5 w-3.5" />
                   Barcode
                 </div>
-                {order.barcodeImage ? (
+                {(order.barcodeImage || order.status !== "PENDING_PAYMENT") ? (
                   <div className="flex flex-col items-center gap-2">
                     <div className="flex h-16 w-full items-center justify-center rounded-lg bg-white p-2">
                       <img 
-                        src={`data:image/png;base64,${order.barcodeImage}`} 
+                        src={`/api/v1/orders/${order.id}/barcode.png`} 
                         alt={`Barcode ${order.orderNumber}`} 
                         className="max-h-full object-contain"
                       />
@@ -539,7 +541,7 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
 
               {/* Test List */}
               <div className="rounded-xl border border-border bg-card p-4 sm:col-span-2 lg:col-span-1">
-                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#8B8B6B]">
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   <FlaskConical className="h-3.5 w-3.5" />
                   Daftar Tes ({order.details.length})
                 </div>
@@ -568,6 +570,12 @@ function OrderRow({ order, isExpanded, onToggle }: OrderRowProps) {
                 <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
                   <AlertCircle className="h-3.5 w-3.5" />
                   {confirmError}
+                </div>
+              )}
+              {barcodeError && (
+                <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {barcodeError}
                 </div>
               )}
               {confirmSuccess && (

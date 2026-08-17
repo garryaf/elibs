@@ -29,6 +29,7 @@ describe('LabWorkflowService - Traceability Chain Enforcement', () => {
     visitId: null,
     barcode: 'LAB-20250703-0001',
     barcodeImage: 'base64-barcode-image',
+    barcodeText: 'LAB-20250703-0001',
     totalAmount: 150000,
     sampleCondition: null,
     rejectionReason: null,

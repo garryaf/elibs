@@ -66,6 +66,7 @@ describe('Order Notes Property Tests', () => {
       mockOrderValidationGuard,
       { validateVisitInsurance: jest.fn() } as any,
       { transition: jest.fn(), canTransition: jest.fn(), getValidTransitions: jest.fn().mockReturnValue([]) } as any,
+      { generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001') } as any,
     );
   });
 

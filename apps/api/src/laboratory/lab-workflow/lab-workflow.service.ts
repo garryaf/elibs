@@ -10,7 +10,9 @@ import { OrderStatus, SampleCondition } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { OrderStateMachineService } from './order-state-machine.service';
 import { AutoFlaggingService } from './auto-flagging.service';
+import { DeltaCheckService } from './delta-check.service';
 import { NotificationService } from '../notification/notification.service';
+import { BpjsVerificationExpirationService } from '../order/bpjs-verification-expiration.service';
 import { ConfirmSampleDto } from './dto/confirm-sample.dto';
 import { EnterResultsDto } from './dto/enter-results.dto';
 import { VerifyResultsDto } from './dto/verify-results.dto';
@@ -24,8 +26,10 @@ export class LabWorkflowService {
     private readonly prisma: PrismaService,
     private readonly orderStateMachine: OrderStateMachineService,
     private readonly autoFlaggingService: AutoFlaggingService,
+    private readonly deltaCheckService: DeltaCheckService,
     @Inject(forwardRef(() => NotificationService))
     private readonly notificationService: NotificationService,
+    private readonly bpjsVerificationExpirationService: BpjsVerificationExpirationService,
   ) {}
 
   async confirmSample(orderId: string, dto: ConfirmSampleDto, userId: string) {
@@ -52,26 +56,41 @@ export class LabWorkflowService {
       });
     }
 
-    // Check insurance pre-authorization requirement
-    if (order.insuranceId) {
+    // Check BPJS verification expiration — block specimen collection if expired (Requirement 6.3)
+    const bpjsDetailForExpiry = await this.prisma.bpjsOrderDetail.findUnique({
+      where: { orderId },
+    });
+
+    if (bpjsDetailForExpiry) {
+      const verificationCheck = await this.bpjsVerificationExpirationService.checkVerificationValidity(orderId);
+
+      if (verificationCheck.isExpired) {
+        throw new BadRequestException({
+          errorCode: 'ERR_BPJS_VERIFICATION_EXPIRED',
+          message: verificationCheck.message || 'Verifikasi BPJS telah kedaluwarsa. Silakan lakukan verifikasi ulang sebelum pengambilan sampel.',
+        });
+      }
+    }
+
+    // Check insurance pre-authorization requirement via OrderInsurance junction table
+    // (Requirement 6.4: Use OrderInsurance junction instead of deprecated Order.insuranceId)
+    const primaryOrderInsurance = await this.prisma.orderInsurance.findFirst({
+      where: { orderId, coverageType: 'PRIMARY' },
+    });
+
+    if (primaryOrderInsurance) {
       const testsRequiringPreAuth = await this.prisma.orderDetail.findMany({
         where: { orderId, test: { requiresInsurancePreAuth: true } },
         include: { test: { select: { id: true, name: true, code: true } } },
       });
 
       if (testsRequiringPreAuth.length > 0) {
-        // Check if BPJS detail exists and is verified
-        const bpjsDetail = await this.prisma.bpjsOrderDetail.findUnique({
-          where: { orderId },
-        });
-        const isVerified = bpjsDetail?.verificationStatus === 'VERIFIED';
+        // If we reach here and bpjsDetail exists, it's guaranteed not expired (checked above)
+        const isVerified = bpjsDetailForExpiry?.verificationStatus === 'VERIFIED';
 
         // Check if any OrderInsurance claim is at least submitted
-        const orderInsurance = await this.prisma.orderInsurance.findFirst({
-          where: { orderId },
-        });
-        const hasClaimApproval = orderInsurance &&
-          ['APPROVED', 'PARTIALLY_APPROVED', 'SUBMITTED', 'UNDER_REVIEW'].includes(orderInsurance.claimStatus);
+        const hasClaimApproval =
+          ['APPROVED', 'PARTIALLY_APPROVED', 'SUBMITTED', 'UNDER_REVIEW'].includes(primaryOrderInsurance.claimStatus);
 
         if (!isVerified && !hasClaimApproval) {
           const testNames = testsRequiringPreAuth.map((od) => od.test.name).join(', ');
@@ -83,7 +102,7 @@ export class LabWorkflowService {
       }
     }
 
-    if (!order.barcode || !order.barcodeImage) {
+    if (!order.barcode || (!order.barcodeImage && !order.barcodeText)) {
       throw new BadRequestException({
         errorCode: 'ERR_VALIDATION',
         message: 'Order must have a valid barcode before sample collection',
@@ -304,6 +323,87 @@ export class LabWorkflowService {
     }
 
     if (dto.decision === 'APPROVE') {
+      // Requirement 12.1: Check if order contains CRITICAL-flagged results
+      const hasCritical = order.orderDetails.some(
+        (od) => od.flag === 'CRITICAL',
+      );
+
+      // If order has critical results and second-level approval has not yet been given
+      if (hasCritical && !order.secondApprovalRequired) {
+        // First approval: mark as requiring second-level approval
+        await this.prisma.order.update({
+          where: { id: orderId },
+          data: {
+            secondApprovalRequired: true,
+            approvedBy: userId,
+            approvedAt: new Date(),
+            interpretation: dto.interpretation ?? null,
+          },
+        });
+
+        return {
+          ...order,
+          secondApprovalRequired: true,
+          statusChange: {
+            from: OrderStatus.VERIFIED,
+            to: OrderStatus.VERIFIED,
+            awaitingSecondApproval: true,
+          },
+          message: 'Order contains CRITICAL results. Second-level approval required before final release.',
+        };
+      }
+
+      // If second-level approval is being provided
+      if (hasCritical && order.secondApprovalRequired && dto.secondLevelApproval) {
+        const now = new Date();
+        const updatedOrder = await this.orderStateMachine.transition(
+          orderId,
+          OrderStatus.APPROVED,
+          {
+            userId,
+            metadata: { interpretation: dto.interpretation, secondLevelApproval: true },
+          },
+        );
+
+        // Record second-level approver
+        await this.prisma.order.update({
+          where: { id: orderId },
+          data: {
+            secondApprovalBy: userId,
+            secondApprovalAt: now,
+          },
+        });
+
+        // Fire-and-forget: trigger notifications without blocking the approval response
+        this.notificationService.triggerNotifications(orderId).catch((error) => {
+          this.logger.error(
+            `Failed to trigger notifications for order ${orderId}: ${error.message}`,
+            error.stack,
+          );
+        });
+
+        return {
+          ...updatedOrder,
+          secondApprovalBy: userId,
+          secondApprovalAt: now,
+          statusChange: {
+            from: OrderStatus.VERIFIED,
+            to: OrderStatus.APPROVED,
+            autoApproved: false,
+            secondLevelApproval: true,
+          },
+        };
+      }
+
+      // If second-level approval is required but not provided yet
+      if (hasCritical && order.secondApprovalRequired && !dto.secondLevelApproval) {
+        throw new BadRequestException({
+          errorCode: 'ERR_SECOND_APPROVAL_REQUIRED',
+          message: 'Order contains CRITICAL results and requires second-level approval. Set secondLevelApproval=true to confirm.',
+        });
+      }
+
+      // Non-critical order: proceed with normal approval
       const updatedOrder = await this.orderStateMachine.transition(
         orderId,
         OrderStatus.APPROVED,
@@ -333,6 +433,18 @@ export class LabWorkflowService {
     }
 
     // REJECT: transition back to IN_ANALYSIS
+    // Reset second approval state on rejection
+    if (order.secondApprovalRequired) {
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: {
+          secondApprovalRequired: false,
+          secondApprovalBy: null,
+          secondApprovalAt: null,
+        },
+      });
+    }
+
     const updatedOrder = await this.orderStateMachine.transition(
       orderId,
       OrderStatus.IN_ANALYSIS,
@@ -390,8 +502,27 @@ export class LabWorkflowService {
       this.prisma.order.count({ where }),
     ]);
 
+    // Requirement 17.3: Add hasCritical computed indicator
+    // Requirement 17.2: Sort CRITICAL-flagged orders above non-critical
+    const enrichedData = data.map((order) => {
+      const hasCritical = order.orderDetails.some(
+        (od) => od.flag === 'CRITICAL',
+      );
+      return {
+        ...order,
+        hasCritical,
+      };
+    });
+
+    // Sort: CRITICAL-flagged orders first, then by createdAt ascending
+    enrichedData.sort((a, b) => {
+      if (a.hasCritical && !b.hasCritical) return -1;
+      if (!a.hasCritical && b.hasCritical) return 1;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+
     return {
-      data,
+      data: enrichedData,
       meta: {
         total,
         page,
@@ -506,9 +637,15 @@ export class LabWorkflowService {
       throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
     }
 
+    // Use DeltaCheckService to get enriched results with percentageChange
+    const deltaResults = await this.deltaCheckService.performDeltaCheckForOrder(orderId);
+
+    // Combine delta results with full history for backwards compatibility
     const results = [];
 
     for (const detail of order.orderDetails) {
+      const deltaResult = deltaResults.find((r) => r.orderDetailId === detail.id);
+
       const history = await this.prisma.orderDetail.findMany({
         where: {
           testId: detail.testId,
@@ -526,6 +663,11 @@ export class LabWorkflowService {
       results.push({
         testId: detail.testId,
         testName: detail.test.name,
+        currentValue: detail.resultValue,
+        percentageChange: deltaResult?.percentageChange ?? null,
+        previousValue: deltaResult?.previousValue ?? null,
+        thresholdExceeded: deltaResult?.thresholdExceeded ?? false,
+        deltaAlertThreshold: deltaResult?.deltaAlertThreshold ?? null,
         history: history.map((h) => ({
           resultValue: h.resultValue,
           flag: h.flag,

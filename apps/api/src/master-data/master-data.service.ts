@@ -14,6 +14,8 @@ import { CreatePanelDto } from './dto/create-panel.dto';
 import { UpdatePanelDto } from './dto/update-panel.dto';
 import { CreateTariffDto } from './dto/create-tariff.dto';
 import { UpdateTariffDto } from './dto/update-tariff.dto';
+import { CreateReferenceValueDto } from './dto/create-reference-value.dto';
+import { UpdateReferenceValueDto } from './dto/update-reference-value.dto';
 import {
   IMasterDataQueryService,
   TestMasterView,
@@ -113,6 +115,17 @@ export class MasterDataService implements IMasterDataQueryService {
     return { data, meta: { total, page, limit } };
   }
 
+  async findOneTest(id: string) {
+    const test = await this.prisma.testMaster.findFirst({
+      where: { id, deletedAt: null },
+      include: { category: true, referenceValues: true },
+    });
+    if (!test) {
+      throw new NotFoundException('Test not found');
+    }
+    return test;
+  }
+
   async createTest(dto: CreateTestDto) {
     // Validate unique code across non-deleted records
     const existing = await this.prisma.testMaster.findFirst({
@@ -123,6 +136,11 @@ export class MasterDataService implements IMasterDataQueryService {
         errorCode: 'ERR_DUPLICATE_CODE',
         message: `Test code '${dto.code}' already exists`,
       });
+    }
+
+    // Validate sampleType against SampleTypeMaster.code (Requirement 14.3)
+    if (dto.sampleType) {
+      await this.validateSampleType(dto.sampleType);
     }
 
     try {
@@ -169,6 +187,11 @@ export class MasterDataService implements IMasterDataQueryService {
           message: `Test code '${dto.code}' already exists`,
         });
       }
+    }
+
+    // Validate sampleType against SampleTypeMaster.code (Requirement 14.3)
+    if (dto.sampleType) {
+      await this.validateSampleType(dto.sampleType);
     }
 
     return this.prisma.testMaster.update({
@@ -221,17 +244,23 @@ export class MasterDataService implements IMasterDataQueryService {
   }
 
   async createPanel(dto: CreatePanelDto) {
+    // Enforce minimum 2 tests per panel (Requirement 14.2)
+    if (!dto.testIds || dto.testIds.length < 2) {
+      throw new BadRequestException({
+        errorCode: 'ERR_PANEL_MIN_TESTS',
+        message: 'A panel must contain at least 2 tests',
+      });
+    }
+
     return this.prisma.panel.create({
       data: {
         name: dto.name,
         description: dto.description,
         price: dto.price,
         isActive: dto.isActive ?? true,
-        ...(dto.testIds && dto.testIds.length > 0 && {
-          panelTests: {
-            create: dto.testIds.map((testId) => ({ testId })),
-          },
-        }),
+        panelTests: {
+          create: dto.testIds.map((testId) => ({ testId })),
+        },
       },
       include: { panelTests: { include: { test: true } } },
     });
@@ -243,6 +272,14 @@ export class MasterDataService implements IMasterDataQueryService {
     });
     if (!panel) {
       throw new NotFoundException('Panel not found');
+    }
+
+    // Enforce minimum 2 tests per panel when testIds are updated (Requirement 14.2)
+    if (dto.testIds && dto.testIds.length < 2) {
+      throw new BadRequestException({
+        errorCode: 'ERR_PANEL_MIN_TESTS',
+        message: 'A panel must contain at least 2 tests',
+      });
     }
 
     // If testIds are provided, replace the panel tests
@@ -284,7 +321,7 @@ export class MasterDataService implements IMasterDataQueryService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { test: true },
+        include: { test: true, clinic: true, insurance: true },
       }),
       this.prisma.tariff.count(),
     ]);
@@ -302,7 +339,7 @@ export class MasterDataService implements IMasterDataQueryService {
         effectiveFrom: new Date(dto.effectiveFrom),
         effectiveTo: dto.effectiveTo ? new Date(dto.effectiveTo) : null,
       },
-      include: { test: true },
+      include: { test: true, clinic: true, insurance: true },
     });
   }
 
@@ -360,7 +397,7 @@ export class MasterDataService implements IMasterDataQueryService {
           : undefined,
         effectiveTo: dto.effectiveTo ? new Date(dto.effectiveTo) : undefined,
       },
-      include: { test: true },
+      include: { test: true, clinic: true, insurance: true },
     });
   }
 
@@ -373,6 +410,104 @@ export class MasterDataService implements IMasterDataQueryService {
     }
 
     return this.prisma.tariff.delete({
+      where: { id },
+    });
+  }
+
+  // ─── Reference Values ────────────────────────────────────────────────────────
+
+  async findReferenceValuesByTest(testId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.referenceValue.findMany({
+        where: { testId },
+        skip,
+        take: limit,
+        orderBy: [{ gender: 'asc' }, { minAge: 'asc' }],
+      }),
+      this.prisma.referenceValue.count({ where: { testId } }),
+    ]);
+    return { data, meta: { total, page, limit } };
+  }
+
+  async createReferenceValue(testId: string, dto: CreateReferenceValueDto) {
+    // Verify test exists
+    const test = await this.prisma.testMaster.findFirst({
+      where: { id: testId, deletedAt: null },
+    });
+    if (!test) {
+      throw new NotFoundException('Test not found');
+    }
+
+    try {
+      return await this.prisma.referenceValue.create({
+        data: {
+          testId,
+          gender: dto.gender,
+          minAge: dto.minAge ?? 0,
+          maxAge: dto.maxAge ?? 150,
+          minRef: dto.minRef,
+          maxRef: dto.maxRef,
+          criticalMin: dto.criticalMin ?? null,
+          criticalMax: dto.criticalMax ?? null,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'A reference value with this gender and age range already exists for this test',
+        );
+      }
+      throw error;
+    }
+  }
+
+  async updateReferenceValue(id: string, testId: string, dto: UpdateReferenceValueDto) {
+    const referenceValue = await this.prisma.referenceValue.findFirst({
+      where: { id, testId },
+    });
+    if (!referenceValue) {
+      throw new NotFoundException('Reference value not found');
+    }
+
+    try {
+      return await this.prisma.referenceValue.update({
+        where: { id },
+        data: {
+          gender: dto.gender,
+          minAge: dto.minAge,
+          maxAge: dto.maxAge,
+          minRef: dto.minRef,
+          maxRef: dto.maxRef,
+          criticalMin: dto.criticalMin,
+          criticalMax: dto.criticalMax,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'A reference value with this gender and age range already exists for this test',
+        );
+      }
+      throw error;
+    }
+  }
+
+  async deleteReferenceValue(id: string, testId: string) {
+    const referenceValue = await this.prisma.referenceValue.findFirst({
+      where: { id, testId },
+    });
+    if (!referenceValue) {
+      throw new NotFoundException('Reference value not found');
+    }
+
+    return this.prisma.referenceValue.delete({
       where: { id },
     });
   }
@@ -482,6 +617,23 @@ export class MasterDataService implements IMasterDataQueryService {
   }
 
   // ─── Private Helpers ──────────────────────────────────────────────────────────
+
+  /**
+   * Validates that sampleType matches an existing SampleTypeMaster.code record.
+   * Application-level validation since sampleType is a free-text String? field.
+   * (Requirement 14.3)
+   */
+  private async validateSampleType(sampleType: string): Promise<void> {
+    const sampleTypeRecord = await this.prisma.sampleTypeMaster.findFirst({
+      where: { code: sampleType, deletedAt: null },
+    });
+    if (!sampleTypeRecord) {
+      throw new BadRequestException({
+        errorCode: 'ERR_INVALID_SAMPLE_TYPE',
+        message: `sampleType '${sampleType}' does not match any existing SampleTypeMaster code`,
+      });
+    }
+  }
 
   private mapToTestMasterView(test: any): TestMasterView {
     return {

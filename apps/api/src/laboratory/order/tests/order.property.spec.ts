@@ -130,6 +130,7 @@ describe('Order Creation Property Tests', () => {
             mockOrderValidationGuard as any,
             { validateVisitInsurance: jest.fn() } as any,
             { transition: jest.fn(), canTransition: jest.fn(), getValidTransitions: jest.fn().mockReturnValue([]) } as any,
+            { generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001') } as any,
           );
 
           const dto = {

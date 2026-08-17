@@ -2,12 +2,13 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, ClipboardPlus, Eye, Loader2 } from "lucide-react";
+import { CheckCircle2, ClipboardPlus, Eye, FlaskConical, Loader2 } from "lucide-react";
 import type { PatientOption } from "@/types/visit";
 import { WorkflowStepIndicator } from "@/components/registration/WorkflowStepIndicator";
 import { PatientSearchStep } from "@/components/registration/PatientSearchStep";
 import { PatientRegistrationStep } from "@/components/registration/PatientRegistrationStep";
 import { VisitCreationStep } from "@/components/registration/VisitCreationStep";
+import { RoleGuard } from "@/components/guards/RoleGuard";
 import { apiClient } from "@/lib/api";
 
 interface WorkflowState {
@@ -158,10 +159,17 @@ function RegistrationWorkflow() {
             Alur pendaftaran pasien dan kunjungan terpadu
           </p>
         </div>
-        <div className="flex items-center justify-center py-16">
-          <div className="flex flex-col items-center gap-3 text-slate-500 dark:text-slate-400">
-            <Loader2 className="h-8 w-8 animate-spin text-brand" />
-            <p className="text-sm">Memuat data pasien...</p>
+        <div className="space-y-4 py-6">
+          <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+            <div className="h-5 w-36 animate-pulse rounded bg-muted" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+                  <div className="h-9 w-full animate-pulse rounded-xl bg-muted" />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -208,8 +216,19 @@ function RegistrationWorkflow() {
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <button
-                onClick={handleRegisterAnother}
+                onClick={() =>
+                  router.push(
+                    `/dashboard/orders/new?visitId=${state.createdVisit!.id}`
+                  )
+                }
                 className="flex items-center justify-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md"
+              >
+                <FlaskConical className="h-4 w-4" />
+                Buat Order
+              </button>
+              <button
+                onClick={handleRegisterAnother}
+                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 <ClipboardPlus className="h-4 w-4" />
                 Daftar Pasien Lain
@@ -292,24 +311,36 @@ function RegistrationWorkflow() {
 //     components that call useSearchParams during SSR / static generation) ─────
 export default function RegistrationWorkflowPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Pendaftaran Pasien
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Alur pendaftaran pasien dan kunjungan terpadu
-            </p>
+    <RoleGuard allowedRoles={["SUPER_ADMIN", "ADMIN", "CS", "SAMPLING"]}>
+      <Suspense
+        fallback={
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Pendaftaran Pasien
+              </h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Alur pendaftaran pasien dan kunjungan terpadu
+              </p>
+            </div>
+            <div className="space-y-4 py-6">
+              <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+                <div className="h-5 w-36 animate-pulse rounded bg-muted" />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+                      <div className="h-9 w-full animate-pulse rounded-xl bg-muted" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-brand" />
-          </div>
-        </div>
-      }
-    >
-      <RegistrationWorkflow />
-    </Suspense>
+        }
+      >
+        <RegistrationWorkflow />
+      </Suspense>
+    </RoleGuard>
   );
 }

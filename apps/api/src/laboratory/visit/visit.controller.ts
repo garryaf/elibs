@@ -22,6 +22,7 @@ import { VisitService } from './visit.service';
 import { CreateVisitDto } from './dto/create-visit.dto';
 import { UpdateVisitDto } from './dto/update-visit.dto';
 import { CancelVisitDto } from './dto/cancel-visit.dto';
+import { TransitionVisitDto } from './dto/transition-visit.dto';
 import { VisitQueryDto } from './dto/visit-query.dto';
 import { OrderQueryDto } from '../order/dto/order-query.dto';
 
@@ -95,5 +96,25 @@ export class VisitController {
     const ipAddress =
       (req.headers['x-forwarded-for'] as string) || req.ip;
     return this.visitService.cancel(id, dto, user.sub, ipAddress);
+  }
+
+  @Post(':id/transition')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  async transition(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: TransitionVisitDto,
+    @CurrentUser() user: any,
+    @Req() req: express.Request,
+  ) {
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string) || req.ip;
+    return this.visitService.manualTransition(
+      id,
+      dto.targetStatus,
+      user.sub,
+      dto.reason,
+      ipAddress,
+    );
   }
 }

@@ -112,13 +112,22 @@ function useDeleteUserForEntity() {
 interface Column {
   key: string;
   label: string;
+  render?: (value: unknown, row: Record<string, unknown>) => React.ReactNode;
 }
 
 interface FormField {
   name: string;
   label: string;
-  type: "text" | "number" | "email" | "textarea" | "select";
+  type: "text" | "number" | "email" | "textarea" | "select" | "date" | "entity-autocomplete" | "checkbox" | "multi-entity-autocomplete";
   required?: boolean;
+  /** API endpoint for entity-autocomplete type */
+  endpoint?: string;
+  /** Select options */
+  options?: { label: string; value: string }[];
+  /** Minimum number of selections for multi-entity-autocomplete */
+  min?: number;
+  /** Which property of the entity to use as value (default: "id"). Use "code" to store entity code instead of UUID. */
+  valueKey?: "id" | "code";
 }
 
 interface EntityConfig {
@@ -202,11 +211,26 @@ const entityConfigs: Record<string, EntityConfig> = {
     columns: [
       { key: "name", label: "Nama" },
       { key: "code", label: "Kode" },
-      { key: "category", label: "Kategori" },
+      { key: "category", label: "Kategori", render: (value: unknown) => {
+        if (value && typeof value === "object" && "name" in (value as Record<string, unknown>)) {
+          return (value as Record<string, unknown>).name as string;
+        }
+        return "—";
+      }},
+      { key: "unit", label: "Satuan" },
+      { key: "method", label: "Metode" },
+      { key: "sampleType", label: "Jenis Sampel" },
+      { key: "price", label: "Harga" },
     ],
     formFields: [
       { name: "name", label: "Nama Pemeriksaan", type: "text", required: true },
       { name: "code", label: "Kode", type: "text", required: true },
+      { name: "categoryId", label: "Kategori", type: "entity-autocomplete" as const, required: true, endpoint: "/api/v1/master/test-categories" },
+      { name: "unit", label: "Satuan", type: "text" },
+      { name: "method", label: "Metode", type: "text" },
+      { name: "sampleType", label: "Jenis Sampel", type: "entity-autocomplete" as const, endpoint: "/api/v1/master/sample-types", valueKey: "code" as const },
+      { name: "price", label: "Harga", type: "number", required: true },
+      { name: "requiresDoctorApproval", label: "Memerlukan Persetujuan Dokter", type: "checkbox" as const },
       { name: "description", label: "Deskripsi", type: "text" },
     ],
   },
@@ -220,11 +244,18 @@ const entityConfigs: Record<string, EntityConfig> = {
       { key: "name", label: "Nama" },
       { key: "description", label: "Deskripsi" },
       { key: "price", label: "Harga" },
+      { key: "panelTests", label: "Jumlah Tes", render: (value: unknown) => {
+        if (Array.isArray(value)) {
+          return `${value.length} tes`;
+        }
+        return "—";
+      }},
     ],
     formFields: [
       { name: "name", label: "Nama Panel", type: "text", required: true },
       { name: "description", label: "Deskripsi", type: "text" },
       { name: "price", label: "Harga", type: "number", required: true },
+      { name: "testIds", label: "Pemeriksaan", type: "multi-entity-autocomplete" as const, required: true, endpoint: "/api/v1/master/tests", min: 2 },
     ],
   },
   dokter: {
@@ -324,16 +355,46 @@ const entityConfigs: Record<string, EntityConfig> = {
     useUpdate: useUpdateMasterTariff,
     useDelete: useDeleteMasterTariff,
     columns: [
-      { key: "test.name", label: "Tes" },
+      { key: "test", label: "Tes", render: (value: unknown) => {
+        if (value && typeof value === "object" && "name" in (value as Record<string, unknown>)) {
+          return (value as Record<string, unknown>).name as string;
+        }
+        return "—";
+      }},
+      { key: "clinic", label: "Klinik", render: (value: unknown) => {
+        if (value && typeof value === "object" && "name" in (value as Record<string, unknown>)) {
+          return (value as Record<string, unknown>).name as string;
+        }
+        return "— (Semua)";
+      }},
+      { key: "insurance", label: "Asuransi", render: (value: unknown) => {
+        if (value && typeof value === "object" && "name" in (value as Record<string, unknown>)) {
+          return (value as Record<string, unknown>).name as string;
+        }
+        return "— (Semua)";
+      }},
       { key: "price", label: "Harga" },
-      { key: "discount", label: "Diskon" },
+      { key: "effectiveFrom", label: "Berlaku Dari", render: (value: unknown) => {
+        if (!value) return "—";
+        try {
+          return new Date(value as string).toLocaleDateString("id-ID");
+        } catch { return String(value); }
+      }},
+      { key: "effectiveTo", label: "Berlaku Sampai", render: (value: unknown) => {
+        if (!value) return "Tidak terbatas";
+        try {
+          return new Date(value as string).toLocaleDateString("id-ID");
+        } catch { return String(value); }
+      }},
     ],
     formFields: [
-      { name: "testId", label: "Tes", type: "text", required: true },
-      { name: "clinicId", label: "Klinik", type: "text" },
-      { name: "insuranceId", label: "Asuransi", type: "text" },
-      { name: "price", label: "Harga", type: "number", required: true },
-      { name: "discount", label: "Diskon", type: "number" },
+      { name: "testId", label: "Tes", type: "entity-autocomplete" as const, required: true, endpoint: "/api/v1/master/tests" },
+      { name: "clinicId", label: "Klinik", type: "entity-autocomplete" as const, endpoint: "/api/v1/master/clinics" },
+      { name: "insuranceId", label: "Asuransi", type: "entity-autocomplete" as const, endpoint: "/api/v1/master/insurances" },
+      { name: "price", label: "Harga", type: "number" as const, required: true },
+      { name: "discount", label: "Diskon (%)", type: "number" as const },
+      { name: "effectiveFrom", label: "Berlaku Dari", type: "date" as const, required: true },
+      { name: "effectiveTo", label: "Berlaku Sampai", type: "date" as const },
     ],
   },
   users: {
@@ -401,9 +462,15 @@ export default function MasterDataEntityPage() {
   }, []);
 
   const handleEdit = useCallback((row: Record<string, unknown>) => {
-    setEditingItem(row);
+    // Transform panelTests to testIds for panel entity editing
+    if (entity === "panel" && Array.isArray(row.panelTests)) {
+      const testIds = (row.panelTests as Array<{ testId: string }>).map((pt) => pt.testId);
+      setEditingItem({ ...row, testIds });
+    } else {
+      setEditingItem(row);
+    }
     setIsModalOpen(true);
-  }, []);
+  }, [entity]);
 
   const handleDelete = useCallback((row: Record<string, unknown>) => {
     setDeleteConfirm(row);

@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { NotConfiguredError } from './exceptions';
 
 @Injectable()
 export class WhatsAppService {
@@ -15,6 +16,7 @@ export class WhatsAppService {
 
   /**
    * WhatsApp message delivery with PDF attachment using Fonnte API.
+   * @throws NotConfiguredError when FONNTE_TOKEN environment variable is not set
    */
   async send(
     phone: string,
@@ -27,8 +29,7 @@ export class WhatsAppService {
 
     const token = process.env.FONNTE_TOKEN;
     if (!token) {
-      this.logger.warn('FONNTE_TOKEN not configured. Skipping real WhatsApp delivery.');
-      return;
+      throw new NotConfiguredError('WhatsApp', 'FONNTE_TOKEN');
     }
 
     try {
@@ -56,7 +57,7 @@ const blob = new Blob([new Uint8Array(pdfBuffer)], { type: 'application/pdf' });
       this.logger.log(`[WhatsApp] Successfully sent to ${phone}`);
     } catch (error: any) {
       this.logger.error(`[WhatsApp] Failed to send to ${phone}: ${error.message}`);
-      // Don't throw to avoid crashing the queue processor, just log
+      throw error;
     }
   }
 }

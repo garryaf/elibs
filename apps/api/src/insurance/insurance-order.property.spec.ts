@@ -87,6 +87,7 @@ describe('Order Insurance Property Tests', () => {
       mockOrderValidationGuard,
       mockConsolidationService,
       mockOrderStateMachine as any,
+      { generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001') } as any,
     );
   });
 

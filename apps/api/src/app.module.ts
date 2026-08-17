@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
 import { BullModule } from '@nestjs/bullmq';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { redisStore } from 'cache-manager-redis-yet';
 import { envValidationSchema } from './config/env.validation';
 import { PrismaModule } from './common/prisma/prisma.module';
@@ -19,6 +20,7 @@ import { SettingsModule } from './settings/settings.module';
 import { OrganizationModule } from './organization/organization.module';
 import { ApprovalModule } from './approval/approval.module';
 import { InsuranceModule } from './insurance/insurance.module';
+import { WsModule } from './common/ws/ws.module';
 
 @Module({
   imports: [
@@ -49,6 +51,7 @@ import { InsuranceModule } from './insurance/insurance.module';
         port: parseInt(process.env.REDIS_PORT || '6379', 10),
       },
     }),
+    EventEmitterModule.forRoot(),
     LoggingModule,
     CryptoModule,
     PrismaModule,
@@ -62,6 +65,7 @@ import { InsuranceModule } from './insurance/insurance.module';
     OrganizationModule,
     ApprovalModule,
     InsuranceModule,
+    WsModule,
   ],
 })
 export class AppModule implements NestModule {

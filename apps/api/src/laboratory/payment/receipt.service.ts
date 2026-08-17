@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PaymentMethod } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { ReceiptSequenceService } from './receipt-sequence.service';
 import {
   ReceiptData,
   ReceiptLineItem,
@@ -12,7 +13,10 @@ import {
 
 @Injectable()
 export class ReceiptService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly receiptSequenceService: ReceiptSequenceService,
+  ) {}
 
   async generateReceipt(orderId: string): Promise<ReceiptData> {
     const order = await this.prisma.order.findUnique({
@@ -36,7 +40,11 @@ export class ReceiptService {
       throw new NotFoundException('Order not found');
     }
 
-    const receiptNumber = this.generateReceiptNumber();
+    const receiptNumber = await this.receiptSequenceService.generateReceiptNumber();
+
+    // Persist receipt number to the order
+    await this.receiptSequenceService.persistReceipt(orderId, receiptNumber);
+
     const lineItems = this.buildLineItems(order.orderDetails);
     const totalAmount = Number(order.totalAmount);
 
@@ -264,10 +272,4 @@ export class ReceiptService {
     }));
   }
 
-  private generateReceiptNumber(): string {
-    const now = new Date();
-    const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
-    const randomPart = Math.floor(1000 + Math.random() * 9000).toString();
-    return `RCP-${datePart}-${randomPart}`;
-  }
 }

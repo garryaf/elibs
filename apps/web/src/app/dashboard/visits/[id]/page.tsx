@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  Loader2,
   User,
   CreditCard,
   ClipboardList,
@@ -183,9 +182,32 @@ export default function VisitDetailPage() {
   // Loading state
   if (authLoading || loading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-brand" />
-        <p className="text-sm text-slate-500 dark:text-slate-400">Memuat detail kunjungan...</p>
+      <div className="space-y-6 py-6">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 animate-pulse rounded-xl bg-muted" />
+          <div className="space-y-2">
+            <div className="h-5 w-40 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-56 animate-pulse rounded bg-muted" />
+          </div>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
+            <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-4 w-full animate-pulse rounded bg-muted" />
+              ))}
+            </div>
+          </div>
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
+            <div className="h-5 w-36 animate-pulse rounded bg-muted" />
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-4 w-full animate-pulse rounded bg-muted" />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

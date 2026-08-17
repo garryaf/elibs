@@ -50,6 +50,17 @@
   --color-brand: #6B8E6B;
   --color-brand-dark: #5A7D5A;
   --color-brand-light: oklch(0.55 0.08 145 / 15%);
+  /* T-27.2: Semantic tokens replacing hardcoded hex values */
+  --color-verified: #8B8B6B;
+  --color-verified-foreground: #8B8B6B;
+  --color-verified-foreground-dark: #B5B590;
+  --color-brand-text-dark: #8FBF8F;
+  /* T-27.2: Chart semantic colors for Levey-Jennings / QC visualization */
+  --color-chart-success: var(--chart-success);
+  --color-chart-danger: var(--chart-danger);
+  --color-chart-warning: var(--chart-warning);
+  --color-chart-info: var(--chart-info);
+  --color-chart-line: var(--chart-line);
 }
 
 :root {
@@ -85,6 +96,12 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* T-27.2: Chart colors (light mode) */
+  --chart-success: #22c55e;
+  --chart-danger: #ef4444;
+  --chart-warning: #f59e0b;
+  --chart-info: #3b82f6;
+  --chart-line: #6366f1;
 }
 
 .dark {
@@ -119,6 +136,12 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  /* T-27.2: Dark mode chart colors (slightly lighter for contrast on dark bg) */
+  --chart-success: #4ade80;
+  --chart-danger: #f87171;
+  --chart-warning: #fbbf24;
+  --chart-info: #60a5fa;
+  --chart-line: #818cf8;
 }
 
 @layer base {

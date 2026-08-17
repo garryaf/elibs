@@ -36,12 +36,12 @@ const STATUS_MAP: Record<OrderStatus, StatusConfig> = {
   IN_ANALYSIS: {
     label: "Proses Analisa",
     className:
-      "bg-brand/10 text-brand dark:bg-brand/20 dark:text-[#8FBF8F]",
+      "bg-brand/10 text-brand dark:bg-brand/20 dark:text-brand-text-dark",
   },
   VERIFIED: {
     label: "Terverifikasi",
     className:
-      "bg-[#8B8B6B]/10 text-[#8B8B6B] dark:bg-[#8B8B6B]/20 dark:text-[#B5B590]",
+      "bg-verified/10 text-verified-foreground dark:bg-verified/20 dark:text-verified-foreground-dark",
   },
   APPROVED: {
     label: "Disetujui",

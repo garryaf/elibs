@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, Printer, User,
   CreditCard, Banknote, Building2, ReceiptText,
-  FlaskConical, Clock, Loader2, Split
+  FlaskConical, Clock, Loader2, Split, Landmark, ShieldCheck
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { formatRupiah } from "@/lib/format";
@@ -66,6 +66,10 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: React.Elemen
   { value: "CASH", label: "Tunai", icon: Banknote, desc: "Pembayaran uang tunai" },
   { value: "TRANSFER", label: "Transfer Bank", icon: Building2, desc: "Via m-banking / i-banking" },
   { value: "EDC", label: "EDC / Kartu", icon: CreditCard, desc: "Debit / Kredit / QRIS" },
+  { value: "INSURANCE", label: "Asuransi", icon: ShieldCheck, desc: "Klaim asuransi swasta" },
+  { value: "BPJS", label: "BPJS", icon: Landmark, desc: "Jaminan kesehatan nasional" },
+  { value: "INSURANCE_CASH_FALLBACK", label: "Asuransi (Tunai Fallback)", icon: Banknote, desc: "Tunai pengganti klaim ditolak" },
+  { value: "CORPORATE_DEFERRED", label: "Korporat (Tertunda)", icon: Building2, desc: "Tagihan korporat ditangguhkan" },
 ];
 
 /* ────────────────────────────────────────────────────────────────
@@ -112,7 +116,7 @@ function SuccessModal({ order, onClose }: { order: OrderApi; onClose: () => void
         <div className="mt-4 rounded-xl bg-slate-50 p-4 text-left dark:bg-slate-800">
           <div className="flex justify-between text-sm">
             <span className="text-slate-500">Total Bayar</span>
-            <span className="font-bold text-slate-900 dark:text-white">{formatRupiah(order.totalAmount)}</span>
+            <span className="font-bold text-slate-900 dark:text-white">{formatRupiah(Number(order.totalAmount))}</span>
           </div>
         </div>
         <div className="mt-5 flex gap-3">
@@ -152,7 +156,9 @@ export default function OrderDetailPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
-  const [payMode, setPayMode] = useState<"single" | "split">("single");
+  const [payMode, setPayMode] = useState<"single" | "split" | "deposit">("single");
+  const [depositInput, setDepositInput] = useState("");
+  const [depositNotes, setDepositNotes] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -182,8 +188,48 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-brand" />
+      <div className="min-h-[60vh] space-y-6 p-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-6 w-48 animate-pulse rounded-lg bg-muted" />
+            <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+          </div>
+          <div className="h-9 w-28 animate-pulse rounded-xl bg-muted" />
+        </div>
+        {/* Content cards skeleton */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
+            <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+            <div className="space-y-3">
+              <div className="h-4 w-full animate-pulse rounded bg-muted" />
+              <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+              <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+            </div>
+          </div>
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
+            <div className="h-5 w-40 animate-pulse rounded bg-muted" />
+            <div className="space-y-3">
+              <div className="h-4 w-full animate-pulse rounded bg-muted" />
+              <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+              <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+            </div>
+          </div>
+        </div>
+        {/* Table skeleton */}
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="h-5 w-36 animate-pulse rounded bg-muted mb-4" />
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex gap-4">
+                <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+                <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+                <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -198,12 +244,12 @@ export default function OrderDetailPage() {
     );
   }
 
-  const subtotal = order.orderDetails.reduce((s, d) => s + d.price, 0);
+  const subtotal = order.orderDetails.reduce((s, d) => s + Number(d.price), 0);
   const discountAmount = discount ? parseFloat(discount.replace(/\D/g, "")) : 0;
   const total = Math.max(0, subtotal - discountAmount);
   const cashPaid = parseInt(cashInput.replace(/\D/g, "") || "0", 10);
   const change = Math.max(0, cashPaid - total);
-  const canPay = order.status === "PENDING_PAYMENT" && (paymentMethod !== "CASH" || cashPaid >= total);
+  const canPay = (order.status === "PENDING_PAYMENT" || order.status === "PAYMENT_OVERDUE" || order.status === "DEPOSIT_RECEIVED") && (paymentMethod !== "CASH" || cashPaid >= total);
 
   const handleNumpad = (k: string) => {
     setCashInput((prev) => {
@@ -238,7 +284,7 @@ export default function OrderDetailPage() {
     }
   };
 
-  const alreadyPaid = order.status !== "PENDING_PAYMENT";
+  const alreadyPaid = order.status !== "PENDING_PAYMENT" && order.status !== "PAYMENT_OVERDUE" && order.status !== "DEPOSIT_RECEIVED";
 
   return (
     <>
@@ -335,7 +381,7 @@ export default function OrderDetailPage() {
                         </div>
                       </div>
                     </div>
-                    <span className="text-sm font-semibold text-slate-900 dark:text-white">{formatRupiah(d.price)}</span>
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">{formatRupiah(Number(d.price))}</span>
                   </div>
                 ))}
               </div>
@@ -423,6 +469,18 @@ export default function OrderDetailPage() {
                 >
                   <Split className="h-3.5 w-3.5" /> Split / Parsial
                 </button>
+                <button
+                  id="pay-mode-deposit"
+                  onClick={() => setPayMode("deposit")}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-semibold transition border-l border-slate-200 dark:border-slate-700",
+                    payMode === "deposit"
+                      ? "bg-brand text-white"
+                      : "bg-white text-slate-500 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-400"
+                  )}
+                >
+                  <Banknote className="h-3.5 w-3.5" /> Deposit
+                </button>
               </div>
 
               {payMode === "split" ? (
@@ -437,6 +495,111 @@ export default function OrderDetailPage() {
                     });
                   }}
                 />
+              ) : payMode === "deposit" ? (
+                <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <div className="flex items-center gap-2">
+                    <Banknote className="h-4 w-4 text-brand" />
+                    <p className="text-sm font-bold text-slate-800 dark:text-white">Pembayaran Deposit</p>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Bayar sebagian (uang muka) tanpa menandai order sebagai lunas. Order akan berstatus &quot;Deposit Diterima&quot;.
+                  </p>
+
+                  {/* Payment method for deposit */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Metode</label>
+                    <select
+                      id="deposit-method"
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                      {PAYMENT_METHODS.map((m) => (
+                        <option key={m.value} value={m.value}>{m.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Deposit amount */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Jumlah Deposit (Rp)</label>
+                    <input
+                      id="deposit-amount"
+                      type="text"
+                      inputMode="numeric"
+                      value={depositInput}
+                      placeholder="0"
+                      onChange={(e) => setDepositInput(e.target.value.replace(/\D/g, ""))}
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                    <p className="mt-1 text-xs text-slate-400">
+                      Maksimal: {formatRupiah(total)}
+                    </p>
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Catatan (Opsional)</label>
+                    <textarea
+                      id="deposit-notes"
+                      rows={2}
+                      value={depositNotes}
+                      placeholder="Catatan pembayaran deposit..."
+                      onChange={(e) => setDepositNotes(e.target.value)}
+                      className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                  </div>
+
+                  {payError && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+                      {payError}
+                    </div>
+                  )}
+
+                  <button
+                    id="deposit-submit-btn"
+                    onClick={async () => {
+                      const depositAmount = parseInt(depositInput.replace(/\D/g, "") || "0", 10);
+                      if (depositAmount <= 0) {
+                        setPayError("Jumlah deposit harus lebih dari 0");
+                        return;
+                      }
+                      if (depositAmount > total) {
+                        setPayError("Jumlah deposit tidak boleh melebihi total tagihan");
+                        return;
+                      }
+                      setIsProcessing(true);
+                      setPayError(null);
+                      try {
+                        await apiClient.depositPayment(id, {
+                          paymentMethod,
+                          depositAmount,
+                          notes: depositNotes || undefined,
+                        });
+                        const res = await apiClient.getOrder(id);
+                        const raw = res as unknown as Record<string, unknown>;
+                        if (raw && "orderNumber" in raw) { setOrder(raw as unknown as OrderApi); }
+                        else if (raw?.data && typeof raw.data === "object") { setOrder(raw.data as OrderApi); }
+                        setDepositInput("");
+                        setDepositNotes("");
+                        setShowSuccess(true);
+                      } catch (err: unknown) {
+                        const message = err && typeof err === "object" && "message" in err ? (err as { message: string }).message : "Pembayaran deposit gagal";
+                        setPayError(message);
+                      } finally {
+                        setIsProcessing(false);
+                      }
+                    }}
+                    disabled={isProcessing || !depositInput || parseInt(depositInput.replace(/\D/g, "") || "0", 10) <= 0}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-3 text-sm font-bold text-white shadow-sm shadow-brand/20 transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {isProcessing ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Memproses...</>
+                    ) : (
+                      <><CheckCircle2 className="h-4 w-4" /> Kirim Deposit {depositInput ? formatRupiah(parseInt(depositInput.replace(/\D/g, "") || "0", 10)) : ""}</>
+                    )}
+                  </button>
+                </div>
               ) : (
               <>
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">

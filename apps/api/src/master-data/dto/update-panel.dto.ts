@@ -25,7 +25,7 @@ export class UpdatePanelDto {
 
   @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
+  @ArrayMinSize(2, { message: 'A panel must contain at least 2 tests' })
   @IsUUID('4', { each: true })
   testIds?: string[];
 

@@ -39,9 +39,15 @@ export class BatchInvoiceService {
 
     // Find all PAID orders for this insurance within the period
     // that are NOT already included in another batch invoice
+    // Requirement 6.5: Query via OrderInsurance junction with coverageType PRIMARY
     const eligibleOrders = await this.prisma.order.findMany({
       where: {
-        insuranceId: dto.insuranceId,
+        orderInsurances: {
+          some: {
+            insuranceId: dto.insuranceId,
+            coverageType: 'PRIMARY',
+          },
+        },
         status: OrderStatus.PAID,
         paidAt: {
           gte: periodStart,

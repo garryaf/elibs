@@ -97,6 +97,8 @@ export class NotificationService {
       where: { id: orderId },
       include: {
         patient: true,
+        clinic: true,
+        doctor: true,
         orderDetails: {
           include: {
             test: {
@@ -106,6 +108,9 @@ export class NotificationService {
             },
           },
         },
+        addendums: {
+          orderBy: { version: 'asc' },
+        },
       },
     });
 
@@ -114,37 +119,104 @@ export class NotificationService {
       return;
     }
 
-    // Check patient consent for digital notifications
-    if (!order.patient.consentDigitalNotification) {
-      this.logger.log(
-        `Patient ${order.patient.mrn} has not consented to digital notifications. Skipping.`,
-      );
-      return;
-    }
-
-    // Generate PDF report
+    // Generate PDF report (needed for both patient and doctor notifications)
     const pdfBuffer = await this.pdfGeneratorService.generateReport(
       order as unknown as OrderWithDetails,
     );
 
-    const hasEmail = !!order.patient.email;
-    const hasValidPhone = this.whatsAppService.isValidPhone(order.patient.phone);
-
-    // If no valid delivery channels, skip
-    if (!hasEmail && !hasValidPhone) {
+    // --- Patient notifications (subject to consent and contact info) ---
+    const patientConsented = !!order.patient.consentDigitalNotification;
+    if (!patientConsented) {
       this.logger.log(
-        `Patient ${order.patient.mrn} has no valid email or phone. Skipping notifications.`,
+        `Patient ${order.patient.mrn} has not consented to digital notifications. Skipping patient notifications.`,
       );
-      return;
+    } else {
+      const hasEmail = !!order.patient.email;
+      const hasValidPhone = this.whatsAppService.isValidPhone(order.patient.phone);
+
+      if (!hasEmail && !hasValidPhone) {
+        this.logger.log(
+          `Patient ${order.patient.mrn} has no valid email or phone. Skipping patient notifications.`,
+        );
+      } else {
+        // Enqueue email delivery
+        if (hasEmail) {
+          const emailLog = await this.prisma.notificationLog.create({
+            data: {
+              orderId: order.id,
+              type: NotificationType.EMAIL,
+              recipient: order.patient.email!,
+              status: NotificationStatus.PENDING,
+            },
+          });
+
+          await this.emailQueue.add(
+            'send-email',
+            {
+              notificationLogId: emailLog.id,
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              email: order.patient.email,
+              pdfBase64: pdfBuffer.toString('base64'),
+            },
+            {
+              attempts: 3,
+              backoff: {
+                type: 'exponential',
+                delay: 2000,
+              },
+            },
+          );
+
+          this.logger.log(
+            `Enqueued email notification for order ${order.orderNumber} to ${order.patient.email}`,
+          );
+        }
+
+        // Enqueue WhatsApp delivery
+        if (hasValidPhone) {
+          const whatsappLog = await this.prisma.notificationLog.create({
+            data: {
+              orderId: order.id,
+              type: NotificationType.WHATSAPP,
+              recipient: order.patient.phone!,
+              status: NotificationStatus.PENDING,
+            },
+          });
+
+          await this.whatsAppQueue.add(
+            'send-whatsapp',
+            {
+              notificationLogId: whatsappLog.id,
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              phone: order.patient.phone,
+              pdfBase64: pdfBuffer.toString('base64'),
+            },
+            {
+              attempts: 3,
+              backoff: {
+                type: 'exponential',
+                delay: 5000,
+              },
+            },
+          );
+
+          this.logger.log(
+            `Enqueued WhatsApp notification for order ${order.orderNumber} to ${order.patient.phone}`,
+          );
+        }
+      }
     }
 
-    // Enqueue email delivery
-    if (hasEmail) {
-      const emailLog = await this.prisma.notificationLog.create({
+    // --- Referring doctor email notification (independent of patient consent) ---
+    const hasDoctorEmail = !!order.doctor?.email;
+    if (hasDoctorEmail) {
+      const doctorEmailLog = await this.prisma.notificationLog.create({
         data: {
           orderId: order.id,
           type: NotificationType.EMAIL,
-          recipient: order.patient.email!,
+          recipient: order.doctor!.email!,
           status: NotificationStatus.PENDING,
         },
       });
@@ -152,11 +224,14 @@ export class NotificationService {
       await this.emailQueue.add(
         'send-email',
         {
-          notificationLogId: emailLog.id,
+          notificationLogId: doctorEmailLog.id,
           orderId: order.id,
           orderNumber: order.orderNumber,
-          email: order.patient.email,
+          email: order.doctor!.email!,
           pdfBase64: pdfBuffer.toString('base64'),
+          recipientType: 'doctor_referral' as const,
+          patientName: order.patient.name,
+          doctorName: order.doctor!.name,
         },
         {
           attempts: 3,
@@ -168,41 +243,7 @@ export class NotificationService {
       );
 
       this.logger.log(
-        `Enqueued email notification for order ${order.orderNumber} to ${order.patient.email}`,
-      );
-    }
-
-    // Enqueue WhatsApp delivery
-    if (hasValidPhone) {
-      const whatsappLog = await this.prisma.notificationLog.create({
-        data: {
-          orderId: order.id,
-          type: NotificationType.WHATSAPP,
-          recipient: order.patient.phone!,
-          status: NotificationStatus.PENDING,
-        },
-      });
-
-      await this.whatsAppQueue.add(
-        'send-whatsapp',
-        {
-          notificationLogId: whatsappLog.id,
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          phone: order.patient.phone,
-          pdfBase64: pdfBuffer.toString('base64'),
-        },
-        {
-          attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 5000,
-          },
-        },
-      );
-
-      this.logger.log(
-        `Enqueued WhatsApp notification for order ${order.orderNumber} to ${order.patient.phone}`,
+        `Enqueued referring doctor email notification for order ${order.orderNumber} to ${order.doctor!.email}`,
       );
     }
   }
@@ -265,6 +306,8 @@ export class NotificationService {
         order: {
           include: {
             patient: true,
+            clinic: true,
+            doctor: true,
             orderDetails: {
               include: {
                 test: {
@@ -273,6 +316,9 @@ export class NotificationService {
                   },
                 },
               },
+            },
+            addendums: {
+              orderBy: { version: 'asc' },
             },
           },
         },

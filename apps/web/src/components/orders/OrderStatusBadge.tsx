@@ -19,6 +19,13 @@ const STATUS_CONFIG: Record<
     text: "text-orange-700 dark:text-orange-300",
     ring: "ring-orange-200 dark:ring-orange-700/50",
   },
+  DEPOSIT_RECEIVED: {
+    label: "Deposit Diterima",
+    dot: "bg-cyan-400",
+    bg: "bg-cyan-50 dark:bg-cyan-900/30",
+    text: "text-cyan-700 dark:text-cyan-300",
+    ring: "ring-cyan-200 dark:ring-cyan-700/50",
+  },
   PAID: {
     label: "Lunas",
     dot: "bg-blue-400",

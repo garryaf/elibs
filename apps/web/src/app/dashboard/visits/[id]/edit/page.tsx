@@ -104,8 +104,19 @@ export default function EditVisitPage() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="mx-auto max-w-2xl space-y-6 p-6">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 animate-pulse rounded-xl bg-muted" />
+          <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+        </div>
+        <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+              <div className="h-9 flex-1 animate-pulse rounded-xl bg-muted" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

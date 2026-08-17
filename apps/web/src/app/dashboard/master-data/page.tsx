@@ -15,6 +15,7 @@ import {
   CreditCard,
   MapPin,
   Users as UsersIcon,
+  Activity,
 } from "lucide-react";
 import { RoleGuard } from "@/components/guards/RoleGuard";
 
@@ -30,6 +31,12 @@ const masterDataItems = [
     description: "Daftar pemeriksaan laboratorium yang tersedia",
     icon: TestTube,
     href: "/dashboard/master-data/pemeriksaan-lab",
+  },
+  {
+    name: "Nilai Referensi",
+    description: "Atur rentang normal dan kritis per pemeriksaan (untuk auto-flagging)",
+    icon: Activity,
+    href: "/dashboard/master-data/reference-values",
   },
   {
     name: "Panel",

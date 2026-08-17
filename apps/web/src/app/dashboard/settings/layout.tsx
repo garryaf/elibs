@@ -9,6 +9,7 @@ import {
   FlaskConical,
   MessageCircle,
   Palette,
+  Shield,
 } from "lucide-react";
 import { Breadcrumb } from "@/components/breadcrumb";
 
@@ -48,6 +49,12 @@ const settingsNav = [
     href: "/dashboard/settings/appearance",
     icon: Palette,
     description: "Tema & tampilan",
+  },
+  {
+    label: "Audit",
+    href: "/dashboard/settings/audit",
+    icon: Shield,
+    description: "Retensi & arsip audit log",
   },
 ];
 

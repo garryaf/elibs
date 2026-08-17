@@ -34,6 +34,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string, orderTota
 
   const [selectedInsurance, setSelectedInsurance] = useState("");
   const [claimReference, setClaimReference] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
   
   // For approval modal
   const [activeClaimId, setActiveClaimId] = useState<string | null>(null);
@@ -45,6 +46,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string, orderTota
 
   const handleSubmitClaim = async () => {
     if (!selectedInsurance) return;
+    setFormError(null);
     try {
       await submitMutation.mutateAsync({
         orderId,
@@ -56,28 +58,31 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string, orderTota
       setSelectedInsurance("");
       setClaimReference("");
     } catch (e) {
-      alert("Failed to submit claim");
+      setFormError("Gagal mengajukan klaim");
     }
   };
 
   const handleReview = async (claimId: string) => {
+    setFormError(null);
     try {
       await reviewMutation.mutateAsync({ claimId, orderId });
     } catch (e) {
-      alert("Failed to mark claim as under review");
+      setFormError("Gagal memproses klaim ke status review");
     }
   };
 
   const handleMarkPaid = async (claimId: string) => {
+    setFormError(null);
     try {
       await paidMutation.mutateAsync({ claimId, orderId });
     } catch (e) {
-      alert("Failed to mark claim as paid");
+      setFormError("Gagal menandai klaim sebagai lunas");
     }
   };
 
   const handleProcessDecision = async () => {
     if (!activeClaimId || !approvalType) return;
+    setFormError(null);
     try {
       if (approvalType === "APPROVE") {
         await approveMutation.mutateAsync({
@@ -109,14 +114,21 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string, orderTota
       setActiveClaimId(null);
       setApprovalType(null);
     } catch (e) {
-      alert(`Failed to process claim decision`);
+      setFormError("Gagal memproses keputusan klaim");
     }
   };
 
   if (loadingClaims || loadingInsurances) {
     return (
-      <div className="flex items-center justify-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin text-brand" />
+      <div className="space-y-3 p-4">
+        <div className="h-4 w-36 animate-pulse rounded bg-muted" />
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex gap-3 rounded-xl border border-border p-3">
+            <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+          </div>
+        ))}
       </div>
     );
   }
@@ -151,6 +163,15 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string, orderTota
       </div>
 
       <div className="p-5 space-y-4">
+        {/* Error Banner */}
+        {formError && (
+          <div role="alert" className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{formError}</span>
+            <button onClick={() => setFormError(null)} className="text-xs font-semibold opacity-70 hover:opacity-100">Tutup</button>
+          </div>
+        )}
+
         {/* List of Claims */}
         {claims.length > 0 ? (
           <div className="space-y-3">
@@ -168,11 +189,11 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string, orderTota
                   <div className="mt-2 text-sm grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded dark:bg-slate-900">
                     <div>
                       <span className="block text-xs text-slate-500">Dicover</span>
-                      <span className="font-semibold text-green-600">{formatRupiah(claim.coveredAmount)}</span>
+                      <span className="font-semibold text-green-600">{formatRupiah(Number(claim.coveredAmount))}</span>
                     </div>
                     <div>
                       <span className="block text-xs text-slate-500">Co-Pay</span>
-                      <span className="font-semibold text-amber-600">{formatRupiah(claim.copayAmount || 0)}</span>
+                      <span className="font-semibold text-amber-600">{formatRupiah(Number(claim.copayAmount || 0))}</span>
                     </div>
                   </div>
                 )}

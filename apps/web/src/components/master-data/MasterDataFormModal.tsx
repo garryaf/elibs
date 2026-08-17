@@ -5,14 +5,22 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { parseApiErrors } from "@/lib/api";
+import { EntityAutocomplete } from "./EntityAutocomplete";
+import { MultiEntityAutocomplete } from "./MultiEntityAutocomplete";
 
 interface FormField {
   name: string;
   label: string;
-  type: "text" | "number" | "email" | "textarea" | "select";
+  type: "text" | "number" | "email" | "textarea" | "select" | "date" | "entity-autocomplete" | "checkbox" | "multi-entity-autocomplete";
   required?: boolean;
   placeholder?: string;
   options?: { label: string; value: string }[];
+  /** API endpoint for entity-autocomplete type */
+  endpoint?: string;
+  /** Minimum number of selections for multi-entity-autocomplete */
+  min?: number;
+  /** Which property of the entity to use as value (default: "id"). Use "code" to store entity code instead of UUID. */
+  valueKey?: "id" | "code";
 }
 
 interface MasterDataFormModalProps {
@@ -131,8 +139,24 @@ export function MasterDataFormModal({
     for (const field of fields) {
       if (field.required) {
         const value = formData[field.name];
-        if (value === undefined || value === null || String(value).trim() === "") {
-          newErrors[field.name] = `${field.label} wajib diisi`;
+        if (field.type === "multi-entity-autocomplete") {
+          const arr = value as string[] | undefined;
+          if (!arr || arr.length === 0) {
+            newErrors[field.name] = `${field.label} wajib diisi`;
+          } else if (field.min && arr.length < field.min) {
+            newErrors[field.name] = `${field.label} minimal ${field.min} item`;
+          }
+        } else if (field.type === "checkbox") {
+          // Checkbox required means must be checked (rarely used, skip validation)
+        } else {
+          if (value === undefined || value === null || String(value).trim() === "") {
+            newErrors[field.name] = `${field.label} wajib diisi`;
+          }
+        }
+      } else if (field.type === "multi-entity-autocomplete" && field.min) {
+        const arr = formData[field.name] as string[] | undefined;
+        if (arr && arr.length > 0 && arr.length < field.min) {
+          newErrors[field.name] = `${field.label} minimal ${field.min} item`;
         }
       }
     }
@@ -144,8 +168,16 @@ export function MasterDataFormModal({
     for (const field of fields) {
       if (field.required) {
         const value = formData[field.name];
-        if (value === undefined || value === null || String(value).trim() === "") {
-          return false;
+        if (field.type === "multi-entity-autocomplete") {
+          const arr = value as string[] | undefined;
+          if (!arr || arr.length === 0) return false;
+          if (field.min && arr.length < field.min) return false;
+        } else if (field.type === "checkbox") {
+          // Checkbox fields don't block form submission
+        } else {
+          if (value === undefined || value === null || String(value).trim() === "") {
+            return false;
+          }
         }
       }
     }
@@ -224,13 +256,15 @@ export function MasterDataFormModal({
             )}
             {fields.map((field, index) => (
               <div key={field.name}>
-                <label
-                  htmlFor={`master-field-${field.name}`}
-                  className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
-                >
-                  {field.label}
-                  {field.required && <span className="ml-1 text-red-500">*</span>}
-                </label>
+                {field.type !== "checkbox" && (
+                  <label
+                    htmlFor={`master-field-${field.name}`}
+                    className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                  >
+                    {field.label}
+                    {field.required && <span className="ml-1 text-red-500">*</span>}
+                  </label>
+                )}
 
                 {field.type === "textarea" ? (
                   <textarea
@@ -261,6 +295,61 @@ export function MasterDataFormModal({
                       </option>
                     ))}
                   </select>
+                ) : field.type === "entity-autocomplete" ? (
+                  <EntityAutocomplete
+                    id={`master-field-${field.name}`}
+                    endpoint={field.endpoint ?? ""}
+                    value={formData[field.name] as string | undefined}
+                    onChange={(id, entity) => {
+                      if (field.valueKey === "code" && entity?.code) {
+                        handleChange(field.name, entity.code);
+                      } else {
+                        handleChange(field.name, id ?? "");
+                      }
+                    }}
+                    placeholder={field.placeholder ?? `Cari ${field.label.toLowerCase()}...`}
+                    required={field.required}
+                    error={errors[field.name]}
+                    matchBy={field.valueKey === "code" ? "code" : "id"}
+                  />
+                ) : field.type === "date" ? (
+                  <Input
+                    id={`master-field-${field.name}`}
+                    ref={index === 0 ? (el: HTMLInputElement | null) => { firstInputRef.current = el; } : undefined}
+                    type="date"
+                    placeholder={field.placeholder}
+                    value={String(formData[field.name] ?? "").slice(0, 10)}
+                    onChange={(e) => handleChange(field.name, e.target.value)}
+                    aria-invalid={!!errors[field.name]}
+                    aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
+                    className="h-10 rounded-xl border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand"
+                  />
+                ) : field.type === "checkbox" ? (
+                  <label className="flex items-center gap-3 cursor-pointer py-1">
+                    <input
+                      id={`master-field-${field.name}`}
+                      type="checkbox"
+                      checked={!!formData[field.name]}
+                      onChange={(e) => handleChange(field.name, e.target.checked)}
+                      aria-invalid={!!errors[field.name]}
+                      aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
+                      className="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand/20 dark:border-slate-600 dark:bg-slate-900"
+                    />
+                    <span className="text-sm text-slate-700 dark:text-slate-300">
+                      {field.label}
+                    </span>
+                  </label>
+                ) : field.type === "multi-entity-autocomplete" ? (
+                  <MultiEntityAutocomplete
+                    id={`master-field-${field.name}`}
+                    endpoint={field.endpoint ?? ""}
+                    value={(formData[field.name] as string[]) ?? []}
+                    onChange={(ids) => handleChange(field.name, ids)}
+                    placeholder={field.placeholder ?? `Cari ${field.label.toLowerCase()}...`}
+                    required={field.required}
+                    error={errors[field.name]}
+                    min={field.min}
+                  />
                 ) : (
                   <Input
                     id={`master-field-${field.name}`}

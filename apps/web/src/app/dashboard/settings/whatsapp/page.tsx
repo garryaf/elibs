@@ -56,8 +56,19 @@ export default function WhatsAppSettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-brand" />
+      <div className="max-w-xl space-y-6">
+        <div className="space-y-2">
+          <div className="h-5 w-40 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-72 animate-pulse rounded bg-muted" />
+        </div>
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+              <div className="h-10 w-full animate-pulse rounded-xl bg-muted" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

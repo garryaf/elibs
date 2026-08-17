@@ -13,6 +13,7 @@ import { apiClient } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { RoleGuard } from "@/components/guards/RoleGuard";
+import { PriorityBadge } from "@/components/laboratory/priority-badge";
 
 /* ─── Types ─── */
 interface TestInfo {
@@ -42,7 +43,9 @@ interface ApprovalOrder {
   id: string;
   orderNumber: string;
   status: string;
+  priority: string | null;
   createdAt: string;
+  hasCritical?: boolean;
   patient: PatientInfo;
   orderDetails: OrderDetailItem[];
 }
@@ -178,9 +181,12 @@ function ApprovalCard({
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <span className="font-mono text-xs font-semibold text-primary">
-              {order.orderNumber}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs font-semibold text-primary">
+                {order.orderNumber}
+              </span>
+              <PriorityBadge priority={order.priority} />
+            </div>
             <h3 className="mt-1 font-bold text-foreground">{order.patient?.name ?? "-"}</h3>
             <span className="text-xs text-muted-foreground">
               MRN: {order.patient?.mrn ?? "-"}
@@ -350,6 +356,28 @@ export default function LabApprovalPage() {
           items = (raw.data as Record<string, unknown>).data as ApprovalOrder[];
         }
       }
+
+      // Compute hasCritical and sort CRITICAL-flagged orders above non-critical (Req 17.2)
+      items = items.map((order) => ({
+        ...order,
+        hasCritical: (order.orderDetails ?? []).some((d) => d.flag === "CRITICAL"),
+      }));
+
+      items.sort((a, b) => {
+        // CRITICAL-flagged orders first
+        if (a.hasCritical && !b.hasCritical) return -1;
+        if (!a.hasCritical && b.hasCritical) return 1;
+        // Then by priority (CITO > URGENT > ROUTINE)
+        const priorityWeight = (p: string | null) => {
+          if (p === "CITO") return 3;
+          if (p === "URGENT") return 2;
+          return 1;
+        };
+        const pDiff = priorityWeight(b.priority) - priorityWeight(a.priority);
+        if (pDiff !== 0) return pDiff;
+        // Then by creation date (oldest first)
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
 
       setOrders(items);
     } catch (err: unknown) {

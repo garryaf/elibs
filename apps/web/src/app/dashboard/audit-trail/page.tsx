@@ -5,6 +5,12 @@ import { Shield, ChevronDown, ChevronUp, ChevronRight, Search } from "lucide-rea
 import { apiClient } from "@/lib/api";
 import { RoleGuard } from "@/components/guards/RoleGuard";
 
+interface UserOption {
+  id: string;
+  name: string | null;
+  email: string;
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AuditLog {
@@ -25,6 +31,7 @@ interface AuditFilters {
   dateFrom: string;
   dateTo: string;
   entityId: string;
+  userId: string;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -142,7 +149,11 @@ export default function AuditTrailPage() {
     dateFrom: "",
     dateTo: "",
     entityId: "",
+    userId: "",
   });
+
+  // ─── User options for userId filter ─────────────────────────────────────────
+  const [userOptions, setUserOptions] = useState<UserOption[]>([]);
 
   // ─── Sorting ────────────────────────────────────────────────────────────────
   type AuditSortField = "timestamp" | "action" | "entityName";
@@ -193,6 +204,8 @@ export default function AuditTrailPage() {
         page,
         limit: 20,
         entityName: filters.entityName || undefined,
+        entityId: filters.entityId || undefined,
+        userId: filters.userId || undefined,
         action: filters.action || undefined,
         startDate: filters.dateFrom || undefined,
         endDate: filters.dateTo || undefined,
@@ -231,6 +244,31 @@ export default function AuditTrailPage() {
     fetchLogs();
   }, [fetchLogs]);
 
+  // Load user options for userId filter dropdown
+  useEffect(() => {
+    async function loadUsers() {
+      try {
+        const res = await apiClient.getUsers({ limit: 200 });
+        const envelope = (res as unknown as { data?: unknown })?.data ?? res;
+        if (envelope && typeof envelope === "object") {
+          const env = envelope as Record<string, unknown>;
+          if (Array.isArray(env.data)) {
+            setUserOptions(
+              (env.data as Array<{ id: string; name?: string | null; email: string }>).map((u) => ({
+                id: u.id,
+                name: u.name ?? null,
+                email: u.email,
+              }))
+            );
+          }
+        }
+      } catch {
+        // Silently fail — user filter will just be empty
+      }
+    }
+    loadUsers();
+  }, []);
+
   // Debounced filter change resets page
   const handleFilterChange = (key: keyof AuditFilters, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -259,7 +297,7 @@ export default function AuditTrailPage() {
 
       {/* Filters */}
       <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           {/* Entity Filter */}
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -290,6 +328,25 @@ export default function AuditTrailPage() {
               <option value="">Semua Aksi</option>
               {ACTION_OPTIONS.map((a) => (
                 <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* User Filter */}
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
+              User
+            </label>
+            <select
+              value={filters.userId}
+              onChange={(e) => handleFilterChange("userId", e.target.value)}
+              className="h-9 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 text-foreground"
+            >
+              <option value="">Semua User</option>
+              {userOptions.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name || u.email}
+                </option>
               ))}
             </select>
           </div>

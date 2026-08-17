@@ -8,6 +8,8 @@ import { PaymentService } from '../payment.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { BarcodeService } from '../../../common/barcode';
 import { AuditService } from '../../audit/audit.service';
+import { OrderStateMachineService } from '../../lab-workflow/order-state-machine.service';
+import { DiscountApprovalService } from '../../../approval/discount-approval.service';
 import { OrderStatus, PaymentMethod } from '@prisma/client';
 
 /**
@@ -51,6 +53,20 @@ describe('Payment Property Tests', () => {
           provide: AuditService,
           useValue: {
             log: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: OrderStateMachineService,
+          useValue: {
+            transition: jest.fn().mockResolvedValue(undefined),
+            getValidTransitions: jest.fn().mockReturnValue(['PAID']),
+          },
+        },
+        {
+          provide: DiscountApprovalService,
+          useValue: {
+            hasApprovedDiscountRequest: jest.fn().mockResolvedValue(true),
+            getApprovedDiscount: jest.fn().mockResolvedValue(null),
           },
         },
       ],

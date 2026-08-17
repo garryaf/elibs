@@ -142,8 +142,12 @@ function PaymentMethodLabel({ method }: { method: string | null }) {
     DEBIT_CARD: "Debit",
     CREDIT_CARD: "Kartu Kredit",
     BANK_TRANSFER: "Transfer",
+    TRANSFER: "Transfer",
+    EDC: "EDC (Kartu)",
     BPJS: "BPJS",
     INSURANCE: "Asuransi",
+    INSURANCE_CASH_FALLBACK: "Asuransi (Fallback)",
+    CORPORATE_DEFERRED: "Korporat (Tertunda)",
     QRIS: "QRIS",
   };
 

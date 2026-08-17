@@ -9,20 +9,26 @@ import { Observable } from 'rxjs';
 import { Role } from '@prisma/client';
 
 /**
- * Interceptor that enforces clinic-level data isolation for KLINIK_PARTNER users.
+ * Interceptor that enforces clinic-level data isolation for scoped roles.
  *
- * - If the user has role KLINIK_PARTNER and no clinicId assigned, throws 403.
- * - If the user has role KLINIK_PARTNER and a clinicId, attaches
- *   `request.dataScope = { clinicId }` for downstream service-layer filtering.
- * - For all other roles, passes through without modification.
+ * Scoped roles (KLINIK_PARTNER, DOKTER):
+ * - If the user has no clinicId assigned, throws 403.
+ * - If the user has a clinicId, attaches `request.dataScope = { clinicId }`
+ *   for downstream service-layer filtering.
+ *
+ * For all other roles, passes through without modification.
+ *
+ * Requirement 17.4: Enforce clinic scope for DOKTER role approval queue access.
  */
 @Injectable()
 export class DataScopeInterceptor implements NestInterceptor {
+  private readonly SCOPED_ROLES: Role[] = [Role.KLINIK_PARTNER, Role.DOKTER];
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    if (user?.role === Role.KLINIK_PARTNER) {
+    if (user?.role && this.SCOPED_ROLES.includes(user.role)) {
       if (!user.clinicId) {
         throw new ForbiddenException({
           errorCode: 'ERR_NO_CLINIC_ASSIGNED',

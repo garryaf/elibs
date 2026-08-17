@@ -240,6 +240,13 @@ class ApiClient {
     });
   }
 
+  async patch<T>(endpoint: string, body?: unknown): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: "PATCH",
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
   async delete<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, { method: "DELETE" });
   }
@@ -307,6 +314,17 @@ class ApiClient {
     return this.get(`/api/v1/master/tests${query}`);
   }
 
+  async getPanels(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.limit) qs.set("limit", String(params.limit));
+    const query = qs.toString() ? `?${qs.toString()}` : "";
+    return this.get(`/api/v1/master/panels${query}`);
+  }
+
   // ─── Orders ───────────────────────────────────────────────────────────────
 
   async getOrders(params?: {
@@ -363,6 +381,13 @@ class ApiClient {
     return this.post(`/api/v1/orders/${id}/fallback-payment`, data);
   }
 
+  async depositPayment(
+    id: string,
+    data: { paymentMethod: string; depositAmount: number; notes?: string }
+  ): Promise<ApiResponse<unknown>> {
+    return this.post(`/api/v1/orders/${id}/deposit`, data);
+  }
+
   async getBarcode(id: string): Promise<ApiResponse<unknown>> {
     return this.get(`/api/v1/orders/${id}/barcode`);
   }
@@ -415,6 +440,29 @@ class ApiClient {
     data: { decision: "APPROVE" | "REJECT"; interpretation?: string; rejectionReason?: string }
   ): Promise<ApiResponse<unknown>> {
     return this.post(`/api/v1/lab/${orderId}/approve`, data);
+  }
+
+  // ─── Per-Parameter Verification ────────────────────────────────────────────
+
+  async verifyOrderDetail(
+    orderDetailId: string,
+    data?: { verificationNotes?: string }
+  ): Promise<ApiResponse<unknown>> {
+    return this.patch(`/api/v1/lab-workflow/order-details/${orderDetailId}/verify`, data);
+  }
+
+  async rejectOrderDetail(
+    orderDetailId: string,
+    data: { reason: string; notes?: string }
+  ): Promise<ApiResponse<unknown>> {
+    return this.patch(`/api/v1/lab-workflow/order-details/${orderDetailId}/reject`, data);
+  }
+
+  async rerunOrderDetail(
+    orderDetailId: string,
+    data: { rerunReason: string; notes?: string }
+  ): Promise<ApiResponse<unknown>> {
+    return this.post(`/api/v1/lab-workflow/order-details/${orderDetailId}/rerun`, data);
   }
 
   // ─── Dashboard ────────────────────────────────────────────────────────────
@@ -520,6 +568,15 @@ class ApiClient {
     return this.post("/api/v1/settings/smtp/test", { email });
   }
 
+  async getSettings(prefix?: string): Promise<ApiResponse<unknown>> {
+    const qs = prefix ? `?prefix=${encodeURIComponent(prefix)}` : "";
+    return this.get(`/api/v1/settings${qs}`);
+  }
+
+  async updateSettingsBulk(entries: { key: string; value: string }[]): Promise<ApiResponse<unknown>> {
+    return this.put("/api/v1/settings/bulk", { entries });
+  }
+
   // ─── Visits ─────────────────────────────────────────────────────────────
 
   async getVisits(params?: {
@@ -602,6 +659,7 @@ class ApiClient {
     page?: number;
     limit?: number;
     entityName?: string;
+    entityId?: string;
     action?: string;
     userId?: string;
     startDate?: string;
@@ -611,12 +669,19 @@ class ApiClient {
     if (params?.page) qs.set("page", String(params.page));
     if (params?.limit) qs.set("limit", String(params.limit));
     if (params?.entityName) qs.set("entityName", params.entityName);
+    if (params?.entityId) qs.set("entityId", params.entityId);
     if (params?.action) qs.set("action", params.action);
     if (params?.userId) qs.set("userId", params.userId);
     if (params?.startDate) qs.set("startDate", params.startDate);
     if (params?.endDate) qs.set("endDate", params.endDate);
     const query = qs.toString() ? `?${qs.toString()}` : "";
     return this.get(`/api/v1/audit-logs${query}`);
+  }
+
+  // ─── WhatsApp Delivery ──────────────────────────────────────────────────────
+
+  async sendWhatsApp(orderId: string): Promise<ApiResponse<unknown>> {
+    return this.post(`/api/v1/orders/${orderId}/send-whatsapp`);
   }
 }
 

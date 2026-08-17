@@ -29,8 +29,8 @@ describe('State Machine Property Tests', () => {
 
   beforeAll(() => {
     // OrderStateMachineService.canTransition is pure logic — no DB needed
-    // We pass a null prisma since we only test canTransition
-    service = new OrderStateMachineService(null as any);
+    // We pass null for prisma and auditService since we only test canTransition
+    service = new OrderStateMachineService(null as any, null as any);
   });
 
   /**

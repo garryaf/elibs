@@ -8,6 +8,11 @@ import {
   FlaskConical,
   ShieldCheck,
   BarChart3,
+  TestTube,
+  ClipboardCheck,
+  Upload,
+  AlertTriangle,
+  Activity,
 } from "lucide-react";
 
 export type LabRole =
@@ -37,10 +42,45 @@ const LAB_TABS: LabTab[] = [
     allowedRoles: ["ADMIN", "SUPER_ADMIN", "SAMPLING", "ANALIS", "DOKTER"],
   },
   {
+    id: "specimens",
+    label: "Spesimen",
+    href: "/dashboard/laboratory/specimens",
+    icon: TestTube,
+    allowedRoles: ["ADMIN", "SUPER_ADMIN", "SAMPLING", "ANALIS"],
+  },
+  {
     id: "results",
     label: "Hasil",
     href: "/dashboard/laboratory/results",
     icon: FlaskConical,
+    allowedRoles: ["ADMIN", "SUPER_ADMIN", "ANALIS"],
+  },
+  {
+    id: "analyzer",
+    label: "Analyzer",
+    href: "/dashboard/laboratory/analyzer",
+    icon: Upload,
+    allowedRoles: ["ADMIN", "SUPER_ADMIN", "ANALIS"],
+  },
+  {
+    id: "critical-values",
+    label: "Critical Values",
+    href: "/dashboard/laboratory/critical-values",
+    icon: AlertTriangle,
+    allowedRoles: ["ADMIN", "SUPER_ADMIN", "DOKTER", "ANALIS"],
+  },
+  {
+    id: "verification",
+    label: "Verifikasi",
+    href: "/dashboard/laboratory/verification",
+    icon: ClipboardCheck,
+    allowedRoles: ["ADMIN", "SUPER_ADMIN", "ANALIS"],
+  },
+  {
+    id: "qc",
+    label: "QC",
+    href: "/dashboard/laboratory/qc",
+    icon: Activity,
     allowedRoles: ["ADMIN", "SUPER_ADMIN", "ANALIS"],
   },
   {
@@ -89,7 +129,7 @@ export function LabNavTabs({ userRole = "ADMIN" }: LabNavTabsProps) {
               "flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all",
               isActive
                 ? "bg-brand text-white shadow-sm"
-                : "text-[#8B8B6B] hover:bg-brand/10 hover:text-brand"
+                : "text-muted-foreground hover:bg-brand/10 hover:text-brand"
             )}
             aria-current={isActive ? "page" : undefined}
           >

@@ -178,11 +178,11 @@ export function OrderTable({ orders, sortField, sortDir, onSort }: OrderTablePro
                   {/* Total */}
                   <td className="px-5 py-4">
                     <div className="font-semibold text-slate-900 dark:text-white">
-                      {formatRupiah(order.totalAmount)}
+                      {formatRupiah(Number(order.totalAmount))}
                     </div>
                     {order.invoice?.discountAmount ? (
                       <div className="text-xs text-brand">
-                        -{formatRupiah(order.invoice.discountAmount)}
+                        -{formatRupiah(Number(order.invoice.discountAmount))}
                       </div>
                     ) : null}
                   </td>

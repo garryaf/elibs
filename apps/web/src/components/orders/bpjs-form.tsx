@@ -29,6 +29,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Sync formData with fetched BPJS detail if available and not editing
   if (bpjsData && !isEditing && formData.sepNumber !== bpjsData.sepNumber) {
@@ -46,6 +47,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
   }
 
   const handleSave = async () => {
+    setFormError(null);
     try {
       if (bpjsData?.id) {
         await updateMutation.mutateAsync({ id: orderId, data: formData });
@@ -55,23 +57,35 @@ export function BpjsForm({ orderId }: { orderId: string }) {
       setIsEditing(false);
     } catch (e) {
       console.error(e);
-      alert("Gagal menyimpan data BPJS");
+      setFormError("Gagal menyimpan data BPJS");
     }
   };
 
   const handleVerify = async () => {
+    setFormError(null);
     try {
       await verifyMutation.mutateAsync({ id: orderId, data: { notes: "Verified manually" } });
     } catch (e) {
       console.error(e);
-      alert("Gagal memverifikasi BPJS");
+      setFormError("Gagal memverifikasi BPJS");
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin text-brand" />
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 space-y-4">
+        <div className="flex items-center gap-3 border-b border-slate-100 pb-3 dark:border-slate-800">
+          <div className="h-4 w-4 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+              <div className="h-4 w-40 animate-pulse rounded bg-muted" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -111,6 +125,15 @@ export function BpjsForm({ orderId }: { orderId: string }) {
       </div>
 
       <div className="p-5 space-y-4">
+        {/* Error Banner */}
+        {formError && (
+          <div role="alert" className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{formError}</span>
+            <button onClick={() => setFormError(null)} className="text-xs font-semibold opacity-70 hover:opacity-100">Tutup</button>
+          </div>
+        )}
+
         {(!bpjsData || isEditing) ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>

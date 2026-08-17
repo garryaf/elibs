@@ -86,6 +86,13 @@ export class MasterDataController {
     );
   }
 
+  @Get('tests/:id')
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
+  @ApiOperation({ summary: 'Get a single test with category and reference values' })
+  async findOneTest(@Param('id', ParseUUIDPipe) id: string) {
+    return this.masterDataService.findOneTest(id);
+  }
+
   @Post('tests')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Create a test' })

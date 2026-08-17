@@ -15,8 +15,12 @@ import { RequirePermission } from '../../common/decorators/permission.decorator'
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaymentService } from './payment.service';
 import { ReceiptService } from './receipt.service';
+import { InvoiceService } from './invoice.service';
+import { RefundService } from './refund.service';
 import { ProcessPaymentDto } from './dto/process-payment.dto';
 import { SplitPaymentDto } from './dto/split-payment.dto';
+import { DepositPaymentDto } from './dto/deposit-payment.dto';
+import { CreateRefundDto } from './dto/create-refund.dto';
 
 @ApiTags('Payments')
 @ApiBearerAuth()
@@ -25,6 +29,8 @@ export class PaymentController {
   constructor(
     private readonly paymentService: PaymentService,
     private readonly receiptService: ReceiptService,
+    private readonly invoiceService: InvoiceService,
+    private readonly refundService: RefundService,
   ) {}
 
   @Post('pay')
@@ -70,9 +76,9 @@ export class PaymentController {
   @Get('invoice')
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @RequirePermission('payments:read')
-  @ApiOperation({ summary: 'Get invoice for an order' })
+  @ApiOperation({ summary: 'Get structured invoice for an order' })
   async getInvoice(@Param('id', ParseUUIDPipe) id: string) {
-    return this.paymentService.getInvoice(id);
+    return this.invoiceService.generateInvoice(id);
   }
 
   @Get('receipt')
@@ -81,5 +87,37 @@ export class PaymentController {
   @ApiOperation({ summary: 'Get receipt for an order' })
   async getReceipt(@Param('id', ParseUUIDPipe) id: string) {
     return this.receiptService.generateReceipt(id);
+  }
+
+  @Post('deposit')
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('payments:process')
+  @ApiOperation({ summary: 'Record deposit/advance payment for an order' })
+  async processDeposit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: DepositPaymentDto,
+    @CurrentUser() user: { id: string; role: Role },
+  ) {
+    return this.paymentService.processDeposit(id, dto, user.id);
+  }
+
+  @Post('refund')
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('payments:process')
+  @ApiOperation({ summary: 'Process refund for an order' })
+  async createRefund(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreateRefundDto,
+    @CurrentUser() user: { id: string; role: Role },
+  ) {
+    return this.refundService.createRefund(id, dto, user.id);
+  }
+
+  @Get('refunds')
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('payments:read')
+  @ApiOperation({ summary: 'Get refunds for an order' })
+  async getRefunds(@Param('id', ParseUUIDPipe) id: string) {
+    return this.refundService.getRefundsByOrder(id);
   }
 }

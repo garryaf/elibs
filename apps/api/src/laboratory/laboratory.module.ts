@@ -9,6 +9,11 @@ import { NotificationModule } from './notification/notification.module';
 import { RegionModule } from './region/region.module';
 import { VisitModule } from './visit/visit.module';
 import { ReportsModule } from './reports/reports.module';
+import { SpecimenModule } from './specimen/specimen.module';
+import { QCModule } from './qc/qc.module';
+import { CriticalValueModule } from './critical-value/critical-value.module';
+import { AnalyzerModule } from './analyzer/analyzer.module';
+import { PortalModule } from './portal/portal.module';
 
 @Module({
   imports: [
@@ -22,6 +27,11 @@ import { ReportsModule } from './reports/reports.module';
     RegionModule,
     VisitModule,
     ReportsModule,
+    SpecimenModule,
+    QCModule,
+    CriticalValueModule,
+    AnalyzerModule,
+    PortalModule,
   ],
   exports: [
     AuditModule,
@@ -34,6 +44,11 @@ import { ReportsModule } from './reports/reports.module';
     RegionModule,
     VisitModule,
     ReportsModule,
+    SpecimenModule,
+    QCModule,
+    CriticalValueModule,
+    AnalyzerModule,
+    PortalModule,
   ],
 })
 export class LaboratoryModule {}

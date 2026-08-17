@@ -86,6 +86,10 @@ export class VisitService {
           clinicId: dto.clinicId ?? null,
           insuranceId: dto.insuranceId ?? null,
           bpjsNumber: dto.bpjsNumber ?? null,
+          referringDoctorName: dto.referringDoctorName ?? null,
+          referralLetterNo: dto.referralLetterNo ?? null,
+          encounterReason: dto.encounterReason ?? null,
+          chiefComplaint: dto.chiefComplaint ?? null,
         },
         include: VISIT_INCLUDE,
       });
@@ -466,6 +470,18 @@ export class VisitService {
     if (dto.bpjsNumber !== undefined) {
       updateData.bpjsNumber = dto.bpjsNumber;
     }
+    if (dto.referringDoctorName !== undefined) {
+      updateData.referringDoctorName = dto.referringDoctorName;
+    }
+    if (dto.referralLetterNo !== undefined) {
+      updateData.referralLetterNo = dto.referralLetterNo;
+    }
+    if (dto.encounterReason !== undefined) {
+      updateData.encounterReason = dto.encounterReason;
+    }
+    if (dto.chiefComplaint !== undefined) {
+      updateData.chiefComplaint = dto.chiefComplaint;
+    }
 
     // 7. Track old vs new values for audit (only fields that actually changed)
     const oldValues: Record<string, unknown> = {};
@@ -668,5 +684,61 @@ export class VisitService {
         data: { status: VisitStatus.COMPLETED },
       });
     }
+  }
+
+  /**
+   * Administrative manual status transition for stuck visits.
+   * Restricted to ADMIN and SUPER_ADMIN roles (enforced at controller level).
+   * Bypasses normal transition rules to allow recovery of stuck states.
+   */
+  async manualTransition(
+    visitId: string,
+    targetStatus: VisitStatus,
+    userId: string,
+    reason?: string,
+    ipAddress?: string,
+  ) {
+    const visit = await this.prisma.visit.findUnique({
+      where: { id: visitId },
+      include: VISIT_INCLUDE,
+    });
+
+    if (!visit) {
+      throw new NotFoundException({
+        errorCode: 'ERR_NOT_FOUND',
+        message: 'Visit not found',
+      });
+    }
+
+    if (visit.status === targetStatus) {
+      throw new BadRequestException({
+        errorCode: 'ERR_INVALID_STATE',
+        message: `Visit is already in ${targetStatus} status`,
+      });
+    }
+
+    // Validate transition is allowed
+    this.validateStatusTransition(visit.status, targetStatus);
+
+    const oldStatus = visit.status;
+
+    const updatedVisit = await this.prisma.visit.update({
+      where: { id: visitId },
+      data: { status: targetStatus },
+      include: VISIT_INCLUDE,
+    });
+
+    // Audit log the manual transition with full context
+    await this.auditService.log(
+      userId,
+      'MANUAL_TRANSITION',
+      'Visit',
+      visitId,
+      { status: oldStatus },
+      { status: targetStatus, reason: reason ?? null },
+      ipAddress,
+    );
+
+    return updatedVisit;
   }
 }

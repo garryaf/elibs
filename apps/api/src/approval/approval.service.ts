@@ -3,17 +3,27 @@ import {
   ConflictException,
   UnprocessableEntityException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApprovalStatus, ApprovalType } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { AuditService } from '../laboratory/audit/audit.service';
 import { CreateApprovalDto } from './dto/create-approval.dto';
 import { ApproveApprovalDto } from './dto/approve-approval.dto';
 import { RejectApprovalDto } from './dto/reject-approval.dto';
 import { IApprovalService } from './interfaces/approval.interface';
+import {
+  resolveDiscountRoutingRule,
+} from './discount-routing.config';
+import { DiscountApprovalPayload } from './discount-approval.service';
 
 @Injectable()
 export class ApprovalService implements IApprovalService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
+  ) {}
 
   /**
    * Create a new approval request.
@@ -33,6 +43,7 @@ export class ApprovalService implements IApprovalService {
   /**
    * Approve the current level of an approval request.
    * If all levels are approved, mark the request as APPROVED.
+   * For DISCOUNT requests, validates approver role and applies discount on final approval.
    */
   async approve(id: string, dto: ApproveApprovalDto) {
     const request = await this.findOneOrFail(id);
@@ -44,7 +55,7 @@ export class ApprovalService implements IApprovalService {
     }
 
     // Validate the approver is authorized for the current level
-    this.validateApproverAuthorized(dto.approverId, request.currentLevel);
+    await this.validateApproverAuthorized(dto.approverId, request.currentLevel, request);
 
     // Record the approval step
     await this.prisma.approvalStep.create({
@@ -61,7 +72,7 @@ export class ApprovalService implements IApprovalService {
 
     // If all levels approved, mark as APPROVED
     if (newLevel > request.maxLevel) {
-      return this.prisma.approvalRequest.update({
+      const updatedRequest = await this.prisma.approvalRequest.update({
         where: { id },
         data: {
           currentLevel: newLevel,
@@ -70,6 +81,23 @@ export class ApprovalService implements IApprovalService {
         },
         include: { steps: true },
       });
+
+      // For DISCOUNT requests, apply discount to order on final approval (Requirement 9.3)
+      if (request.requestType === ApprovalType.DISCOUNT) {
+        await this.applyDiscountFromApproval(request.payload as unknown as DiscountApprovalPayload);
+      }
+
+      // Requirement 15.5: Explicit audit log for approval action
+      await this.auditService.log(
+        dto.approverId,
+        'APPROVAL_APPROVED',
+        'ApprovalRequest',
+        id,
+        { status: ApprovalStatus.PENDING, currentLevel: request.currentLevel },
+        { status: ApprovalStatus.APPROVED, currentLevel: newLevel, requestType: request.requestType },
+      );
+
+      return updatedRequest;
     }
 
     // Otherwise, increment the current level
@@ -83,6 +111,7 @@ export class ApprovalService implements IApprovalService {
   /**
    * Reject an approval request at any level.
    * Immediately sets the status to REJECTED.
+   * For DISCOUNT requests, validates approver role before rejecting.
    */
   async reject(id: string, dto: RejectApprovalDto) {
     const request = await this.findOneOrFail(id);
@@ -94,7 +123,7 @@ export class ApprovalService implements IApprovalService {
     }
 
     // Validate the approver is authorized for the current level
-    this.validateApproverAuthorized(dto.approverId, request.currentLevel);
+    await this.validateApproverAuthorized(dto.approverId, request.currentLevel, request);
 
     // Record the rejection step
     await this.prisma.approvalStep.create({
@@ -108,7 +137,7 @@ export class ApprovalService implements IApprovalService {
     });
 
     // Set status to REJECTED immediately
-    return this.prisma.approvalRequest.update({
+    const updatedRequest = await this.prisma.approvalRequest.update({
       where: { id },
       data: {
         status: ApprovalStatus.REJECTED,
@@ -117,6 +146,18 @@ export class ApprovalService implements IApprovalService {
       },
       include: { steps: true },
     });
+
+    // Requirement 15.5: Explicit audit log for rejection action
+    await this.auditService.log(
+      dto.approverId,
+      'APPROVAL_REJECTED',
+      'ApprovalRequest',
+      id,
+      { status: ApprovalStatus.PENDING, currentLevel: request.currentLevel },
+      { status: ApprovalStatus.REJECTED, reason: dto.reason, requestType: request.requestType },
+    );
+
+    return updatedRequest;
   }
 
   /**
@@ -163,18 +204,59 @@ export class ApprovalService implements IApprovalService {
 
   /**
    * Validate that the approver is authorized for the given level.
-   * For now, any valid UUID is considered authorized.
-   * This can be enhanced with role/permission checks later.
+   * For DISCOUNT requests, validates role against DiscountRoutingConfig allowed roles.
+   * For other types, any valid UUID is currently accepted (extensible for future types).
+   *
+   * Requirement 9.5: Validate approver's role against configured allowed roles.
    */
-  private validateApproverAuthorized(approverId: string, level: number) {
-    // Authorization validation placeholder.
-    // In a full implementation, this would check if the approver
-    // has the correct role/permission for the given approval level.
+  private async validateApproverAuthorized(
+    approverId: string,
+    level: number,
+    request?: { requestType: ApprovalType; payload: any },
+  ) {
     if (!approverId) {
       throw new UnprocessableEntityException(
         `Approver ID is required for level ${level}.`,
       );
     }
+
+    // For DISCOUNT requests, enforce role-based authorization
+    if (request?.requestType === ApprovalType.DISCOUNT) {
+      const payload = request.payload as unknown as DiscountApprovalPayload;
+      const user = await this.prisma.user.findUnique({
+        where: { id: approverId },
+        select: { role: true },
+      });
+
+      if (!user) {
+        throw new NotFoundException(`User with ID '${approverId}' not found.`);
+      }
+
+      const routingRule = resolveDiscountRoutingRule(payload.discountPercent);
+      if (routingRule && !routingRule.allowedRoles.includes(user.role)) {
+        throw new ForbiddenException(
+          `User role '${user.role}' is not authorized to approve discounts of ${payload.discountPercent}%. ` +
+          `Allowed roles: ${routingRule.allowedRoles.join(', ')}.`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Apply discount to order when a DISCOUNT approval reaches final level.
+   * Populates Order.discountAmount and Order.discountReason from the approval payload.
+   *
+   * Requirement 9.3: Populate Order.discountAmount and Order.discountReason
+   * from approved request.
+   */
+  private async applyDiscountFromApproval(payload: DiscountApprovalPayload): Promise<void> {
+    await this.prisma.order.update({
+      where: { id: payload.orderId },
+      data: {
+        discountAmount: new Decimal(payload.discountAmount),
+        discountReason: payload.discountReason,
+      },
+    });
   }
 
   private async findOneOrFail(id: string) {

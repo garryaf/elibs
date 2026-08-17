@@ -6,7 +6,7 @@ import { apiClient, parseApiErrors } from "@/lib/api";
 import { SearchableDropdown, type DropdownOption } from "@/components/visits/SearchableDropdown";
 import type { PatientOption } from "@/types/visit";
 
-type PaymentMethod = "CASH" | "BPJS" | "INSURANCE" | "TRANSFER" | "EDC";
+type PaymentMethod = "CASH" | "BPJS" | "INSURANCE" | "TRANSFER" | "EDC" | "INSURANCE_CASH_FALLBACK" | "CORPORATE_DEFERRED";
 
 interface InsuranceEnrollment {
   id: string;
@@ -384,7 +384,7 @@ export function VisitCreationStep({
 
           <div className="space-y-4">
             {/* Payment options — button-style grid */}
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
               {(
                 [
                   { value: "CASH", label: "Tunai (Cash)" },
@@ -392,6 +392,8 @@ export function VisitCreationStep({
                   { value: "EDC", label: "EDC (Kartu)" },
                   { value: "BPJS", label: "BPJS" },
                   { value: "INSURANCE", label: "Asuransi" },
+                  { value: "INSURANCE_CASH_FALLBACK", label: "Asuransi (Fallback)" },
+                  { value: "CORPORATE_DEFERRED", label: "Korporat (Tertunda)" },
                 ] as const
               ).map((option) => (
                 <button

@@ -8,12 +8,14 @@ import {
   Param,
   Query,
   Req,
+  Res,
   UseGuards,
   UseInterceptors,
   ParseUUIDPipe,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiProduces } from '@nestjs/swagger';
 import * as express from 'express';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -24,6 +26,7 @@ import { DataScopeInterceptor } from '../../common/interceptors/data-scope.inter
 import { OrderService } from './order.service';
 import { ClaimService } from './claim.service';
 import { InsuranceRejectionService } from './insurance-rejection.service';
+import { BarcodeService } from '../../common/barcode/barcode.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
 import { OrderQueryDto } from './dto/order-query.dto';
@@ -44,6 +47,7 @@ export class OrderController {
     private readonly orderService: OrderService,
     private readonly claimService: ClaimService,
     private readonly insuranceRejectionService: InsuranceRejectionService,
+    private readonly barcodeService: BarcodeService,
   ) {}
 
   @Post()
@@ -92,6 +96,36 @@ export class OrderController {
   async findById(@Param('id', ParseUUIDPipe) id: string, @Req() req: express.Request) {
     const clinicId = (req as any).dataScope?.clinicId;
     return this.orderService.findById(id, clinicId);
+  }
+
+  @Get(':id/barcode.png')
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('orders:read')
+  @ApiOperation({ summary: 'Get barcode image on-demand as PNG stream' })
+  @ApiProduces('image/png')
+  async getBarcodeImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: express.Response,
+  ) {
+    const order = await this.orderService.findBarcodeText(id);
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Determine the barcode text to encode: prefer barcodeText, fall back to orderNumber
+    const text = order.barcodeText ?? order.orderNumber;
+    if (!text) {
+      throw new NotFoundException('Barcode text not available. Payment must be processed first.');
+    }
+
+    const pngBuffer = await this.barcodeService.generateBuffer(text);
+
+    res.set({
+      'Content-Type': 'image/png',
+      'Content-Length': pngBuffer.length.toString(),
+      'Cache-Control': 'public, max-age=86400', // Cache for 24h since barcode is deterministic
+    });
+    res.send(pngBuffer);
   }
 
   @Post(':id/cancel')

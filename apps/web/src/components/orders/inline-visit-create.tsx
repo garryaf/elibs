@@ -33,7 +33,7 @@ interface InlineVisitCreateProps {
   preselectedPatientId?: string;
 }
 
-type PaymentMethod = "CASH" | "BPJS" | "INSURANCE";
+type PaymentMethod = "CASH" | "TRANSFER" | "EDC" | "INSURANCE" | "BPJS" | "INSURANCE_CASH_FALLBACK" | "CORPORATE_DEFERRED";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -353,8 +353,12 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             >
               <option value="CASH">Tunai (Cash)</option>
-              <option value="BPJS">BPJS</option>
+              <option value="TRANSFER">Transfer Bank</option>
+              <option value="EDC">EDC / Kartu</option>
               <option value="INSURANCE">Asuransi (Insurance)</option>
+              <option value="BPJS">BPJS</option>
+              <option value="INSURANCE_CASH_FALLBACK">Asuransi (Tunai Fallback)</option>
+              <option value="CORPORATE_DEFERRED">Korporat (Tertunda)</option>
             </select>
           </div>
 
@@ -378,7 +382,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
             <button
               type="submit"
               disabled={submitting || !selectedPatient}
-              className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#5A7A5A] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? (
                 <>

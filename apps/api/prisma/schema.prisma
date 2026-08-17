@@ -101,6 +101,7 @@ enum Gender {
 enum OrderStatus {
   PENDING_PAYMENT
   PAYMENT_OVERDUE
+  DEPOSIT_RECEIVED
   PAID
   SAMPLE_COLLECTED
   IN_ANALYSIS
@@ -145,12 +146,15 @@ enum SampleCondition {
   ACCEPTABLE
   LIPEMIC
   HEMOLYTIC
+  HEMOLYZED
   CLOTTED
   INSUFFICIENT
+  OTHER
 }
 
 enum NotificationStatus {
   PENDING
+  PROCESSING
   SENT
   FAILED
 }
@@ -177,19 +181,22 @@ model TestCategory {
 }
 
 model TestMaster {
-  id                       String    @id @default(uuid()) @db.Uuid
-  code                     String    @unique
+  id                       String     @id @default(uuid()) @db.Uuid
+  code                     String     @unique
   name                     String
-  categoryId               String    @db.Uuid
+  categoryId               String     @db.Uuid
   unit                     String?
   method                   String?
   sampleType               String?
-  price                    Decimal   @db.Decimal(12, 2)
-  requiresDoctorApproval   Boolean   @default(true)
-  requiresInsurancePreAuth Boolean   @default(false) // Tests requiring insurance pre-authorization
-  isActive                 Boolean   @default(true)
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
+  price                    Decimal    @db.Decimal(12, 2)
+  requiresDoctorApproval   Boolean    @default(true)
+  requiresInsurancePreAuth Boolean    @default(false) // Tests requiring insurance pre-authorization
+  resultType               ResultType @default(NUMERIC)
+  qualitativeOptions       String[] // Array of valid values for QUALITATIVE tests
+  deltaAlertThreshold      Decimal?   @db.Decimal(5, 2) // Percentage change threshold for delta check alerts
+  isActive                 Boolean    @default(true)
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime   @updatedAt
   deletedAt                DateTime?
 
   category        TestCategory     @relation(fields: [categoryId], references: [id])
@@ -199,6 +206,12 @@ model TestMaster {
   orderDetails    OrderDetail[]
 
   @@map("test_masters")
+}
+
+enum ResultType {
+  NUMERIC
+  TEXT
+  QUALITATIVE
 }
 
 model ReferenceValue {
@@ -595,6 +608,7 @@ model Order {
   insuranceId       String?          @db.Uuid
   visitId           String           @db.Uuid
   status            OrderStatus      @default(PENDING_PAYMENT)
+  priority          OrderPriority?   @default(ROUTINE)
   totalAmount       Decimal          @db.Decimal(12, 2)
   paymentMethod     PaymentMethod?
   amountPaid        Decimal?         @db.Decimal(12, 2)
@@ -602,6 +616,7 @@ model Order {
   paidBy            String?          @db.Uuid
   barcode           String?
   barcodeImage      String?
+  barcodeText       String?          @db.VarChar(100) // Deterministic text for on-demand barcode regeneration
   sampleCollectedAt DateTime?
   sampleCollectedBy String?          @db.Uuid
   sampleCondition   SampleCondition?
@@ -612,6 +627,9 @@ model Order {
   approvedAt        DateTime?
   approvedBy        String?          @db.Uuid
   interpretation    String?
+  secondApprovalRequired Boolean     @default(false)
+  secondApprovalBy  String?          @db.Uuid
+  secondApprovalAt  DateTime?
   rejectedReason    String?
   rejectedAt        DateTime?
   rejectedBy        String?          @db.Uuid
@@ -621,6 +639,9 @@ model Order {
   cancelReason      String?
   discountAmount    Decimal?         @db.Decimal(12, 2)
   discountReason    String?
+  reportVersion     Int              @default(1)
+  depositAmount     Decimal?         @db.Decimal(12, 2)
+  receiptNumber     String?          @unique @db.VarChar(30)
   notes             String?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
@@ -636,11 +657,20 @@ model Order {
   bpjsDetail        BpjsOrderDetail?
   paymentComponents PaymentComponent[]
   batchInvoiceItems BatchInvoiceItem[]
+  specimens         Specimen[]
+  addendums         OrderAddendum[]
+  refunds           Refund[]
 
   @@index([status])
   @@index([patientId])
   @@index([createdAt])
   @@map("orders")
+}
+
+enum OrderPriority {
+  ROUTINE
+  URGENT
+  CITO
 }
 
 // === ORDER-INSURANCE JUNCTION (primary/secondary coverage + claim tracking) ===
@@ -728,15 +758,18 @@ model BpjsOrderDetail {
 // === PAYMENT COMPONENT (split payment support) ===
 
 model PaymentComponent {
-  id            String        @id @default(uuid()) @db.Uuid
-  orderId       String        @db.Uuid
-  paymentMethod PaymentMethod
-  amount        Decimal       @db.Decimal(12, 2)
-  insuranceId   String?       @db.Uuid
-  reference     String?       @db.VarChar(100) // Transaction reference (e.g., bank transfer ref, EDC approval code)
-  notes         String?
-  paidAt        DateTime      @default(now())
-  createdAt     DateTime      @default(now())
+  id                   String        @id @default(uuid()) @db.Uuid
+  orderId              String        @db.Uuid
+  paymentMethod        PaymentMethod
+  amount               Decimal       @db.Decimal(12, 2)
+  insuranceId          String?       @db.Uuid
+  reference            String?       @db.VarChar(100) // Transaction reference (e.g., bank transfer ref, EDC approval code)
+  notes                String?
+  reconciliationStatus String?       @db.VarChar(20) // MATCHED, UNMATCHED, PENDING
+  reconciledAt         DateTime?
+  reconciliationRef    String?       @db.VarChar(100)
+  paidAt               DateTime      @default(now())
+  createdAt            DateTime      @default(now())
 
   order     Order      @relation(fields: [orderId], references: [id])
   insurance Insurance? @relation(fields: [insuranceId], references: [id], name: "paymentComponents")
@@ -815,6 +848,14 @@ model OrderDetail {
   finalPrice      Decimal           @db.Decimal(12, 2)
   resultEnteredAt DateTime?
   resultEnteredBy String?           @db.Uuid
+  verifiedAt      DateTime?
+  verifiedBy      String?           @db.Uuid
+  rejectedAt      DateTime?
+  rejectedBy      String?           @db.Uuid
+  rejectionReason String?
+  rerunCount      Int               @default(0)
+  rerunReason     String?           @db.VarChar(50) // enum stored as string: QC_FAILURE, SPECIMEN_ISSUE, EQUIPMENT_ERROR, OPERATOR_ERROR, OTHER
+  previousResults Json? // Array of {value, flag, enteredAt, enteredBy}
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
@@ -822,6 +863,7 @@ model OrderDetail {
   test  TestMaster @relation(fields: [testId], references: [id])
 
   @@index([orderId])
+  @@index([testId, resultEnteredAt(sort: Desc)])
   @@map("order_details")
 }
 
@@ -857,20 +899,24 @@ model MrnSequence {
 // === VISIT ===
 
 model Visit {
-  id               String        @id @default(uuid()) @db.Uuid
-  visitNumber      String        @unique @db.VarChar(50)
-  status           VisitStatus   @default(REGISTERED)
-  registrationDate DateTime      @default(now())
-  patientId        String        @db.Uuid
-  doctorId         String?       @db.Uuid
-  clinicId         String?       @db.Uuid
-  paymentMethod    PaymentMethod
-  insuranceId      String?       @db.Uuid
-  bpjsNumber       String?       @db.VarChar(20)
-  cancelledAt      DateTime?
-  cancelReason     String?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id                  String        @id @default(uuid()) @db.Uuid
+  visitNumber         String        @unique @db.VarChar(50)
+  status              VisitStatus   @default(REGISTERED)
+  registrationDate    DateTime      @default(now())
+  patientId           String        @db.Uuid
+  doctorId            String?       @db.Uuid
+  clinicId            String?       @db.Uuid
+  paymentMethod       PaymentMethod
+  insuranceId         String?       @db.Uuid
+  bpjsNumber          String?       @db.VarChar(20)
+  referringDoctorName String?       @db.VarChar(100)
+  referralLetterNo    String?       @db.VarChar(50)
+  encounterReason     String?
+  chiefComplaint      String?
+  cancelledAt         DateTime?
+  cancelReason        String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   patient   Patient    @relation(fields: [patientId], references: [id])
   doctor    Doctor?    @relation(fields: [doctorId], references: [id])
@@ -908,6 +954,7 @@ enum ApprovalType {
   TARIFF_CHANGE
   HIGH_VALUE_ORDER
   MASTER_DATA_DELETE
+  DISCOUNT
 }
 
 enum ApprovalStatus {
@@ -992,4 +1039,240 @@ model RoleHierarchy {
   level      Int    @default(0)
 
   @@map("role_hierarchy")
+}
+
+
+// === SPECIMEN TRACKING ===
+
+model Specimen {
+  id                   String          @id @default(uuid()) @db.Uuid
+  orderId              String          @db.Uuid
+  sampleTypeCode       String          @db.VarChar(20)
+  barcode              String          @unique @db.VarChar(50)
+  condition            SampleCondition @default(ACCEPTABLE)
+  rejectionReason      String?         @db.VarChar(200)
+  transportTemperature Decimal?        @db.Decimal(4, 1)
+  temperatureCompliant Boolean?
+  collectedAt          DateTime?
+  collectedBy          String?         @db.Uuid
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  order              Order                    @relation(fields: [orderId], references: [id])
+  collectionAttempts SampleCollectionAttempt[]
+  handoffs           CustodyHandoff[]
+
+  @@index([orderId])
+  @@index([barcode])
+  @@map("specimens")
+}
+
+model SampleCollectionAttempt {
+  id              String          @id @default(uuid()) @db.Uuid
+  orderId         String          @db.Uuid
+  specimenId      String          @db.Uuid
+  sampleCondition SampleCondition
+  rejectionReason String?         @db.VarChar(200)
+  collectedBy     String          @db.Uuid
+  attemptedAt     DateTime        @default(now())
+
+  specimen Specimen @relation(fields: [specimenId], references: [id])
+
+  @@index([specimenId])
+  @@index([orderId])
+  @@map("sample_collection_attempts")
+}
+
+model CustodyHandoff {
+  id         String   @id @default(uuid()) @db.Uuid
+  specimenId String   @db.Uuid
+  fromUserId String   @db.Uuid
+  toUserId   String   @db.Uuid
+  handoffAt  DateTime @default(now())
+  notes      String?
+
+  specimen Specimen @relation(fields: [specimenId], references: [id])
+
+  @@index([specimenId])
+  @@map("custody_handoffs")
+}
+
+// === QUALITY CONTROL ===
+
+model QCSample {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(100)
+  lotNumber    String   @db.VarChar(50)
+  manufacturer String?
+  level        Int // 1 = normal, 2 = abnormal low, 3 = abnormal high
+  expiryDate   DateTime @db.Date
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  runs QCRun[]
+
+  @@map("qc_samples")
+}
+
+model QCRun {
+  id          String   @id @default(uuid()) @db.Uuid
+  qcSampleId  String   @db.Uuid
+  testId      String   @db.Uuid
+  equipmentId String?  @db.Uuid
+  runDate     DateTime @default(now())
+  performedBy String   @db.Uuid
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  qcSample QCSample   @relation(fields: [qcSampleId], references: [id])
+  results  QCResult[]
+
+  @@index([qcSampleId, testId])
+  @@map("qc_runs")
+}
+
+model QCResult {
+  id           String  @id @default(uuid()) @db.Uuid
+  qcRunId      String  @db.Uuid
+  resultValue  Decimal @db.Decimal(12, 4)
+  expectedMean Decimal @db.Decimal(12, 4)
+  expectedSD   Decimal @db.Decimal(12, 4)
+  zScore       Decimal @db.Decimal(6, 3)
+  westgardPass Boolean
+  violatedRule String? @db.VarChar(10) // e.g., "1-3s", "R-4s"
+
+  qcRun QCRun @relation(fields: [qcRunId], references: [id])
+
+  @@index([qcRunId])
+  @@map("qc_results")
+}
+
+// === CRITICAL VALUE ALERTING ===
+
+enum CriticalValueStatus {
+  PENDING
+  NOTIFIED
+  ACKNOWLEDGED
+  ESCALATED
+}
+
+model CriticalValueLog {
+  id                  String              @id @default(uuid()) @db.Uuid
+  orderId             String              @db.Uuid
+  orderDetailId       String              @db.Uuid
+  testId              String              @db.Uuid
+  patientId           String              @db.Uuid
+  resultValue         String
+  flaggedAt           DateTime            @default(now())
+  notificationStatus  CriticalValueStatus @default(PENDING)
+  notifiedAt          DateTime?
+  acknowledgedAt      DateTime?
+  acknowledgedBy      String?             @db.Uuid
+  acknowledgmentNotes String?
+  escalatedAt         DateTime?
+  escalationMethod    String?             @db.VarChar(20) // SMS, CALL
+  clinicianId         String?             @db.Uuid
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([orderId])
+  @@index([notificationStatus])
+  @@index([patientId])
+  @@map("critical_value_logs")
+}
+
+// === ORDER ADDENDUM ===
+
+model OrderAddendum {
+  id        String   @id @default(uuid()) @db.Uuid
+  orderId   String   @db.Uuid
+  authorId  String   @db.Uuid
+  content   String
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("order_addendums")
+}
+
+// === REFUND ===
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  PROCESSED
+  REJECTED
+}
+
+model Refund {
+  id           String        @id @default(uuid()) @db.Uuid
+  orderId      String        @db.Uuid
+  amount       Decimal       @db.Decimal(12, 2)
+  reason       String
+  status       RefundStatus  @default(PENDING)
+  refundMethod PaymentMethod?
+  processedAt  DateTime?
+  processedBy  String?       @db.Uuid
+  reference    String?       @db.VarChar(100)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("refunds")
+}
+
+// === PRICING ===
+
+model PriceList {
+  id            String    @id @default(uuid()) @db.Uuid
+  name          String
+  description   String?
+  type          String    @db.VarChar(30) // CORPORATE, INSURANCE, PROMOTION, PACKAGE
+  entityId      String?   @db.Uuid // Reference to insurance/clinic/corporate
+  effectiveFrom DateTime  @db.Date
+  effectiveTo   DateTime? @db.Date
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  items PriceListItem[]
+
+  @@index([type, isActive])
+  @@map("price_lists")
+}
+
+model PriceListItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  priceListId String  @db.Uuid
+  testId      String  @db.Uuid
+  price       Decimal @db.Decimal(12, 2)
+  discount    Decimal @default(0) @db.Decimal(5, 2)
+
+  priceList PriceList @relation(fields: [priceListId], references: [id])
+
+  @@unique([priceListId, testId])
+  @@map("price_list_items")
+}
+
+// === RECEIPT SEQUENCE ===
+
+model ReceiptSequence {
+  id        String @id // format: "YYYYMMDD"
+  lastValue Int    @default(0)
+
+  @@map("receipt_sequences")
+}
+
+// === ORDER SEQUENCE ===
+
+model OrderSequence {
+  id        String @id // format: "YYYYMM"
+  lastValue Int    @default(0)
+
+  @@map("order_sequences")
 }

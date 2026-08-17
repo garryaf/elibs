@@ -263,6 +263,7 @@ describe('API Response Insurance Derivation Property Tests', () => {
           mockOrderValidationGuard as any,
           mockConsolidationService as any,
           mockOrderStateMachine as any,
+          { generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001') } as any,
         );
       });
 
@@ -544,6 +545,7 @@ describe('API Response Insurance Derivation Property Tests', () => {
           mockOrderValidationGuard as any,
           mockConsolidationService as any,
           mockOrderStateMachine as any,
+          { generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001') } as any,
         );
       });
 

@@ -1,6 +1,7 @@
 export type OrderStatus =
   | "PENDING_PAYMENT"
   | "PAYMENT_OVERDUE"
+  | "DEPOSIT_RECEIVED"
   | "PAID"
   | "SAMPLE_COLLECTED"
   | "IN_ANALYSIS"
@@ -9,7 +10,7 @@ export type OrderStatus =
   | "NOTIFIED"
   | "CANCELLED";
 
-export type PaymentMethod = "CASH" | "TRANSFER" | "EDC";
+export type PaymentMethod = "CASH" | "TRANSFER" | "EDC" | "INSURANCE" | "BPJS" | "INSURANCE_CASH_FALLBACK" | "CORPORATE_DEFERRED";
 
 export interface TestMaster {
   id: string;

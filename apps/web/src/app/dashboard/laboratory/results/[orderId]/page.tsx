@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   History,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -188,6 +189,7 @@ export default function ResultEntryPage() {
   const [submitting, setSubmitting] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [toast, setToast] = useState<{ title: string; description: string; autoApproved?: boolean } | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Load order and delta check data
   useEffect(() => {
@@ -352,7 +354,7 @@ export default function ResultEntryPage() {
         err && typeof err === "object" && "message" in err
           ? (err as { message: string }).message
           : "Gagal menyimpan hasil.";
-      alert(message);
+      setActionError(message);
     } finally {
       setSubmitting(false);
     }
@@ -360,7 +362,7 @@ export default function ResultEntryPage() {
 
   const handleVerify = async () => {
     if (!allResultsFilled) {
-      alert("Semua hasil harus diisi sebelum verifikasi.");
+      setActionError("Semua hasil harus diisi sebelum verifikasi.");
       return;
     }
     setVerifying(true);
@@ -391,7 +393,7 @@ export default function ResultEntryPage() {
         err && typeof err === "object" && "message" in err
           ? (err as { message: string }).message
           : "Gagal memverifikasi hasil.";
-      alert(message);
+      setActionError(message);
       setVerifying(false);
     }
   };
@@ -646,6 +648,23 @@ export default function ResultEntryPage() {
           </button>
         )}
       </div>
+
+      {/* Error Banner */}
+      {actionError && (
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300"
+        >
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span className="flex-1">{actionError}</span>
+          <button
+            onClick={() => setActionError(null)}
+            className="text-xs font-semibold opacity-70 hover:opacity-100"
+          >
+            Tutup
+          </button>
+        </div>
+      )}
 
       {toast && (
         <div

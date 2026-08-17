@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { OrderStatus } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 import { InvalidStateTransitionException } from './exceptions/invalid-state-transition.exception';
 
 export interface TransitionContext {
@@ -10,8 +11,9 @@ export interface TransitionContext {
 }
 
 const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  [OrderStatus.PENDING_PAYMENT]: [OrderStatus.PAID, OrderStatus.PAYMENT_OVERDUE, OrderStatus.CANCELLED],
-  [OrderStatus.PAYMENT_OVERDUE]: [OrderStatus.PAID, OrderStatus.CANCELLED],
+  [OrderStatus.PENDING_PAYMENT]: [OrderStatus.PAID, OrderStatus.DEPOSIT_RECEIVED, OrderStatus.PAYMENT_OVERDUE, OrderStatus.CANCELLED],
+  [OrderStatus.PAYMENT_OVERDUE]: [OrderStatus.PAID, OrderStatus.DEPOSIT_RECEIVED, OrderStatus.CANCELLED],
+  [OrderStatus.DEPOSIT_RECEIVED]: [OrderStatus.PAID, OrderStatus.CANCELLED],
   [OrderStatus.PAID]: [OrderStatus.SAMPLE_COLLECTED],
   [OrderStatus.SAMPLE_COLLECTED]: [OrderStatus.IN_ANALYSIS],
   [OrderStatus.IN_ANALYSIS]: [OrderStatus.VERIFIED],
@@ -23,7 +25,10 @@ const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 
 @Injectable()
 export class OrderStateMachineService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
+  ) {}
 
   canTransition(currentStatus: OrderStatus, toStatus: OrderStatus): boolean {
     const validTargets = VALID_TRANSITIONS[currentStatus];
@@ -57,7 +62,7 @@ export class OrderStateMachineService {
 
     const updateData = this.buildUpdateData(order.status, toStatus, context);
 
-    return this.prisma.order.update({
+    const updatedOrder = await this.prisma.order.update({
       where: { id: orderId },
       data: {
         status: toStatus,
@@ -68,6 +73,22 @@ export class OrderStateMachineService {
         orderDetails: true,
       },
     });
+
+    // Explicitly log audit trail with real userId (Requirements 10.3, 15.5)
+    await this.auditService.log(
+      context.userId,
+      'ORDER_STATE_TRANSITION',
+      'Order',
+      orderId,
+      { status: order.status },
+      {
+        status: toStatus,
+        reason: context.reason ?? null,
+        ...(context.metadata ?? {}),
+      },
+    );
+
+    return updatedOrder;
   }
 
   private buildUpdateData(
@@ -78,6 +99,8 @@ export class OrderStateMachineService {
     const now = new Date();
 
     switch (toStatus) {
+      case OrderStatus.DEPOSIT_RECEIVED:
+        return {};
       case OrderStatus.PAID:
         return { paidAt: now, paidBy: context.userId };
       case OrderStatus.SAMPLE_COLLECTED:

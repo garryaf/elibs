@@ -10,11 +10,12 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  Loader2,
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
 import { useNotifications, useRetryNotification } from "@/services/notifications";
+import { useToast } from "@/hooks/use-toast";
+import { ToastContainer } from "@/components/ui/ToastContainer";
 
 type NotificationStatus = "PENDING" | "SENT" | "FAILED";
 type NotificationType = "EMAIL" | "WHATSAPP";
@@ -53,6 +54,7 @@ export default function NotificationsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [page, setPage] = useState(1);
+  const { toasts, success, error: showError, dismiss } = useToast();
 
   const { data, isLoading, error, refetch } = useNotifications({
     page,
@@ -66,9 +68,9 @@ export default function NotificationsPage() {
   const handleRetry = async (id: string) => {
     try {
       await retryMutation.mutateAsync(id);
-      alert("Proses pengiriman ulang berhasil dimasukkan ke antrian.");
+      success("Proses pengiriman ulang berhasil dimasukkan ke antrian.");
     } catch (err) {
-      alert("Gagal melakukan pengiriman ulang notifikasi.");
+      showError("Gagal melakukan pengiriman ulang notifikasi.");
     }
   };
 
@@ -78,6 +80,9 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Toast Messages */}
+      <ToastContainer toasts={toasts} onDismiss={dismiss} />
+
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -138,10 +143,19 @@ export default function NotificationsPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-slate-400">
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-brand" />
-                      Memuat data notifikasi...
+                  <td colSpan={7} className="px-5 py-4">
+                    <div className="space-y-3">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="flex gap-4">
+                          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                          <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+                          <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+                          <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+                          <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+                          <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+                          <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+                        </div>
+                      ))}
                     </div>
                   </td>
                 </tr>

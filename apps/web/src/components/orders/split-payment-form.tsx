@@ -9,7 +9,7 @@ import { apiClient } from "@/lib/api";
 import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-type PaymentMethod = "CASH" | "TRANSFER" | "EDC" | "BPJS" | "INSURANCE";
+type PaymentMethod = "CASH" | "TRANSFER" | "EDC" | "BPJS" | "INSURANCE" | "INSURANCE_CASH_FALLBACK" | "CORPORATE_DEFERRED";
 
 interface SplitComponent {
   id: string;
@@ -26,11 +26,13 @@ interface Props {
 }
 
 const METHOD_OPTIONS: { value: PaymentMethod; label: string; icon: React.ElementType }[] = [
-  { value: "CASH",      label: "Tunai",        icon: Banknote   },
-  { value: "TRANSFER",  label: "Transfer",     icon: Building2  },
-  { value: "EDC",       label: "EDC / Kartu",  icon: CreditCard },
-  { value: "BPJS",      label: "BPJS",         icon: Building2  },
-  { value: "INSURANCE", label: "Asuransi",     icon: Building2  },
+  { value: "CASH",                    label: "Tunai",                  icon: Banknote   },
+  { value: "TRANSFER",                label: "Transfer",               icon: Building2  },
+  { value: "EDC",                     label: "EDC / Kartu",            icon: CreditCard },
+  { value: "BPJS",                    label: "BPJS",                   icon: Building2  },
+  { value: "INSURANCE",               label: "Asuransi",               icon: Building2  },
+  { value: "INSURANCE_CASH_FALLBACK", label: "Asuransi (Fallback)",    icon: Banknote   },
+  { value: "CORPORATE_DEFERRED",      label: "Korporat (Tertunda)",    icon: Building2  },
 ];
 
 function newComponent(): SplitComponent {
@@ -190,7 +192,7 @@ export function SplitPaymentForm({ orderId, orderTotal, isFallback = false, onSu
               {/* Method picker */}
               <div>
                 <label className="mb-1.5 block text-[11px] font-semibold uppercase text-slate-500">Metode</label>
-                <div className="grid grid-cols-3 gap-1">
+                <div className="grid grid-cols-4 gap-1">
                   {METHOD_OPTIONS.map((m) => {
                     const Icon = m.icon;
                     return (

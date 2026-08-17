@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Printer, Download, Share2, Loader2 } from "lucide-react";
+import { ArrowLeft, Printer, Download, Share2, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -37,11 +37,23 @@ interface OrderApi {
   patient: {
     name: string;
     mrn: string;
+    phone?: string;
   };
   orderDetails: OrderDetailApi[];
   createdAt: string;
   clinicalInterpretation?: string;
   approvedBy?: string;
+}
+
+interface SendWhatsAppResponse {
+  success: boolean;
+  message: string;
+  data: {
+    method: "fonnte" | "wa_link";
+    portalUrl: string;
+    phone?: string | null;
+    waLink?: string;
+  };
 }
 
 export default function ReportPreviewPage() {
@@ -51,6 +63,8 @@ export default function ReportPreviewPage() {
   const [order, setOrder] = useState<OrderApi | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [waSending, setWaSending] = useState(false);
+  const [waStatus, setWaStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -74,10 +88,82 @@ export default function ReportPreviewPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const handleSendWhatsApp = async () => {
+    if (!id || waSending) return;
+
+    setWaSending(true);
+    setWaStatus(null);
+
+    try {
+      const response = await apiClient.post<SendWhatsAppResponse>(
+        `/api/v1/orders/${id}/send-whatsapp`
+      );
+
+      const result = (response as unknown as { data?: SendWhatsAppResponse })?.data ?? response as unknown as SendWhatsAppResponse;
+
+      if (result?.data?.method === "fonnte") {
+        // Delivery triggered via FONNTE — show success
+        setWaStatus({
+          type: "success",
+          message: result.message || "Pengiriman via WhatsApp sedang diproses",
+        });
+      } else if (result?.data?.method === "wa_link" && result.data.waLink) {
+        // Fallback: open WhatsApp Web link
+        window.open(result.data.waLink, "_blank", "noopener,noreferrer");
+        setWaStatus({
+          type: "success",
+          message: "Link WhatsApp Web dibuka di tab baru",
+        });
+      } else {
+        setWaStatus({
+          type: "error",
+          message: result?.message || "Gagal mengirim via WhatsApp",
+        });
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Gagal mengirim via WhatsApp";
+      setWaStatus({ type: "error", message: errorMessage });
+    } finally {
+      setWaSending(false);
+      // Auto-clear status after 5 seconds
+      setTimeout(() => setWaStatus(null), 5000);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-brand" />
+      <div className="mx-auto max-w-4xl min-h-[60vh] space-y-6 py-6">
+        <div className="flex items-center justify-between">
+          <div className="h-9 w-28 animate-pulse rounded-xl bg-muted" />
+          <div className="flex gap-3">
+            <div className="h-9 w-32 animate-pulse rounded-xl bg-muted" />
+            <div className="h-9 w-32 animate-pulse rounded-xl bg-muted" />
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-8 space-y-6">
+          <div className="space-y-2 text-center">
+            <div className="mx-auto h-6 w-64 animate-pulse rounded bg-muted" />
+            <div className="mx-auto h-4 w-48 animate-pulse rounded bg-muted" />
+          </div>
+          <div className="space-y-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex gap-4">
+                <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+                <div className="h-4 flex-1 animate-pulse rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+          <div className="space-y-2 pt-4 border-t border-border">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex gap-4">
+                <div className="h-4 w-40 animate-pulse rounded bg-muted" />
+                <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+                <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -99,8 +185,20 @@ export default function ReportPreviewPage() {
           <ArrowLeft className="h-4 w-4" /> Kembali
         </button>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
-            <Share2 className="h-4 w-4 text-blue-500" /> Kirim via WA
+          <button
+            onClick={handleSendWhatsApp}
+            disabled={waSending}
+            className={cn(
+              "flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all",
+              waSending && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            {waSending ? (
+              <Loader2 className="h-4 w-4 animate-spin text-green-600" />
+            ) : (
+              <Share2 className="h-4 w-4 text-green-600" />
+            )}
+            {waSending ? "Mengirim..." : "Kirim via WA"}
           </button>
           <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
             <Download className="h-4 w-4 text-brand" /> Download PDF
@@ -113,6 +211,25 @@ export default function ReportPreviewPage() {
           </button>
         </div>
       </div>
+
+      {/* WhatsApp Status Toast */}
+      {waStatus && (
+        <div
+          className={cn(
+            "flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all",
+            waStatus.type === "success"
+              ? "border-green-200 bg-green-50 text-green-800"
+              : "border-red-200 bg-red-50 text-red-800"
+          )}
+        >
+          {waStatus.type === "success" ? (
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+          ) : (
+            <AlertCircle className="h-4 w-4 shrink-0" />
+          )}
+          {waStatus.message}
+        </div>
+      )}
 
       {/* A4 Canvas Container */}
       <div className="mx-auto flex justify-center bg-slate-100 p-8 rounded-2xl border border-slate-200">
