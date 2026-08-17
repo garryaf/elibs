@@ -501,6 +501,75 @@ async function seedTariffs(): Promise<void> {
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
+// TAT DEFAULTS
+// ════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Seed default TAT (Turnaround Time) values for all TestMaster records
+ * that don't have tatMinutes set yet.
+ *
+ * Defaults by test code prefix:
+ *   - HEM- (Hematologi): 120 menit (2 jam)
+ *   - KIM- (Kimia Klinik): 180 menit (3 jam)
+ *   - MIK- (Mikrobiologi): 4320 menit (3 hari)
+ *   - SER- (Serologi): 60 menit (1 jam)
+ *   - URI- (Urinalisis): 120 menit (2 jam)
+ *   - Lainnya: 180 menit (3 jam)
+ *
+ * Idempotent: only updates records where tatMinutes IS NULL.
+ */
+async function seedTATDefaults(): Promise<void> {
+  console.log('\n[seed] === TAT Defaults ===');
+
+  const tatMapping: { prefix: string; tatMinutes: number; label: string }[] = [
+    { prefix: 'HEM-', tatMinutes: 120, label: 'Hematologi (120 min)' },
+    { prefix: 'KIM-', tatMinutes: 180, label: 'Kimia Klinik (180 min)' },
+    { prefix: 'MIK-', tatMinutes: 4320, label: 'Mikrobiologi (4320 min / 3 hari)' },
+    { prefix: 'SER-', tatMinutes: 60, label: 'Serologi (60 min)' },
+    { prefix: 'URI-', tatMinutes: 120, label: 'Urinalisis (120 min)' },
+  ];
+
+  // Update each prefix category
+  for (const { prefix, tatMinutes, label } of tatMapping) {
+    const result = await prisma.testMaster.updateMany({
+      where: {
+        code: { startsWith: prefix },
+        tatMinutes: null,
+        deletedAt: null,
+      },
+      data: {
+        tatMinutes,
+        tatCategory: 'ROUTINE',
+      },
+    });
+
+    if (result.count > 0) {
+      console.log(`[seed] ✅ TAT ${label}: ${result.count} record(s) updated`);
+    } else {
+      console.log(`[seed] TAT ${label}: sudah terisi semua`);
+    }
+  }
+
+  // Default for any remaining tests without TAT (not matching known prefixes)
+  const othersResult = await prisma.testMaster.updateMany({
+    where: {
+      tatMinutes: null,
+      deletedAt: null,
+    },
+    data: {
+      tatMinutes: 180,
+      tatCategory: 'ROUTINE',
+    },
+  });
+
+  if (othersResult.count > 0) {
+    console.log(`[seed] ✅ TAT Default (180 min): ${othersResult.count} record(s) lainnya updated`);
+  } else {
+    console.log(`[seed] TAT Default: tidak ada record tersisa`);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
 // EXPORTED FUNCTION — for use from main seed index
 // ════════════════════════════════════════════════════════════════════════════════
 
@@ -519,6 +588,7 @@ export async function seedCompleteMasterData(client?: PrismaClient): Promise<voi
   await seedMethods();
   await seedMeasurementUnits();
   await seedReferenceValues();
+  await seedTATDefaults();
   await seedPanels();
   await seedEquipments();
   await seedReagents();
@@ -532,6 +602,7 @@ export async function seedCompleteMasterData(client?: PrismaClient): Promise<voi
   console.log('  • Metode: 10 records (Fotometri, Turbidimetri, Impedansi, dll)');
   console.log('  • Satuan Ukur: 13 records (g/dL, mg/dL, U/L, dll)');
   console.log('  • Nilai Referensi: 20 records (per gender per tes)');
+  console.log('  • TAT Defaults: per kategori (HEM=120, KIM=180, MIK=4320, SER=60, URI=120)');
   console.log('  • Panel/Paket: 5 records (CBC, Fungsi Hati, dll)');
   console.log('  • Alat: 7 records (Analyzer, Centrifuge, dll)');
   console.log('  • Reagen: 10 records (Diluent, GOD-PAP, dll)');

@@ -155,6 +155,8 @@ export class MasterDataService implements IMasterDataQueryService {
           price: dto.price,
           requiresDoctorApproval: dto.requiresDoctorApproval ?? true,
           isActive: dto.isActive ?? true,
+          tatMinutes: dto.tatMinutes,
+          tatCategory: dto.tatCategory,
         },
       });
     } catch (error) {

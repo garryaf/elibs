@@ -4,6 +4,8 @@ import {
   IsBoolean,
   IsUUID,
   IsNumber,
+  IsInt,
+  IsIn,
   Min,
 } from 'class-validator';
 
@@ -44,4 +46,13 @@ export class UpdateTestDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  tatMinutes?: number;
+
+  @IsOptional()
+  @IsIn(['CITO', 'ROUTINE', 'STAT'])
+  tatCategory?: string;
 }

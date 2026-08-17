@@ -194,6 +194,8 @@ model TestMaster {
   resultType               ResultType @default(NUMERIC)
   qualitativeOptions       String[] // Array of valid values for QUALITATIVE tests
   deltaAlertThreshold      Decimal?   @db.Decimal(5, 2) // Percentage change threshold for delta check alerts
+  tatMinutes               Int? // Target TAT dalam menit (misal: 60 = 1 jam, 1440 = 1 hari)
+  tatCategory              String?    @db.VarChar(20) // CITO, ROUTINE, STAT
   isActive                 Boolean    @default(true)
   createdAt                DateTime   @default(now())
   updatedAt                DateTime   @updatedAt

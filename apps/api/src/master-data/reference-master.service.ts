@@ -9,7 +9,8 @@ type EntityType =
   | 'equipment'
   | 'reagent'
   | 'sampleTypeMaster'
-  | 'measurementUnit';
+  | 'measurementUnit'
+  | 'methodMaster';
 
 /**
  * Generic service for CRUD operations on reference/master data.

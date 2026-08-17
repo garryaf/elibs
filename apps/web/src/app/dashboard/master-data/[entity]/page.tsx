@@ -225,15 +225,30 @@ const entityConfigs: Record<string, EntityConfig> = {
       { key: "method", label: "Metode" },
       { key: "sampleType", label: "Jenis Sampel" },
       { key: "price", label: "Harga" },
+      { key: "tatMinutes", label: "TAT", render: (value: unknown) => {
+        if (value == null) return "-";
+        const minutes = Number(value);
+        if (isNaN(minutes)) return "-";
+        if (minutes < 60) return `${minutes} menit`;
+        if (minutes === 60) return "1 jam";
+        if (minutes < 1440) return `${Math.floor(minutes / 60)} jam`;
+        return `${Math.floor(minutes / 1440)} hari`;
+      }},
+      { key: "tatCategory", label: "Prioritas", render: (value: unknown) => {
+        if (value == null) return "-";
+        return String(value);
+      }},
     ],
     formFields: [
       { name: "name", label: "Nama Pemeriksaan", type: "text", required: true },
       { name: "code", label: "Kode", type: "text", required: true },
       { name: "categoryId", label: "Kategori", type: "entity-autocomplete" as const, required: true, endpoint: "/api/v1/master/test-categories" },
-      { name: "unit", label: "Satuan", type: "text" },
+      { name: "unit", label: "Satuan", type: "entity-autocomplete" as const, endpoint: "/api/v1/master/units", valueKey: "code" as const },
       { name: "method", label: "Metode", type: "entity-autocomplete" as const, endpoint: "/api/v1/master/methods", valueKey: "name" as const },
       { name: "sampleType", label: "Jenis Sampel", type: "entity-autocomplete" as const, endpoint: "/api/v1/master/sample-types", valueKey: "code" as const },
       { name: "price", label: "Harga", type: "number", required: true },
+      { name: "tatMinutes", label: "TAT (menit)", type: "number" as const },
+      { name: "tatCategory", label: "Kategori TAT", type: "select" as const, options: [{ label: "CITO", value: "CITO" }, { label: "ROUTINE", value: "ROUTINE" }, { label: "STAT", value: "STAT" }] },
       { name: "requiresDoctorApproval", label: "Memerlukan Persetujuan Dokter", type: "checkbox" as const },
       { name: "description", label: "Deskripsi", type: "text" },
     ],
