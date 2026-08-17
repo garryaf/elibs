@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { seedMasterData } from './master-data-seed';
+import { seedCompleteMasterData } from './complete-master-data-seed';
 import { seedPermissions } from './permission-seed';
 import { seedRoleHierarchy } from './role-hierarchy-seed';
 
@@ -94,6 +95,7 @@ async function main(): Promise<void> {
   await seedSampleUsers();
   await seedTestCategories();
   await seedMasterData();
+  await seedCompleteMasterData(prisma);
   await seedPermissions();
   await seedRoleHierarchy();
 

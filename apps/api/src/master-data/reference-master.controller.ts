@@ -23,6 +23,7 @@ import {
   CreateReagentDto,
   CreateSampleTypeDto,
   CreateMeasurementUnitDto,
+  CreateMethodDto,
 } from './dto/create-reference-master.dto';
 
 /**
@@ -297,5 +298,43 @@ export class MeasurementUnitController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.softDelete('measurementUnit', id);
+  }
+}
+
+// ─── Methods ────────────────────────────────────────────────────────────────
+
+@Controller('api/v1/master/methods')
+export class MethodController {
+  constructor(private readonly service: ReferenceMasterService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.service.findAll('methodMaster', { page, limit, search });
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  create(@Body() dto: CreateMethodDto) {
+    return this.service.create('methodMaster', dto);
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateMethodDto>) {
+    return this.service.update('methodMaster', id, dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.softDelete('methodMaster', id);
   }
 }

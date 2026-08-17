@@ -482,6 +482,21 @@ model MeasurementUnit {
   @@map("measurement_units")
 }
 
+// === MASTER DATA: METHOD ===
+
+model MethodMaster {
+  id          String    @id @default(uuid()) @db.Uuid
+  code        String    @unique
+  name        String
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@map("methods")
+}
+
 // === REGION MASTER DATA ===
 
 model Provinsi {

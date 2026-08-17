@@ -194,3 +194,21 @@ export class CreateMeasurementUnitDto {
   @IsBoolean()
   isActive?: boolean;
 }
+
+// ─── Method ──────────────────────────────────────────────────────────────────
+
+export class CreateMethodDto {
+  @IsString()
+  code: string;
+
+  @IsString()
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}

@@ -16,6 +16,7 @@ import {
   MapPin,
   Users as UsersIcon,
   Activity,
+  Microscope,
 } from "lucide-react";
 import { RoleGuard } from "@/components/guards/RoleGuard";
 
@@ -79,6 +80,12 @@ const masterDataItems = [
     description: "Satuan pengukuran hasil pemeriksaan",
     icon: Ruler,
     href: "/dashboard/master-data/satuan",
+  },
+  {
+    name: "Metode",
+    description: "Kelola metode pemeriksaan laboratorium (Fotometri, Turbidimetri, Impedansi, dll)",
+    icon: Microscope,
+    href: "/dashboard/master-data/metode",
   },
   {
     name: "Jenis Sampel",

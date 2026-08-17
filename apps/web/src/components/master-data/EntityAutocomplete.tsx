@@ -31,7 +31,7 @@ interface EntityAutocompleteProps {
   /** Whether the field is disabled */
   disabled?: boolean;
   /** Which entity property to match against the value prop (default: "id") */
-  matchBy?: "id" | "code";
+  matchBy?: "id" | "code" | "name";
 }
 
 /**
@@ -79,6 +79,9 @@ export function EntityAutocomplete({
       const found = response.data?.find((item: EntityOption) => {
         if (matchBy === "code") {
           return item.code === entityValue;
+        }
+        if (matchBy === "name") {
+          return item.name === entityValue;
         }
         return item.id === entityValue;
       });
@@ -241,11 +244,11 @@ export function EntityAutocomplete({
                 <li
                   key={option.id}
                   role="option"
-                  aria-selected={matchBy === "code" ? option.code === value : option.id === value}
+                  aria-selected={matchBy === "code" ? option.code === value : matchBy === "name" ? option.name === value : option.id === value}
                   onClick={() => handleSelect(option)}
                   className={cn(
                     "cursor-pointer px-4 py-2.5 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800",
-                    (matchBy === "code" ? option.code === value : option.id === value) && "bg-brand/5 font-medium text-brand"
+                    (matchBy === "code" ? option.code === value : matchBy === "name" ? option.name === value : option.id === value) && "bg-brand/5 font-medium text-brand"
                   )}
                 >
                   <span>{option.name}</span>

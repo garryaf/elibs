@@ -112,6 +112,15 @@ export const masterDataKeys = {
     details: () => [...masterDataKeys.tariffs.all, "detail"] as const,
     detail: (id: string) => [...masterDataKeys.tariffs.details(), id] as const,
   },
+
+  // Metode (methods)
+  methods: {
+    all: ["master-data", "methods"] as const,
+    lists: () => [...masterDataKeys.methods.all, "list"] as const,
+    list: (params: Record<string, unknown>) => [...masterDataKeys.methods.lists(), params] as const,
+    details: () => [...masterDataKeys.methods.all, "detail"] as const,
+    detail: (id: string) => [...masterDataKeys.methods.details(), id] as const,
+  },
 };
 
 // ─── Satuan (Measurement Units) ─────────────────────────────────────────────
@@ -616,6 +625,52 @@ export function useDeleteMasterTariff() {
     mutationFn: (id: string) => apiClient.delete(`/api/v1/master/tariffs/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: masterDataKeys.tariffs.lists() });
+    },
+  });
+}
+
+// ─── Metode (Methods) ────────────────────────────────────────────────────────
+
+export function useMasterMethods(params?: { page?: number; limit?: number; search?: string }) {
+  const qs = new URLSearchParams();
+  if (params?.page) qs.set("page", String(params.page));
+  if (params?.limit) qs.set("limit", String(params.limit));
+  if (params?.search) qs.set("search", params.search);
+  const query = qs.toString() ? `?${qs.toString()}` : "";
+
+  return useQuery({
+    queryKey: masterDataKeys.methods.list(params ?? {}),
+    queryFn: () => apiClient.get<{ data: unknown[]; meta: { total: number; page: number; limit: number } }>(`/api/v1/master/methods${query}`),
+  });
+}
+
+export function useCreateMasterMethod() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: unknown) => apiClient.post("/api/v1/master/methods", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: masterDataKeys.methods.lists() });
+    },
+  });
+}
+
+export function useUpdateMasterMethod() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
+      apiClient.put(`/api/v1/master/methods/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: masterDataKeys.methods.lists() });
+    },
+  });
+}
+
+export function useDeleteMasterMethod() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.delete(`/api/v1/master/methods/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: masterDataKeys.methods.lists() });
     },
   });
 }

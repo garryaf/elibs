@@ -19,6 +19,7 @@ import {
   ReagentController,
   SampleTypeController,
   MeasurementUnitController,
+  MethodController,
 } from './reference-master.controller';
 
 @Module({
@@ -36,6 +37,7 @@ import {
     ReagentController,
     SampleTypeController,
     MeasurementUnitController,
+    MethodController,
   ],
   providers: [
     MasterDataService,

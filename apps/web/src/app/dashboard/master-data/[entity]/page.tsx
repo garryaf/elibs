@@ -52,6 +52,10 @@ import {
   useCreateMasterTariff,
   useUpdateMasterTariff,
   useDeleteMasterTariff,
+  useMasterMethods,
+  useCreateMasterMethod,
+  useUpdateMasterMethod,
+  useDeleteMasterMethod,
 } from "@/services";
 import { apiClient } from "@/lib/api";
 
@@ -126,8 +130,8 @@ interface FormField {
   options?: { label: string; value: string }[];
   /** Minimum number of selections for multi-entity-autocomplete */
   min?: number;
-  /** Which property of the entity to use as value (default: "id"). Use "code" to store entity code instead of UUID. */
-  valueKey?: "id" | "code";
+  /** Which property of the entity to use as value (default: "id"). Use "code" to store entity code, or "name" to store entity name instead of UUID. */
+  valueKey?: "id" | "code" | "name";
 }
 
 interface EntityConfig {
@@ -227,7 +231,7 @@ const entityConfigs: Record<string, EntityConfig> = {
       { name: "code", label: "Kode", type: "text", required: true },
       { name: "categoryId", label: "Kategori", type: "entity-autocomplete" as const, required: true, endpoint: "/api/v1/master/test-categories" },
       { name: "unit", label: "Satuan", type: "text" },
-      { name: "method", label: "Metode", type: "text" },
+      { name: "method", label: "Metode", type: "entity-autocomplete" as const, endpoint: "/api/v1/master/methods", valueKey: "name" as const },
       { name: "sampleType", label: "Jenis Sampel", type: "entity-autocomplete" as const, endpoint: "/api/v1/master/sample-types", valueKey: "code" as const },
       { name: "price", label: "Harga", type: "number", required: true },
       { name: "requiresDoctorApproval", label: "Memerlukan Persetujuan Dokter", type: "checkbox" as const },
@@ -346,6 +350,25 @@ const entityConfigs: Record<string, EntityConfig> = {
       { name: "manufacturer", label: "Manufacturer", type: "text" },
       { name: "lotNumber", label: "Nomor Lot", type: "text" },
       { name: "expiryDate", label: "Tanggal Kedaluwarsa", type: "text" },
+    ],
+  },
+  metode: {
+    displayName: "Metode Pemeriksaan",
+    useQuery: useMasterMethods,
+    useCreate: useCreateMasterMethod,
+    useUpdate: useUpdateMasterMethod,
+    useDelete: useDeleteMasterMethod,
+    columns: [
+      { key: "code", label: "Kode" },
+      { key: "name", label: "Nama" },
+      { key: "description", label: "Deskripsi" },
+      { key: "isActive", label: "Status", render: (value: unknown) => (value ? "Aktif" : "Nonaktif") },
+    ],
+    formFields: [
+      { name: "code", label: "Kode Metode", type: "text", required: true },
+      { name: "name", label: "Nama Metode", type: "text", required: true },
+      { name: "description", label: "Deskripsi", type: "text" },
+      { name: "isActive", label: "Aktif", type: "checkbox" as const },
     ],
   },
   tarif: {

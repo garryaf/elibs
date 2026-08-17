@@ -3,6 +3,7 @@
  *
  * Menambahkan data contoh untuk:
  * 1. Jenis Sampel (SampleTypeMaster)
+ * 1b. Metode (MethodMaster)
  * 2. Satuan Ukur (MeasurementUnit)
  * 3. Nilai Referensi (ReferenceValue)
  * 4. Panel / Paket Pemeriksaan
@@ -17,7 +18,8 @@
  */
 import { PrismaClient, Gender, EquipmentStatus } from '@prisma/client';
 
-const prisma = new PrismaClient();
+// Module-level prisma instance used only when running standalone
+let prisma: PrismaClient;
 
 // ════════════════════════════════════════════════════════════════════════════════
 // 1. JENIS SAMPEL (SampleTypeMaster)
@@ -45,6 +47,37 @@ async function seedSampleTypes(): Promise<void> {
     }
     await prisma.sampleTypeMaster.create({ data: st });
     console.log(`[seed] ✅ Jenis Sampel: ${st.code} - ${st.name}`);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 1b. METODE (MethodMaster)
+// ════════════════════════════════════════════════════════════════════════════════
+
+async function seedMethods(): Promise<void> {
+  console.log('\n[seed] === Metode ===');
+
+  const methods = [
+    { code: 'MTD-FOTOMETRI', name: 'Fotometri', description: 'Pengukuran intensitas cahaya yang diserap/dipancarkan larutan' },
+    { code: 'MTD-TURBIDIMETRI', name: 'Turbidimetri', description: 'Pengukuran kekeruhan larutan untuk kuantitasi antigen-antibodi' },
+    { code: 'MTD-IMPEDANSI', name: 'Impedansi', description: 'Prinsip Coulter — hitung sel berdasarkan perubahan impedansi listrik' },
+    { code: 'MTD-ICT', name: 'Immunochromatography', description: 'Tes cepat berbasis lateral flow (strip test)' },
+    { code: 'MTD-ENZYMATIC', name: 'Enzimatik', description: 'Reaksi enzimatik untuk kuantitasi substrat (GOD-PAP, CHOD-PAP, dll)' },
+    { code: 'MTD-KINETIC', name: 'Kinetik', description: 'Pengukuran laju reaksi enzim (IFCC/DGKC method)' },
+    { code: 'MTD-MICROSCOPY', name: 'Mikroskopi', description: 'Observasi visual menggunakan mikroskop' },
+    { code: 'MTD-CULTURA', name: 'Kultur', description: 'Penanaman mikroorganisme di media kultur' },
+    { code: 'MTD-DIPSTICK', name: 'Dipstick', description: 'Reaksi kimia kering pada strip (urinalisis)' },
+    { code: 'MTD-COAGULOMETRIC', name: 'Koagulometri', description: 'Deteksi pembentukan fibrin (PT, APTT)' },
+  ];
+
+  for (const method of methods) {
+    const existing = await prisma.methodMaster.findFirst({ where: { code: method.code } });
+    if (existing) {
+      console.log(`[seed] Metode sudah ada: ${method.code}`);
+      continue;
+    }
+    await prisma.methodMaster.create({ data: method });
+    console.log(`[seed] ✅ Metode: ${method.code} - ${method.name}`);
   }
 }
 
@@ -468,15 +501,22 @@ async function seedTariffs(): Promise<void> {
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
-// MAIN
+// EXPORTED FUNCTION — for use from main seed index
 // ════════════════════════════════════════════════════════════════════════════════
 
-async function main(): Promise<void> {
+/**
+ * Seeds all complete master data. Can be called from the main seed index
+ * by passing an existing PrismaClient instance, or run standalone.
+ */
+export async function seedCompleteMasterData(client?: PrismaClient): Promise<void> {
+  prisma = client ?? new PrismaClient();
+
   console.log('╔══════════════════════════════════════════════════════════╗');
   console.log('║  eLIS — Complete Master Data Seed (Contoh Data Lengkap) ║');
   console.log('╚══════════════════════════════════════════════════════════╝');
 
   await seedSampleTypes();
+  await seedMethods();
   await seedMeasurementUnits();
   await seedReferenceValues();
   await seedPanels();
@@ -489,6 +529,7 @@ async function main(): Promise<void> {
   console.log('');
   console.log('Data yang ditambahkan:');
   console.log('  • Jenis Sampel: 8 records (EDTA, SST, Citrate, dll)');
+  console.log('  • Metode: 10 records (Fotometri, Turbidimetri, Impedansi, dll)');
   console.log('  • Satuan Ukur: 13 records (g/dL, mg/dL, U/L, dll)');
   console.log('  • Nilai Referensi: 20 records (per gender per tes)');
   console.log('  • Panel/Paket: 5 records (CBC, Fungsi Hati, dll)');
@@ -496,13 +537,24 @@ async function main(): Promise<void> {
   console.log('  • Reagen: 10 records (Diluent, GOD-PAP, dll)');
   console.log('  • Tarif: 11 records (BPJS, Klinik, Prudential)');
   console.log('═══════════════════════════════════════════════════════════');
+
+  // Only disconnect if we created the client ourselves (standalone mode)
+  if (!client) {
+    await prisma.$disconnect();
+  }
 }
 
-main()
-  .catch((error: unknown) => {
-    console.error(`[seed] Fatal: ${error instanceof Error ? error.message : error}`);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+// ════════════════════════════════════════════════════════════════════════════════
+// STANDALONE MAIN — only runs when executed directly
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Check if this file is being run directly (not imported)
+const isRunDirectly = require.main === module;
+
+if (isRunDirectly) {
+  seedCompleteMasterData()
+    .catch((error: unknown) => {
+      console.error(`[seed] Fatal: ${error instanceof Error ? error.message : error}`);
+      process.exit(1);
+    });
+}

@@ -19,8 +19,8 @@ interface FormField {
   endpoint?: string;
   /** Minimum number of selections for multi-entity-autocomplete */
   min?: number;
-  /** Which property of the entity to use as value (default: "id"). Use "code" to store entity code instead of UUID. */
-  valueKey?: "id" | "code";
+  /** Which property of the entity to use as value (default: "id"). Use "code" to store entity code, or "name" to store entity name instead of UUID. */
+  valueKey?: "id" | "code" | "name";
 }
 
 interface MasterDataFormModalProps {
@@ -303,6 +303,8 @@ export function MasterDataFormModal({
                     onChange={(id, entity) => {
                       if (field.valueKey === "code" && entity?.code) {
                         handleChange(field.name, entity.code);
+                      } else if (field.valueKey === "name" && entity?.name) {
+                        handleChange(field.name, entity.name);
                       } else {
                         handleChange(field.name, id ?? "");
                       }
@@ -310,7 +312,7 @@ export function MasterDataFormModal({
                     placeholder={field.placeholder ?? `Cari ${field.label.toLowerCase()}...`}
                     required={field.required}
                     error={errors[field.name]}
-                    matchBy={field.valueKey === "code" ? "code" : "id"}
+                    matchBy={field.valueKey === "code" ? "code" : field.valueKey === "name" ? "name" : "id"}
                   />
                 ) : field.type === "date" ? (
                   <Input
