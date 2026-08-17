@@ -16,8 +16,10 @@ COPY apps/web/package.json ./apps/web/
 
 # Install dependencies with persistent npm cache mount
 # This avoids re-downloading packages on every build
+# Ensure workspace node_modules dir exists (may be empty if fully hoisted)
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --workspace=api --include-workspace-root
+    npm ci --workspace=api --include-workspace-root && \
+    mkdir -p /app/apps/api/node_modules
 
 # --- Stage 2: Build ---
 FROM node:20-alpine AS builder

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import type { SortField, SortDir } from "@/components/orders/OrderTable";
 import Link from "next/link";
 import { Search, Plus, TrendingUp, FlaskConical, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
@@ -9,6 +9,7 @@ import { formatRupiah } from "@/lib/format";
 import type { Order, OrderStatus } from "@/types/order";
 import { OrderTable } from "@/components/orders/OrderTable";
 import { RoleGuard } from "@/components/guards/RoleGuard";
+import { useAuth } from "@/lib/auth-context";
 
 const STATUS_FILTERS: { value: OrderStatus | "ALL"; label: string }[] = [
   { value: "ALL", label: "Semua" },
@@ -21,9 +22,11 @@ const STATUS_FILTERS: { value: OrderStatus | "ALL"; label: string }[] = [
 const PAGE_SIZE = 20;
 
 export default function OrdersPage() {
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -32,11 +35,29 @@ export default function OrdersPage() {
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
+  // Roles that can create orders
+  const canCreateOrder = user && ["SUPER_ADMIN", "ADMIN", "KASIR", "CS", "OWNER", "MANAGER", "KLINIK_PARTNER"].includes(user.role);
+
+  // Debounce search input (300ms)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [search]);
+
   const loadOrders = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
-      const res = await apiClient.getOrders({ page, limit: PAGE_SIZE, status: statusFilter !== "ALL" ? statusFilter : undefined });
+      const res = await apiClient.getOrders({
+        page,
+        limit: PAGE_SIZE,
+        status: statusFilter !== "ALL" ? statusFilter : undefined,
+        search: debouncedSearch || undefined,
+      });
 
       // After unwrapResponse, res is typically { data: [...], meta: {...} }
       // But could also be the raw array if double-unwrapped
@@ -95,7 +116,7 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter]);
+  }, [page, statusFilter, debouncedSearch]);
 
   useEffect(() => {
     loadOrders();
@@ -104,18 +125,10 @@ export default function OrdersPage() {
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [statusFilter]);
+  }, [statusFilter, debouncedSearch]);
 
   const filtered = useMemo(() => {
-    let result = orders.filter((o) => {
-      const q = search.toLowerCase();
-      const matchSearch =
-        !q ||
-        o.orderNumber.toLowerCase().includes(q) ||
-        (o.patientName || "").toLowerCase().includes(q) ||
-        (o.patientMrn || "").toLowerCase().includes(q);
-      return matchSearch;
-    });
+    let result = [...orders];
 
     // Sort
     result.sort((a, b) => {
@@ -150,10 +163,10 @@ export default function OrdersPage() {
     });
 
     return result;
-  }, [orders, search, sortField, sortDir]);
+  }, [orders, sortField, sortDir]);
 
   const stats = {
-    total: orders.length,
+    total,
     pending: orders.filter((o) => o.status === "PENDING_PAYMENT").length,
     todayRevenue: orders
       .filter((o) => o.invoice?.paidAt && new Date(o.invoice.paidAt).toDateString() === new Date().toDateString())
@@ -174,20 +187,22 @@ export default function OrdersPage() {
             Kelola permintaan pemeriksaan dan transaksi pembayaran pasien.
           </p>
         </div>
-        <Link
-          href="/dashboard/orders/new"
-          id="order-new-btn"
-          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
-        >
-          <Plus className="h-4 w-4" />
-          Buat Order Baru
-        </Link>
+        {canCreateOrder && (
+          <Link
+            href="/dashboard/orders/new"
+            id="order-new-btn"
+            className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
+          >
+            <Plus className="h-4 w-4" />
+            Buat Order Baru
+          </Link>
+        )}
       </div>
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Total Order Hari Ini", value: String(stats.total), sub: "order", color: "text-brand" },
+          { label: "Total Order", value: String(stats.total), sub: "order", color: "text-brand" },
           { label: "Menunggu Pembayaran", value: String(stats.pending), sub: "order", color: "text-amber-600 dark:text-amber-400" },
           { label: "Pendapatan Hari Ini", value: formatRupiah(Number(stats.todayRevenue)), sub: "lunas", color: "text-brand" },
           { label: "Order Selesai", value: String(stats.completed), sub: "order", color: "text-brand" },
@@ -238,9 +253,9 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {search && (
+      {search && !loading && (
         <p className="text-sm text-slate-500">
-          Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{filtered.length}</span> hasil untuk &quot;<span className="font-semibold text-brand">{search}</span>&quot;
+          Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{total}</span> hasil untuk &quot;<span className="font-semibold text-brand">{search}</span>&quot;
         </p>
       )}
 

@@ -595,6 +595,7 @@ function ConfirmStep({
           rows={2}
           value={notes}
           onChange={(e) => onNotesChange(e.target.value)}
+          maxLength={2000}
           placeholder="Mis: Pasien puasa 10 jam, suspek DM tipe 2..."
           className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />

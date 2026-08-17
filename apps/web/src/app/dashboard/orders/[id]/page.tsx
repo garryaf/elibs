@@ -15,6 +15,7 @@ import { BpjsForm } from "@/components/orders/bpjs-form";
 import { ClaimsForm } from "@/components/orders/claims-form";
 import { SplitPaymentForm } from "@/components/orders/split-payment-form";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
 
 // ─── Local types matching API response ──────────────────────────────────────
 
@@ -145,6 +146,10 @@ function SuccessModal({ order, onClose }: { order: OrderApi; onClose: () => void
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
+
+  // Roles that can process payments (have payments:process permission)
+  const canProcessPayment = user && ["SUPER_ADMIN", "ADMIN", "KASIR"].includes(user.role);
 
   const [order, setOrder] = useState<OrderApi | null>(null);
   const [loading, setLoading] = useState(true);
@@ -264,7 +269,11 @@ export default function OrderDetailPage() {
     setIsProcessing(true);
     setPayError(null);
     try {
-      await apiClient.payOrder(id, { paymentMethod, amountPaid: paymentMethod === "CASH" ? cashPaid : total });
+      await apiClient.payOrder(id, {
+        paymentMethod,
+        amountPaid: paymentMethod === "CASH" ? cashPaid : total,
+        discountAmount: discountAmount > 0 ? discountAmount : undefined,
+      });
       // Reload order to get updated state
       const res = await apiClient.getOrder(id);
       const raw = res as unknown as Record<string, unknown>;
@@ -441,7 +450,7 @@ export default function OrderDetailPage() {
           </div>
 
           {/* RIGHT: Payment panel */}
-          {!alreadyPaid && (
+          {!alreadyPaid && canProcessPayment && (
             <div className="space-y-4 lg:col-span-2">
               {/* Mode toggle */}
               <div className="flex overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
@@ -680,6 +689,20 @@ export default function OrderDetailPage() {
               </button>
               </>
               )}
+            </div>
+          )}
+          {/* Notice for roles without payment permission */}
+          {!alreadyPaid && !canProcessPayment && (
+            <div className="lg:col-span-2">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-800 dark:bg-amber-900/20">
+                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                  <ShieldCheck className="h-5 w-5" />
+                  <span className="font-semibold text-sm">Pembayaran Belum Diproses</span>
+                </div>
+                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                  Order ini belum dibayar. Hubungi kasir atau admin untuk memproses pembayaran.
+                </p>
+              </div>
             </div>
           )}
         </div>

@@ -118,32 +118,55 @@ function formatTat(minutes: number): string {
   return m > 0 ? `${h}j ${m}m` : `${h}j`;
 }
 
-// Simple CSS bar chart — no external library needed
+// Simple CSS bar chart with Y-axis labels
 function VolumeChart({ data }: { data: VolumePoint[] }) {
   const max = Math.max(...data.map((d) => d.count), 1);
 
+  // Generate Y-axis tick marks (4 levels)
+  const yTicks = [0, Math.round(max * 0.33), Math.round(max * 0.66), max];
+
   return (
-    <div className="flex items-end gap-[2px] h-40 w-full">
-      {data.map((point) => {
-        const heightPct = (point.count / max) * 100;
-        return (
-          <div
-            key={point.date}
-            className="group relative flex-1 flex flex-col items-center justify-end"
-          >
-            {/* Tooltip */}
-            <div className="absolute -top-8 hidden group-hover:flex flex-col items-center z-10">
-              <span className="rounded bg-foreground/90 px-2 py-0.5 text-[10px] text-background whitespace-nowrap">
-                {point.date}: {point.count}
-              </span>
-            </div>
-            <div
-              className="w-full rounded-t bg-primary opacity-80 hover:opacity-100 transition-opacity min-h-[2px]"
-              style={{ height: `${heightPct}%` }}
-            />
-          </div>
-        );
-      })}
+    <div className="flex gap-2">
+      {/* Y-axis labels */}
+      <div className="flex flex-col justify-between h-40 py-0.5">
+        {[...yTicks].reverse().map((tick, i) => (
+          <span key={i} className="text-[9px] font-medium text-muted-foreground w-6 text-right">
+            {tick}
+          </span>
+        ))}
+      </div>
+      {/* Chart area */}
+      <div className="flex-1 relative">
+        {/* Grid lines */}
+        <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+          {yTicks.map((_, i) => (
+            <div key={i} className="border-t border-dashed border-border/50" />
+          ))}
+        </div>
+        {/* Bars */}
+        <div className="flex items-end gap-[2px] h-40 w-full relative z-10">
+          {data.map((point) => {
+            const heightPct = (point.count / max) * 100;
+            return (
+              <div
+                key={point.date}
+                className="group relative flex-1 flex flex-col items-center justify-end"
+              >
+                {/* Tooltip */}
+                <div className="absolute -top-8 hidden group-hover:flex flex-col items-center z-10">
+                  <span className="rounded bg-foreground/90 px-2 py-0.5 text-[10px] text-background whitespace-nowrap">
+                    {point.date}: {point.count}
+                  </span>
+                </div>
+                <div
+                  className="w-full rounded-t bg-primary opacity-80 hover:opacity-100 transition-opacity min-h-[2px]"
+                  style={{ height: `${heightPct}%` }}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -232,23 +255,41 @@ export default function LabDashboardPage() {
   const [dateRange, setDateRange] = useState<DateRange>(30);
   const [summary, setSummary] = useState<LabSummary>(EMPTY_SUMMARY);
   const [volumeData, setVolumeData] = useState<VolumePoint[]>([]);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [volumeLoading, setVolumeLoading] = useState(true);
 
-  // Fetch summary from real API
+  // Fetch summary from real API with polling every 30s (#8 loading + #12 polling)
   useEffect(() => {
-    apiClient.getLabSummary().then((res) => {
-      const d = (res?.data ?? res) as Record<string, unknown>;
-      setSummary({
-        totalOrdersToday: (d.totalOrdersToday as number) || 0,
-        averageTatMinutes: (d.averageTatMinutes as number) || (d.avgTat as number) || 0,
-        pendingApproval: (d.pendingApproval as number) || 0,
-        totalInQueue: (d.totalInQueue as number) || 0,
-        ordersByStatus: (d.ordersByStatus as Record<string, number>) || {},
+    let mounted = true;
+
+    const fetchSummary = () => {
+      apiClient.getLabSummary().then((res) => {
+        if (!mounted) return;
+        const d = (res?.data ?? res) as Record<string, unknown>;
+
+        const queueCounts = (d.queueCounts as Record<string, number>) || {};
+        const totalInQueue = Object.values(queueCounts).reduce((sum, count) => sum + count, 0);
+
+        setSummary({
+          totalOrdersToday: (d.totalOrdersToday as number) || 0,
+          averageTatMinutes: (d.averageTat as number) || (d.averageTatMinutes as number) || 0,
+          pendingApproval: (d.pendingApprovalCount as number) || (d.pendingApproval as number) || 0,
+          totalInQueue,
+          ordersByStatus: (d.ordersByStatus as Record<string, number>) || {},
+        });
+      }).catch(() => { /* keep empty summary */ }).finally(() => {
+        if (mounted) setSummaryLoading(false);
       });
-    }).catch(() => { /* keep empty summary */ });
+    };
+
+    fetchSummary();
+    const interval = setInterval(fetchSummary, 30_000); // Poll every 30s
+    return () => { mounted = false; clearInterval(interval); };
   }, []);
 
   // Fetch volume from real API
   useEffect(() => {
+    setVolumeLoading(true);
     const endDate = new Date().toISOString().slice(0, 10);
     const startDate = new Date(Date.now() - dateRange * 86400000).toISOString().slice(0, 10);
     apiClient.getLabVolume({ startDate, endDate }).then((res) => {
@@ -260,12 +301,24 @@ export default function LabDashboardPage() {
       }
     }).catch(() => {
       setVolumeData(generateEmptyVolume());
+    }).finally(() => {
+      setVolumeLoading(false);
     });
   }, [dateRange]);
 
   return (
     <div className="space-y-6">
       {/* Summary Metric Cards */}
+      {summaryLoading ? (
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-6">
+              <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+              <div className="h-8 w-16 animate-pulse rounded bg-muted" />
+            </div>
+          ))}
+        </div>
+      ) : (
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <MetricCard
           icon={ClipboardList}
@@ -289,6 +342,7 @@ export default function LabDashboardPage() {
           value={summary.totalInQueue}
         />
       </div>
+      )}
 
       {/* Bento Grid: Status Breakdown + Queue Counts */}
       <div className="grid gap-4 lg:grid-cols-2">
@@ -336,11 +390,21 @@ export default function LabDashboardPage() {
             ))}
           </div>
         </div>
-        <VolumeChart data={volumeData} />
-        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
-          <span>{volumeData[0]?.date}</span>
-          <span>{volumeData[volumeData.length - 1]?.date}</span>
-        </div>
+        {volumeLoading ? (
+          <div className="flex h-40 items-end gap-[2px]">
+            {Array.from({ length: 14 }).map((_, i) => (
+              <div key={i} className="flex-1 animate-pulse rounded-t bg-muted" style={{ height: `${20 + Math.random() * 60}%` }} />
+            ))}
+          </div>
+        ) : (
+          <>
+            <VolumeChart data={volumeData} />
+            <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
+              <span>{volumeData[0]?.date}</span>
+              <span>{volumeData[volumeData.length - 1]?.date}</span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

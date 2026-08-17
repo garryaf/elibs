@@ -16,7 +16,8 @@ COPY apps/web/package.json ./apps/web/
 
 # Install dependencies with persistent npm cache mount
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --workspace=web --include-workspace-root
+    npm ci --workspace=web --include-workspace-root && \
+    mkdir -p /app/apps/web/node_modules
 
 # --- Stage 2: Build ---
 FROM node:20-alpine AS builder

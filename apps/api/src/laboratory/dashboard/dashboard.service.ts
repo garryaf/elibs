@@ -35,9 +35,14 @@ export class DashboardService {
     );
 
     // Average TAT: approvedAt minus sampleCollectedAt in minutes
+    // Only consider orders completed in the last 30 days for performance
+    const tatStartDate = new Date();
+    tatStartDate.setDate(tatStartDate.getDate() - 30);
+    tatStartDate.setHours(0, 0, 0, 0);
+
     const completedOrders = await this.prisma.order.findMany({
       where: {
-        approvedAt: { not: null },
+        approvedAt: { not: null, gte: tatStartDate },
         sampleCollectedAt: { not: null },
       },
       select: { approvedAt: true, sampleCollectedAt: true },
@@ -266,9 +271,12 @@ export class DashboardService {
         _sum: { amountPaid: true },
         where: { paidAt: { gte: startOfMonth } },
       }),
-      // Critical/abnormal results count
+      // Critical/abnormal results count — today only
       this.prisma.orderDetail.count({
-        where: { flag: { in: [Flag.HIGH, Flag.CRITICAL] } },
+        where: {
+          flag: { in: [Flag.HIGH, Flag.CRITICAL] },
+          order: { createdAt: { gte: startOfDay } },
+        },
       }),
       // Orders waiting for sample collection (status = PAID)
       this.prisma.order.count({
@@ -304,5 +312,239 @@ export class DashboardService {
         patient: { select: { name: true, mrn: true } },
       },
     });
+  }
+
+  /**
+   * #26 + #15: Comparison metrics — today vs yesterday, this week vs last week
+   */
+  async getComparisonMetrics() {
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+    const startOfThisWeek = new Date(startOfToday);
+    startOfThisWeek.setDate(startOfThisWeek.getDate() - startOfThisWeek.getDay());
+
+    const startOfLastWeek = new Date(startOfThisWeek);
+    startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const [
+      ordersToday,
+      ordersYesterday,
+      revenueToday,
+      revenueYesterday,
+      patientsThisWeek,
+      patientsLastWeek,
+      revenueThisMonth,
+      revenueLastMonth,
+    ] = await Promise.all([
+      this.prisma.order.count({ where: { createdAt: { gte: startOfToday } } }),
+      this.prisma.order.count({ where: { createdAt: { gte: startOfYesterday, lt: startOfToday } } }),
+      this.prisma.order.aggregate({ _sum: { amountPaid: true }, where: { paidAt: { gte: startOfToday } } }),
+      this.prisma.order.aggregate({ _sum: { amountPaid: true }, where: { paidAt: { gte: startOfYesterday, lt: startOfToday } } }),
+      this.prisma.patient.count({ where: { createdAt: { gte: startOfThisWeek }, deletedAt: null } }),
+      this.prisma.patient.count({ where: { createdAt: { gte: startOfLastWeek, lt: startOfThisWeek }, deletedAt: null } }),
+      this.prisma.order.aggregate({ _sum: { amountPaid: true }, where: { paidAt: { gte: startOfThisMonth } } }),
+      this.prisma.order.aggregate({ _sum: { amountPaid: true }, where: { paidAt: { gte: startOfLastMonth, lt: startOfThisMonth } } }),
+    ]);
+
+    const revToday = Number(revenueToday._sum.amountPaid ?? 0);
+    const revYesterday = Number(revenueYesterday._sum.amountPaid ?? 0);
+    const revThisMonth = Number(revenueThisMonth._sum.amountPaid ?? 0);
+    const revLastMonth = Number(revenueLastMonth._sum.amountPaid ?? 0);
+
+    return {
+      orders: {
+        today: ordersToday,
+        yesterday: ordersYesterday,
+        delta: ordersYesterday > 0 ? Math.round(((ordersToday - ordersYesterday) / ordersYesterday) * 100) : 0,
+      },
+      revenue: {
+        today: revToday,
+        yesterday: revYesterday,
+        delta: revYesterday > 0 ? Math.round(((revToday - revYesterday) / revYesterday) * 100) : 0,
+      },
+      patients: {
+        thisWeek: patientsThisWeek,
+        lastWeek: patientsLastWeek,
+        delta: patientsLastWeek > 0 ? Math.round(((patientsThisWeek - patientsLastWeek) / patientsLastWeek) * 100) : 0,
+      },
+      monthlyRevenue: {
+        thisMonth: revThisMonth,
+        lastMonth: revLastMonth,
+        delta: revLastMonth > 0 ? Math.round(((revThisMonth - revLastMonth) / revLastMonth) * 100) : 0,
+      },
+    };
+  }
+
+  /**
+   * #23 + #27: Phased TAT breakdown + SLA monitoring
+   */
+  async getPhasedTat(slaTargetMinutes = 120) {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+    startDate.setHours(0, 0, 0, 0);
+
+    const orders = await this.prisma.order.findMany({
+      where: {
+        approvedAt: { not: null },
+        createdAt: { gte: startDate },
+      },
+      select: {
+        id: true,
+        orderNumber: true,
+        createdAt: true,
+        sampleCollectedAt: true,
+        verifiedAt: true,
+        approvedAt: true,
+      },
+    });
+
+    if (orders.length === 0) {
+      return {
+        totalOrders: 0,
+        slaTargetMinutes,
+        slaCompliance: 100,
+        ordersWithinSla: 0,
+        ordersExceedingSla: 0,
+        phases: { registration_to_sample: 0, sample_to_verification: 0, verification_to_approval: 0, total: 0 },
+      };
+    }
+
+    let sumRegToSample = 0;
+    let sumSampleToVerify = 0;
+    let sumVerifyToApproval = 0;
+    let sumTotal = 0;
+    let countRegToSample = 0;
+    let countSampleToVerify = 0;
+    let countVerifyToApproval = 0;
+    let withinSla = 0;
+
+    for (const o of orders) {
+      const totalMin = (o.approvedAt!.getTime() - o.createdAt.getTime()) / 60000;
+      sumTotal += totalMin;
+
+      if (totalMin <= slaTargetMinutes) withinSla++;
+
+      if (o.sampleCollectedAt) {
+        const regToSample = (o.sampleCollectedAt.getTime() - o.createdAt.getTime()) / 60000;
+        sumRegToSample += regToSample;
+        countRegToSample++;
+
+        if (o.verifiedAt) {
+          const sampleToVerify = (o.verifiedAt.getTime() - o.sampleCollectedAt.getTime()) / 60000;
+          sumSampleToVerify += sampleToVerify;
+          countSampleToVerify++;
+
+          const verifyToApproval = (o.approvedAt!.getTime() - o.verifiedAt.getTime()) / 60000;
+          sumVerifyToApproval += verifyToApproval;
+          countVerifyToApproval++;
+        }
+      }
+    }
+
+    return {
+      totalOrders: orders.length,
+      slaTargetMinutes,
+      slaCompliance: Math.round((withinSla / orders.length) * 100),
+      ordersWithinSla: withinSla,
+      ordersExceedingSla: orders.length - withinSla,
+      phases: {
+        registration_to_sample: countRegToSample > 0 ? Math.round(sumRegToSample / countRegToSample) : 0,
+        sample_to_verification: countSampleToVerify > 0 ? Math.round(sumSampleToVerify / countSampleToVerify) : 0,
+        verification_to_approval: countVerifyToApproval > 0 ? Math.round(sumVerifyToApproval / countVerifyToApproval) : 0,
+        total: Math.round(sumTotal / orders.length),
+      },
+    };
+  }
+
+  /**
+   * #28: Workload distribution — orders processed per analyst (verifiedBy)
+   */
+  async getWorkloadDistribution() {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+    startDate.setHours(0, 0, 0, 0);
+
+    const results = await this.prisma.order.groupBy({
+      by: ['verifiedBy'],
+      where: {
+        verifiedAt: { gte: startDate },
+        verifiedBy: { not: null },
+      },
+      _count: { id: true },
+    });
+
+    const userIds = results.map((r) => r.verifiedBy!).filter(Boolean);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true, role: true },
+    });
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const data = results
+      .map((r) => ({
+        userId: r.verifiedBy!,
+        name: userMap.get(r.verifiedBy!)?.name ?? userMap.get(r.verifiedBy!)?.email ?? 'Unknown',
+        role: userMap.get(r.verifiedBy!)?.role ?? 'ANALIS',
+        orderCount: r._count.id,
+      }))
+      .sort((a, b) => b.orderCount - a.orderCount);
+
+    return {
+      period: '30 days',
+      total: data.reduce((s, d) => s + d.orderCount, 0),
+      analysts: data,
+    };
+  }
+
+  /**
+   * #20: Full revenue picture (outstanding + discounts + refunds)
+   */
+  async getRevenueBreakdown() {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const [paidAgg, totalAgg, discountAgg, outstandingCount] = await Promise.all([
+      this.prisma.order.aggregate({
+        _sum: { amountPaid: true },
+        where: { paidAt: { gte: startOfMonth } },
+      }),
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { createdAt: { gte: startOfMonth } },
+      }),
+      this.prisma.order.aggregate({
+        _sum: { discountAmount: true },
+        where: { createdAt: { gte: startOfMonth }, discountAmount: { not: null } },
+      }),
+      this.prisma.order.count({
+        where: {
+          createdAt: { gte: startOfMonth },
+          status: { in: [OrderStatus.PENDING_PAYMENT] },
+        },
+      }),
+    ]);
+
+    const totalBilled = Number(totalAgg._sum.totalAmount ?? 0);
+    const totalPaid = Number(paidAgg._sum.amountPaid ?? 0);
+    const totalDiscount = Number(discountAgg._sum.discountAmount ?? 0);
+    const outstanding = totalBilled - totalPaid - totalDiscount;
+
+    return {
+      period: 'this_month',
+      totalBilled,
+      totalPaid,
+      totalDiscount,
+      outstanding: outstanding > 0 ? outstanding : 0,
+      outstandingOrderCount: outstandingCount,
+    };
   }
 }

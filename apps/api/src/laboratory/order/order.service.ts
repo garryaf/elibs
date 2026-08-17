@@ -221,6 +221,21 @@ export class OrderService {
       where.visitId = query.visitId;
     }
 
+    if (query.search) {
+      where.AND = [
+        { patient: { deletedAt: null } },
+        {
+          OR: [
+            { orderNumber: { contains: query.search, mode: 'insensitive' } },
+            { patient: { name: { contains: query.search, mode: 'insensitive' } } },
+            { patient: { mrn: { contains: query.search, mode: 'insensitive' } } },
+          ],
+        },
+      ];
+      // Remove top-level patient filter to avoid conflict with AND patient conditions
+      delete where.patient;
+    }
+
     if (query.startDate || query.endDate) {
       where.createdAt = {};
       if (query.startDate) {

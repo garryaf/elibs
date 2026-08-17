@@ -52,4 +52,33 @@ export class DashboardController {
       data,
     };
   }
+
+  @Get('comparison-metrics')
+  @CacheTTL(30000) // 30 seconds
+  @Roles(Role.OWNER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN, Role.KASIR)
+  async getComparisonMetrics() {
+    return this.dashboardService.getComparisonMetrics();
+  }
+
+  @Get('phased-tat')
+  @CacheTTL(60000) // 1 minute
+  @Roles(Role.OWNER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN)
+  async getPhasedTat(@Query('slaTarget') slaTarget?: string) {
+    const target = slaTarget ? parseInt(slaTarget, 10) : 120;
+    return this.dashboardService.getPhasedTat(target);
+  }
+
+  @Get('workload-distribution')
+  @CacheTTL(60000)
+  @Roles(Role.OWNER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN)
+  async getWorkloadDistribution() {
+    return this.dashboardService.getWorkloadDistribution();
+  }
+
+  @Get('revenue-breakdown')
+  @CacheTTL(30000)
+  @Roles(Role.OWNER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN, Role.KASIR)
+  async getRevenueBreakdown() {
+    return this.dashboardService.getRevenueBreakdown();
+  }
 }

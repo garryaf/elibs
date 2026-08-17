@@ -1,4 +1,4 @@
-import { IsOptional, IsEnum, IsDateString, IsNumberString, IsUUID } from 'class-validator';
+import { IsOptional, IsEnum, IsDateString, IsNumberString, IsUUID, IsString, MaxLength } from 'class-validator';
 import { OrderStatus } from '@prisma/client';
 
 export class OrderQueryDto {
@@ -31,4 +31,9 @@ export class OrderQueryDto {
   @IsOptional()
   @IsUUID()
   visitId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  search?: string;
 }

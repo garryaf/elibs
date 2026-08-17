@@ -119,10 +119,7 @@ export default function ReportsPage() {
     if (selectedReport === "revenue") type = "revenue-summary";
     else if (selectedReport === "daily") type = "orders-by-status";
     
-    if (!type) {
-      warning("Export PDF hanya tersedia untuk Laporan Pendapatan dan Harian.");
-      return;
-    }
+    if (!type) return;
     
     try {
       const blob = await apiClient.getReportPdf(type, { startDate: dateFrom, endDate: dateTo });
@@ -136,6 +133,8 @@ export default function ReportsPage() {
       showError("Gagal mengunduh PDF.");
     }
   };
+
+  const isPdfSupported = selectedReport === "revenue" || selectedReport === "daily";
 
   const config = REPORT_CONFIGS.find((r) => r.id === selectedReport)!;
 
@@ -157,7 +156,14 @@ export default function ReportsPage() {
         </div>
         <button 
           onClick={handleDownloadPdf}
-          className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark active:scale-[0.98]">
+          disabled={!isPdfSupported}
+          title={isPdfSupported ? "Unduh laporan sebagai PDF" : "Export PDF hanya tersedia untuk Laporan Harian dan Pendapatan"}
+          className={cn(
+            "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all active:scale-[0.98]",
+            isPdfSupported
+              ? "bg-brand text-white shadow-brand/20 hover:bg-brand-dark"
+              : "cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+          )}>
           <Download className="h-4 w-4" />
           Export PDF
         </button>
@@ -197,6 +203,35 @@ export default function ReportsPage() {
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
         <Calendar className="h-4 w-4 text-slate-400" />
         <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Periode:</span>
+        {/* Quick preset buttons */}
+        {[
+          { label: "7 Hari", days: 7 },
+          { label: "30 Hari", days: 30 },
+          { label: "Bulan Ini", days: 0 },
+        ].map((preset) => (
+          <button
+            key={preset.label}
+            onClick={() => {
+              const today = new Date();
+              const to = today.toISOString().slice(0, 10);
+              let from: string;
+              if (preset.days === 0) {
+                // Bulan ini
+                from = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+              } else {
+                const d = new Date();
+                d.setDate(d.getDate() - preset.days);
+                from = d.toISOString().slice(0, 10);
+              }
+              setDateFrom(from);
+              setDateTo(to);
+            }}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-brand hover:bg-brand/5 hover:text-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-brand dark:hover:text-brand"
+          >
+            {preset.label}
+          </button>
+        ))}
+        <span className="mx-1 text-slate-300 dark:text-slate-600">|</span>
         <input
           type="date"
           value={dateFrom}
@@ -303,7 +338,160 @@ function formatRupiahLocal(value: number): string {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value);
 }
 
+// ─── Mini Chart Components for Report Visualization (#14) ───────────────────
+
+/** Horizontal bar chart for categorical data */
+function MiniBarChart({ data, colorClass = "bg-brand" }: { data: { label: string; value: number }[]; colorClass?: string }) {
+  const maxVal = Math.max(...data.map((d) => d.value), 1);
+  return (
+    <div className="space-y-2">
+      {data.slice(0, 8).map((item, i) => (
+        <div key={i} className="flex items-center gap-3">
+          <span className="w-28 truncate text-xs font-medium text-slate-600 dark:text-slate-400" title={item.label}>
+            {item.label}
+          </span>
+          <div className="flex-1 h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+            <div
+              className={cn("h-full rounded-full transition-all", colorClass)}
+              style={{ width: `${(item.value / maxVal) * 100}%` }}
+            />
+          </div>
+          <span className="w-12 text-right text-xs font-bold text-slate-900 dark:text-white">
+            {item.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Simple SVG donut chart for status distribution */
+function MiniDonutChart({ data }: { data: { label: string; value: number; color: string }[] }) {
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  if (total === 0) return null;
+  
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
+  return (
+    <div className="flex items-center gap-6">
+      <svg width="100" height="100" viewBox="0 0 100 100" className="shrink-0">
+        {data.map((item, i) => {
+          const strokeLen = (item.value / total) * circumference;
+          const segment = (
+            <circle
+              key={i}
+              cx="50"
+              cy="50"
+              r={radius}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="12"
+              strokeDasharray={`${strokeLen} ${circumference - strokeLen}`}
+              strokeDashoffset={-offset}
+              className={item.color}
+              transform="rotate(-90 50 50)"
+            />
+          );
+          offset += strokeLen;
+          return segment;
+        })}
+        <text x="50" y="50" textAnchor="middle" dominantBaseline="middle" className="fill-slate-900 dark:fill-white text-[11px] font-bold">
+          {total}
+        </text>
+      </svg>
+      <div className="flex flex-col gap-1.5">
+        {data.map((item, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <div className={cn("h-2.5 w-2.5 rounded-full", item.color.replace("text-", "bg-"))} />
+            <span className="text-xs text-slate-600 dark:text-slate-400">{item.label}</span>
+            <span className="text-xs font-semibold text-slate-900 dark:text-white">{item.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Simple SVG line sparkline for daily revenue data */
+function MiniLineChart({ data }: { data: { date: string; value: number }[] }) {
+  if (data.length < 2) return null;
+  const maxVal = Math.max(...data.map((d) => d.value), 1);
+  const w = 100;
+  const h = 40;
+  const points = data.map((d, i) => ({
+    x: (i / (data.length - 1)) * w,
+    y: h - (d.value / maxVal) * (h - 4),
+  }));
+  const path = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+  const area = `${path} L ${w} ${h} L 0 ${h} Z`;
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="h-16 w-full">
+      <path d={area} className="fill-brand/10 dark:fill-brand/20" />
+      <path d={path} fill="none" className="stroke-brand" strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function ReportContent({ summary }: { summary: Record<string, unknown> }) {
+  // ─── Revenue summary format (totalRevenue, totalOrders, daily: [...]) ──
+  const dailyArray = summary.daily as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(dailyArray) && dailyArray.length > 0 && summary.totalRevenue !== undefined) {
+    const totalRevenue = Number(summary.totalRevenue ?? 0);
+    const totalOrders = Number(summary.totalOrders ?? 0);
+    const lineData = dailyArray.map((d) => ({
+      date: String(d.date ?? ""),
+      value: Number(d.revenue ?? 0),
+    }));
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <SummaryCard label="Total Pendapatan" value={formatRupiahLocal(totalRevenue)} accent />
+          <SummaryCard label="Total Order" value={String(totalOrders)} />
+          <SummaryCard label="Rata-rata/Hari" value={formatRupiahLocal(Math.round(totalRevenue / Math.max(dailyArray.length, 1)))} />
+        </div>
+        {/* Revenue trend line chart */}
+        <div className="rounded-xl border border-slate-100 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Tren Pendapatan Harian</h4>
+          <MiniLineChart data={lineData} />
+        </div>
+        {/* Daily table */}
+        <div>
+          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Rincian Harian</h3>
+          <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-900">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-400">Tanggal</th>
+                  <th className="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-400">Order</th>
+                  <th className="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-400">Pendapatan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {dailyArray.map((d, i) => (
+                  <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                    <td className="px-4 py-3 text-slate-900 dark:text-white">{String(d.date ?? "-")}</td>
+                    <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">{String(d.orderCount ?? "-")}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white">{formatRupiahLocal(Number(d.revenue ?? 0))}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="bg-slate-50 dark:bg-slate-900">
+                <tr>
+                  <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">Total</td>
+                  <td className="px-4 py-3 text-right font-bold text-slate-900 dark:text-white">{totalOrders}</td>
+                  <td className="px-4 py-3 text-right font-bold text-brand">{formatRupiahLocal(totalRevenue)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ─── Legacy lab summary format (totalOrdersToday, ordersByStatus as object) ──
   const isLegacyLabSummary = summary.totalOrdersToday !== undefined || summary.averageTatMinutes !== undefined;
 
@@ -340,12 +528,24 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
     // ── Status-based report (Laporan Harian / orders-by-status) ──
     if (hasStatus) {
       const statusData = dataArray as Array<{ status: string; count: number }>;
+      const sorted = [...statusData].sort((a, b) => b.count - a.count);
+      const donutColors = ["text-blue-500", "text-amber-500", "text-green-500", "text-indigo-500", "text-purple-500", "text-rose-500", "text-cyan-500", "text-slate-400"];
+      const donutData = sorted.slice(0, 7).map((d, i) => ({
+        label: STATUS_LABELS[d.status] ?? d.status.replace(/_/g, " "),
+        value: d.count,
+        color: donutColors[i % donutColors.length],
+      }));
       return (
         <div className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <SummaryCard label="Total Order" value={String(total ?? statusData.reduce((s, d) => s + d.count, 0))} accent />
             <SummaryCard label="Jumlah Status" value={`${statusData.length} kategori`} />
-            <SummaryCard label="Terbanyak" value={statusData.length > 0 ? `${STATUS_LABELS[statusData.sort((a, b) => b.count - a.count)[0].status] ?? statusData[0].status} (${statusData[0].count})` : "-"} />
+            <SummaryCard label="Terbanyak" value={sorted.length > 0 ? `${STATUS_LABELS[sorted[0].status] ?? sorted[0].status} (${sorted[0].count})` : "-"} />
+          </div>
+          {/* Donut chart visualization */}
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900">
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Distribusi Visual</h4>
+            <MiniDonutChart data={donutData} />
           </div>
           <StatusBreakdownGrid data={statusData} />
         </div>
@@ -357,12 +557,22 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
       const testData = dataArray as Array<Record<string, unknown>>;
       const totalRevenue = testData.reduce((s, d) => s + Number(d.totalRevenue ?? d.revenue ?? 0), 0);
       const totalOrders = testData.reduce((s, d) => s + Number(d.orderCount ?? d.count ?? 0), 0);
+      // Bar chart data for top tests
+      const barData = testData.slice(0, 10).map((d) => ({
+        label: String(d.testCode ?? d.testName ?? ""),
+        value: Number(d.orderCount ?? d.count ?? 0),
+      }));
       return (
         <div className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <SummaryCard label="Total Pendapatan" value={formatRupiahLocal(totalRevenue)} accent />
             <SummaryCard label="Jumlah Jenis Tes" value={String(testData.length)} />
             <SummaryCard label="Total Order Pemeriksaan" value={String(totalOrders)} />
+          </div>
+          {/* Bar chart visualization */}
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900">
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Top Pemeriksaan (Volume)</h4>
+            <MiniBarChart data={barData} colorClass="bg-amber-500" />
           </div>
           <div>
             <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Rincian per Pemeriksaan</h3>
@@ -415,12 +625,33 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
     if (hasRevenue) {
       const revenueData = dataArray as Array<Record<string, unknown>>;
       const totalRevenue = revenueData.reduce((s, d) => s + Number(d.revenue ?? d.totalRevenue ?? d.amount ?? 0), 0);
+      // Check if data has 'date' field for line chart (daily revenue breakdown)
+      const hasDateField = "date" in revenueData[0];
+      const lineData = hasDateField
+        ? revenueData.map((d) => ({ date: String(d.date), value: Number(d.revenue ?? d.totalRevenue ?? d.amount ?? 0) }))
+        : [];
+      // Bar chart for revenue by category
+      const barData = revenueData.slice(0, 8).map((d) => ({
+        label: String(d.name ?? d.paymentMethod ?? d.category ?? d.date ?? "").replace(/_/g, " "),
+        value: Number(d.revenue ?? d.totalRevenue ?? d.amount ?? 0),
+      }));
       return (
         <div className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <SummaryCard label="Total Pendapatan" value={formatRupiahLocal(totalRevenue)} accent />
             <SummaryCard label="Jumlah Kategori" value={String(revenueData.length)} />
             {total !== undefined && <SummaryCard label="Total Transaksi" value={String(total)} />}
+          </div>
+          {/* Chart visualization */}
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900">
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {hasDateField ? "Tren Pendapatan Harian" : "Pendapatan per Kategori"}
+            </h4>
+            {lineData.length > 1 ? (
+              <MiniLineChart data={lineData} />
+            ) : (
+              <MiniBarChart data={barData} colorClass="bg-rose-500" />
+            )}
           </div>
           <div>
             <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Rincian Pendapatan</h3>

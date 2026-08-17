@@ -356,7 +356,7 @@ class ApiClient {
 
   async payOrder(
     id: string,
-    data: { paymentMethod: string; amountPaid: number }
+    data: { paymentMethod: string; amountPaid: number; discountAmount?: number }
   ): Promise<ApiResponse<unknown>> {
     return this.post(`/api/v1/orders/${id}/pay`, data);
   }
@@ -488,6 +488,36 @@ class ApiClient {
 
   async getRecentOrders(): Promise<ApiResponse<unknown>> {
     return this.get("/api/v1/dashboard/recent-orders");
+  }
+
+  async getRegionDistribution(params?: {
+    provinsiId?: string;
+    kabupatenKotaId?: string;
+    kecamatanId?: string;
+  }): Promise<ApiResponse<unknown>> {
+    const qs = new URLSearchParams();
+    if (params?.provinsiId) qs.set("provinsiId", params.provinsiId);
+    if (params?.kabupatenKotaId) qs.set("kabupatenKotaId", params.kabupatenKotaId);
+    if (params?.kecamatanId) qs.set("kecamatanId", params.kecamatanId);
+    const query = qs.toString() ? `?${qs.toString()}` : "";
+    return this.get(`/api/v1/dashboard/region-distribution${query}`);
+  }
+
+  async getComparisonMetrics(): Promise<ApiResponse<unknown>> {
+    return this.get("/api/v1/dashboard/comparison-metrics");
+  }
+
+  async getPhasedTat(slaTarget?: number): Promise<ApiResponse<unknown>> {
+    const query = slaTarget ? `?slaTarget=${slaTarget}` : "";
+    return this.get(`/api/v1/dashboard/phased-tat${query}`);
+  }
+
+  async getWorkloadDistribution(): Promise<ApiResponse<unknown>> {
+    return this.get("/api/v1/dashboard/workload-distribution");
+  }
+
+  async getRevenueBreakdown(): Promise<ApiResponse<unknown>> {
+    return this.get("/api/v1/dashboard/revenue-breakdown");
   }
 
   // ─── Reports ───────────────────────────────────────────────────────────────
