@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { Search, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,8 @@ interface MasterDataTableProps {
   onSearch?: (query: string) => void;
   onPageChange?: (page: number) => void;
   isLoading?: boolean;
+  /** Optional: render an expanded detail section below a row when clicked */
+  renderExpandedRow?: (row: Record<string, unknown>) => React.ReactNode;
 }
 
 /**
@@ -53,8 +55,10 @@ export function MasterDataTable({
   onSearch,
   onPageChange,
   isLoading = false,
+  renderExpandedRow,
 }: MasterDataTableProps) {
   const [searchValue, setSearchValue] = useState("");
+  const [expandedRowId, setExpandedRowId] = useState<string | number | null>(null);
 
   // Debounced search
   const debouncedSearch = useDebounce(searchValue, 300);
@@ -132,49 +136,64 @@ export function MasterDataTable({
                   </td>
                 </tr>
               ) : (
-                data.map((row, rowIdx) => (
-                  <tr
-                    key={(row.id as string | number) ?? rowIdx}
-                    className={cn(
-                      "border-b border-slate-100 transition-colors hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-900/50",
-                      rowIdx === data.length - 1 && "border-b-0"
-                    )}
-                  >
-                    {columns.map((col) => (
-                      <td key={col.key} className="px-5 py-4 text-slate-700 dark:text-slate-300">
-                        {col.render
-                          ? col.render(row[col.key], row)
-                          : renderCellValue(row[col.key])}
-                      </td>
-                    ))}
-                    {(onEdit || onDelete) && (
-                      <td className="px-5 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {onEdit && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => onEdit(row)}
-                              aria-label={`Edit ${(row.name as string) ?? "item"}`}
-                            >
-                              <Edit className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                            </Button>
-                          )}
-                          {onDelete && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => onDelete(row)}
-                              aria-label={`Hapus ${(row.name as string) ?? "item"}`}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))
+                data.map((row, rowIdx) => {
+                  const rowId = (row.id as string | number) ?? rowIdx;
+                  const isExpanded = renderExpandedRow && expandedRowId === rowId;
+                  return (
+                    <Fragment key={rowId}>
+                      <tr
+                        className={cn(
+                          "border-b border-slate-100 transition-colors hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-900/50",
+                          rowIdx === data.length - 1 && !isExpanded && "border-b-0",
+                          renderExpandedRow && "cursor-pointer",
+                          isExpanded && "bg-slate-50/80 dark:bg-slate-900/50"
+                        )}
+                        onClick={renderExpandedRow ? () => setExpandedRowId(isExpanded ? null : rowId) : undefined}
+                      >
+                        {columns.map((col) => (
+                          <td key={col.key} className="px-5 py-4 text-slate-700 dark:text-slate-300">
+                            {col.render
+                              ? col.render(row[col.key], row)
+                              : renderCellValue(row[col.key])}
+                          </td>
+                        ))}
+                        {(onEdit || onDelete) && (
+                          <td className="px-5 py-4 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              {onEdit && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={(e) => { e.stopPropagation(); onEdit(row); }}
+                                  aria-label={`Edit ${(row.name as string) ?? "item"}`}
+                                >
+                                  <Edit className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                                </Button>
+                              )}
+                              {onDelete && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={(e) => { e.stopPropagation(); onDelete(row); }}
+                                  aria-label={`Hapus ${(row.name as string) ?? "item"}`}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={columns.length + (onEdit || onDelete ? 1 : 0)} className="p-0">
+                            {renderExpandedRow(row)}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })
               )}
             </tbody>
           </table>

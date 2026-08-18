@@ -4,6 +4,7 @@ import { seedMasterData } from './master-data-seed';
 import { seedCompleteMasterData } from './complete-master-data-seed';
 import { seedPermissions } from './permission-seed';
 import { seedRoleHierarchy } from './role-hierarchy-seed';
+import { validateSampleTypeCodes } from './validate-sample-type-codes';
 
 const prisma = new PrismaClient();
 
@@ -96,6 +97,7 @@ async function main(): Promise<void> {
   await seedTestCategories();
   await seedMasterData();
   await seedCompleteMasterData(prisma);
+  await validateSampleTypeCodes(prisma);
   await seedPermissions();
   await seedRoleHierarchy();
 

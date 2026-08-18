@@ -32,14 +32,18 @@ export class TariffController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'List all tariffs' })
+  @ApiOperation({ summary: 'List all tariffs with optional filters' })
   async findAllTariffs(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('clinicId') clinicId?: string,
+    @Query('insuranceId') insuranceId?: string,
   ) {
     return this.masterDataService.findAllTariffs(
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 20,
+      { search, clinicId, insuranceId },
     );
   }
 

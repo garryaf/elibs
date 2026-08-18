@@ -115,31 +115,31 @@ interface TestInput {
 
 const labTests: TestInput[] = [
   // Hematologi
-  { code: 'HEM-001', name: 'Hemoglobin (Hb)', categoryName: 'Hematologi', price: 35000, unit: 'g/dL', sampleType: 'Darah EDTA' },
-  { code: 'HEM-002', name: 'Hematokrit (Ht)', categoryName: 'Hematologi', price: 35000, unit: '%', sampleType: 'Darah EDTA' },
-  { code: 'HEM-003', name: 'Leukosit (WBC)', categoryName: 'Hematologi', price: 40000, unit: '/µL', sampleType: 'Darah EDTA' },
-  { code: 'HEM-004', name: 'Trombosit', categoryName: 'Hematologi', price: 40000, unit: '/µL', sampleType: 'Darah EDTA' },
-  { code: 'HEM-005', name: 'Darah Lengkap (CBC)', categoryName: 'Hematologi', price: 85000, unit: '-', sampleType: 'Darah EDTA' },
+  { code: 'HEM-001', name: 'Hemoglobin (Hb)', categoryName: 'Hematologi', price: 35000, unit: 'g/dL', sampleType: 'EDTA' },
+  { code: 'HEM-002', name: 'Hematokrit (Ht)', categoryName: 'Hematologi', price: 35000, unit: '%', sampleType: 'EDTA' },
+  { code: 'HEM-003', name: 'Leukosit (WBC)', categoryName: 'Hematologi', price: 40000, unit: '/µL', sampleType: 'EDTA' },
+  { code: 'HEM-004', name: 'Trombosit', categoryName: 'Hematologi', price: 40000, unit: '/µL', sampleType: 'EDTA' },
+  { code: 'HEM-005', name: 'Darah Lengkap (CBC)', categoryName: 'Hematologi', price: 85000, unit: '-', sampleType: 'EDTA' },
 
   // Kimia Klinik
-  { code: 'KIM-001', name: 'Glukosa Puasa', categoryName: 'Kimia Klinik', price: 45000, unit: 'mg/dL', sampleType: 'Serum' },
-  { code: 'KIM-002', name: 'Kolesterol Total', categoryName: 'Kimia Klinik', price: 50000, unit: 'mg/dL', sampleType: 'Serum' },
-  { code: 'KIM-003', name: 'SGOT (AST)', categoryName: 'Kimia Klinik', price: 55000, unit: 'U/L', sampleType: 'Serum' },
-  { code: 'KIM-004', name: 'SGPT (ALT)', categoryName: 'Kimia Klinik', price: 55000, unit: 'U/L', sampleType: 'Serum' },
-  { code: 'KIM-005', name: 'Kreatinin', categoryName: 'Kimia Klinik', price: 50000, unit: 'mg/dL', sampleType: 'Serum' },
+  { code: 'KIM-001', name: 'Glukosa Puasa', categoryName: 'Kimia Klinik', price: 45000, unit: 'mg/dL', sampleType: 'SST' },
+  { code: 'KIM-002', name: 'Kolesterol Total', categoryName: 'Kimia Klinik', price: 50000, unit: 'mg/dL', sampleType: 'SST' },
+  { code: 'KIM-003', name: 'SGOT (AST)', categoryName: 'Kimia Klinik', price: 55000, unit: 'U/L', sampleType: 'SST' },
+  { code: 'KIM-004', name: 'SGPT (ALT)', categoryName: 'Kimia Klinik', price: 55000, unit: 'U/L', sampleType: 'SST' },
+  { code: 'KIM-005', name: 'Kreatinin', categoryName: 'Kimia Klinik', price: 50000, unit: 'mg/dL', sampleType: 'SST' },
 
   // Urinalisis
-  { code: 'URI-001', name: 'Urinalisis Lengkap', categoryName: 'Urinalisis', price: 50000, unit: '-', sampleType: 'Urin' },
-  { code: 'URI-002', name: 'Protein Urin', categoryName: 'Urinalisis', price: 30000, unit: 'mg/dL', sampleType: 'Urin' },
+  { code: 'URI-001', name: 'Urinalisis Lengkap', categoryName: 'Urinalisis', price: 50000, unit: '-', sampleType: 'URINE' },
+  { code: 'URI-002', name: 'Protein Urin', categoryName: 'Urinalisis', price: 30000, unit: 'mg/dL', sampleType: 'URINE' },
 
   // Serologi
-  { code: 'SER-001', name: 'HBsAg (Rapid)', categoryName: 'Serologi', price: 75000, unit: '-', sampleType: 'Serum' },
-  { code: 'SER-002', name: 'Anti-HIV (Rapid)', categoryName: 'Serologi', price: 95000, unit: '-', sampleType: 'Serum' },
-  { code: 'SER-003', name: 'Widal', categoryName: 'Serologi', price: 65000, unit: '-', sampleType: 'Serum' },
+  { code: 'SER-001', name: 'HBsAg (Rapid)', categoryName: 'Serologi', price: 75000, unit: '-', sampleType: 'SST' },
+  { code: 'SER-002', name: 'Anti-HIV (Rapid)', categoryName: 'Serologi', price: 95000, unit: '-', sampleType: 'SST' },
+  { code: 'SER-003', name: 'Widal', categoryName: 'Serologi', price: 65000, unit: '-', sampleType: 'SST' },
 
   // Mikrobiologi
-  { code: 'MIK-001', name: 'Kultur Urin', categoryName: 'Mikrobiologi', price: 150000, unit: '-', sampleType: 'Urin', requiresDoctorApproval: true },
-  { code: 'MIK-002', name: 'BTA (Bakteri Tahan Asam)', categoryName: 'Mikrobiologi', price: 85000, unit: '-', sampleType: 'Sputum' },
+  { code: 'MIK-001', name: 'Kultur Urin', categoryName: 'Mikrobiologi', price: 150000, unit: '-', sampleType: 'URINE', requiresDoctorApproval: true },
+  { code: 'MIK-002', name: 'BTA (Bakteri Tahan Asam)', categoryName: 'Mikrobiologi', price: 85000, unit: '-', sampleType: 'SPUTUM' },
 ];
 
 async function seedLabTests(): Promise<void> {

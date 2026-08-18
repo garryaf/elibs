@@ -17,6 +17,7 @@
  *   npx ts-node prisma/seeds/complete-master-data-seed.ts
  */
 import { PrismaClient, Gender, EquipmentStatus } from '@prisma/client';
+import { migrateUnitCodes } from './migrate-unit-codes';
 
 // Module-level prisma instance used only when running standalone
 let prisma: PrismaClient;
@@ -593,6 +594,7 @@ export async function seedCompleteMasterData(client?: PrismaClient): Promise<voi
   await seedEquipments();
   await seedReagents();
   await seedTariffs();
+  await migrateUnitCodes(prisma);
 
   console.log('\n═══════════════════════════════════════════════════════════');
   console.log('✅ Complete master data seeding finished!');
@@ -607,6 +609,7 @@ export async function seedCompleteMasterData(client?: PrismaClient): Promise<voi
   console.log('  • Alat: 7 records (Analyzer, Centrifuge, dll)');
   console.log('  • Reagen: 10 records (Diluent, GOD-PAP, dll)');
   console.log('  • Tarif: 11 records (BPJS, Klinik, Prudential)');
+  console.log('  • Unit Migration: TestMaster.unit → MeasurementUnit.code');
   console.log('═══════════════════════════════════════════════════════════');
 
   // Only disconnect if we created the client ourselves (standalone mode)

@@ -201,11 +201,12 @@ model TestMaster {
   updatedAt                DateTime   @updatedAt
   deletedAt                DateTime?
 
-  category        TestCategory     @relation(fields: [categoryId], references: [id])
-  referenceValues ReferenceValue[]
-  tariffs         Tariff[]
-  panelTests      PanelTest[]
-  orderDetails    OrderDetail[]
+  category            TestCategory          @relation(fields: [categoryId], references: [id])
+  referenceValues     ReferenceValue[]
+  tariffs             Tariff[]
+  panelTests          PanelTest[]
+  orderDetails        OrderDetail[]
+  reagentTestMappings ReagentTestMapping[]
 
   @@map("test_masters")
 }
@@ -410,6 +411,7 @@ model Equipment {
   deletedAt       DateTime?
 
   calibrations Calibration[]
+  reagents     Reagent[]
 
   @@map("equipments")
 }
@@ -446,12 +448,29 @@ model Reagent {
   quantity     Int       @default(0)
   unit         String?
   storageTemp  String? // e.g., "2-8°C"
+  equipmentId  String?   @db.Uuid
   isActive     Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
+  equipment           Equipment?           @relation(fields: [equipmentId], references: [id])
+  reagentTestMappings ReagentTestMapping[]
+
   @@map("reagents")
+}
+
+model ReagentTestMapping {
+  id           String   @id @default(uuid()) @db.Uuid
+  reagentId    String   @db.Uuid
+  testId       String   @db.Uuid
+  usagePerTest Decimal? @db.Decimal(8, 4) // jumlah reagen per 1x tes
+
+  reagent Reagent    @relation(fields: [reagentId], references: [id])
+  test    TestMaster @relation(fields: [testId], references: [id])
+
+  @@unique([reagentId, testId])
+  @@map("reagent_test_mappings")
 }
 
 // === MASTER DATA: SAMPLE TYPE ===

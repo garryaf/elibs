@@ -20,6 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node prisma/seeds/index.ts",
     "seed:real": "ts-node prisma/seeds/real-world-seed.ts",
+    "seed:e2e": "ts-node prisma/seeds/e2e-workflow-seed.ts",
+    "test:e2e-api": "ts-node prisma/seeds/e2e-api-test.ts",
     "seed:build": "cd prisma/seeds && npx tsc --project tsconfig.seed.json",
     "seed:prod": "node prisma/seeds/dist/index.js"
   },

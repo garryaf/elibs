@@ -537,6 +537,18 @@ export function useDeleteMasterTest() {
   });
 }
 
+/**
+ * Fetch a single test detail with all related entities:
+ * referenceValues, tariffs (with clinic/insurance), panelTests (with panel), reagentTestMappings (with reagent)
+ */
+export function useMasterTestDetail(id: string | null) {
+  return useQuery({
+    queryKey: masterDataKeys.tests.detail(id ?? ""),
+    queryFn: () => apiClient.get<Record<string, unknown>>(`/api/v1/master/tests/${id}`),
+    enabled: !!id,
+  });
+}
+
 // ─── Panel (Panels) ──────────────────────────────────────────────────────────
 
 export function useMasterPanels(params?: { page?: number; limit?: number; search?: string }) {
@@ -585,11 +597,13 @@ export function useDeleteMasterPanel() {
 
 // ─── Tarif (Tariffs) ─────────────────────────────────────────────────────────
 
-export function useMasterTariffs(params?: { page?: number; limit?: number; search?: string }) {
+export function useMasterTariffs(params?: { page?: number; limit?: number; search?: string; clinicId?: string; insuranceId?: string }) {
   const qs = new URLSearchParams();
   if (params?.page) qs.set("page", String(params.page));
   if (params?.limit) qs.set("limit", String(params.limit));
   if (params?.search) qs.set("search", params.search);
+  if (params?.clinicId) qs.set("clinicId", params.clinicId);
+  if (params?.insuranceId) qs.set("insuranceId", params.insuranceId);
   const query = qs.toString() ? `?${qs.toString()}` : "";
 
   return useQuery({

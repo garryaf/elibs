@@ -127,7 +127,7 @@ async function seedTestMasterAndReferences() {
   const tests: TestDef[] = [
     // ─── HEMATOLOGI ───────────────────────────────────────────────────────────
     {
-      code: 'HEM-HB', name: 'Hemoglobin (Hb)', categoryName: 'Hematologi', price: 40000, unit: 'g/dL', sampleType: 'Darah EDTA', requiresDoctorApproval: false,
+      code: 'HEM-HB', name: 'Hemoglobin (Hb)', categoryName: 'Hematologi', price: 40000, unit: 'g/dL', sampleType: 'EDTA', requiresDoctorApproval: false,
       refs: [
         { gender: Gender.MALE, minAge: 15, maxAge: 150, minRef: 13.0, maxRef: 17.0, criticalMin: 7.0, criticalMax: 20.0 },
         { gender: Gender.FEMALE, minAge: 15, maxAge: 150, minRef: 12.0, maxRef: 15.0, criticalMin: 7.0, criticalMax: 20.0 },
@@ -136,21 +136,21 @@ async function seedTestMasterAndReferences() {
       ],
     },
     {
-      code: 'HEM-LEKO', name: 'Leukosit (WBC)', categoryName: 'Hematologi', price: 35000, unit: '10^3/µL', sampleType: 'Darah EDTA', requiresDoctorApproval: false,
+      code: 'HEM-LEKO', name: 'Leukosit (WBC)', categoryName: 'Hematologi', price: 35000, unit: '10^3/µL', sampleType: 'EDTA', requiresDoctorApproval: false,
       refs: [
         { gender: Gender.MALE, minAge: 0, maxAge: 150, minRef: 4.0, maxRef: 10.0, criticalMin: 2.0, criticalMax: 30.0 },
         { gender: Gender.FEMALE, minAge: 0, maxAge: 150, minRef: 4.0, maxRef: 10.0, criticalMin: 2.0, criticalMax: 30.0 },
       ],
     },
     {
-      code: 'HEM-TROM', name: 'Trombosit (PLT)', categoryName: 'Hematologi', price: 40000, unit: '10^3/µL', sampleType: 'Darah EDTA', requiresDoctorApproval: false,
+      code: 'HEM-TROM', name: 'Trombosit (PLT)', categoryName: 'Hematologi', price: 40000, unit: '10^3/µL', sampleType: 'EDTA', requiresDoctorApproval: false,
       refs: [
         { gender: Gender.MALE, minAge: 0, maxAge: 150, minRef: 150, maxRef: 400, criticalMin: 50, criticalMax: 1000 },
         { gender: Gender.FEMALE, minAge: 0, maxAge: 150, minRef: 150, maxRef: 400, criticalMin: 50, criticalMax: 1000 },
       ],
     },
     {
-      code: 'HEM-HT', name: 'Hematokrit (Ht)', categoryName: 'Hematologi', price: 30000, unit: '%', sampleType: 'Darah EDTA', requiresDoctorApproval: false,
+      code: 'HEM-HT', name: 'Hematokrit (Ht)', categoryName: 'Hematologi', price: 30000, unit: '%', sampleType: 'EDTA', requiresDoctorApproval: false,
       refs: [
         { gender: Gender.MALE, minAge: 15, maxAge: 150, minRef: 40, maxRef: 50 },
         { gender: Gender.FEMALE, minAge: 15, maxAge: 150, minRef: 36, maxRef: 46 },
@@ -158,49 +158,49 @@ async function seedTestMasterAndReferences() {
     },
     // ─── KIMIA KLINIK ──────────────────────────────────────────────────────────
     {
-      code: 'KIM-GLUP', name: 'Glukosa Puasa (GDP)', categoryName: 'Kimia Klinik', price: 45000, unit: 'mg/dL', sampleType: 'Serum', requiresDoctorApproval: false,
+      code: 'KIM-GLUP', name: 'Glukosa Puasa (GDP)', categoryName: 'Kimia Klinik', price: 45000, unit: 'mg/dL', sampleType: 'SST', requiresDoctorApproval: false,
       refs: [
         { gender: Gender.MALE, minAge: 0, maxAge: 150, minRef: 70, maxRef: 99, criticalMin: 40, criticalMax: 400 },
         { gender: Gender.FEMALE, minAge: 0, maxAge: 150, minRef: 70, maxRef: 99, criticalMin: 40, criticalMax: 400 },
       ],
     },
     {
-      code: 'KIM-HBA1C', name: 'HbA1c', categoryName: 'Kimia Klinik', price: 180000, unit: '%', sampleType: 'Darah EDTA', requiresDoctorApproval: false,
+      code: 'KIM-HBA1C', name: 'HbA1c', categoryName: 'Kimia Klinik', price: 180000, unit: '%', sampleType: 'EDTA', requiresDoctorApproval: false,
       refs: [
         { gender: Gender.MALE, minAge: 0, maxAge: 150, minRef: 4.0, maxRef: 5.6 },
         { gender: Gender.FEMALE, minAge: 0, maxAge: 150, minRef: 4.0, maxRef: 5.6 },
       ],
     },
     {
-      code: 'KIM-SGOT', name: 'SGOT (AST)', categoryName: 'Kimia Klinik', price: 55000, unit: 'U/L', sampleType: 'Serum', requiresDoctorApproval: false,
+      code: 'KIM-SGOT', name: 'SGOT (AST)', categoryName: 'Kimia Klinik', price: 55000, unit: 'U/L', sampleType: 'SST', requiresDoctorApproval: false,
       refs: [
         { gender: Gender.MALE, minAge: 0, maxAge: 150, minRef: 0, maxRef: 40 },
         { gender: Gender.FEMALE, minAge: 0, maxAge: 150, minRef: 0, maxRef: 32 },
       ],
     },
     {
-      code: 'KIM-SGPT', name: 'SGPT (ALT)', categoryName: 'Kimia Klinik', price: 55000, unit: 'U/L', sampleType: 'Serum', requiresDoctorApproval: false,
+      code: 'KIM-SGPT', name: 'SGPT (ALT)', categoryName: 'Kimia Klinik', price: 55000, unit: 'U/L', sampleType: 'SST', requiresDoctorApproval: false,
       refs: [
         { gender: Gender.MALE, minAge: 0, maxAge: 150, minRef: 0, maxRef: 41 },
         { gender: Gender.FEMALE, minAge: 0, maxAge: 150, minRef: 0, maxRef: 33 },
       ],
     },
     {
-      code: 'KIM-URE', name: 'Ureum', categoryName: 'Kimia Klinik', price: 50000, unit: 'mg/dL', sampleType: 'Serum', requiresDoctorApproval: false,
+      code: 'KIM-URE', name: 'Ureum', categoryName: 'Kimia Klinik', price: 50000, unit: 'mg/dL', sampleType: 'SST', requiresDoctorApproval: false,
       refs: [
         { gender: Gender.MALE, minAge: 0, maxAge: 150, minRef: 15, maxRef: 43 },
         { gender: Gender.FEMALE, minAge: 0, maxAge: 150, minRef: 15, maxRef: 43 },
       ],
     },
     {
-      code: 'KIM-KREA', name: 'Kreatinin', categoryName: 'Kimia Klinik', price: 50000, unit: 'mg/dL', sampleType: 'Serum', requiresDoctorApproval: false,
+      code: 'KIM-KREA', name: 'Kreatinin', categoryName: 'Kimia Klinik', price: 50000, unit: 'mg/dL', sampleType: 'SST', requiresDoctorApproval: false,
       refs: [
         { gender: Gender.MALE, minAge: 0, maxAge: 150, minRef: 0.6, maxRef: 1.1 },
         { gender: Gender.FEMALE, minAge: 0, maxAge: 150, minRef: 0.5, maxRef: 0.9 },
       ],
     },
     {
-      code: 'KIM-CHOL', name: 'Kolesterol Total', categoryName: 'Kimia Klinik', price: 55000, unit: 'mg/dL', sampleType: 'Serum', requiresDoctorApproval: false,
+      code: 'KIM-CHOL', name: 'Kolesterol Total', categoryName: 'Kimia Klinik', price: 55000, unit: 'mg/dL', sampleType: 'SST', requiresDoctorApproval: false,
       refs: [
         { gender: Gender.MALE, minAge: 0, maxAge: 150, minRef: 0, maxRef: 200 },
         { gender: Gender.FEMALE, minAge: 0, maxAge: 150, minRef: 0, maxRef: 200 },
@@ -208,21 +208,21 @@ async function seedTestMasterAndReferences() {
     },
     // ─── IMUNOSEROLOGI ────────────────────────────────────────────────────────
     {
-      code: 'SER-HBSAG', name: 'HBsAg', categoryName: 'Imunoserologi', price: 120000, unit: 'Index', sampleType: 'Serum', requiresDoctorApproval: true,
+      code: 'SER-HBSAG', name: 'HBsAg', categoryName: 'Imunoserologi', price: 120000, unit: 'Index', sampleType: 'SST', requiresDoctorApproval: true,
       refs: [
         { gender: Gender.MALE, minAge: 0, maxAge: 150, minRef: 0, maxRef: 0.99 },
         { gender: Gender.FEMALE, minAge: 0, maxAge: 150, minRef: 0, maxRef: 0.99 },
       ],
     },
     {
-      code: 'SER-NS1', name: 'Dengue NS1 Antigen', categoryName: 'Imunoserologi', price: 250000, unit: 'Index', sampleType: 'Serum', requiresDoctorApproval: false,
+      code: 'SER-NS1', name: 'Dengue NS1 Antigen', categoryName: 'Imunoserologi', price: 250000, unit: 'Index', sampleType: 'SST', requiresDoctorApproval: false,
       refs: [
         { gender: Gender.MALE, minAge: 0, maxAge: 150, minRef: 0, maxRef: 0.99 },
         { gender: Gender.FEMALE, minAge: 0, maxAge: 150, minRef: 0, maxRef: 0.99 },
       ],
     },
     {
-      code: 'SER-WID', name: 'Widal (S. Typhi O)', categoryName: 'Imunoserologi', price: 80000, unit: 'Titer', sampleType: 'Serum', requiresDoctorApproval: false,
+      code: 'SER-WID', name: 'Widal (S. Typhi O)', categoryName: 'Imunoserologi', price: 80000, unit: 'Titer', sampleType: 'SST', requiresDoctorApproval: false,
       refs: [
         // Using numeric proxy for titer (e.g. 1/80 = 80)
         { gender: Gender.MALE, minAge: 0, maxAge: 150, minRef: 0, maxRef: 80 },
@@ -231,7 +231,7 @@ async function seedTestMasterAndReferences() {
     },
     // ─── ENDOKRINOLOGI ────────────────────────────────────────────────────────
     {
-      code: 'END-TSHS', name: 'TSHs', categoryName: 'Endokrinologi', price: 200000, unit: 'µIU/mL', sampleType: 'Serum', requiresDoctorApproval: true,
+      code: 'END-TSHS', name: 'TSHs', categoryName: 'Endokrinologi', price: 200000, unit: 'µIU/mL', sampleType: 'SST', requiresDoctorApproval: true,
       refs: [
         { gender: Gender.MALE, minAge: 0, maxAge: 150, minRef: 0.27, maxRef: 4.2 },
         { gender: Gender.FEMALE, minAge: 0, maxAge: 150, minRef: 0.27, maxRef: 4.2 },

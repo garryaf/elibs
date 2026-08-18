@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsEmail, IsInt, IsDateString, IsIn, Min } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEmail, IsInt, IsDateString, IsIn, IsUUID, Min } from 'class-validator';
 
 // ─── Doctor ──────────────────────────────────────────────────────────────────
 
@@ -153,6 +153,10 @@ export class CreateReagentDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsUUID()
+  equipmentId?: string;
 }
 
 // ─── Sample Type ─────────────────────────────────────────────────────────────

@@ -7,6 +7,8 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MasterDataTable } from "@/components/master-data/MasterDataTable";
 import { MasterDataFormModal } from "@/components/master-data/MasterDataFormModal";
+import { TestDetailPanel } from "@/components/master-data/TestDetailPanel";
+import { EntityFilterBar } from "@/components/master-data/EntityFilterBar";
 import {
   useMasterUnits,
   useCreateMasterUnit,
@@ -134,9 +136,15 @@ interface FormField {
   valueKey?: "id" | "code" | "name";
 }
 
+interface EntityFilter {
+  name: string;
+  label: string;
+  endpoint: string;
+}
+
 interface EntityConfig {
   displayName: string;
-  useQuery: (params?: { page?: number; limit?: number; search?: string }) => {
+  useQuery: (params?: { page?: number; limit?: number; search?: string; [key: string]: unknown }) => {
     data?: { data: unknown[]; meta: { total: number; page: number; limit: number } };
     isLoading: boolean;
     error: unknown;
@@ -155,6 +163,8 @@ interface EntityConfig {
   };
   columns: Column[];
   formFields: FormField[];
+  /** Optional: entity-specific filters that render as dropdowns above the table */
+  filters?: EntityFilter[];
 }
 
 // ─── Entity Configuration Map ────────────────────────────────────────────────
@@ -168,10 +178,12 @@ const entityConfigs: Record<string, EntityConfig> = {
     useUpdate: useUpdateMasterUnit,
     useDelete: useDeleteMasterUnit,
     columns: [
+      { key: "code", label: "Kode" },
       { key: "name", label: "Nama" },
       { key: "description", label: "Deskripsi" },
     ],
     formFields: [
+      { name: "code", label: "Kode Satuan", type: "text", required: true },
       { name: "name", label: "Nama Satuan", type: "text", required: true },
       { name: "description", label: "Deskripsi", type: "text" },
     ],
@@ -261,11 +273,48 @@ const entityConfigs: Record<string, EntityConfig> = {
     useDelete: useDeleteMasterPanel,
     columns: [
       { key: "name", label: "Nama" },
-      { key: "description", label: "Deskripsi" },
-      { key: "price", label: "Harga" },
-      { key: "panelTests", label: "Jumlah Tes", render: (value: unknown) => {
-        if (Array.isArray(value)) {
-          return `${value.length} tes`;
+      { key: "panelTests", label: "Tes Anggota", render: (value: unknown) => {
+        if (Array.isArray(value) && value.length > 0) {
+          const names = value
+            .map((pt: { test?: { name?: string } }) => pt.test?.name)
+            .filter(Boolean);
+          if (names.length <= 3) return names.join(", ");
+          return `${names.slice(0, 3).join(", ")} +${names.length - 3} lainnya`;
+        }
+        return "—";
+      }},
+      { key: "sampleType_derived", label: "Jenis Sampel", render: (_value: unknown, row: Record<string, unknown>) => {
+        const panelTests = row.panelTests;
+        if (Array.isArray(panelTests) && panelTests.length > 0) {
+          const sampleTypes = [...new Set(
+            panelTests
+              .map((pt: { test?: { sampleType?: string } }) => pt.test?.sampleType)
+              .filter(Boolean)
+          )];
+          return sampleTypes.join(", ") || "—";
+        }
+        return "—";
+      }},
+      { key: "price", label: "Harga Panel", render: (value: unknown, row: Record<string, unknown>) => {
+        const panelPrice = Number(value) || 0;
+        const panelTests = row.panelTests;
+        let totalIndividual = 0;
+        if (Array.isArray(panelTests)) {
+          totalIndividual = panelTests.reduce((sum: number, pt: { test?: { price?: number | string } }) => {
+            return sum + (Number(pt.test?.price) || 0);
+          }, 0);
+        }
+        const formatted = panelPrice.toLocaleString("id-ID");
+        if (totalIndividual > 0 && totalIndividual !== panelPrice) {
+          const discount = Math.round(((totalIndividual - panelPrice) / totalIndividual) * 100);
+          return `Rp ${formatted} (hemat ${discount}% dari Rp ${totalIndividual.toLocaleString("id-ID")})`;
+        }
+        return `Rp ${formatted}`;
+      }},
+      { key: "testCount_derived", label: "Jumlah Tes", render: (_value: unknown, row: Record<string, unknown>) => {
+        const panelTests = row.panelTests;
+        if (Array.isArray(panelTests)) {
+          return `${panelTests.length} tes`;
         }
         return "—";
       }},
@@ -273,8 +322,8 @@ const entityConfigs: Record<string, EntityConfig> = {
     formFields: [
       { name: "name", label: "Nama Panel", type: "text", required: true },
       { name: "description", label: "Deskripsi", type: "text" },
-      { name: "price", label: "Harga", type: "number", required: true },
-      { name: "testIds", label: "Pemeriksaan", type: "multi-entity-autocomplete" as const, required: true, endpoint: "/api/v1/master/tests", min: 2 },
+      { name: "price", label: "Harga Panel (Total harga tes individu akan ditampilkan sebagai perbandingan)", type: "number", required: true },
+      { name: "testIds", label: "Pemeriksaan (pilih min. 2 tes)", type: "multi-entity-autocomplete" as const, required: true, endpoint: "/api/v1/master/tests", min: 2 },
     ],
   },
   dokter: {
@@ -339,12 +388,18 @@ const entityConfigs: Record<string, EntityConfig> = {
     columns: [
       { key: "name", label: "Nama" },
       { key: "model", label: "Model" },
+      { key: "serialNumber", label: "Nomor Seri" },
+      { key: "location", label: "Lokasi" },
       { key: "status", label: "Status" },
     ],
     formFields: [
       { name: "name", label: "Nama Alat", type: "text", required: true },
       { name: "model", label: "Model", type: "text" },
       { name: "manufacturer", label: "Manufacturer", type: "text" },
+      { name: "serialNumber", label: "Nomor Seri", type: "text" },
+      { name: "location", label: "Lokasi", type: "text" },
+      { name: "lastCalibration", label: "Kalibrasi Terakhir", type: "date" },
+      { name: "nextCalibration", label: "Kalibrasi Berikutnya", type: "date" },
       { name: "status", label: "Status", type: "text" },
     ],
   },
@@ -357,14 +412,37 @@ const entityConfigs: Record<string, EntityConfig> = {
     columns: [
       { key: "name", label: "Nama" },
       { key: "manufacturer", label: "Manufacturer" },
-      { key: "expiryDate", label: "Tanggal Kedaluwarsa" },
+      { key: "quantity", label: "Jumlah Stok" },
+      { key: "storageTemp", label: "Suhu Penyimpanan" },
+      { key: "expiryDate", label: "Kedaluwarsa", render: (value: unknown) => {
+        if (!value) return "—";
+        try {
+          const expiry = new Date(value as string);
+          const now = new Date();
+          const threeMonthsFromNow = new Date();
+          threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
+          const formatted = expiry.toLocaleDateString("id-ID");
+          if (expiry <= now) {
+            return `🔴 Expired: ${formatted}`;
+          }
+          if (expiry <= threeMonthsFromNow) {
+            return `⚠️ Exp: ${formatted}`;
+          }
+          return formatted;
+        } catch {
+          return String(value);
+        }
+      }},
     ],
     formFields: [
       { name: "code", label: "Kode Reagen", type: "text", required: true },
       { name: "name", label: "Nama Reagen", type: "text", required: true },
       { name: "manufacturer", label: "Manufacturer", type: "text" },
       { name: "lotNumber", label: "Nomor Lot", type: "text" },
-      { name: "expiryDate", label: "Tanggal Kedaluwarsa", type: "text" },
+      { name: "expiryDate", label: "Tanggal Kedaluwarsa", type: "date" },
+      { name: "quantity", label: "Jumlah Stok", type: "number" },
+      { name: "storageTemp", label: "Suhu Penyimpanan", type: "text" },
+      { name: "equipmentId", label: "Alat", type: "entity-autocomplete" as const, endpoint: "/api/v1/master/equipments", valueKey: "id" as const },
     ],
   },
   metode: {
@@ -392,6 +470,10 @@ const entityConfigs: Record<string, EntityConfig> = {
     useCreate: useCreateMasterTariff,
     useUpdate: useUpdateMasterTariff,
     useDelete: useDeleteMasterTariff,
+    filters: [
+      { name: "clinicId", label: "Filter Klinik", endpoint: "/api/v1/master/clinics" },
+      { name: "insuranceId", label: "Filter Asuransi", endpoint: "/api/v1/master/insurances" },
+    ],
     columns: [
       { key: "test", label: "Tes", render: (value: unknown) => {
         if (value && typeof value === "object" && "name" in (value as Record<string, unknown>)) {
@@ -465,6 +547,7 @@ export default function MasterDataEntityPage() {
   // State
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Record<string, unknown> | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Record<string, unknown> | null>(null);
@@ -479,7 +562,7 @@ export default function MasterDataEntityPage() {
   const deleteHook = config?.useDelete ?? useDeleteMasterUnit;
 
   // Call hooks (must be unconditional per React rules)
-  const queryResult = queryHook({ page, limit: 10, search: search || undefined });
+  const queryResult = queryHook({ page, limit: 10, search: search || undefined, ...filters });
   const createMutation = createHook();
   const updateMutation = updateHook();
   const deleteMutation = deleteHook();
@@ -492,6 +575,19 @@ export default function MasterDataEntityPage() {
   // Handlers
   const handleSearch = useCallback((query: string) => {
     setSearch(query);
+    setPage(1);
+  }, []);
+
+  const handleFilterChange = useCallback((filterName: string, value: string) => {
+    setFilters((prev) => {
+      const next = { ...prev };
+      if (value) {
+        next[filterName] = value;
+      } else {
+        delete next[filterName];
+      }
+      return next;
+    });
     setPage(1);
   }, []);
 
@@ -584,6 +680,15 @@ export default function MasterDataEntityPage() {
         </Button>
       </div>
 
+      {/* Entity Filters (e.g. tarif filter by clinic/insurance) */}
+      {config.filters && config.filters.length > 0 && (
+        <EntityFilterBar
+          filters={config.filters}
+          values={filters}
+          onChange={handleFilterChange}
+        />
+      )}
+
       {/* Table */}
       <MasterDataTable
         columns={config.columns}
@@ -594,6 +699,11 @@ export default function MasterDataEntityPage() {
         onSearch={handleSearch}
         onPageChange={handlePageChange}
         isLoading={queryResult.isLoading}
+        renderExpandedRow={
+          entity === "pemeriksaan-lab"
+            ? (row) => <TestDetailPanel testId={row.id as string} />
+            : undefined
+        }
       />
 
       {/* Create/Edit Modal */}

@@ -118,7 +118,20 @@ export class MasterDataService implements IMasterDataQueryService {
   async findOneTest(id: string) {
     const test = await this.prisma.testMaster.findFirst({
       where: { id, deletedAt: null },
-      include: { category: true, referenceValues: true },
+      include: {
+        category: true,
+        referenceValues: true,
+        tariffs: {
+          include: { clinic: true, insurance: true },
+          orderBy: { effectiveFrom: 'desc' },
+        },
+        panelTests: {
+          include: { panel: true },
+        },
+        reagentTestMappings: {
+          include: { reagent: true },
+        },
+      },
     });
     if (!test) {
       throw new NotFoundException('Test not found');
@@ -141,6 +154,11 @@ export class MasterDataService implements IMasterDataQueryService {
     // Validate sampleType against SampleTypeMaster.code (Requirement 14.3)
     if (dto.sampleType) {
       await this.validateSampleType(dto.sampleType);
+    }
+
+    // Validate unit against MeasurementUnit.code
+    if (dto.unit) {
+      await this.validateUnit(dto.unit);
     }
 
     try {
@@ -194,6 +212,11 @@ export class MasterDataService implements IMasterDataQueryService {
     // Validate sampleType against SampleTypeMaster.code (Requirement 14.3)
     if (dto.sampleType) {
       await this.validateSampleType(dto.sampleType);
+    }
+
+    // Validate unit against MeasurementUnit.code
+    if (dto.unit) {
+      await this.validateUnit(dto.unit);
     }
 
     return this.prisma.testMaster.update({
@@ -316,16 +339,41 @@ export class MasterDataService implements IMasterDataQueryService {
 
   // ─── Tariffs ──────────────────────────────────────────────────────────────────
 
-  async findAllTariffs(page = 1, limit = 20) {
+  async findAllTariffs(
+    page = 1,
+    limit = 20,
+    filters?: { search?: string; clinicId?: string; insuranceId?: string },
+  ) {
     const skip = (page - 1) * limit;
+
+    // Build Prisma where clause based on filters
+    const where: Record<string, unknown> = {};
+
+    if (filters?.clinicId) {
+      where.clinicId = filters.clinicId;
+    }
+
+    if (filters?.insuranceId) {
+      where.insuranceId = filters.insuranceId;
+    }
+
+    if (filters?.search) {
+      where.OR = [
+        { test: { name: { contains: filters.search, mode: 'insensitive' } } },
+        { clinic: { name: { contains: filters.search, mode: 'insensitive' } } },
+        { insurance: { name: { contains: filters.search, mode: 'insensitive' } } },
+      ];
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.tariff.findMany({
+        where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: { test: true, clinic: true, insurance: true },
       }),
-      this.prisma.tariff.count(),
+      this.prisma.tariff.count({ where }),
     ]);
     return { data, meta: { total, page, limit } };
   }
@@ -633,6 +681,22 @@ export class MasterDataService implements IMasterDataQueryService {
       throw new BadRequestException({
         errorCode: 'ERR_INVALID_SAMPLE_TYPE',
         message: `sampleType '${sampleType}' does not match any existing SampleTypeMaster code`,
+      });
+    }
+  }
+
+  /**
+   * Validates that unit matches an existing MeasurementUnit.code record.
+   * Application-level validation since unit is a free-text String? field.
+   */
+  private async validateUnit(unitCode: string): Promise<void> {
+    const unit = await this.prisma.measurementUnit.findFirst({
+      where: { code: unitCode, isActive: true },
+    });
+    if (!unit) {
+      throw new BadRequestException({
+        errorCode: 'ERR_INVALID_UNIT',
+        message: `Unit code '${unitCode}' not found in MeasurementUnit master`,
       });
     }
   }
