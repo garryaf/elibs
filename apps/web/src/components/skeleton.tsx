@@ -62,3 +62,47 @@ export function CardSkeleton() {
     </div>
   );
 }
+
+/**
+ * Individual Stats Card Skeleton.
+ */
+export function StatsCardSkeleton({ className }: { className?: string }) {
+  return (
+    <div
+      data-testid="stats-card-skeleton"
+      className={cn(
+        "rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-slate-800 dark:bg-slate-950",
+        className
+      )}
+    >
+      <Skeleton className="h-4 w-28" />
+      <Skeleton className="mt-3 h-8 w-20 rounded-lg" />
+    </div>
+  );
+}
+
+/**
+ * Stats cards grid skeleton for pages with summary metric cards.
+ */
+export function StatsCardsSkeleton({
+  count = 3,
+  className,
+}: {
+  count?: number;
+  className?: string;
+}) {
+  const gridClass =
+    className ||
+    (count === 4
+      ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      : "grid gap-4 sm:grid-cols-3");
+
+  return (
+    <div className={gridClass} data-testid="stats-skeleton">
+      {Array.from({ length: count }).map((_, i) => (
+        <StatsCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+

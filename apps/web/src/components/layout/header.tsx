@@ -1,8 +1,11 @@
 "use client";
 
 import { Search, Bell, Menu, LogOut } from "lucide-react";
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { getInitials } from "@/lib/format";
+import { useShortcut } from "@/hooks";
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -11,6 +14,9 @@ interface HeaderProps {
 export function Header({ onMenuToggle }: HeaderProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useShortcut("k", () => searchInputRef.current?.focus(), { ctrlCmd: true });
 
   const handleLogout = () => {
     logout();
@@ -19,7 +25,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
 
   const displayName = user?.email?.split("@")[0] || "User";
   const displayRole = user?.role || "Staff";
-  const initial = displayName.charAt(0).toUpperCase();
+  const initial = getInitials(displayName);
 
   return (
     <header className="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80 sm:px-6">
@@ -47,10 +53,16 @@ export function Header({ onMenuToggle }: HeaderProps) {
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
+              ref={searchInputRef}
               type="text"
               placeholder="Search patients, orders, or results..."
-              className="w-full rounded-full border border-slate-200 bg-slate-50 py-2 pl-10 pr-4 text-sm outline-none transition-all focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20 dark:border-slate-800 dark:bg-slate-900 dark:focus:border-brand dark:focus:bg-slate-950"
+              className="w-full rounded-full border border-slate-200 bg-slate-50 py-2 pl-10 pr-12 text-sm outline-none transition-all focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20 dark:border-slate-800 dark:bg-slate-900 dark:focus:border-brand dark:focus:bg-slate-950"
             />
+            <div className="pointer-events-none absolute right-3 top-1/2 flex -translate-y-1/2 items-center">
+              <kbd className="hidden items-center gap-1 rounded border border-slate-200 bg-slate-100 px-1.5 font-mono text-[10px] font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 sm:flex">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </div>
           </div>
         </div>
 

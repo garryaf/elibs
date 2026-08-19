@@ -24,6 +24,8 @@ export interface VisitListParams {
   endDate?: string;
   doctorId?: string;
   clinicId?: string;
+  sortBy?: string;
+  sortDir?: string;
 }
 
 export interface CreateVisitPayload {

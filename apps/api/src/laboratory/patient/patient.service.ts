@@ -35,9 +35,14 @@ export class PatientService {
 
   private transformRegionResponse(patient: any) {
     if (!patient) return patient;
-    const { provinsiRef, kabupatenKotaRef, kecamatanRef, kelurahanDesaRef, ...rest } = patient;
+    const { provinsiRef, kabupatenKotaRef, kecamatanRef, kelurahanDesaRef, visits, ...rest } = patient;
+    const lastVisitDate = visits?.[0]?.registrationDate
+      ? new Date(visits[0].registrationDate).toISOString()
+      : null;
     return {
       ...rest,
+      lastVisitDate,
+      lastVisit: lastVisitDate,
       provinsi: provinsiRef || null,
       kabupatenKota: kabupatenKotaRef || null,
       kecamatan: kecamatanRef || null,
@@ -164,6 +169,13 @@ export class PatientService {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
     status?: string;
+    gender?: string;
+    ageMin?: number;
+    ageMax?: number;
+    registeredFrom?: string;
+    registeredTo?: string;
+    lastVisitFrom?: string;
+    lastVisitTo?: string;
   }) {
     const page = query.page || 1;
     const limit = query.limit || 20;
@@ -177,6 +189,54 @@ export class PatientService {
       where.deletedAt = null;
     } else if (query.status === 'INACTIVE') {
       where.deletedAt = { not: null };
+    }
+
+    // Gender filter
+    if (query.gender && (query.gender === 'MALE' || query.gender === 'FEMALE')) {
+      where.gender = query.gender;
+    }
+
+    // Age filter — convert age range to dateOfBirth range
+    if (query.ageMin !== undefined || query.ageMax !== undefined) {
+      const today = new Date();
+      const dobCondition: any = {};
+      if (query.ageMin !== undefined) {
+        // ageMin years old → born on or before today minus ageMin years
+        const maxDob = new Date(today.getFullYear() - query.ageMin, today.getMonth(), today.getDate());
+        dobCondition.lte = maxDob;
+      }
+      if (query.ageMax !== undefined) {
+        // ageMax years old → born on or after today minus (ageMax + 1) years
+        const minDob = new Date(today.getFullYear() - query.ageMax - 1, today.getMonth(), today.getDate() + 1);
+        dobCondition.gte = minDob;
+      }
+      if (Object.keys(dobCondition).length > 0) {
+        where.dateOfBirth = dobCondition;
+      }
+    }
+
+    // Registration date filter
+    if (query.registeredFrom || query.registeredTo) {
+      const createdAtCondition: any = {};
+      if (query.registeredFrom) createdAtCondition.gte = new Date(query.registeredFrom);
+      if (query.registeredTo) {
+        const endDate = new Date(query.registeredTo);
+        endDate.setHours(23, 59, 59, 999);
+        createdAtCondition.lte = endDate;
+      }
+      where.createdAt = createdAtCondition;
+    }
+
+    // Last visit filter — requires subquery on visits relation
+    if (query.lastVisitFrom || query.lastVisitTo) {
+      const visitCondition: any = { cancelledAt: null };
+      if (query.lastVisitFrom) visitCondition.registrationDate = { ...visitCondition.registrationDate, gte: new Date(query.lastVisitFrom) };
+      if (query.lastVisitTo) {
+        const endDate = new Date(query.lastVisitTo);
+        endDate.setHours(23, 59, 59, 999);
+        visitCondition.registrationDate = { ...visitCondition.registrationDate, lte: endDate };
+      }
+      where.visits = { some: visitCondition };
     }
 
     if (query.search) {
@@ -204,7 +264,21 @@ export class PatientService {
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
-        include: REGION_INCLUDE,
+        include: {
+          ...REGION_INCLUDE,
+          visits: {
+            where: { cancelledAt: null },
+            orderBy: { registrationDate: 'desc' },
+            take: 1,
+            select: { registrationDate: true, status: true },
+          },
+          orders: {
+            where: { status: { notIn: ['CANCELLED', 'APPROVED', 'NOTIFIED'] } },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: { status: true, orderNumber: true },
+          },
+        },
       }),
       this.prisma.patient.count({ where }),
       this.prisma.patient.count({ where: { ...countWhereBase, deletedAt: null } }),
@@ -217,10 +291,20 @@ export class PatientService {
         const transformed = this.transformRegionResponse(p);
         const resolvedInsuranceId = await this.insuranceConsolidationService.resolvePatientInsuranceId(p.id);
         const insurances = await this.insuranceConsolidationService.getActiveInsurances(p.id);
+
+        // Derive visit/order state for table display
+        const latestVisit = (p as any).visits?.[0] ?? null;
+        const latestActiveOrder = (p as any).orders?.[0] ?? null;
+
         return {
           ...transformed,
           insuranceId: resolvedInsuranceId,
           insurances,
+          // BP-05: expose visit/order state for table UI
+          activeVisitStatus: latestVisit?.status ?? null,
+          lastVisitDate: latestVisit?.registrationDate ?? null,
+          activeOrderStatus: latestActiveOrder?.status ?? null,
+          activeOrderNumber: latestActiveOrder?.orderNumber ?? null,
         };
       }),
     );
@@ -241,7 +325,15 @@ export class PatientService {
   async findById(id: string) {
     const patient = await this.prisma.patient.findFirst({
       where: { id, deletedAt: null },
-      include: REGION_INCLUDE,
+      include: {
+        ...REGION_INCLUDE,
+        visits: {
+          where: { cancelledAt: null },
+          orderBy: { registrationDate: 'desc' },
+          take: 1,
+          select: { registrationDate: true },
+        },
+      },
     });
     if (!patient) {
       throw new NotFoundException('Patient not found');
@@ -631,5 +723,174 @@ export class PatientService {
     );
 
     return updated;
+  }
+
+  async reactivate(id: string, userId: string, ipAddress?: string) {
+    // 1. Verify patient exists and IS currently deactivated
+    const patient = await this.prisma.patient.findFirst({
+      where: { id, deletedAt: { not: null } },
+    });
+    if (!patient) {
+      throw new NotFoundException('Patient not found or already active');
+    }
+
+    // 2. Reactivate — set deletedAt back to null
+    const updated = await this.prisma.patient.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    // 3. Audit
+    await this.auditService.log(
+      userId,
+      'REACTIVATE',
+      'Patient',
+      id,
+      { deletedAt: patient.deletedAt },
+      { deletedAt: null },
+      ipAddress,
+    );
+
+    return updated;
+  }
+
+  // ─── BP-06: Duplicate Detection & Merge ─────────────────────────────────────
+
+  /**
+   * Detect potential duplicate patients by name similarity or NIK prefix.
+   */
+  async findDuplicates(query: { search?: string; limit?: number }) {
+    const limit = query.limit || 20;
+
+    // Find patients with similar names using case-insensitive partial match
+    // This identifies groups of patients that could be duplicates
+    const patients = await this.prisma.patient.findMany({
+      where: {
+        deletedAt: null,
+        ...(query.search
+          ? {
+              OR: [
+                { name: { contains: query.search, mode: 'insensitive' } },
+                { nik: { startsWith: query.search } },
+              ],
+            }
+          : {}),
+      },
+      take: limit,
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        mrn: true,
+        nik: true,
+        name: true,
+        dateOfBirth: true,
+        gender: true,
+        phone: true,
+        createdAt: true,
+        _count: { select: { orders: true, visits: true } },
+      },
+    });
+
+    return patients;
+  }
+
+  /**
+   * Merge patient B into patient A.
+   * All visits, orders, insurances from B are reassigned to A.
+   * Patient B is then soft-deleted.
+   */
+  async mergePatients(
+    primaryId: string,
+    secondaryId: string,
+    userId: string,
+    ipAddress?: string,
+  ) {
+    if (primaryId === secondaryId) {
+      throw new BadRequestException('Cannot merge a patient into themselves');
+    }
+
+    // Verify both patients exist
+    const [primary, secondary] = await Promise.all([
+      this.prisma.patient.findFirst({ where: { id: primaryId, deletedAt: null } }),
+      this.prisma.patient.findFirst({ where: { id: secondaryId, deletedAt: null } }),
+    ]);
+
+    if (!primary) throw new NotFoundException('Primary patient not found');
+    if (!secondary) throw new NotFoundException('Secondary patient not found');
+
+    // Execute merge in a transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // 1. Reassign all visits from secondary to primary
+      const visitUpdate = await tx.visit.updateMany({
+        where: { patientId: secondaryId },
+        data: { patientId: primaryId },
+      });
+
+      // 2. Reassign all orders from secondary to primary
+      const orderUpdate = await tx.order.updateMany({
+        where: { patientId: secondaryId },
+        data: { patientId: primaryId },
+      });
+
+      // 3. Reassign patient insurances (skip if primary already has same insurance)
+      const primaryInsurances = await tx.patientInsurance.findMany({
+        where: { patientId: primaryId },
+        select: { insuranceId: true },
+      });
+      const primaryInsuranceIds = new Set(primaryInsurances.map((i) => i.insuranceId));
+
+      const secondaryInsurances = await tx.patientInsurance.findMany({
+        where: { patientId: secondaryId },
+      });
+
+      let insuranceMerged = 0;
+      for (const si of secondaryInsurances) {
+        if (primaryInsuranceIds.has(si.insuranceId)) {
+          // Duplicate — delete the secondary's insurance record
+          await tx.patientInsurance.delete({ where: { id: si.id } });
+        } else {
+          // Move to primary with next available priority
+          const maxPriority = await tx.patientInsurance.findFirst({
+            where: { patientId: primaryId },
+            orderBy: { priority: 'desc' },
+            select: { priority: true },
+          });
+          await tx.patientInsurance.update({
+            where: { id: si.id },
+            data: { patientId: primaryId, priority: (maxPriority?.priority || 0) + 1 },
+          });
+          insuranceMerged++;
+        }
+      }
+
+      // 4. Soft-delete the secondary patient
+      await tx.patient.update({
+        where: { id: secondaryId },
+        data: { deletedAt: new Date() },
+      });
+
+      return {
+        visitsMerged: visitUpdate.count,
+        ordersMerged: orderUpdate.count,
+        insurancesMerged: insuranceMerged,
+      };
+    });
+
+    // 5. Audit log
+    await this.auditService.log(
+      userId,
+      'MERGE_PATIENT',
+      'Patient',
+      primaryId,
+      { secondaryPatientId: secondaryId, secondaryMrn: secondary.mrn, secondaryName: secondary.name },
+      { ...result, mergedInto: primaryId },
+      ipAddress,
+    );
+
+    return {
+      primaryPatient: { id: primary.id, mrn: primary.mrn, name: primary.name },
+      mergedFrom: { id: secondary.id, mrn: secondary.mrn, name: secondary.name },
+      ...result,
+    };
   }
 }

@@ -550,7 +550,7 @@ function InsuranceFormModal({
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 transition-colors dark:hover:bg-slate-800"
+            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
             aria-label="Tutup"
           >
             <X className="h-4 w-4" />

@@ -87,12 +87,17 @@ jest.mock("@/components/regions/CascadingRegionSelector", () => ({
 const mockGetPatients = jest.fn();
 const mockUpdatePatient = jest.fn();
 
-jest.mock("@/lib/api", () => ({
-  apiClient: {
-    getPatients: (...args: unknown[]) => mockGetPatients(...args),
-    updatePatient: (...args: unknown[]) => mockUpdatePatient(...args),
-  },
-}));
+jest.mock("@/lib/api", () => {
+  const actual = jest.requireActual("@/lib/api");
+  return {
+    ...actual,
+    apiClient: {
+      ...actual.apiClient,
+      getPatients: (...args: unknown[]) => mockGetPatients(...args),
+      updatePatient: (...args: unknown[]) => mockUpdatePatient(...args),
+    },
+  };
+});
 
 // ─── Import component under test AFTER mocks ─────────────────────────────────
 
@@ -134,12 +139,12 @@ async function triggerPatientUpdate(errorToThrow: Error) {
 
   // Wait for patients to load
   await waitFor(() => {
-    expect(screen.getByTestId("patient-table")).toBeInTheDocument();
+    expect(screen.getAllByTestId("patient-table")[0]).toBeInTheDocument();
   });
 
   // Click edit to open modal
   await act(async () => {
-    fireEvent.click(screen.getByTestId("edit-patient-btn"));
+    fireEvent.click(screen.getAllByTestId("edit-patient-btn")[0]);
   });
 
   // Wait for modal to appear — find the submit button
@@ -200,12 +205,12 @@ describe("Feature: batch-a-quick-ux-fixes, Property 2: Bug Condition — Patient
 
         // Wait for patients to load
         await waitFor(() => {
-          expect(screen.getByTestId("patient-table")).toBeInTheDocument();
+          expect(screen.getAllByTestId("patient-table")[0]).toBeInTheDocument();
         });
 
         // Click edit
         await act(async () => {
-          fireEvent.click(screen.getByTestId("edit-patient-btn"));
+          fireEvent.click(screen.getAllByTestId("edit-patient-btn")[0]);
         });
 
         // Wait for modal

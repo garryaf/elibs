@@ -23,6 +23,8 @@ describe('PatientService Property Tests', () => {
     const mockPrismaService = {
       patient: {
         findFirst: jest.fn().mockResolvedValue(null),
+        findMany: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(0),
         create: jest.fn().mockImplementation(({ data }) => ({
           id: 'test-id',
           ...data,
@@ -376,7 +378,6 @@ describe('PatientService Property Tests', () => {
             expect((prismaService.patient as any).findMany).toHaveBeenCalledWith(
               expect.objectContaining({
                 where: expect.objectContaining({
-                  deletedAt: null,
                   OR: expectedConditions,
                 }),
               }),
@@ -421,7 +422,6 @@ describe('PatientService Property Tests', () => {
             expect((prismaService.patient as any).findMany).toHaveBeenCalledWith(
               expect.objectContaining({
                 where: expect.objectContaining({
-                  deletedAt: null,
                   OR: expectedConditions,
                 }),
               }),
@@ -457,7 +457,6 @@ describe('PatientService Property Tests', () => {
             expect((prismaService.patient as any).findMany).toHaveBeenCalledWith(
               expect.objectContaining({
                 where: expect.objectContaining({
-                  deletedAt: null,
                   OR: expectedConditions,
                 }),
               }),
@@ -609,6 +608,76 @@ describe('PatientService Property Tests', () => {
         ),
         { numRuns: 100 },
       );
+    });
+  });
+
+  describe('UX-05: Last Visit Resolution', () => {
+    it('returns registrationDate of the latest visit as lastVisit/lastVisitDate and not updatedAt in findAll', async () => {
+      const visitDate = new Date('2026-05-15T09:30:00.000Z');
+      const updatedAtDate = new Date('2026-08-01T12:00:00.000Z');
+
+      (prismaService.patient.findMany as jest.Mock).mockResolvedValue([
+        {
+          id: 'p-1',
+          name: 'Patient With Visit',
+          mrn: 'MRN-001',
+          nik: '3201000000000001',
+          dateOfBirth: new Date('1990-01-01'),
+          gender: 'MALE',
+          createdAt: new Date('2024-01-01'),
+          updatedAt: updatedAtDate,
+          deletedAt: null,
+          visits: [{ registrationDate: visitDate }],
+        },
+        {
+          id: 'p-2',
+          name: 'Patient Without Visit',
+          mrn: 'MRN-002',
+          nik: '3201000000000002',
+          dateOfBirth: new Date('1992-02-02'),
+          gender: 'FEMALE',
+          createdAt: new Date('2024-02-01'),
+          updatedAt: updatedAtDate,
+          deletedAt: null,
+          visits: [],
+        },
+      ]);
+      (prismaService.patient.count as jest.Mock).mockResolvedValue(2);
+
+      const result = await service.findAll({});
+
+      // Patient 1 has visit: lastVisit should match visit registrationDate, NOT updatedAt
+      expect(result.data[0].lastVisitDate).toBe(visitDate.toISOString());
+      expect(result.data[0].lastVisit).toBe(visitDate.toISOString());
+      expect(result.data[0].lastVisit).not.toBe(updatedAtDate.toISOString());
+
+      // Patient 2 has no visit: lastVisit should be null, NOT updatedAt
+      expect(result.data[1].lastVisitDate).toBeNull();
+      expect(result.data[1].lastVisit).toBeNull();
+    });
+
+    it('returns registrationDate of the latest visit as lastVisit/lastVisitDate in findById', async () => {
+      const visitDate = new Date('2026-03-20T14:15:00.000Z');
+      const updatedAtDate = new Date('2026-08-01T12:00:00.000Z');
+
+      (prismaService.patient.findFirst as jest.Mock).mockResolvedValue({
+        id: 'p-1',
+        name: 'Patient Detail',
+        mrn: 'MRN-001',
+        nik: '3201000000000001',
+        dateOfBirth: new Date('1990-01-01'),
+        gender: 'MALE',
+        createdAt: new Date('2024-01-01'),
+        updatedAt: updatedAtDate,
+        deletedAt: null,
+        visits: [{ registrationDate: visitDate }],
+      });
+
+      const result = await service.findById('p-1');
+
+      expect(result.lastVisitDate).toBe(visitDate.toISOString());
+      expect(result.lastVisit).toBe(visitDate.toISOString());
+      expect(result.lastVisit).not.toBe(updatedAtDate.toISOString());
     });
   });
 });

@@ -473,7 +473,7 @@ export default function AuditTrailPage() {
                   <tr key={log.id} className="group">
                     <td colSpan={7} className="p-0">
                       <div
-                        className={`border-b border-border transition-colors ${isExpanded ? "bg-slate-50 dark:bg-slate-900/30" : "hover:bg-slate-50/50 dark:hover:bg-slate-900/20"}`}
+                        className={`border-b border-border transition-colors ${isExpanded ? "bg-slate-50 dark:bg-slate-900/30" : "hover:bg-slate-50/50 even:bg-slate-50/50 dark:hover:bg-slate-900/50 dark:even:bg-slate-900/30"}`}
                       >
                         {/* Main row */}
                         <div

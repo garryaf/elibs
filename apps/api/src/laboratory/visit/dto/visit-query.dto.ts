@@ -1,6 +1,7 @@
 import {
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -48,4 +49,12 @@ export class VisitQueryDto {
   @IsOptional()
   @IsUUID()
   clinicId?: string;
+
+  @IsOptional()
+  @IsIn(['visitNumber', 'patientName', 'status', 'paymentMethod', 'registrationDate'])
+  sortBy?: string;
+
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortDir?: 'asc' | 'desc';
 }

@@ -20,6 +20,7 @@ import { useVisits } from "@/services/visits";
 import { VisitRowActions } from "@/components/visits/VisitRowActions";
 import { CancelVisitDialog } from "@/components/visits/CancelVisitDialog";
 import { RoleGuard } from "@/components/guards/RoleGuard";
+import { ActiveFilters, type ActiveFilterItem } from "@/components";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -121,6 +122,7 @@ function VisitsPageContent() {
       setSortField(field);
       setSortDir("desc");
     }
+    setPage(1); // Reset to page 1 when sort changes (server-side sorting)
   };
 
   // Debounce search input (300ms)
@@ -137,6 +139,53 @@ function VisitsPageContent() {
     setPage(1);
   }, [statusFilter, startDate, endDate]);
 
+  const activeFilterItems: ActiveFilterItem[] = useMemo(() => {
+    const items: ActiveFilterItem[] = [];
+    if (search.trim()) {
+      items.push({
+        id: "search",
+        label: "Pencarian",
+        value: `"${search.trim()}"`,
+        onRemove: () => {
+          setSearch("");
+          setDebouncedSearch("");
+        },
+      });
+    }
+    if (statusFilter !== "ALL") {
+      const label = STATUS_FILTERS.find((f) => f.value === statusFilter)?.label || statusFilter;
+      items.push({
+        id: "status",
+        label: "Status",
+        value: label,
+        onRemove: () => setStatusFilter("ALL"),
+      });
+    }
+    if (startDate || endDate) {
+      const startStr = startDate ? new Date(startDate).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "...";
+      const endStr = endDate ? new Date(endDate).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "...";
+      items.push({
+        id: "dateRange",
+        label: "Periode",
+        value: `${startStr} s/d ${endStr}`,
+        onRemove: () => {
+          setStartDate("");
+          setEndDate("");
+        },
+      });
+    }
+    return items;
+  }, [search, statusFilter, startDate, endDate]);
+
+  const handleResetAllFilters = () => {
+    setSearch("");
+    setDebouncedSearch("");
+    setStatusFilter("ALL");
+    setStartDate("");
+    setEndDate("");
+    setPage(1);
+  };
+
   // ─── TanStack Query: fetch visits ─────────────────────────────────────────
   const { data: queryData, isLoading: loading, error: queryError, refetch } = useVisits({
     page,
@@ -145,6 +194,8 @@ function VisitsPageContent() {
     status: statusFilter !== "ALL" ? statusFilter : undefined,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
+    sortBy: sortField,
+    sortDir: sortDir,
   });
 
   // ─── Extract data from query response ─────────────────────────────────────
@@ -195,41 +246,8 @@ function VisitsPageContent() {
 
   const error = queryError ? "Gagal memuat data kunjungan. Silakan coba lagi." : null;
 
-  // ─── Sorted visits ──────────────────────────────────────────────────────────
-  const sortedVisits = useMemo(() => {
-    const sorted = [...visits];
-    sorted.sort((a, b) => {
-      let aVal: string;
-      let bVal: string;
-      switch (sortField) {
-        case "visitNumber":
-          aVal = a.visitNumber;
-          bVal = b.visitNumber;
-          break;
-        case "patientName":
-          aVal = a.patient?.name || "";
-          bVal = b.patient?.name || "";
-          break;
-        case "status":
-          aVal = a.status;
-          bVal = b.status;
-          break;
-        case "paymentMethod":
-          aVal = a.paymentMethod;
-          bVal = b.paymentMethod;
-          break;
-        case "registrationDate":
-          aVal = a.registrationDate;
-          bVal = b.registrationDate;
-          break;
-        default:
-          return 0;
-      }
-      const cmp = aVal.localeCompare(bVal);
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-    return sorted;
-  }, [visits, sortField, sortDir]);
+  // Server-side sorting: visits are already sorted by the API
+  const sortedVisits = visits;
 
   return (
     <div className="space-y-6">
@@ -269,7 +287,7 @@ function VisitsPageContent() {
             />
           </div>
 
-          <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 overflow-x-auto dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex flex-wrap items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
             {STATUS_FILTERS.map((f) => (
               <button
                 key={f.value}
@@ -317,18 +335,11 @@ function VisitsPageContent() {
         </div>
       </div>
 
-      {/* Results summary */}
-      {debouncedSearch && !loading && (
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Menampilkan{" "}
-          <span className="font-semibold text-slate-700 dark:text-slate-300">
-            {total}
-          </span>{" "}
-          hasil untuk &quot;
-          <span className="font-semibold text-brand">{debouncedSearch}</span>
-          &quot;
-        </p>
-      )}
+      {/* Active Filters Bar */}
+      <ActiveFilters
+        items={activeFilterItems}
+        onResetAll={handleResetAllFilters}
+      />
 
       {/* Table */}
       {loading ? (
@@ -421,7 +432,7 @@ function VisitsPageContent() {
               {sortedVisits.map((visit) => (
                 <tr
                   key={visit.id}
-                  className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-900/50"
+                  className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30"
                 >
                   <td className="px-4 py-3 font-mono text-xs font-medium text-brand">
                     {visit.visitNumber}

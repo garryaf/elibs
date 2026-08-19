@@ -10,6 +10,7 @@ import type { Order, OrderStatus } from "@/types/order";
 import { OrderTable } from "@/components/orders/OrderTable";
 import { RoleGuard } from "@/components/guards/RoleGuard";
 import { useAuth } from "@/lib/auth-context";
+import { StatsCardsSkeleton, ActiveFilters, type ActiveFilterItem } from "@/components";
 
 const STATUS_FILTERS: { value: OrderStatus | "ALL"; label: string }[] = [
   { value: "ALL", label: "Semua" },
@@ -37,6 +38,38 @@ export default function OrdersPage() {
 
   // Roles that can create orders
   const canCreateOrder = user && ["SUPER_ADMIN", "ADMIN", "KASIR", "CS", "OWNER", "MANAGER", "KLINIK_PARTNER"].includes(user.role);
+
+  const activeFilterItems: ActiveFilterItem[] = useMemo(() => {
+    const items: ActiveFilterItem[] = [];
+    if (search.trim()) {
+      items.push({
+        id: "search",
+        label: "Pencarian",
+        value: `"${search.trim()}"`,
+        onRemove: () => {
+          setSearch("");
+          setDebouncedSearch("");
+        },
+      });
+    }
+    if (statusFilter !== "ALL") {
+      const label = STATUS_FILTERS.find((f) => f.value === statusFilter)?.label || statusFilter;
+      items.push({
+        id: "status",
+        label: "Status",
+        value: label,
+        onRemove: () => setStatusFilter("ALL"),
+      });
+    }
+    return items;
+  }, [search, statusFilter]);
+
+  const handleResetAllFilters = useCallback(() => {
+    setSearch("");
+    setDebouncedSearch("");
+    setStatusFilter("ALL");
+    setPage(1);
+  }, []);
 
   // Debounce search input (300ms)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -200,26 +233,30 @@ export default function OrdersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "Total Order", value: String(stats.total), sub: "order", color: "text-brand" },
-          { label: "Menunggu Pembayaran", value: String(stats.pending), sub: "order", color: "text-amber-600 dark:text-amber-400" },
-          { label: "Pendapatan Hari Ini", value: formatRupiah(Number(stats.todayRevenue)), sub: "lunas", color: "text-brand" },
-          { label: "Order Selesai", value: String(stats.completed), sub: "order", color: "text-brand" },
-        ].map((s) => (
-          <div
-            key={s.label}
-            className="rounded-2xl border border-border bg-card px-5 py-4 shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
-              <TrendingUp className="h-4 w-4 text-slate-300 dark:text-slate-700" />
+      {loading ? (
+        <StatsCardsSkeleton count={4} />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: "Total Order", value: String(stats.total), sub: "order", color: "text-brand" },
+            { label: "Menunggu Pembayaran", value: String(stats.pending), sub: "order", color: "text-amber-600 dark:text-amber-400" },
+            { label: "Pendapatan Hari Ini", value: formatRupiah(Number(stats.todayRevenue)), sub: "lunas", color: "text-brand" },
+            { label: "Order Selesai", value: String(stats.completed), sub: "order", color: "text-brand" },
+          ].map((s) => (
+            <div
+              key={s.label}
+              className="rounded-2xl border border-border bg-card px-5 py-4 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
+                <TrendingUp className="h-4 w-4 text-slate-300 dark:text-slate-700" />
+              </div>
+              <p className={`mt-2 text-2xl font-bold ${s.color}`}>{s.value}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-600">{s.sub}</p>
             </div>
-            <p className={`mt-2 text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-slate-400 dark:text-slate-600">{s.sub}</p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -253,11 +290,11 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {search && !loading && (
-        <p className="text-sm text-slate-500">
-          Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{total}</span> hasil untuk &quot;<span className="font-semibold text-brand">{search}</span>&quot;
-        </p>
-      )}
+      {/* Active Filters Bar */}
+      <ActiveFilters
+        items={activeFilterItems}
+        onResetAll={handleResetAllFilters}
+      />
 
       {loading ? (
         <div className="overflow-hidden rounded-2xl border border-border bg-card">

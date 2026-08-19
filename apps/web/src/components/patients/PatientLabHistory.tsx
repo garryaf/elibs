@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { apiClient } from "@/lib/api";
-import { ChevronDown, ChevronUp, AlertCircle, FlaskConical } from "lucide-react";
+import { ChevronDown, ChevronUp, AlertCircle, FlaskConical, RefreshCw } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -238,11 +238,16 @@ function OrderCard({ order }: { order: LabHistoryItem }) {
 export function PatientLabHistory({ patientId }: { patientId: string }) {
   const [data, setData] = useState<LabHistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
-  const fetchLabHistory = useCallback(async () => {
-    setLoading(true);
+  const fetchLabHistory = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
       const response = await apiClient.get<LabHistoryResponse>(
@@ -259,12 +264,17 @@ export function PatientLabHistory({ patientId }: { patientId: string }) {
       setError("Gagal memuat riwayat laboratorium.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [patientId, page]);
 
   useEffect(() => {
     fetchLabHistory();
   }, [fetchLabHistory]);
+
+  const handleRefresh = () => {
+    fetchLabHistory(true);
+  };
 
   // Loading state
   if (loading) {
@@ -291,7 +301,7 @@ export function PatientLabHistory({ patientId }: { patientId: string }) {
           <AlertCircle className="h-5 w-5 text-red-500" />
           <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
           <button
-            onClick={fetchLabHistory}
+            onClick={() => fetchLabHistory()}
             className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
           >
             Coba Lagi
@@ -305,10 +315,21 @@ export function PatientLabHistory({ patientId }: { patientId: string }) {
   if (!data || !data.items || data.items.length === 0) {
     return (
       <div className="space-y-3">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-          <FlaskConical className="h-4 w-4 text-brand" />
-          Riwayat Laboratorium
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+            <FlaskConical className="h-4 w-4 text-brand" />
+            Riwayat Laboratorium
+          </h3>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            title="Refresh riwayat"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            {refreshing ? "Memuat..." : "Refresh"}
+          </button>
+        </div>
         <div className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-800/50">
           <FlaskConical className="h-8 w-8 text-slate-300 dark:text-slate-600" />
           <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -322,10 +343,21 @@ export function PatientLabHistory({ patientId }: { patientId: string }) {
   // Data state
   return (
     <div className="space-y-3">
-      <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-        <FlaskConical className="h-4 w-4 text-brand" />
-        Riwayat Laboratorium
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+          <FlaskConical className="h-4 w-4 text-brand" />
+          Riwayat Laboratorium
+        </h3>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          title="Refresh riwayat"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          {refreshing ? "Memuat..." : "Refresh"}
+        </button>
+      </div>
 
       <div className="space-y-2">
         {data.items.map((order) => (

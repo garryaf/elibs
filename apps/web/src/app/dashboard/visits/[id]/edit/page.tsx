@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { SearchableDropdown, type DropdownOption } from "@/components/visits/SearchableDropdown";
+import { RoleGuard } from "@/components/guards/RoleGuard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,9 +24,22 @@ interface VisitDetail {
   insurance?: { id: string; name: string } | null;
 }
 
+// ─── RBAC ─────────────────────────────────────────────────────────────────────
+
+// Roles allowed to edit visits (must match backend update controller)
+const EDIT_VISIT_ROLES = ["KASIR", "CS", "ADMIN", "SUPER_ADMIN", "OWNER", "MANAGER"];
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function EditVisitPage() {
+  return (
+    <RoleGuard allowedRoles={EDIT_VISIT_ROLES}>
+      <EditVisitPageContent />
+    </RoleGuard>
+  );
+}
+
+function EditVisitPageContent() {
   const params = useParams();
   const router = useRouter();
   const visitId = params.id as string;
@@ -70,9 +84,9 @@ export default function EditVisitPage() {
   const handleSave = async () => {
     if (!visit) return;
 
-    // Can only edit REGISTERED visits
-    if (visit.status !== "REGISTERED") {
-      setError("Hanya visit dengan status TERDAFTAR yang dapat diedit.");
+    // Can only edit REGISTERED or IN_PROGRESS visits
+    if (visit.status === "COMPLETED" || visit.status === "CANCELLED") {
+      setError("Visit dengan status SELESAI atau DIBATALKAN tidak dapat diedit.");
       return;
     }
 
@@ -134,7 +148,7 @@ export default function EditVisitPage() {
 
   if (!visit) return null;
 
-  const isEditable = visit.status === "REGISTERED";
+  const isEditable = visit.status === "REGISTERED" || visit.status === "IN_PROGRESS";
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
@@ -156,7 +170,7 @@ export default function EditVisitPage() {
 
       {!isEditable && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-          Visit ini tidak dapat diedit karena statusnya sudah bukan TERDAFTAR.
+          Visit ini tidak dapat diedit karena statusnya sudah SELESAI atau DIBATALKAN.
         </div>
       )}
 
@@ -188,6 +202,7 @@ export default function EditVisitPage() {
             <option value="INSURANCE">Asuransi Swasta</option>
             <option value="TRANSFER">Transfer</option>
             <option value="EDC">EDC</option>
+            <option value="INSURANCE_CASH_FALLBACK">Fallback Tunai (Asuransi)</option>
             <option value="CORPORATE_DEFERRED">Corporate (Tagihan)</option>
           </select>
         </div>

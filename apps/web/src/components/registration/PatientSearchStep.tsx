@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, User, UserPlus, Loader2, X } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import { PatientAvatar } from "@/components/patients/PatientAvatar";
 import type { PatientOption } from "@/types/visit";
 
 /** Extended patient data for display purposes (includes phone) */
@@ -146,15 +147,7 @@ export function PatientSearchStep({
                 className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-brand/40 hover:bg-brand/5 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/40 dark:hover:bg-brand/5"
               >
                 {/* Avatar */}
-                <div
-                  className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
-                    patient.gender === "MALE"
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                      : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300"
-                  }`}
-                >
-                  {patient.name.charAt(0).toUpperCase()}
-                </div>
+                <PatientAvatar name={patient.name} gender={patient.gender} size="md" className="h-10 w-10 text-sm" />
 
                 {/* Patient info */}
                 <div className="min-w-0 flex-1">

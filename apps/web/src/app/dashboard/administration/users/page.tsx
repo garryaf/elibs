@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { UserPlus, Search, Trash2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { UserPlus, Search, Trash2, Pencil, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { RoleGuard } from "@/components/guards/RoleGuard";
@@ -207,7 +207,9 @@ export default function UsersPage() {
       {deleteError && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400 flex items-center justify-between">
           <span>{deleteError}</span>
-          <button onClick={() => setDeleteError("")} className="ml-4 text-red-400 hover:text-red-600 font-medium">✕</button>
+          <button onClick={() => setDeleteError("")} className="ml-4 text-red-400 hover:text-red-600 font-medium p-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-800/50">
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
@@ -230,7 +232,7 @@ export default function UsersPage() {
               <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">Tidak ada user ditemukan</td></tr>
             ) : (
               users.map((user) => (
-                <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                   <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{user.email}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{user.name || "—"}</td>
                   <td className="px-4 py-3">
@@ -290,9 +292,19 @@ export default function UsersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowForm(false)} />
           <div ref={userFormTrapRef} role="dialog" aria-modal="true" className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
-              {editingUser ? "Edit User" : "Tambah User"}
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                {editingUser ? "Edit User" : "Tambah User"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
+                aria-label="Tutup"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
             {formError && (
               <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{formError}</div>

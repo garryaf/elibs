@@ -8,6 +8,7 @@ import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { VisitSelector, type VisitOption } from "@/components/orders/visit-selector";
 import { InlineVisitCreate } from "@/components/orders/inline-visit-create";
+import { PatientAvatar } from "@/components/patients/PatientAvatar";
 
 type Step = 1 | 2 | 3;
 
@@ -160,9 +161,7 @@ function VisitStep({
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
           <p className="mb-2 text-xs font-bold tracking-wide text-slate-400 uppercase">Pasien (dari kunjungan)</p>
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-              {selectedVisit.patient.name.charAt(0)}
-            </div>
+            <PatientAvatar name={selectedVisit.patient.name} size="md" />
             <div>
               <div className="font-semibold text-slate-900 dark:text-white">{selectedVisit.patient.name}</div>
               <div className="font-mono text-xs text-brand">{selectedVisit.patient.mrn}</div>
@@ -537,9 +536,7 @@ function ConfirmStep({
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
         <p className="mb-2 text-xs font-bold tracking-wide text-slate-400 uppercase">Pasien</p>
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-            {visit.patient.name.charAt(0)}
-          </div>
+          <PatientAvatar name={visit.patient.name} size="md" />
           <div>
             <div className="font-semibold text-slate-900 dark:text-white">{visit.patient.name}</div>
             <div className="font-mono text-xs text-brand">{visit.patient.mrn}</div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MoreVertical, Eye, Pencil, XCircle } from "lucide-react";
+import { useClickOutside } from "@/hooks";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,29 +43,40 @@ export function VisitRowActions({
   onCancelSuccess,
 }: VisitRowActionsProps) {
   const [open, setOpen] = useState(false);
+  const menuRef = useClickOutside<HTMLDivElement>(() => setOpen(false), open);
 
   const canEdit =
     EDIT_VISIT_ROLES.includes(userRole) &&
     ["REGISTERED", "IN_PROGRESS"].includes(visit.status);
 
   const canCancel =
-    CANCEL_VISIT_ROLES.includes(userRole) && visit.status === "REGISTERED";
+    CANCEL_VISIT_ROLES.includes(userRole) &&
+    ["REGISTERED", "IN_PROGRESS"].includes(visit.status);
 
   return (
-    <div className="relative">
+    <div ref={menuRef} className="relative">
       <button
         id={`visit-action-${visit.id}`}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Aksi kunjungan"
         onClick={() => setOpen((v) => !v)}
-        onBlur={() => setTimeout(() => setOpen(false), 300)}
         className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
       >
         <MoreVertical className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-8 z-20 min-w-36 rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <div
+          role="menu"
+          aria-label="Menu aksi kunjungan"
+          className="absolute right-0 top-8 z-20 min-w-36 rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900 animate-in fade-in slide-in-from-top-1 duration-150"
+        >
           {/* Always show "Lihat Detail" */}
           <button
-            onMouseDown={() => {
+            role="menuitem"
+            type="button"
+            onClick={() => {
               onViewDetail(visit);
               setOpen(false);
             }}
@@ -76,7 +88,9 @@ export function VisitRowActions({
           {/* Conditionally show "Edit Kunjungan" */}
           {canEdit && (
             <button
-              onMouseDown={() => {
+              role="menuitem"
+              type="button"
+              onClick={() => {
                 onEdit(visit);
                 setOpen(false);
               }}
@@ -91,7 +105,9 @@ export function VisitRowActions({
             <>
               <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
               <button
-                onMouseDown={() => {
+                role="menuitem"
+                type="button"
+                onClick={() => {
                   onCancelSuccess();
                   setOpen(false);
                 }}

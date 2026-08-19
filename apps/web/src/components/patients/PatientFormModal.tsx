@@ -148,15 +148,26 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
     }
   };
 
+  const isValidPhone = (phone: string): boolean => {
+    return /^(08\d{8,}|\+62\d{8,})$/.test(phone.trim());
+  };
+
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof PatientFormData | "region" | "global", string>> = {};
     if (!form.nik || form.nik.length !== 16) newErrors.nik = "NIK harus 16 digit";
     if (!form.name || form.name.trim().length < 3) newErrors.name = "Nama minimal 3 karakter";
     if (!form.dob) newErrors.dob = "Tanggal lahir wajib diisi";
-    if (!form.phone) newErrors.phone = "Nomor telepon wajib diisi";
+    if (!form.phone) {
+      newErrors.phone = "Nomor telepon wajib diisi";
+    } else if (!isValidPhone(form.phone)) {
+      newErrors.phone = "Nomor telepon harus diawali 08 atau +62 dan minimal 10 digit";
+    }
     if (!form.address || form.address.trim().length < 5) newErrors.address = "Alamat minimal 5 karakter";
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       newErrors.email = "Format email tidak valid";
+    }
+    if (form.emergencyPhone && !isValidPhone(form.emergencyPhone)) {
+      newErrors.emergencyPhone = "Nomor telepon darurat harus diawali 08 atau +62 dan minimal 10 digit";
     }
 
     // Validate region: if any is selected, all must be selected
@@ -173,9 +184,10 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
     if (!form.nik || form.nik.length !== 16) return false;
     if (!form.name || form.name.trim().length < 3) return false;
     if (!form.dob) return false;
-    if (!form.phone) return false;
+    if (!form.phone || !isValidPhone(form.phone)) return false;
     if (!form.address || form.address.trim().length < 5) return false;
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return false;
+    if (form.emergencyPhone && !isValidPhone(form.emergencyPhone)) return false;
     if (validateRegion(regionValue)) return false;
     return true;
   })();
@@ -234,7 +246,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate>
           {errors.global && (
-            <div className="mx-6 mt-6 rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200">
+            <div role="alert" className="mx-6 mt-6 rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200">
               {errors.global}
             </div>
           )}
@@ -311,9 +323,9 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                   <input
                     id="patient-phone"
                     type="tel"
-                    placeholder="08xxxxxxxxxx"
+                    placeholder="08xxxxxxxxxx atau +62xxxxxxxxxx"
                     value={form.phone}
-                    onChange={(e) => { setForm({ ...form, phone: e.target.value.replace(/\D/g, "") }); setDirty(); }}
+                    onChange={(e) => { setForm({ ...form, phone: e.target.value.replace(/(?!^\+)[^\d]/g, "") }); setDirty(); }}
                     className={cn(inputClass, errors.phone && "border-red-400 focus:border-red-400 focus:ring-red-400/20")}
                   />
                 </FormField>
@@ -451,7 +463,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
             <button
               type="submit"
               id="patient-modal-submit"
-              disabled={isSubmitting || !isFormValid}
+              disabled={isSubmitting || !isFormValid || !editData}
               className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? (

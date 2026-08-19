@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X, AlertTriangle } from "lucide-react";
-import { apiClient } from "@/lib/api";
+import { useCancelVisit } from "@/services/visits";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -34,9 +34,9 @@ export function CancelVisitDialog({
   onCancelSuccess,
 }: CancelVisitDialogProps) {
   const [reason, setReason] = useState("");
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const cancelMutation = useCancelVisit();
   const focusTrapRef = useFocusTrap(isOpen, onClose);
 
   const isReasonValid = reason.trim().length >= MIN_REASON_LENGTH;
@@ -46,24 +46,26 @@ export function CancelVisitDialog({
 
     if (!isReasonValid) return;
 
-    setSubmitting(true);
     setError(null);
 
-    try {
-      await apiClient.cancelVisit(visit.id, reason.trim());
-      setReason("");
-      onClose();
-      onCancelSuccess();
-    } catch (err: unknown) {
-      const apiErr = err as { message?: string; errors?: Array<{ message: string }> };
-      const message =
-        apiErr?.errors?.[0]?.message ||
-        apiErr?.message ||
-        "Gagal membatalkan kunjungan. Silakan coba lagi.";
-      setError(message);
-    } finally {
-      setSubmitting(false);
-    }
+    cancelMutation.mutate(
+      { id: visit.id, reason: reason.trim() },
+      {
+        onSuccess: () => {
+          setReason("");
+          onClose();
+          onCancelSuccess();
+        },
+        onError: (err: unknown) => {
+          const apiErr = err as { message?: string; errors?: Array<{ message: string }> };
+          const message =
+            apiErr?.errors?.[0]?.message ||
+            apiErr?.message ||
+            "Gagal membatalkan kunjungan. Silakan coba lagi.";
+          setError(message);
+        },
+      },
+    );
   };
 
   if (!isOpen) return null;
@@ -101,8 +103,8 @@ export function CancelVisitDialog({
           <button
             type="button"
             onClick={onClose}
-            disabled={submitting}
-            className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+            disabled={cancelMutation.isPending}
+            className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             aria-label="Tutup dialog"
           >
             <X className="h-4 w-4" />
@@ -140,7 +142,7 @@ export function CancelVisitDialog({
               onChange={(e) => setReason(e.target.value)}
               placeholder="Masukkan alasan pembatalan (minimal 10 karakter)..."
               rows={3}
-              disabled={submitting}
+              disabled={cancelMutation.isPending}
               className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -160,17 +162,17 @@ export function CancelVisitDialog({
             <button
               type="button"
               onClick={onClose}
-              disabled={submitting}
+              disabled={cancelMutation.isPending}
               className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Batal
             </button>
             <button
               type="submit"
-              disabled={submitting || !isReasonValid}
+              disabled={cancelMutation.isPending || !isReasonValid}
               className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {submitting ? (
+              {cancelMutation.isPending ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   <span>Membatalkan...</span>

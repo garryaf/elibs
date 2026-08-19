@@ -471,7 +471,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {dailyArray.map((d, i) => (
-                  <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                  <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                     <td className="px-4 py-3 text-slate-900 dark:text-white">{String(d.date ?? "-")}</td>
                     <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">{String(d.orderCount ?? "-")}</td>
                     <td className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white">{formatRupiahLocal(Number(d.revenue ?? 0))}</td>
@@ -588,7 +588,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {testData.map((item, i) => (
-                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                       <td className="px-4 py-3">
                         <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                           {String(item.testCode ?? "-")}
@@ -666,7 +666,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {revenueData.map((item, i) => (
-                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                       <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
                         {String(item.name ?? item.testName ?? item.paymentMethod ?? item.category ?? item.label ?? `Item ${i + 1}`).replace(/_/g, " ")}
                       </td>
@@ -720,7 +720,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {tatData.map((item, i) => (
-                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                       <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
                         {String(item.name ?? item.category ?? item.testCategory ?? `Kategori ${i + 1}`)}
                       </td>
@@ -764,7 +764,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {namedData.map((item, i) => (
-                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                       <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{i + 1}</td>
                       <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
                         {String(item.name ?? item.testName ?? item.patientName ?? `Item ${i + 1}`)}
@@ -805,7 +805,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {dataArray.map((item, i) => (
-                  <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                  <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                     {columns.map((col) => (
                       <td key={col} className="px-4 py-3 text-slate-900 dark:text-white whitespace-nowrap">
                         {String(item[col] ?? "-")}

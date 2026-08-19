@@ -14,6 +14,7 @@ import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
 import { BpjsForm } from "@/components/orders/bpjs-form";
 import { ClaimsForm } from "@/components/orders/claims-form";
 import { SplitPaymentForm } from "@/components/orders/split-payment-form";
+import { PatientAvatar } from "@/components/patients/PatientAvatar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 
@@ -333,9 +334,7 @@ export default function OrderDetailPage() {
                 <User className="h-3.5 w-3.5" /> Informasi Pasien
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                  {order.patient.name.charAt(0)}
-                </div>
+                <PatientAvatar name={order.patient.name} size="md" className="h-10 w-10 text-sm" />
                 <div>
                   <div className="font-semibold text-slate-900 dark:text-white">{order.patient.name}</div>
                   <div className="font-mono text-xs text-brand">{order.patient.mrn}</div>

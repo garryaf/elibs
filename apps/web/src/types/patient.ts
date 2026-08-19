@@ -31,6 +31,20 @@ export interface Patient {
   status: PatientStatus;
   createdAt: string;
   lastVisit?: string;
+  // BP-05: Visit/Order state for table display
+  activeVisitStatus?: string | null;
+  activeOrderStatus?: string | null;
+  activeOrderNumber?: string | null;
+  // BP-09: Insurance data
+  insurances?: Array<{
+    id: string;
+    insuranceId: string;
+    memberNumber?: string;
+    priority: number;
+    type?: string;
+    isActive: boolean;
+    insurance?: { name: string; code: string };
+  }>;
 }
 
 export interface PatientFormData {

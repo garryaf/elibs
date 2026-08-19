@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { apiClient } from "@/lib/api";
 import { CancelVisitDialog } from "@/components/visits/CancelVisitDialog";
+import { RoleGuard } from "@/components/guards/RoleGuard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -142,7 +143,32 @@ const TIMELINE_STEPS: { status: VisitStatus; label: string }[] = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+// Roles authorized to cancel visits (must match backend controller)
+const CANCEL_VISIT_ROLES = ["KASIR", "ADMIN", "SUPER_ADMIN"];
+
+// Roles allowed to view visit detail (must match backend findById controller)
+const VIEW_VISIT_ROLES = [
+  "SUPER_ADMIN",
+  "OWNER",
+  "MANAGER",
+  "ADMIN",
+  "KASIR",
+  "CS",
+  "KLINIK_PARTNER",
+  "SAMPLING",
+  "ANALIS",
+  "DOKTER",
+];
+
 export default function VisitDetailPage() {
+  return (
+    <RoleGuard allowedRoles={VIEW_VISIT_ROLES}>
+      <VisitDetailPageContent />
+    </RoleGuard>
+  );
+}
+
+function VisitDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
@@ -239,7 +265,9 @@ export default function VisitDetailPage() {
     );
   }
 
-  const canCancel = visit.status === "REGISTERED" || visit.status === "IN_PROGRESS";
+  const canCancel =
+    CANCEL_VISIT_ROLES.includes(user?.role || "") &&
+    (visit.status === "REGISTERED" || visit.status === "IN_PROGRESS");
 
   return (
     <div className="space-y-6">

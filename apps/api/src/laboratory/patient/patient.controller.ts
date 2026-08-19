@@ -49,6 +49,13 @@ export class PatientController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
     @Query('status') status?: string,
+    @Query('gender') gender?: string,
+    @Query('ageMin') ageMin?: string,
+    @Query('ageMax') ageMax?: string,
+    @Query('registeredFrom') registeredFrom?: string,
+    @Query('registeredTo') registeredTo?: string,
+    @Query('lastVisitFrom') lastVisitFrom?: string,
+    @Query('lastVisitTo') lastVisitTo?: string,
   ) {
     return this.patientService.findAll({
       page: page ? parseInt(page, 10) : undefined,
@@ -57,8 +64,46 @@ export class PatientController {
       sortBy,
       sortOrder,
       status,
+      gender,
+      ageMin: ageMin ? parseInt(ageMin, 10) : undefined,
+      ageMax: ageMax ? parseInt(ageMax, 10) : undefined,
+      registeredFrom,
+      registeredTo,
+      lastVisitFrom,
+      lastVisitTo,
     });
   }
+
+  // ─── Duplicate Detection & Merge ───────────────────────────────────────────
+
+  @Get('duplicates')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Find potential duplicate patients' })
+  async findDuplicates(
+    @Query('search') search?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.patientService.findDuplicates({
+      search,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
+  }
+
+  @Post('merge')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Merge secondary patient into primary patient' })
+  async mergePatients(
+    @Body() dto: { primaryId: string; secondaryId: string },
+    @CurrentUser() user: any,
+    @Req() req: express.Request,
+  ) {
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.ip;
+    return this.patientService.mergePatients(dto.primaryId, dto.secondaryId, user.sub, ipAddress);
+  }
+
+  // ─── Patient by ID ──────────────────────────────────────────────────────────
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -114,6 +159,19 @@ export class PatientController {
   ) {
     const ipAddress = (req.headers['x-forwarded-for'] as string) || req.ip;
     return this.patientService.softDelete(id, user.sub, ipAddress);
+  }
+
+  @Post(':id/reactivate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Reactivate a previously deactivated patient' })
+  async reactivate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: any,
+    @Req() req: express.Request,
+  ) {
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.ip;
+    return this.patientService.reactivate(id, user.sub, ipAddress);
   }
 
   // ─── Patient Insurance Endpoints ───────────────────────────────────────────

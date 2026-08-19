@@ -264,12 +264,30 @@ class ApiClient {
     limit?: number;
     search?: string;
     status?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    gender?: string;
+    ageMin?: number;
+    ageMax?: number;
+    registeredFrom?: string;
+    registeredTo?: string;
+    lastVisitFrom?: string;
+    lastVisitTo?: string;
   }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
     const qs = new URLSearchParams();
     if (params?.page) qs.set("page", String(params.page));
     if (params?.limit) qs.set("limit", String(params.limit));
     if (params?.search) qs.set("search", params.search);
     if (params?.status) qs.set("status", params.status);
+    if (params?.sortBy) qs.set("sortBy", params.sortBy);
+    if (params?.sortOrder) qs.set("sortOrder", params.sortOrder);
+    if (params?.gender) qs.set("gender", params.gender);
+    if (params?.ageMin !== undefined) qs.set("ageMin", String(params.ageMin));
+    if (params?.ageMax !== undefined) qs.set("ageMax", String(params.ageMax));
+    if (params?.registeredFrom) qs.set("registeredFrom", params.registeredFrom);
+    if (params?.registeredTo) qs.set("registeredTo", params.registeredTo);
+    if (params?.lastVisitFrom) qs.set("lastVisitFrom", params.lastVisitFrom);
+    if (params?.lastVisitTo) qs.set("lastVisitTo", params.lastVisitTo);
     const query = qs.toString() ? `?${qs.toString()}` : "";
     return this.get(`/api/v1/patients${query}`);
   }
@@ -288,6 +306,39 @@ class ApiClient {
 
   async deletePatient(id: string): Promise<ApiResponse<unknown>> {
     return this.delete(`/api/v1/patients/${id}`);
+  }
+
+  /**
+   * Deactivate (soft-delete) a patient. Sets deletedAt on the backend.
+   * Patient data is preserved — this is NOT a hard delete.
+   * Alias for deletePatient for semantic clarity.
+   */
+  async deactivatePatient(id: string): Promise<ApiResponse<unknown>> {
+    return this.delete(`/api/v1/patients/${id}`);
+  }
+
+  /**
+   * Reactivate a previously deactivated patient. Clears deletedAt.
+   */
+  async reactivatePatient(id: string): Promise<ApiResponse<unknown>> {
+    return this.post(`/api/v1/patients/${id}/reactivate`, {});
+  }
+
+  /**
+   * Find potential duplicate patients by name/NIK similarity.
+   */
+  async findDuplicatePatients(search?: string): Promise<ApiResponse<unknown>> {
+    const qs = search ? `?search=${encodeURIComponent(search)}` : "";
+    return this.get(`/api/v1/patients/duplicates${qs}`);
+  }
+
+  /**
+   * Merge secondary patient into primary. All data from secondary is moved to primary.
+   * Secondary patient is deactivated after merge.
+   * Requires SUPER_ADMIN role.
+   */
+  async mergePatients(primaryId: string, secondaryId: string): Promise<ApiResponse<unknown>> {
+    return this.post(`/api/v1/patients/merge`, { primaryId, secondaryId });
   }
 
   // ─── Master Data ──────────────────────────────────────────────────────────
@@ -618,6 +669,8 @@ class ApiClient {
     endDate?: string;
     doctorId?: string;
     clinicId?: string;
+    sortBy?: string;
+    sortDir?: string;
   }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
     const qs = new URLSearchParams();
     if (params?.page) qs.set("page", String(params.page));
@@ -628,6 +681,8 @@ class ApiClient {
     if (params?.endDate) qs.set("endDate", params.endDate);
     if (params?.doctorId) qs.set("doctorId", params.doctorId);
     if (params?.clinicId) qs.set("clinicId", params.clinicId);
+    if (params?.sortBy) qs.set("sortBy", params.sortBy);
+    if (params?.sortDir) qs.set("sortDir", params.sortDir);
     const query = qs.toString() ? `?${qs.toString()}` : "";
     return this.get(`/api/v1/visits${query}`);
   }

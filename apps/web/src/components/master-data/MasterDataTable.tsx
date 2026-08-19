@@ -143,7 +143,7 @@ export function MasterDataTable({
                     <Fragment key={rowId}>
                       <tr
                         className={cn(
-                          "border-b border-slate-100 transition-colors hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-900/50",
+                          "border-b border-slate-100 transition-colors hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30",
                           rowIdx === data.length - 1 && !isExpanded && "border-b-0",
                           renderExpandedRow && "cursor-pointer",
                           isExpanded && "bg-slate-50/80 dark:bg-slate-900/50"

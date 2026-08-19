@@ -543,7 +543,7 @@ function ReferenceValuesContent() {
                   </tr>
                 ) : (
                   referenceValues.map((rv) => (
-                    <tr key={rv.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                    <tr key={rv.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                       <td className="px-4 py-3">
                         <span className={cn("inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold", genderBadgeClasses(rv.gender))}>
                           {genderLabel(rv.gender)}

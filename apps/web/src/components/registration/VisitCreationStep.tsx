@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Loader2, ArrowLeft, AlertTriangle } from "lucide-react";
 import { apiClient, parseApiErrors } from "@/lib/api";
 import { SearchableDropdown, type DropdownOption } from "@/components/visits/SearchableDropdown";
+import { PatientAvatar } from "@/components/patients/PatientAvatar";
 import type { PatientOption } from "@/types/visit";
 
 type PaymentMethod = "CASH" | "BPJS" | "INSURANCE" | "TRANSFER" | "EDC" | "INSURANCE_CASH_FALLBACK" | "CORPORATE_DEFERRED";
@@ -329,15 +330,7 @@ export function VisitCreationStep({
           Data Pasien
         </h2>
         <div className="flex items-center gap-4">
-          <div
-            className={`flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold ${
-              patient.gender === "MALE"
-                ? "bg-blue-100 text-blue-700"
-                : "bg-rose-100 text-rose-700"
-            }`}
-          >
-            {patient.name.charAt(0)}
-          </div>
+          <PatientAvatar name={patient.name} gender={patient.gender} size="lg" className="h-12 w-12 text-lg" />
           <div className="min-w-0 flex-1">
             <p className="text-lg font-semibold text-slate-900 dark:text-white">
               {patient.name}

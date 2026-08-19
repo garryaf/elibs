@@ -189,7 +189,7 @@ export default function NotificationsPage() {
                 </tr>
               ) : (
                 notifications.map((notif) => (
-                  <tr key={notif.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors">
+                  <tr key={notif.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30/20 transition-colors">
                     <td className="px-5 py-4 font-mono text-xs font-semibold text-brand">
                       {notif.order?.orderNumber || notif.orderNumber || "-"}
                     </td>

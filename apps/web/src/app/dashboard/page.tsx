@@ -1084,7 +1084,7 @@ export default function DashboardPage() {
                   return (
                     <tr
                       key={order.id}
-                      className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                      className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30"
                     >
                       <td className="px-6 py-3 font-mono text-xs text-slate-700 dark:text-slate-300">
                         {order.orderNumber}

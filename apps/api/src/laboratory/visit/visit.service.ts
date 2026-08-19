@@ -295,12 +295,37 @@ export class VisitService {
       insurance: { select: { id: true, name: true } },
     };
 
+    // Build orderBy from sortBy/sortDir params
+    let orderBy: any = { registrationDate: 'desc' }; // default sort
+    if (query.sortBy) {
+      const dir = query.sortDir || 'desc';
+      switch (query.sortBy) {
+        case 'visitNumber':
+          orderBy = { visitNumber: dir };
+          break;
+        case 'patientName':
+          orderBy = { patient: { name: dir } };
+          break;
+        case 'status':
+          orderBy = { status: dir };
+          break;
+        case 'paymentMethod':
+          orderBy = { paymentMethod: dir };
+          break;
+        case 'registrationDate':
+          orderBy = { registrationDate: dir };
+          break;
+        default:
+          orderBy = { registrationDate: 'desc' };
+      }
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.visit.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { registrationDate: 'desc' },
+        orderBy,
         include,
       }),
       this.prisma.visit.count({ where }),
@@ -564,28 +589,61 @@ export class VisitService {
       }
     }
 
-    // Transition to CANCELLED
+    // Transition to CANCELLED + cascade-cancel PENDING_PAYMENT orders in one transaction
     const cancelledAt = new Date();
-    const updatedVisit = await this.prisma.visit.update({
-      where: { id },
-      data: {
-        status: 'CANCELLED',
-        cancelledAt,
-        cancelReason: dto.reason,
-      },
-      include: VISIT_INCLUDE,
-    });
+    const [updatedVisit] = await this.prisma.$transaction([
+      this.prisma.visit.update({
+        where: { id },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt,
+          cancelReason: dto.reason,
+        },
+        include: VISIT_INCLUDE,
+      }),
+      // Cascade: cancel all PENDING_PAYMENT orders under this visit
+      ...(orders.length > 0
+        ? [
+            this.prisma.order.updateMany({
+              where: {
+                visitId: id,
+                status: 'PENDING_PAYMENT',
+              },
+              data: {
+                status: 'CANCELLED',
+                cancelledAt,
+                cancelReason: `Otomatis dibatalkan: kunjungan induk dibatalkan (${dto.reason})`,
+              },
+            }),
+          ]
+        : []),
+    ]);
 
-    // Audit log
+    // Audit log — visit cancellation
     await this.auditService.log(
       userId,
       'CANCEL',
       'Visit',
       visit.id,
       null,
-      { cancelReason: dto.reason, cancelledAt },
+      { cancelReason: dto.reason, cancelledAt, cascadedOrderCount: orders.length },
       ipAddress,
     );
+
+    // Audit log — cascaded order cancellations
+    if (orders.length > 0) {
+      for (const order of orders) {
+        await this.auditService.log(
+          userId,
+          'CANCEL',
+          'Order',
+          order.id,
+          { status: 'PENDING_PAYMENT' },
+          { status: 'CANCELLED', cancelReason: `Otomatis dibatalkan: kunjungan induk dibatalkan` },
+          ipAddress,
+        );
+      }
+    }
 
     return updatedVisit;
   }
