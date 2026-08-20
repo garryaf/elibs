@@ -285,15 +285,87 @@ export class OrderService {
     };
   }
 
+  async getStats(clinicId?: string) {
+    const where: any = {
+      patient: { deletedAt: null },
+    };
+
+    if (clinicId) {
+      where.clinicId = clinicId;
+    }
+
+    // Get today's date boundaries in UTC
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    // Statuses that indicate payment has been received
+    const paidStatuses: OrderStatus[] = [
+      OrderStatus.PAID,
+      OrderStatus.SAMPLE_COLLECTED,
+      OrderStatus.IN_ANALYSIS,
+      OrderStatus.VERIFIED,
+      OrderStatus.APPROVED,
+      OrderStatus.NOTIFIED,
+    ];
+
+    const [
+      totalOrders,
+      pendingPayment,
+      completed,
+      todayPaidOrders,
+    ] = await Promise.all([
+      // Total orders (excluding cancelled, soft-deleted patients)
+      this.prisma.order.count({ where }),
+      // Pending payment
+      this.prisma.order.count({
+        where: { ...where, status: OrderStatus.PENDING_PAYMENT },
+      }),
+      // Completed (approved + notified)
+      this.prisma.order.count({
+        where: { ...where, status: { in: [OrderStatus.APPROVED, OrderStatus.NOTIFIED] } },
+      }),
+      // Today's revenue: orders paid today
+      this.prisma.order.findMany({
+        where: {
+          ...where,
+          status: { in: paidStatuses },
+          paidAt: { gte: todayStart, lte: todayEnd },
+        },
+        select: { totalAmount: true },
+      }),
+    ]);
+
+    const todayRevenue = todayPaidOrders.reduce(
+      (sum, o) => sum + (o.totalAmount ? Number(o.totalAmount) : 0),
+      0,
+    );
+
+    return {
+      totalOrders,
+      pendingPayment,
+      completed,
+      todayRevenue,
+    };
+  }
+
   async findById(id: string, clinicId?: string) {
     const order = await this.prisma.order.findUnique({
       where: { id },
       include: {
         patient: true,
+        doctor: { select: { id: true, name: true, specialization: true } },
         orderDetails: {
           include: { test: true },
         },
-        visit: { select: { visitNumber: true, status: true } },
+        visit: {
+          select: {
+            visitNumber: true,
+            status: true,
+            doctor: { select: { id: true, name: true } },
+          },
+        },
         orderInsurances: true,
       },
     });
@@ -311,10 +383,22 @@ export class OrderService {
       (oi) => oi.coverageType === 'PRIMARY',
     );
 
+    // Resolve approvedBy UUID to a name (lookup in users table)
+    let approvedByName: string | null = null;
+    if (order.approvedBy) {
+      const approver = await this.prisma.user.findUnique({
+        where: { id: order.approvedBy },
+        select: { name: true },
+      });
+      approvedByName = approver?.name ?? null;
+    }
+
     return {
       ...order,
       // Override insuranceId: junction PRIMARY takes precedence, fall back to legacy FK
       insuranceId: primaryInsurance?.insuranceId ?? order.insuranceId ?? null,
+      // Resolved approver name for report display
+      approvedByName,
     };
   }
 

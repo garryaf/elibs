@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ExternalLink } from "lucide-react";
+import { ChevronUp, ChevronDown, ExternalLink } from "lucide-react";
 import type { Order } from "@/types/order";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 import { cn } from "@/lib/utils";
@@ -23,8 +22,6 @@ interface OrderTableProps {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const PAGE_SIZE = 8;
 
 const ORDER_COLUMNS: ColumnDef[] = [
   { key: "order_number", label: "No. Order",        required: true },
@@ -60,10 +57,6 @@ function SortIcon({ field, activeField, dir }: { field: SortField; activeField?:
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function OrderTable({ orders, sortField, sortDir, onSort }: OrderTableProps) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
-  const paginated = orders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
   // ─── Column visibility ────────────────────────────────────────────────────
   const [colVisibility, setColVisibility] = useColumnVisibility("order-table-columns", ORDER_COLUMNS);
 
@@ -168,19 +161,19 @@ export function OrderTable({ orders, sortField, sortDir, onSort }: OrderTablePro
             </tr>
           </thead>
           <tbody>
-            {paginated.length === 0 ? (
+            {orders.length === 0 ? (
               <tr>
                 <td colSpan={visibleColCount} className="py-16 text-center text-sm text-slate-400">
                   Tidak ada order yang ditemukan.
                 </td>
               </tr>
             ) : (
-              paginated.map((order, idx) => (
+              orders.map((order, idx) => (
                 <tr
                   key={order.id}
                   className={cn(
                     "border-b border-slate-100 transition-colors hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30",
-                    idx === paginated.length - 1 && "border-b-0"
+                    idx === orders.length - 1 && "border-b-0"
                   )}
                 >
                   {/* Order Number — always visible */}
@@ -225,11 +218,6 @@ export function OrderTable({ orders, sortField, sortDir, onSort }: OrderTablePro
                       <div className="font-semibold text-slate-900 dark:text-white">
                         {formatRupiah(Number(order.totalAmount))}
                       </div>
-                      {order.invoice?.discountAmount ? (
-                        <div className="text-xs text-brand">
-                          -{formatRupiah(Number(order.invoice.discountAmount))}
-                        </div>
-                      ) : null}
                     </td>
                   )}
 
@@ -264,65 +252,16 @@ export function OrderTable({ orders, sortField, sortDir, onSort }: OrderTablePro
         </table>
       </div>
 
-      {/* Pagination + Column Toggle */}
-      <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3.5 dark:border-slate-800 flex-wrap gap-3">
-        {totalPages > 1 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Menampilkan{" "}
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
-              {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, orders.length)}
-            </span>{" "}
-            dari <span className="font-semibold text-slate-700 dark:text-slate-300">{orders.length}</span> order
-          </p>
-        ) : (
-          <span />
-        )}
-
-        <div className="flex items-center gap-3 ml-auto">
-          {/* Column Toggle */}
-          <ColumnToggle
-            columns={ORDER_COLUMNS}
-            visibility={colVisibility}
-            onChange={setColVisibility}
-          />
-
-          {/* Page navigation — only shown when more than 1 page */}
-          {totalPages > 1 && (
-            <div className="flex items-center gap-2">
-              <button
-                id="order-table-prev"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              {Array.from({ length: totalPages }).map((_, i) => (
-                <button
-                  key={i}
-                  id={`order-table-page-${i + 1}`}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-all",
-                    currentPage === i + 1
-                      ? "bg-brand text-white shadow-sm"
-                      : "border border-border bg-card text-muted-foreground hover:bg-brand/10"
-                  )}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button
-                id="order-table-next"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-        </div>
+      {/* Footer with Column Toggle */}
+      <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3.5 dark:border-slate-800">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{orders.length}</span> order
+        </p>
+        <ColumnToggle
+          columns={ORDER_COLUMNS}
+          visibility={colVisibility}
+          onChange={setColVisibility}
+        />
       </div>
     </div>
   );

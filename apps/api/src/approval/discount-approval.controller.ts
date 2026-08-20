@@ -103,6 +103,51 @@ export class DiscountApprovalController {
   }
 
   /**
+   * GET /api/v1/approvals/discount/order/:orderId
+   * Get discount approval status for a specific order.
+   * Returns the most recent approval request (any status) for this order.
+   */
+  @Get('order/:orderId')
+  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.MANAGER, Role.OWNER, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get discount approval status for an order' })
+  async getDiscountApprovalForOrder(
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+  ) {
+    const request = await this.prisma.approvalRequest.findFirst({
+      where: {
+        requestType: ApprovalType.DISCOUNT,
+        payload: {
+          path: ['orderId'],
+          equals: orderId,
+        },
+      },
+      include: {
+        steps: { orderBy: { actedAt: 'asc' } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!request) {
+      return { exists: false, status: null, data: null };
+    }
+
+    const payload = request.payload as any;
+    return {
+      exists: true,
+      status: request.status,
+      data: {
+        id: request.id,
+        discountPercent: payload.discountPercent,
+        discountAmount: payload.discountAmount,
+        discountReason: payload.discountReason,
+        createdAt: request.createdAt,
+        resolvedAt: request.resolvedAt,
+        steps: request.steps,
+      },
+    };
+  }
+
+  /**
    * POST /api/v1/approvals/discount/:id/decide
    * Approve or reject a pending discount approval request with comments.
    *

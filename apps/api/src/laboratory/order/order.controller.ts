@@ -89,6 +89,15 @@ export class OrderController {
     return this.insuranceRejectionService.checkOverduePayments();
   }
 
+  @Get('stats')
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('orders:read')
+  @ApiOperation({ summary: 'Get aggregated order statistics' })
+  async getStats(@Req() req: express.Request) {
+    const clinicId = (req as any).dataScope?.clinicId;
+    return this.orderService.getStats(clinicId);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @RequirePermission('orders:read')

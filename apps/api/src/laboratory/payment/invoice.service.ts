@@ -48,7 +48,11 @@ export interface InvoiceDocument {
 
 @Injectable()
 export class InvoiceService {
-  /** Indonesian PPN tax rate (11%) */
+  /**
+   * Indonesian PPN tax rate (11%).
+   * Pricing is TAX-INCLUSIVE: the order totalAmount already includes tax.
+   * Invoice displays the tax component extracted from the inclusive price.
+   */
   private readonly TAX_RATE = 0.11;
 
   /** Default payment terms note */
@@ -60,7 +64,12 @@ export class InvoiceService {
   /**
    * Generate a structured invoice document for an order.
    * Produces invoiceNumber (INV-YYYYMMDD-XXXX), header, line items,
-   * tax calculation (11% PPN), and payment terms.
+   * and tax breakdown (tax-inclusive: total = order.totalAmount).
+   *
+   * Tax-inclusive formula:
+   *   total = order.totalAmount (what customer pays)
+   *   taxableAmount = total / (1 + taxRate)
+   *   taxAmount = total - taxableAmount
    */
   async generateInvoice(orderId: string): Promise<InvoiceDocument> {
     const order = await this.prisma.order.findUnique({
@@ -87,9 +96,12 @@ export class InvoiceService {
     const discountAmount = order.discountAmount
       ? Number(order.discountAmount)
       : 0;
-    const taxableAmount = subtotal - discountAmount;
-    const taxAmount = Math.round(taxableAmount * this.TAX_RATE);
-    const total = taxableAmount + taxAmount;
+
+    // Tax-inclusive approach: total is what the customer actually pays
+    // The tax is embedded within the price, not added on top
+    const total = subtotal - discountAmount;
+    const taxableAmount = Math.round(total / (1 + this.TAX_RATE));
+    const taxAmount = total - taxableAmount;
 
     // Due date: 7 days from order creation (or invoice date for paid orders)
     const dueDate = new Date(order.createdAt);

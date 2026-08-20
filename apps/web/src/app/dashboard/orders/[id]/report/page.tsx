@@ -39,10 +39,21 @@ interface OrderApi {
     mrn: string;
     phone?: string;
   };
+  doctor?: {
+    id: string;
+    name: string;
+    specialization?: string;
+  } | null;
+  visit?: {
+    visitNumber: string;
+    status: string;
+    doctor?: { id: string; name: string } | null;
+  } | null;
   orderDetails: OrderDetailApi[];
   createdAt: string;
   clinicalInterpretation?: string;
   approvedBy?: string;
+  approvedByName?: string | null;
 }
 
 interface SendWhatsAppResponse {
@@ -258,7 +269,7 @@ export default function ReportPreviewPage() {
             <div className="flex"><span className="w-24 text-slate-500">Nama</span><span className="font-semibold text-slate-900">: {order.patient.name}</span></div>
             <div className="flex"><span className="w-24 text-slate-500">MRN</span><span className="font-mono font-semibold text-slate-900">: {order.patient.mrn}</span></div>
             <div className="flex"><span className="w-24 text-slate-500">Tgl Order</span><span className="text-slate-900">: {new Date(order.createdAt).toLocaleDateString("id-ID")}</span></div>
-            <div className="flex"><span className="w-24 text-slate-500">Dokter</span><span className="text-slate-900">: {order.approvedBy || "dr. Mandiri"}</span></div>
+            <div className="flex"><span className="w-24 text-slate-500">Dokter</span><span className="text-slate-900">: {order.doctor?.name || order.visit?.doctor?.name || "—"}</span></div>
           </div>
 
           {/* Hasil Tabel */}
@@ -304,7 +315,7 @@ export default function ReportPreviewPage() {
             <div className="text-center">
               <p className="text-sm text-slate-500">Jakarta, {new Date().toLocaleDateString("id-ID")}</p>
               <p className="mb-16 text-sm font-semibold text-slate-800">Penanggung Jawab</p>
-              <p className="text-sm font-bold text-slate-900 underline decoration-slate-300 underline-offset-4">{order.approvedBy || "_______________________"}</p>
+              <p className="text-sm font-bold text-slate-900 underline decoration-slate-300 underline-offset-4">{order.approvedByName || order.doctor?.name || "_______________________"}</p>
             </div>
           </div>
           

@@ -383,14 +383,22 @@ class ApiClient {
     limit?: number;
     status?: string;
     search?: string;
+    startDate?: string;
+    endDate?: string;
   }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
     const qs = new URLSearchParams();
     if (params?.page) qs.set("page", String(params.page));
     if (params?.limit) qs.set("limit", String(params.limit));
     if (params?.status && params.status !== "ALL") qs.set("status", params.status);
     if (params?.search) qs.set("search", params.search);
+    if (params?.startDate) qs.set("startDate", params.startDate);
+    if (params?.endDate) qs.set("endDate", params.endDate);
     const query = qs.toString() ? `?${qs.toString()}` : "";
     return this.get(`/api/v1/orders${query}`);
+  }
+
+  async getOrderStats(): Promise<ApiResponse<unknown>> {
+    return this.get("/api/v1/orders/stats");
   }
 
   async getOrder(id: string): Promise<ApiResponse<unknown>> {
@@ -445,6 +453,25 @@ class ApiClient {
 
   async getInvoice(id: string): Promise<ApiResponse<unknown>> {
     return this.get(`/api/v1/orders/${id}/invoice`);
+  }
+
+  async getPaymentHistory(id: string): Promise<ApiResponse<unknown>> {
+    return this.get(`/api/v1/orders/${id}/payments`);
+  }
+
+  // ─── Discount Approvals ────────────────────────────────────────────────────
+
+  async requestDiscountApproval(data: {
+    orderId: string;
+    discountPercent: number;
+    discountAmount: number;
+    discountReason: string;
+  }): Promise<ApiResponse<unknown>> {
+    return this.post("/api/v1/approvals/discount", data);
+  }
+
+  async getDiscountApprovalForOrder(orderId: string): Promise<ApiResponse<unknown>> {
+    return this.get(`/api/v1/approvals/discount/order/${orderId}`);
   }
 
   // ─── Lab Workflow ─────────────────────────────────────────────────────────

@@ -14,6 +14,12 @@ COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 
+# Configure npm for better network reliability in Docker
+RUN npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set fetch-timeout 300000
+
 # Install dependencies with persistent npm cache mount
 # This avoids re-downloading packages on every build
 # Ensure workspace node_modules dir exists (may be empty if fully hoisted)
@@ -33,8 +39,11 @@ COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY apps/api/ ./apps/api/
 COPY package.json package-lock.json ./
 
+# Ensure hoisted binaries are in PATH for workspace scripts
+ENV PATH="/app/node_modules/.bin:$PATH"
+
 # Generate Prisma Client and stage to deterministic location
-RUN cd apps/api && npx prisma generate && \
+RUN cd apps/api && prisma generate && \
     mkdir -p /prisma-out/.prisma /prisma-out/@prisma && \
     if [ -d /app/node_modules/.prisma ]; then cp -r /app/node_modules/.prisma/client /prisma-out/.prisma/client; \
     elif [ -d /app/apps/api/node_modules/.prisma ]; then cp -r /app/apps/api/node_modules/.prisma/client /prisma-out/.prisma/client; fi && \
@@ -42,10 +51,10 @@ RUN cd apps/api && npx prisma generate && \
     elif [ -d /app/apps/api/node_modules/@prisma/client ]; then cp -r /app/apps/api/node_modules/@prisma/client /prisma-out/@prisma/client; fi
 
 # Build NestJS
-RUN cd apps/api && npx nest build
+RUN cd apps/api && nest build
 
 # Compile seed scripts for production use
-RUN cd apps/api/prisma/seeds && /app/node_modules/.bin/tsc --project ./tsconfig.seed.json
+RUN cd apps/api/prisma/seeds && tsc --project ./tsconfig.seed.json
 
 # --- Stage 3: Production ---
 FROM node:20-alpine AS production
@@ -58,13 +67,14 @@ RUN apk add --no-cache openssl libc6-compat
 RUN addgroup -g 1001 -S elis && \
     adduser -S elis -u 1001 -G elis
 
-# Copy package files for production install
+# Copy package files
 COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 
-# Install production-only dependencies with cache mount
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --workspace=api --include-workspace-root --omit=dev
+# Copy node_modules from deps stage (no network needed) and prune devDependencies
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+RUN npm prune --workspace=api --include-workspace-root --omit=dev
 
 # Copy built application
 COPY --from=builder /app/apps/api/dist ./apps/api/dist

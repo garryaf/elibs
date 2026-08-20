@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useOrderBpjs, useCreateBpjsDetail, useUpdateBpjsDetail, useVerifyBpjs } from "@/services/orders";
 import { Loader2, CheckCircle2, AlertCircle, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,19 +32,21 @@ export function BpjsForm({ orderId }: { orderId: string }) {
   const [formError, setFormError] = useState<string | null>(null);
 
   // Sync formData with fetched BPJS detail if available and not editing
-  if (bpjsData && !isEditing && formData.sepNumber !== bpjsData.sepNumber) {
-    setFormData({
-      sepNumber: bpjsData.sepNumber || "",
-      referringFacilityCode: bpjsData.referringFacilityCode || "",
-      referringFacilityName: bpjsData.referringFacilityName || "",
-      classLevel: bpjsData.classLevel || "1",
-      diagnosisCode: bpjsData.diagnosisCode || "",
-      diagnosisName: bpjsData.diagnosisName || "",
-      procedureCode: bpjsData.procedureCode || "",
-      guaranteeLetterNo: bpjsData.guaranteeLetterNo || "",
-      notes: bpjsData.notes || "",
-    });
-  }
+  useEffect(() => {
+    if (bpjsData && !isEditing) {
+      setFormData({
+        sepNumber: bpjsData.sepNumber || "",
+        referringFacilityCode: bpjsData.referringFacilityCode || "",
+        referringFacilityName: bpjsData.referringFacilityName || "",
+        classLevel: bpjsData.classLevel || "1",
+        diagnosisCode: bpjsData.diagnosisCode || "",
+        diagnosisName: bpjsData.diagnosisName || "",
+        procedureCode: bpjsData.procedureCode || "",
+        guaranteeLetterNo: bpjsData.guaranteeLetterNo || "",
+        notes: bpjsData.notes || "",
+      });
+    }
+  }, [bpjsData, isEditing]);
 
   const handleSave = async () => {
     setFormError(null);

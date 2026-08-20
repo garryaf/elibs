@@ -14,6 +14,12 @@ COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 
+# Configure npm for better network reliability in Docker
+RUN npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set fetch-timeout 300000
+
 # Install dependencies with persistent npm cache mount
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --workspace=web --include-workspace-root && \
@@ -37,8 +43,11 @@ ARG API_URL=http://api:3001
 ENV API_URL=${API_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Ensure hoisted binaries are in PATH for workspace scripts
+ENV PATH="/app/node_modules/.bin:$PATH"
+
 # Build Next.js with standalone output for smaller image
-RUN cd apps/web && npm run build
+RUN npm run build --workspace=web
 
 # --- Stage 3: Production ---
 FROM node:20-alpine AS production

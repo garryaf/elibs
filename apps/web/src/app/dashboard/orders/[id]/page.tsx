@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, Printer, User,
   CreditCard, Banknote, Building2, ReceiptText,
-  FlaskConical, Clock, Loader2, Split, Landmark, ShieldCheck
+  FlaskConical, Clock, Loader2, Split, Landmark, ShieldCheck, AlertTriangle
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { formatRupiah } from "@/lib/format";
@@ -46,6 +46,8 @@ interface OrderApi {
   paidAt?: string;
   barcode?: string;
   barcodeImage?: string;
+  depositAmount?: number;
+  discountAmount?: number;
   patient: {
     name: string;
     mrn: string;
@@ -104,6 +106,15 @@ function Numpad({ onPress }: { onPress: (v: string) => void }) {
    SUCCESS MODAL
 ──────────────────────────────────────────────────────────────── */
 function SuccessModal({ order, onClose }: { order: OrderApi; onClose: () => void }) {
+  const handlePrint = () => {
+    // Open receipt in new window for printing
+    const printWindow = window.open(`/dashboard/orders/${order.id}/report?print=1`, "_blank");
+    if (!printWindow) {
+      // Fallback: navigate to receipt page
+      window.location.href = `/dashboard/orders/${order.id}/report`;
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
@@ -124,6 +135,7 @@ function SuccessModal({ order, onClose }: { order: OrderApi; onClose: () => void
         <div className="mt-5 flex gap-3">
           <button
             id="payment-success-print"
+            onClick={handlePrint}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
           >
             <Printer className="h-4 w-4" /> Cetak
@@ -135,6 +147,220 @@ function SuccessModal({ order, onClose }: { order: OrderApi; onClose: () => void
           >
             Selesai
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ORDER STATUS TIMELINE
+──────────────────────────────────────────────────────────────── */
+const ORDER_WORKFLOW_STEPS = [
+  { status: "PENDING_PAYMENT", label: "Pembayaran", icon: CreditCard },
+  { status: "PAID", label: "Lunas", icon: CheckCircle2 },
+  { status: "SAMPLE_COLLECTED", label: "Sampel", icon: FlaskConical },
+  { status: "IN_ANALYSIS", label: "Analisa", icon: FlaskConical },
+  { status: "VERIFIED", label: "Verifikasi", icon: CheckCircle2 },
+  { status: "APPROVED", label: "Selesai", icon: CheckCircle2 },
+] as const;
+
+function OrderStatusTimeline({ currentStatus }: { currentStatus: string }) {
+  // Map status to step index (how far along the workflow)
+  const STATUS_ORDER: Record<string, number> = {
+    PENDING_PAYMENT: 0,
+    PAYMENT_OVERDUE: 0,
+    DEPOSIT_RECEIVED: 0,
+    PAID: 1,
+    SAMPLE_COLLECTED: 2,
+    IN_ANALYSIS: 3,
+    VERIFIED: 4,
+    APPROVED: 5,
+    NOTIFIED: 5,
+    CANCELLED: -1,
+  };
+
+  const currentIndex = STATUS_ORDER[currentStatus] ?? -1;
+
+  if (currentStatus === "CANCELLED") {
+    return null; // Don't show timeline for cancelled orders
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex items-center justify-between overflow-x-auto gap-0">
+        {ORDER_WORKFLOW_STEPS.map((step, idx) => {
+          const Icon = step.icon;
+          const isCompleted = idx <= currentIndex;
+          const isCurrent = idx === currentIndex;
+          const isLast = idx === ORDER_WORKFLOW_STEPS.length - 1;
+
+          return (
+            <div key={step.status} className="flex flex-1 items-center min-w-0">
+              <div className="flex flex-col items-center gap-1">
+                <div
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all",
+                    isCurrent
+                      ? "border-brand bg-brand text-white shadow-sm shadow-brand/30"
+                      : isCompleted
+                        ? "border-brand/50 bg-brand/10 text-brand dark:border-brand/40 dark:bg-brand/20"
+                        : "border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-600"
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                </div>
+                <span
+                  className={cn(
+                    "text-[10px] font-medium whitespace-nowrap",
+                    isCurrent
+                      ? "text-brand font-semibold"
+                      : isCompleted
+                        ? "text-brand/70 dark:text-brand/60"
+                        : "text-slate-400 dark:text-slate-600"
+                  )}
+                >
+                  {step.label}
+                </span>
+              </div>
+              {!isLast && (
+                <div
+                  className={cn(
+                    "h-0.5 flex-1 mx-1.5 rounded-full transition-all",
+                    idx < currentIndex
+                      ? "bg-brand/40 dark:bg-brand/30"
+                      : "bg-slate-200 dark:bg-slate-700"
+                  )}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   PAYMENT HISTORY TIMELINE
+──────────────────────────────────────────────────────────────── */
+interface PaymentComponentItem {
+  id: string;
+  paymentMethod: string;
+  amount: number;
+  reference?: string | null;
+  notes?: string | null;
+  paidAt: string;
+  insurance?: { name: string; code: string } | null;
+}
+
+function PaymentHistory({ orderId }: { orderId: string }) {
+  const [components, setComponents] = useState<PaymentComponentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    apiClient.getPaymentHistory(orderId).then((res) => {
+      const raw = res as unknown as Record<string, unknown>;
+      let data: unknown[] = [];
+      if (Array.isArray(raw)) {
+        data = raw;
+      } else if (raw && typeof raw === "object" && "data" in raw) {
+        const inner = raw.data;
+        if (Array.isArray(inner)) data = inner;
+        else if (inner && typeof inner === "object" && "data" in (inner as object)) {
+          const nested = (inner as Record<string, unknown>).data;
+          if (Array.isArray(nested)) data = nested;
+        }
+      }
+      setComponents(data as PaymentComponentItem[]);
+    }).catch(() => {
+      setComponents([]);
+    }).finally(() => setLoading(false));
+  }, [orderId]);
+
+  if (loading) {
+    return (
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950">
+        <div className="h-4 w-40 animate-pulse rounded bg-muted mb-3" />
+        <div className="space-y-3">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="flex gap-3">
+              <div className="h-3 w-3 rounded-full animate-pulse bg-muted mt-1" />
+              <div className="flex-1 space-y-1">
+                <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-48 animate-pulse rounded bg-muted" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (components.length === 0) return null;
+
+  const METHOD_LABELS: Record<string, string> = {
+    CASH: "Tunai",
+    TRANSFER: "Transfer Bank",
+    EDC: "EDC / Kartu",
+    INSURANCE: "Asuransi",
+    BPJS: "BPJS",
+    INSURANCE_CASH_FALLBACK: "Tunai (Fallback Asuransi)",
+    CORPORATE_DEFERRED: "Korporat (Tertunda)",
+  };
+
+  return (
+    <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 dark:border-slate-800">
+        <ReceiptText className="h-4 w-4 text-slate-400" />
+        <span className="text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+          Riwayat Pembayaran ({components.length} komponen)
+        </span>
+      </div>
+      <div className="p-5">
+        <div className="relative space-y-4 pl-6 before:absolute before:left-[7px] before:top-2 before:h-[calc(100%-16px)] before:w-px before:bg-slate-200 dark:before:bg-slate-700">
+          {components.map((comp, idx) => (
+            <div key={comp.id} className="relative">
+              {/* Timeline dot */}
+              <div className={cn(
+                "absolute -left-6 top-1 h-3.5 w-3.5 rounded-full border-2",
+                idx === 0
+                  ? "border-brand bg-brand/20"
+                  : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900"
+              )} />
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    {METHOD_LABELS[comp.paymentMethod] || comp.paymentMethod}
+                  </span>
+                  <span className="text-sm font-bold text-brand">
+                    {formatRupiah(Number(comp.amount))}
+                  </span>
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                  <span>
+                    {new Date(comp.paidAt).toLocaleString("id-ID", {
+                      day: "2-digit", month: "short", year: "numeric",
+                      hour: "2-digit", minute: "2-digit",
+                    })}
+                  </span>
+                  {comp.reference && (
+                    <span className="font-mono text-slate-600 dark:text-slate-300">
+                      Ref: {comp.reference}
+                    </span>
+                  )}
+                  {comp.insurance && (
+                    <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                      {comp.insurance.name}
+                    </span>
+                  )}
+                </div>
+                {comp.notes && (
+                  <p className="mt-1.5 text-xs italic text-slate-400 dark:text-slate-500">{comp.notes}</p>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -165,6 +391,17 @@ export default function OrderDetailPage() {
   const [payMode, setPayMode] = useState<"single" | "split" | "deposit">("single");
   const [depositInput, setDepositInput] = useState("");
   const [depositNotes, setDepositNotes] = useState("");
+  const [showConfirmPay, setShowConfirmPay] = useState(false);
+
+  // Discount approval state
+  const [discountApproval, setDiscountApproval] = useState<{
+    exists: boolean;
+    status: string | null;
+    data: { discountAmount?: number; discountReason?: string } | null;
+  } | null>(null);
+  const [discountReason, setDiscountReason] = useState("");
+  const [isRequestingDiscount, setIsRequestingDiscount] = useState(false);
+  const [discountApprovalError, setDiscountApprovalError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -190,6 +427,29 @@ export default function OrderDetailPage() {
         setError(err?.message || "Gagal memuat data order");
       })
       .finally(() => setLoading(false));
+  }, [id]);
+
+  // Load discount approval status for this order
+  useEffect(() => {
+    if (!id) return;
+    apiClient.getDiscountApprovalForOrder(id).then((res) => {
+      const raw = res as unknown as Record<string, unknown>;
+      let data: Record<string, unknown> | null = null;
+      if (raw && typeof raw === "object" && "exists" in raw) {
+        data = raw;
+      } else if (raw && typeof raw === "object" && "data" in raw && raw.data && typeof raw.data === "object") {
+        data = raw.data as Record<string, unknown>;
+      }
+      if (data) {
+        setDiscountApproval({
+          exists: !!data.exists,
+          status: (data.status as string) || null,
+          data: (data.data as { discountAmount?: number; discountReason?: string }) || null,
+        });
+      }
+    }).catch(() => {
+      // Silently fail — approval status not critical for page load
+    });
   }, [id]);
 
   if (loading) {
@@ -322,6 +582,9 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
+        {/* Order Status Timeline */}
+        <OrderStatusTimeline currentStatus={order.status} />
+
         {/* POS Layout */}
         <div className="grid gap-5 lg:grid-cols-5">
 
@@ -366,6 +629,35 @@ export default function OrderDetailPage() {
               />
             )}
 
+            {/* Deposit Info Banner — shown when deposit has been received */}
+            {order.status === "DEPOSIT_RECEIVED" && order.depositAmount && (
+              <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-5 dark:border-cyan-800 dark:bg-cyan-900/20">
+                <div className="flex items-center gap-2 text-cyan-700 dark:text-cyan-300">
+                  <Banknote className="h-5 w-5" />
+                  <span className="font-semibold">Deposit Telah Diterima</span>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <p className="text-xs text-cyan-600/70 dark:text-cyan-400/70">Deposit Dibayar</p>
+                    <p className="font-bold text-cyan-700 dark:text-cyan-300">{formatRupiah(Number(order.depositAmount))}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-cyan-600/70 dark:text-cyan-400/70">Total Tagihan</p>
+                    <p className="font-bold text-cyan-700 dark:text-cyan-300">{formatRupiah(Number(order.totalAmount))}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-cyan-600/70 dark:text-cyan-400/70">Sisa Tagihan</p>
+                    <p className="font-bold text-red-600 dark:text-red-400">
+                      {formatRupiah(Math.max(0, Number(order.totalAmount) - Number(order.depositAmount)))}
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-cyan-600 dark:text-cyan-400">
+                  Lakukan pelunasan untuk melanjutkan proses pemeriksaan laboratorium.
+                </p>
+              </div>
+            )}
+
             {/* Test items */}
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 mt-4">
               <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 dark:border-slate-800">
@@ -403,19 +695,171 @@ export default function OrderDetailPage() {
                   <span className="text-slate-600 dark:text-slate-400">Diskon</span>
                   <div className="flex items-center gap-2">
                     {!alreadyPaid ? (
-                      <input
-                        id="order-discount-input"
-                        type="text"
-                        value={discount}
-                        onChange={(e) => setDiscount(e.target.value.replace(/\D/g, ""))}
-                        placeholder="0"
-                        className="h-7 w-28 rounded-lg border border-slate-200 bg-white px-2 text-right text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
-                      />
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          id="order-discount-input"
+                          type="text"
+                          value={discount}
+                          onChange={(e) => setDiscount(e.target.value.replace(/\D/g, ""))}
+                          placeholder="0"
+                          disabled={discountApproval?.exists && discountApproval.status === "APPROVED"}
+                          className="h-7 w-28 rounded-lg border border-slate-200 bg-white px-2 text-right text-sm outline-none focus:border-brand disabled:bg-slate-50 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+                        />
+                        {discountAmount > 0 && !discountApproval?.exists && (
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400" title="Diskon memerlukan persetujuan">
+                            *perlu approval
+                          </span>
+                        )}
+                        {discountApproval?.exists && discountApproval.status === "APPROVED" && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-green-600 dark:text-green-400">
+                            <CheckCircle2 className="h-3 w-3" /> Disetujui
+                          </span>
+                        )}
+                        {discountApproval?.exists && discountApproval.status === "PENDING" && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                            <Clock className="h-3 w-3" /> Menunggu
+                          </span>
+                        )}
+                        {discountApproval?.exists && discountApproval.status === "REJECTED" && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-600 dark:text-red-400">
+                            <AlertTriangle className="h-3 w-3" /> Ditolak
+                          </span>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-brand">-{formatRupiah(discountAmount)}</span>
                     )}
                   </div>
                 </div>
+                {/* Discount approval workflow */}
+                {!alreadyPaid && discountAmount > 0 && (
+                  <div className="space-y-2">
+                    {/* Case 1: No approval request yet — show form to request */}
+                    {!discountApproval?.exists && (
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
+                        <p className="mb-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                          Diskon memerlukan persetujuan Manager/Owner
+                        </p>
+                        <div className="space-y-2">
+                          <input
+                            id="discount-reason-input"
+                            type="text"
+                            value={discountReason}
+                            onChange={(e) => setDiscountReason(e.target.value)}
+                            placeholder="Alasan diskon (wajib diisi)..."
+                            className="h-8 w-full rounded-lg border border-amber-300 bg-white px-3 text-xs outline-none placeholder:text-slate-400 focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-amber-700 dark:bg-slate-900 dark:text-white"
+                          />
+                          {discountApprovalError && (
+                            <p className="text-[11px] text-red-600 dark:text-red-400">{discountApprovalError}</p>
+                          )}
+                          <button
+                            id="discount-request-btn"
+                            onClick={async () => {
+                              if (!discountReason.trim()) {
+                                setDiscountApprovalError("Alasan diskon wajib diisi");
+                                return;
+                              }
+                              setIsRequestingDiscount(true);
+                              setDiscountApprovalError(null);
+                              try {
+                                const discountPercent = Math.min(100, Math.round((discountAmount / subtotal) * 100 * 100) / 100);
+                                await apiClient.requestDiscountApproval({
+                                  orderId: id,
+                                  discountPercent,
+                                  discountAmount,
+                                  discountReason: discountReason.trim(),
+                                });
+                                // Reload approval status
+                                const res = await apiClient.getDiscountApprovalForOrder(id);
+                                const raw = res as unknown as Record<string, unknown>;
+                                let data: Record<string, unknown> | null = null;
+                                if (raw && "exists" in raw) data = raw;
+                                else if (raw?.data && typeof raw.data === "object") data = raw.data as Record<string, unknown>;
+                                if (data) {
+                                  setDiscountApproval({
+                                    exists: !!data.exists,
+                                    status: (data.status as string) || null,
+                                    data: (data.data as { discountAmount?: number; discountReason?: string }) || null,
+                                  });
+                                }
+                                setDiscountReason("");
+                              } catch (err: unknown) {
+                                const msg = err && typeof err === "object" && "message" in err
+                                  ? (err as { message: string }).message
+                                  : "Gagal mengajukan persetujuan diskon";
+                                setDiscountApprovalError(msg);
+                              } finally {
+                                setIsRequestingDiscount(false);
+                              }
+                            }}
+                            disabled={isRequestingDiscount || !discountReason.trim()}
+                            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {isRequestingDiscount ? (
+                              <><Loader2 className="h-3 w-3 animate-spin" /> Mengajukan...</>
+                            ) : (
+                              "Ajukan Persetujuan Diskon"
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Case 2: Approval pending — show waiting status */}
+                    {discountApproval?.exists && discountApproval.status === "PENDING" && (
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-600" />
+                          <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                            Menunggu Persetujuan Diskon
+                          </p>
+                        </div>
+                        <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+                          Diskon Rp {Number(discountApproval.data?.discountAmount || discountAmount).toLocaleString("id-ID")} sedang
+                          menunggu persetujuan dari Manager/Owner. Pembayaran belum bisa diproses dengan diskon sampai disetujui.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Case 3: Approved — green confirmation */}
+                    {discountApproval?.exists && discountApproval.status === "APPROVED" && (
+                      <div className="rounded-xl border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                          <p className="text-xs font-semibold text-green-700 dark:text-green-300">
+                            Diskon Disetujui
+                          </p>
+                        </div>
+                        <p className="mt-1 text-[11px] text-green-600 dark:text-green-400">
+                          Diskon Rp {Number(discountApproval.data?.discountAmount || discountAmount).toLocaleString("id-ID")} telah disetujui.
+                          Anda dapat memproses pembayaran dengan diskon ini.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Case 4: Rejected — red notice with option to re-request */}
+                    {discountApproval?.exists && discountApproval.status === "REJECTED" && (
+                      <div className="rounded-xl border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="h-3.5 w-3.5 text-red-600" />
+                          <p className="text-xs font-semibold text-red-700 dark:text-red-300">
+                            Diskon Ditolak
+                          </p>
+                        </div>
+                        <p className="mt-1 text-[11px] text-red-600 dark:text-red-400">
+                          Permintaan diskon sebelumnya ditolak. Anda dapat mengajukan ulang dengan alasan yang berbeda,
+                          atau proses pembayaran tanpa diskon.
+                        </p>
+                        <button
+                          onClick={() => setDiscountApproval(null)}
+                          className="mt-2 text-[11px] font-semibold text-red-700 underline hover:no-underline dark:text-red-300"
+                        >
+                          Ajukan ulang diskon
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="flex justify-between border-t border-slate-200 pt-2 dark:border-slate-700">
                   <span className="font-bold text-slate-900 dark:text-white">Total Tagihan</span>
                   <span className="text-lg font-bold text-brand">{formatRupiah(total)}</span>
@@ -446,6 +890,9 @@ export default function OrderDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* Payment History Timeline */}
+            {alreadyPaid && <PaymentHistory orderId={order.id} />}
           </div>
 
           {/* RIGHT: Payment panel */}
@@ -663,6 +1110,22 @@ export default function OrderDetailPage() {
                 </div>
               )}
 
+              {/* Non-CASH payment summary */}
+              {paymentMethod !== "CASH" && (
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Ringkasan Pembayaran</p>
+                  <div className="rounded-xl border border-brand/20 bg-brand/5 px-4 py-4 text-center dark:border-brand/30 dark:bg-brand/10">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Total yang akan dibayar</p>
+                    <p className="mt-1 text-2xl font-bold tracking-tight text-brand">
+                      {formatRupiah(total)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                      via {PAYMENT_METHODS.find((m) => m.value === paymentMethod)?.label ?? paymentMethod}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Payment Error Banner */}
               {payError && (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
@@ -673,7 +1136,7 @@ export default function OrderDetailPage() {
               {/* Pay button */}
               <button
                 id="order-pay-btn"
-                onClick={handlePay}
+                onClick={() => setShowConfirmPay(true)}
                 disabled={!canPay || isProcessing}
                 className="w-full rounded-2xl bg-brand py-4 text-base font-bold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
               >
@@ -686,6 +1149,66 @@ export default function OrderDetailPage() {
                   `Bayar ${formatRupiah(total)}`
                 )}
               </button>
+
+              {/* Payment Confirmation Dialog */}
+              {showConfirmPay && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                  <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowConfirmPay(false)} />
+                  <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                      <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <h3 className="text-center text-lg font-bold text-slate-900 dark:text-white">Konfirmasi Pembayaran</h3>
+                    <p className="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">
+                      Pastikan data pembayaran sudah benar sebelum memproses.
+                    </p>
+                    <div className="mt-4 space-y-2 rounded-xl bg-slate-50 p-4 dark:bg-slate-800">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Metode</span>
+                        <span className="font-semibold text-slate-900 dark:text-white">
+                          {PAYMENT_METHODS.find((m) => m.value === paymentMethod)?.label ?? paymentMethod}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Total Tagihan</span>
+                        <span className="font-bold text-brand">{formatRupiah(total)}</span>
+                      </div>
+                      {paymentMethod === "CASH" && cashPaid > 0 && (
+                        <>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">Uang Diterima</span>
+                            <span className="font-semibold text-slate-900 dark:text-white">{formatRupiah(cashPaid)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">Kembalian</span>
+                            <span className="font-semibold text-brand">{formatRupiah(change)}</span>
+                          </div>
+                        </>
+                      )}
+                      {discountAmount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-500">Diskon</span>
+                          <span className="font-semibold text-red-600">-{formatRupiah(discountAmount)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-5 flex gap-3">
+                      <button
+                        onClick={() => setShowConfirmPay(false)}
+                        className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        onClick={() => { setShowConfirmPay(false); handlePay(); }}
+                        className="flex-1 rounded-xl bg-brand py-2.5 text-sm font-bold text-white hover:bg-brand-dark"
+                      >
+                        Ya, Proses Bayar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
               </>
               )}
             </div>
