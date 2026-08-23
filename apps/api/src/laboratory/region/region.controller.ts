@@ -87,11 +87,22 @@ export class RegionController {
   @UseGuards(RolesGuard)
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   async syncRegions() {
-    const result = await this.regionSyncService.syncAll();
+    const result = this.regionSyncService.startSyncInBackground();
     return {
       success: true,
-      message: 'Region sync completed',
-      data: result,
+      message: result.message,
+      data: this.regionSyncService.getSyncStatus(),
+    };
+  }
+
+  @Get('sync/status')
+  @UseGuards(RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  async getSyncStatus() {
+    return {
+      success: true,
+      message: 'Sync status retrieved',
+      data: this.regionSyncService.getSyncStatus(),
     };
   }
 }

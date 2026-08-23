@@ -96,7 +96,7 @@ export default function SettingsLayout({
 
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* Sidebar Navigation */}
-        <nav className="w-full shrink-0 lg:w-56">
+        <nav className="w-full shrink-0 lg:w-60">
           <ul className="space-y-1">
             {settingsNav.map((item) => {
               const Icon = item.icon;
@@ -106,14 +106,23 @@ export default function SettingsLayout({
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
                       isActive
                         ? "bg-brand/10 text-brand dark:bg-brand-light dark:text-brand"
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                     }`}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span>{item.label}</span>
+                    <Icon className="h-4 w-4 shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <span className="block font-medium">{item.label}</span>
+                      <span className={`block text-xs truncate ${
+                        isActive
+                          ? "text-brand/70"
+                          : "text-slate-400 dark:text-slate-500"
+                      }`}>
+                        {item.description}
+                      </span>
+                    </div>
                   </Link>
                 </li>
               );

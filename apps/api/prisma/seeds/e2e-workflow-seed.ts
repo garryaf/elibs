@@ -274,7 +274,7 @@ async function seedMasterDataReal(): Promise<void> {
 
     for (const ref of t.refs) {
       await prisma.referenceValue.upsert({
-        where: { testId_gender_minAge_maxAge: { testId: upserted.id, gender: ref.gender, minAge: ref.minAge, maxAge: ref.maxAge } },
+        where: { testId_gender_ageUnit_minAge_maxAge: { testId: upserted.id, gender: ref.gender, ageUnit: "YEARS", minAge: ref.minAge, maxAge: ref.maxAge } },
         update: { minRef: ref.minRef, maxRef: ref.maxRef, criticalMin: ref.criticalMin ?? null, criticalMax: ref.criticalMax ?? null },
         create: { testId: upserted.id, gender: ref.gender, minAge: ref.minAge, maxAge: ref.maxAge, minRef: ref.minRef, maxRef: ref.maxRef, criticalMin: ref.criticalMin ?? null, criticalMax: ref.criticalMax ?? null },
       });

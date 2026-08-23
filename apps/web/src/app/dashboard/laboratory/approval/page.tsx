@@ -398,19 +398,68 @@ export default function LabApprovalPage() {
   }, [fetchApprovalQueue]);
 
   const handleApprove = async (orderId: string, interpretation: string) => {
-    await apiClient.approveOrder(orderId, {
-      decision: "APPROVE",
-      interpretation,
-    });
-    setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    try {
+      const res = await apiClient.approveOrder(orderId, {
+        decision: "APPROVE",
+        interpretation,
+      }) as unknown as Record<string, unknown>;
+
+      // Check if second-level approval is needed (CRITICAL results)
+      const statusChange = res?.statusChange as Record<string, unknown> | undefined;
+      if (statusChange?.awaitingSecondApproval) {
+        // Second-level approval required — send again with flag
+        await apiClient.approveOrder(orderId, {
+          decision: "APPROVE",
+          interpretation,
+          secondLevelApproval: true,
+        });
+      }
+
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    } catch (err: unknown) {
+      const apiErr = err as { errorCode?: string; message?: string };
+      
+      // If second-level approval required, auto-retry with the flag
+      if (apiErr?.errorCode === "ERR_SECOND_APPROVAL_REQUIRED") {
+        try {
+          await apiClient.approveOrder(orderId, {
+            decision: "APPROVE",
+            interpretation,
+            secondLevelApproval: true,
+          });
+          setOrders((prev) => prev.filter((o) => o.id !== orderId));
+        } catch {
+          setError("Gagal melakukan second-level approval. Silakan coba lagi.");
+        }
+        return;
+      }
+
+      // If order is not in VERIFIED status, remove it from the list (stale data)
+      if (apiErr?.errorCode === "ERR_INVALID_STATE") {
+        setOrders((prev) => prev.filter((o) => o.id !== orderId));
+        return;
+      }
+
+      throw err;
+    }
   };
 
   const handleReject = async (orderId: string, reason: string) => {
-    await apiClient.approveOrder(orderId, {
-      decision: "REJECT",
-      rejectionReason: reason,
-    });
-    setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    try {
+      await apiClient.approveOrder(orderId, {
+        decision: "REJECT",
+        rejectionReason: reason,
+      });
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    } catch (err: unknown) {
+      const apiErr = err as { errorCode?: string };
+      // If order is not in VERIFIED status, remove from list
+      if (apiErr?.errorCode === "ERR_INVALID_STATE") {
+        setOrders((prev) => prev.filter((o) => o.id !== orderId));
+        return;
+      }
+      throw err;
+    }
   };
 
   return (

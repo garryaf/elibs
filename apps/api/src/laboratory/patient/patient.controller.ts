@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import * as express from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -32,6 +33,7 @@ export class PatientController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 patient registrations per minute per user
   @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.KLINIK_PARTNER)
   @ApiOperation({ summary: 'Register a new patient' })
   async register(@Body() dto: CreatePatientDto, @CurrentUser() user: any) {

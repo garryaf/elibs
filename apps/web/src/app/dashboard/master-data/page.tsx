@@ -22,8 +22,11 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  TrendingUp,
+  Search,
 } from "lucide-react";
 import { RoleGuard } from "@/components/guards/RoleGuard";
+import { BulkPriceAdjustDialog } from "@/components/master-data/BulkPriceAdjustDialog";
 
 const masterDataItems = [
   {
@@ -136,6 +139,8 @@ const setupOrderSteps = [
 export default function MasterDataPage() {
   const [isInfoDismissed, setIsInfoDismissed] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showBulkPriceDialog, setShowBulkPriceDialog] = useState(false);
+  const [cardSearch, setCardSearch] = useState("");
 
   useEffect(() => {
     const dismissed = localStorage.getItem(SETUP_ORDER_DISMISSED_KEY);
@@ -156,13 +161,22 @@ export default function MasterDataPage() {
     <RoleGuard allowedRoles={["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN"]}>
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-          Master Data
-        </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Kelola seluruh data referensi laboratorium dari satu tempat.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+            Master Data
+          </h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Kelola seluruh data referensi laboratorium dari satu tempat.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowBulkPriceDialog(true)}
+          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md"
+        >
+          <TrendingUp className="h-4 w-4" />
+          Penyesuaian Harga
+        </button>
       </div>
 
       {/* Setup Order Info Banner */}
@@ -239,9 +253,28 @@ export default function MasterDataPage() {
         </button>
       )}
 
+      {/* UI-MD-07: Search bar for cards */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Cari menu master data..."
+          value={cardSearch}
+          onChange={(e) => setCardSearch(e.target.value)}
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-900 dark:text-white placeholder:text-slate-400"
+          aria-label="Search master data cards"
+        />
+      </div>
+
       {/* Cards Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {masterDataItems.map((item) => {
+        {masterDataItems
+          .filter((item) => {
+            if (!cardSearch.trim()) return true;
+            const q = cardSearch.toLowerCase();
+            return item.name.toLowerCase().includes(q) || item.description.toLowerCase().includes(q);
+          })
+          .map((item) => {
           const Icon = item.icon;
           return (
             <Link
@@ -262,6 +295,13 @@ export default function MasterDataPage() {
           );
         })}
       </div>
+
+      {/* Bulk Price Adjustment Dialog */}
+      <BulkPriceAdjustDialog
+        isOpen={showBulkPriceDialog}
+        onClose={() => setShowBulkPriceDialog(false)}
+        onSuccess={() => {}}
+      />
     </div>
     </RoleGuard>
   );

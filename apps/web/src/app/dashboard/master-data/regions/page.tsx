@@ -8,7 +8,6 @@ import { apiClient } from "@/lib/api";
 
 interface RegionItem {
   id: string;
-  code: string;
   name: string;
 }
 
@@ -128,12 +127,40 @@ export default function RegionsPage() {
     setSyncMessage("");
     try {
       await apiClient.post("/api/v1/regions/sync");
-      setSyncMessage("Sinkronisasi data wilayah berhasil.");
-      loadData();
+      setSyncMessage("Sinkronisasi sedang berjalan di background...");
+
+      // Poll for completion
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await apiClient.get<any>("/api/v1/regions/sync/status");
+          const status = statusRes?.data?.status || statusRes?.data?.data?.status;
+
+          if (status === "completed") {
+            clearInterval(pollInterval);
+            setSyncing(false);
+            setSyncMessage("Sinkronisasi data wilayah berhasil.");
+            loadData();
+          } else if (status === "failed") {
+            clearInterval(pollInterval);
+            setSyncing(false);
+            const error = statusRes?.data?.error || statusRes?.data?.data?.error || "";
+            setSyncMessage(`Sinkronisasi gagal: ${error}`);
+          }
+          // If still 'running', continue polling
+        } catch {
+          clearInterval(pollInterval);
+          setSyncing(false);
+          setSyncMessage("Gagal memeriksa status sinkronisasi.");
+        }
+      }, 3000); // Poll every 3 seconds
+
+      // Safety timeout: stop polling after 10 minutes
+      setTimeout(() => {
+        setSyncing(false);
+      }, 10 * 60 * 1000);
     } catch {
-      setSyncMessage("Gagal melakukan sinkronisasi. Silakan coba lagi.");
-    } finally {
       setSyncing(false);
+      setSyncMessage("Gagal memulai sinkronisasi. Silakan coba lagi.");
     }
   };
 
@@ -381,7 +408,7 @@ export default function RegionsPage() {
                       {(page - 1) * limit + index + 1}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-600 dark:text-slate-400">
-                      {item.code}
+                      {item.id}
                     </td>
                     <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-200">
                       {item.name}

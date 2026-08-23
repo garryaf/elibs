@@ -256,8 +256,8 @@ async function seedTestMasterAndReferences() {
     for (const ref of test.refs) {
       await prisma.referenceValue.upsert({
         where: {
-          testId_gender_minAge_maxAge: {
-            testId: upsertedTest.id, gender: ref.gender, minAge: ref.minAge, maxAge: ref.maxAge
+          testId_gender_ageUnit_minAge_maxAge: {
+            testId: upsertedTest.id, gender: ref.gender, ageUnit: 'YEARS', minAge: ref.minAge, maxAge: ref.maxAge
           }
         },
         update: { minRef: ref.minRef, maxRef: ref.maxRef, criticalMin: ref.criticalMin, criticalMax: ref.criticalMax },

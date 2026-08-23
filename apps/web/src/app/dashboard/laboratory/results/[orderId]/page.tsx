@@ -333,6 +333,10 @@ export default function ResultEntryPage() {
   }, [order, allResultsFilled]);
 
   const handleSubmitResults = async () => {
+    if (!allResultsFilled) {
+      setActionError("Semua hasil harus diisi sebelum menyimpan.");
+      return;
+    }
     setSubmitting(true);
     try {
       await apiClient.enterResults(
@@ -613,11 +617,12 @@ export default function ResultEntryPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
         <button
           onClick={handleSubmitResults}
-          disabled={submitting}
+          disabled={submitting || !allResultsFilled}
+          title={!allResultsFilled ? "Semua hasil harus diisi sebelum menyimpan" : undefined}
           className={cn(
             "inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all",
             "border border-brand text-brand hover:bg-brand/10",
-            submitting && "opacity-50 cursor-not-allowed"
+            (submitting || !allResultsFilled) && "opacity-50 cursor-not-allowed"
           )}
         >
           {submitting ? (

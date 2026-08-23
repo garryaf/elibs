@@ -93,8 +93,14 @@ export class PdfReportCacheService {
       throw new NotFoundException('Order tidak ditemukan');
     }
 
+    // BE-4: Fetch lab accreditation number from system settings if configured
+    const accreditationSetting = await this.prisma.systemSetting.findUnique({
+      where: { key: 'lab_accreditation_number' },
+    });
+
     const pdfBuffer = await this.pdfGeneratorService.generateReport(
       fullOrder as unknown as OrderWithDetails,
+      { accreditationNumber: accreditationSetting?.value },
     );
 
     // Store in cache

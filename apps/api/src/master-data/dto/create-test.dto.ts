@@ -6,7 +6,9 @@ import {
   IsNumber,
   IsInt,
   IsIn,
+  IsArray,
   Min,
+  Max,
 } from 'class-validator';
 
 export class CreateTestDto {
@@ -36,12 +38,36 @@ export class CreateTestDto {
   price: number;
 
   @IsOptional()
+  @IsIn(['NUMERIC', 'TEXT', 'QUALITATIVE'])
+  resultType?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  qualitativeOptions?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  deltaAlertThreshold?: number;
+
+  @IsOptional()
   @IsBoolean()
   requiresDoctorApproval?: boolean;
 
   @IsOptional()
   @IsBoolean()
   requiresInsurancePreAuth?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  fastingRequired?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  fastingHours?: number;
 
   @IsOptional()
   @IsBoolean()
@@ -55,4 +81,8 @@ export class CreateTestDto {
   @IsOptional()
   @IsIn(['CITO', 'ROUTINE', 'STAT'])
   tatCategory?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
 }

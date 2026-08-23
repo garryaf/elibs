@@ -117,10 +117,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
     }
   }, [isOpen, reset]);
 
-  // Guard: only allow edit mode — don't render in create mode
-  if (!editData) {
-    return null;
-  }
+
 
   // Derive region value for the CascadingRegionSelector
   const regionValue: RegionValue = {
@@ -463,7 +460,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
             <button
               type="submit"
               id="patient-modal-submit"
-              disabled={isSubmitting || !isFormValid || !editData}
+              disabled={isSubmitting || !isFormValid}
               className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? (

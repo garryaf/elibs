@@ -6,6 +6,15 @@ import { z } from "zod";
 
 export const Gender = z.enum(["MALE", "FEMALE"]);
 
+/**
+ * Region IDs use EMSIFA (Indonesian administrative code) format:
+ * - Provinsi: 2 digits (e.g., "11", "32")
+ * - Kabupaten/Kota: 4 digits (e.g., "1101", "3201")
+ * - Kecamatan: 6-7 digits (e.g., "110101", "1107061")
+ * - Kelurahan/Desa: 10-13 digits (e.g., "1101012001")
+ */
+const regionCodeSchema = z.string().regex(/^\d{2,13}$/, "Kode wilayah tidak valid");
+
 export const createPatientSchema = z.object({
   nik: z
     .string()
@@ -28,10 +37,10 @@ export const createPatientSchema = z.object({
   district: z.string().optional(),
   village: z.string().optional(),
   postalCode: z.string().optional(),
-  provinsiId: z.string().uuid().optional(),
-  kabupatenKotaId: z.string().uuid().optional(),
-  kecamatanId: z.string().uuid().optional(),
-  kelurahanDesaId: z.string().uuid().optional(),
+  provinsiId: regionCodeSchema.optional(),
+  kabupatenKotaId: regionCodeSchema.optional(),
+  kecamatanId: regionCodeSchema.optional(),
+  kelurahanDesaId: regionCodeSchema.optional(),
   bloodType: z.string().optional(),
   emergencyContact: z.string().optional(),
   emergencyPhone: z.string().optional(),

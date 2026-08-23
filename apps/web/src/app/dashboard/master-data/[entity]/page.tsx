@@ -181,11 +181,13 @@ const entityConfigs: Record<string, EntityConfig> = {
       { key: "code", label: "Kode" },
       { key: "name", label: "Nama" },
       { key: "description", label: "Deskripsi" },
+      { key: "isActive", label: "Status", render: (value: unknown) => (value !== false ? "Aktif" : "Nonaktif") },
     ],
     formFields: [
       { name: "code", label: "Kode Satuan", type: "text", required: true },
       { name: "name", label: "Nama Satuan", type: "text", required: true },
       { name: "description", label: "Deskripsi", type: "text" },
+      { name: "isActive", label: "Aktif", type: "checkbox" as const },
     ],
   },
   "jenis-sampel": {
@@ -195,12 +197,25 @@ const entityConfigs: Record<string, EntityConfig> = {
     useUpdate: useUpdateMasterSampleType,
     useDelete: useDeleteMasterSampleType,
     columns: [
+      { key: "code", label: "Kode" },
       { key: "name", label: "Nama" },
-      { key: "description", label: "Deskripsi" },
+      { key: "container", label: "Wadah/Tabung" },
+      { key: "minimumVolume", label: "Volume Min" },
+      { key: "storageTemperature", label: "Suhu Simpan" },
+      { key: "instructions", label: "Instruksi", render: (value: unknown) => {
+        if (!value) return "—";
+        const str = String(value);
+        return str.length > 50 ? str.slice(0, 50) + "…" : str;
+      }},
     ],
     formFields: [
+      { name: "code", label: "Kode Sampel", type: "text", required: true },
       { name: "name", label: "Nama Jenis Sampel", type: "text", required: true },
-      { name: "description", label: "Deskripsi", type: "text" },
+      { name: "container", label: "Wadah/Tabung (misal: Tabung tutup ungu K3-EDTA)", type: "text" },
+      { name: "minimumVolume", label: "Volume Minimum (misal: 3 mL)", type: "text" },
+      { name: "storageTemperature", label: "Suhu Penyimpanan (misal: 2-8°C)", type: "text" },
+      { name: "stabilityPeriod", label: "Masa Stabilitas (misal: 24h room temp, 72h refrigerated)", type: "text" },
+      { name: "instructions", label: "Instruksi Pengambilan", type: "textarea" },
     ],
   },
   "kategori-pemeriksaan": {
@@ -236,6 +251,11 @@ const entityConfigs: Record<string, EntityConfig> = {
       { key: "unit", label: "Satuan" },
       { key: "method", label: "Metode" },
       { key: "sampleType", label: "Jenis Sampel" },
+      { key: "resultType", label: "Tipe Hasil", render: (value: unknown) => {
+        if (value === "QUALITATIVE") return "Kualitatif";
+        if (value === "TEXT") return "Teks";
+        return "Numerik";
+      }},
       { key: "price", label: "Harga" },
       { key: "tatMinutes", label: "TAT", render: (value: unknown) => {
         if (value == null) return "-";
@@ -250,18 +270,25 @@ const entityConfigs: Record<string, EntityConfig> = {
         if (value == null) return "-";
         return String(value);
       }},
+      { key: "isActive", label: "Status", render: (value: unknown) => (value !== false ? "Aktif" : "Nonaktif") },
     ],
     formFields: [
       { name: "name", label: "Nama Pemeriksaan", type: "text", required: true },
       { name: "code", label: "Kode", type: "text", required: true },
       { name: "categoryId", label: "Kategori", type: "entity-autocomplete" as const, required: true, endpoint: "/api/v1/master/test-categories" },
+      { name: "resultType", label: "Tipe Hasil", type: "select" as const, required: true, options: [{ label: "Numerik", value: "NUMERIC" }, { label: "Teks Bebas", value: "TEXT" }, { label: "Kualitatif (pilihan)", value: "QUALITATIVE" }] },
+      { name: "qualitativeOptions", label: "Opsi Kualitatif (pisahkan dengan koma, misal: Reaktif,Non-Reaktif)", type: "text" },
       { name: "unit", label: "Satuan", type: "entity-autocomplete" as const, endpoint: "/api/v1/master/units", valueKey: "code" as const },
       { name: "method", label: "Metode", type: "entity-autocomplete" as const, endpoint: "/api/v1/master/methods", valueKey: "name" as const },
       { name: "sampleType", label: "Jenis Sampel", type: "entity-autocomplete" as const, endpoint: "/api/v1/master/sample-types", valueKey: "code" as const },
       { name: "price", label: "Harga", type: "number", required: true },
       { name: "tatMinutes", label: "TAT (menit)", type: "number" as const },
       { name: "tatCategory", label: "Kategori TAT", type: "select" as const, options: [{ label: "CITO", value: "CITO" }, { label: "ROUTINE", value: "ROUTINE" }, { label: "STAT", value: "STAT" }] },
+      { name: "deltaAlertThreshold", label: "Delta Alert Threshold (%)", type: "number" as const },
       { name: "requiresDoctorApproval", label: "Memerlukan Persetujuan Dokter", type: "checkbox" as const },
+      { name: "requiresInsurancePreAuth", label: "Memerlukan Pre-Otorisasi Asuransi", type: "checkbox" as const },
+      { name: "fastingRequired", label: "Memerlukan Puasa", type: "checkbox" as const },
+      { name: "fastingHours", label: "Durasi Puasa (jam, misal 8-12)", type: "number" as const },
       { name: "description", label: "Deskripsi", type: "text" },
     ],
   },
@@ -323,6 +350,7 @@ const entityConfigs: Record<string, EntityConfig> = {
       { name: "name", label: "Nama Panel", type: "text", required: true },
       { name: "description", label: "Deskripsi", type: "text" },
       { name: "price", label: "Harga Panel (Total harga tes individu akan ditampilkan sebagai perbandingan)", type: "number", required: true },
+      { name: "discount", label: "Diskon Panel (%)", type: "number" as const },
       { name: "testIds", label: "Pemeriksaan (pilih min. 2 tes)", type: "multi-entity-autocomplete" as const, required: true, endpoint: "/api/v1/master/tests", min: 2 },
     ],
   },
@@ -671,13 +699,51 @@ export default function MasterDataEntityPage() {
             Kelola data {config.displayName.toLowerCase()}
           </p>
         </div>
-        <Button
-          onClick={handleOpenCreate}
-          className="gap-2 rounded-xl bg-brand px-4 py-2.5 text-white shadow-sm shadow-brand/20 hover:bg-brand-dark"
-        >
-          <Plus className="h-4 w-4" />
-          Tambah
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* UI-MD-02: Import/Export buttons for supported entities */}
+          {["pemeriksaan-lab", "tarif", "dokter", "klinik"].includes(entity) && (
+            <>
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
+                <input
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const entityMap: Record<string, string> = { "pemeriksaan-lab": "tests", tarif: "tariffs", dokter: "doctors", klinik: "clinics" };
+                    const importType = entityMap[entity] ?? entity;
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    try {
+                      const token = typeof window !== "undefined" ? localStorage.getItem("token") || sessionStorage.getItem("token") : "";
+                      const resp = await fetch(`/api/v1/master/import/${importType}`, { method: "POST", body: formData, headers: token ? { Authorization: `Bearer ${token}` } : {} });
+                      const result = await resp.json();
+                      if (result.success !== false) { alert(`Import berhasil: ${result.data?.imported ?? 0} data diimpor`); window.location.reload(); }
+                      else { alert(`Import gagal: ${result.message || "Unknown error"}`); }
+                    } catch { alert("Import gagal. Periksa format file."); }
+                    e.target.value = "";
+                  }}
+                />
+                Import CSV/Excel
+              </label>
+              <a
+                href={`/api/v1/master/export/${entity === "pemeriksaan-lab" ? "tests" : entity === "tarif" ? "tariffs" : entity === "dokter" ? "doctors" : "clinics"}?format=csv`}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                download
+              >
+                Export CSV
+              </a>
+            </>
+          )}
+          <Button
+            onClick={handleOpenCreate}
+            className="gap-2 rounded-xl bg-brand px-4 py-2.5 text-white shadow-sm shadow-brand/20 hover:bg-brand-dark"
+          >
+            <Plus className="h-4 w-4" />
+            Tambah
+          </Button>
+        </div>
       </div>
 
       {/* Entity Filters (e.g. tarif filter by clinic/insurance) */}
@@ -717,7 +783,7 @@ export default function MasterDataEntityPage() {
         isLoading={createMutation.isPending || updateMutation.isPending}
       />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation Dialog (UI-MD-06: with dependency warning) */}
       {deleteConfirm && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -744,10 +810,25 @@ export default function MasterDataEntityPage() {
             >
               Apakah Anda yakin ingin menghapus{" "}
               <span className="font-semibold text-slate-700 dark:text-slate-300">
-                {(deleteConfirm.name as string) ?? "item ini"}
+                {(deleteConfirm.name as string) ?? (deleteConfirm.code as string) ?? "item ini"}
               </span>
               ? Tindakan ini tidak dapat dibatalkan.
             </p>
+            {/* UI-MD-06: Dependency warning for entities with relations */}
+            {entity === "pemeriksaan-lab" && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-800 dark:bg-amber-900/20">
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  Jika pemeriksaan ini digunakan oleh order aktif, panel, atau tarif, penghapusan akan ditolak oleh sistem (ERR_REFERENCE_CONFLICT).
+                </p>
+              </div>
+            )}
+            {entity === "kategori-pemeriksaan" && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-800 dark:bg-amber-900/20">
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  Kategori yang masih memiliki pemeriksaan aktif tidak dapat dihapus.
+                </p>
+              </div>
+            )}
             <div className="mt-5 flex justify-end gap-3">
               <Button
                 variant="outline"

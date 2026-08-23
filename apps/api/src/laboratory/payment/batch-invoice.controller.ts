@@ -30,6 +30,20 @@ export class BatchInvoiceController {
     return this.batchInvoiceService.createBatchInvoice(dto);
   }
 
+  @Get('preview')
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.KASIR)
+  async previewBatchInvoice(
+    @Query('insuranceId') insuranceId: string,
+    @Query('periodStart') periodStart: string,
+    @Query('periodEnd') periodEnd: string,
+  ) {
+    return this.batchInvoiceService.previewEligibleOrders({
+      insuranceId,
+      periodStart,
+      periodEnd,
+    });
+  }
+
   @Get()
   @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.KASIR)
   async getBatchInvoices(

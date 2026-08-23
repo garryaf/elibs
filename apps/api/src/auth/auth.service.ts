@@ -62,7 +62,7 @@ export class AuthService {
       }
 
       const newPayload = { email: user.email, sub: user.id, role: user.role, clinicId: user.clinicId ?? null };
-      return {
+      const result = {
         accessToken: this.jwtService.sign(newPayload),
         refreshToken: this.jwtService.sign(newPayload, {
           secret: this.refreshSecret,
@@ -70,6 +70,11 @@ export class AuthService {
         } as any),
         user: newPayload,
       };
+
+      // Audit log token refresh (non-blocking)
+      this.auditService.log(user.id, 'TOKEN_REFRESH', 'User', user.id, null, { email: user.email, role: user.role }, null).catch(() => {});
+
+      return result;
     } catch {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
@@ -91,5 +96,22 @@ export class AuthService {
    */
   isTokenBlocked(sub: string, iat: number): boolean {
     return this.tokenBlocklist.isBlocked(sub, iat);
+  }
+
+  /**
+   * Log a failed login attempt for security audit.
+   * Uses the SYSTEM UUID as userId since the user is not authenticated.
+   */
+  logFailedLogin(email: string, ipAddress?: string): void {
+    const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
+    this.auditService.log(
+      SYSTEM_USER_ID,
+      'LOGIN_FAILED',
+      'User',
+      SYSTEM_USER_ID,
+      null,
+      { email, reason: 'invalid_credentials' },
+      ipAddress ?? null,
+    ).catch(() => {});
   }
 }

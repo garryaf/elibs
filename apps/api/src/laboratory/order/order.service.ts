@@ -89,6 +89,59 @@ export class OrderService {
       resolvedTestIds = [...resolvedTestIds, ...panelTestIds];
     }
 
+    // Step 2.6: Auto-expand individual tests that are actually panels.
+    // If a test (e.g. HEM-005 "Darah Lengkap (CBC)") is ordered directly via testIds,
+    // but a Panel with matching constituent tests exists, replace the "umbrella" test
+    // with its individual component tests for proper result entry.
+    if (resolvedTestIds.length > 0) {
+      // Find panels whose names match tests being ordered (via PanelTest junction)
+      // Strategy: look for any test that has unit '-' and also has a panel linking to other tests
+      const panelTestLinks = await this.prisma.panelTest.findMany({
+        where: { testId: { in: resolvedTestIds } },
+        select: { testId: true, panelId: true },
+      });
+
+      if (panelTestLinks.length > 0) {
+        // These testIds are themselves "constituents" of a panel — don't expand them.
+        // We only want to expand tests that ACT as a panel header.
+      }
+
+      // Find tests that are referenced as the basis for a panel (same name matching)
+      const testsBeingOrdered = await this.prisma.testMaster.findMany({
+        where: { id: { in: resolvedTestIds }, deletedAt: null },
+        select: { id: true, name: true, unit: true },
+      });
+
+      // For each test with unit '-' (meta/umbrella test), check if a panel with matching name exists
+      const umbrellaTests = testsBeingOrdered.filter((t) => t.unit === '-');
+      const expandedFromUmbrella: string[] = [];
+      const umbrellaIdsToRemove: string[] = [];
+
+      for (const umbrella of umbrellaTests) {
+        const matchingPanel = await this.prisma.panel.findFirst({
+          where: {
+            name: { equals: umbrella.name, mode: 'insensitive' },
+            deletedAt: null,
+            isActive: true,
+          },
+          include: { panelTests: { select: { testId: true } } },
+        });
+
+        if (matchingPanel && matchingPanel.panelTests.length > 0) {
+          // Replace umbrella test with its constituent tests
+          umbrellaIdsToRemove.push(umbrella.id);
+          for (const pt of matchingPanel.panelTests) {
+            expandedFromUmbrella.push(pt.testId);
+          }
+        }
+      }
+
+      if (umbrellaIdsToRemove.length > 0) {
+        resolvedTestIds = resolvedTestIds.filter((id) => !umbrellaIdsToRemove.includes(id));
+        resolvedTestIds = [...resolvedTestIds, ...expandedFromUmbrella];
+      }
+    }
+
     // Deduplicate testIds
     resolvedTestIds = [...new Set(resolvedTestIds)];
 
@@ -355,9 +408,16 @@ export class OrderService {
       where: { id },
       include: {
         patient: true,
+        clinic: { select: { id: true, name: true, address: true, phone: true } },
         doctor: { select: { id: true, name: true, specialization: true } },
         orderDetails: {
-          include: { test: true },
+          include: {
+            test: {
+              include: {
+                referenceValues: true,
+              },
+            },
+          },
         },
         visit: {
           select: {

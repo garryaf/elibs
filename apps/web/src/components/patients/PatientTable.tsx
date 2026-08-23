@@ -386,7 +386,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete, onReactivate,
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto overflow-y-visible">
+      <div className="relative overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/50">
@@ -464,7 +464,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete, onReactivate,
               )}
 
               {/* AKSI — always visible (required) */}
-              <th className="px-5 py-3.5 text-right text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400">
+              <th className="sticky right-0 bg-slate-50/70 dark:bg-slate-900/50 px-5 py-3.5 text-right text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400">
                 AKSI
               </th>
             </tr>
@@ -611,7 +611,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete, onReactivate,
                   )}
 
                   {/* Actions — always visible */}
-                  <td className="px-5 py-4 text-right">
+                  <td className="sticky right-0 bg-white dark:bg-slate-950 px-5 py-4 text-right">
                     <ActionMenu
                       patient={patient}
                       onView={() => onView(patient)}

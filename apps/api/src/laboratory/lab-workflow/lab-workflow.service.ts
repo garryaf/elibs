@@ -6,13 +6,14 @@ import {
   BadRequestException,
   forwardRef,
 } from '@nestjs/common';
-import { OrderStatus, SampleCondition } from '@prisma/client';
+import { OrderStatus, SampleCondition, Flag } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { OrderStateMachineService } from './order-state-machine.service';
 import { AutoFlaggingService } from './auto-flagging.service';
 import { DeltaCheckService } from './delta-check.service';
 import { NotificationService } from '../notification/notification.service';
 import { BpjsVerificationExpirationService } from '../order/bpjs-verification-expiration.service';
+import { CriticalValueService } from '../critical-value/critical-value.service';
 import { ConfirmSampleDto } from './dto/confirm-sample.dto';
 import { EnterResultsDto } from './dto/enter-results.dto';
 import { VerifyResultsDto } from './dto/verify-results.dto';
@@ -30,6 +31,7 @@ export class LabWorkflowService {
     @Inject(forwardRef(() => NotificationService))
     private readonly notificationService: NotificationService,
     private readonly bpjsVerificationExpirationService: BpjsVerificationExpirationService,
+    private readonly criticalValueService: CriticalValueService,
   ) {}
 
   async confirmSample(orderId: string, dto: ConfirmSampleDto, userId: string) {
@@ -193,6 +195,14 @@ export class LabWorkflowService {
           patientAge,
           patientGender,
         );
+      } else {
+        // BP-MD-05: For non-numeric values (qualitative/text), try qualitative flagging
+        flag = await this.autoFlaggingService.calculateFlag(
+          entry.resultValue,
+          orderDetail.testId,
+          patientAge,
+          patientGender,
+        );
       }
 
       await this.prisma.orderDetail.update({
@@ -206,6 +216,20 @@ export class LabWorkflowService {
           comment: entry.comment ?? null,
         },
       });
+
+      // Critical Value Alert: trigger detection if result is CRITICAL
+      if (flag === Flag.CRITICAL) {
+        await this.criticalValueService.detectAndAlert(
+          orderId,
+          entry.orderDetailId,
+          entry.resultValue,
+          orderDetail.testId,
+        ).catch((err) => {
+          this.logger.warn(
+            `Failed to trigger critical value alert for order ${orderId}, detail ${entry.orderDetailId}: ${err.message}`,
+          );
+        });
+      }
     }
 
     // Check if ALL OrderDetails now have resultValue
@@ -550,10 +574,25 @@ export class LabWorkflowService {
       return false;
     }
 
+    // Patient safety: do NOT auto-approve if any result is flagged HIGH or CRITICAL
+    // These results require doctor review regardless of test configuration
+    // Also block auto-approve if any result has flag=null (no reference values configured)
+    // as this indicates the system cannot determine if the result is normal
+    const hasAbnormalOrUnflaggedResult = order.orderDetails.some(
+      (od) => od.flag === 'HIGH' || od.flag === 'CRITICAL' || od.flag === null,
+    );
+
+    if (hasAbnormalOrUnflaggedResult) {
+      this.logger.log(
+        `Order ${orderId} not auto-approved: contains HIGH/CRITICAL flagged results or unflagged results (no reference values) requiring doctor review`,
+      );
+      return false;
+    }
+
     await this.orderStateMachine.transition(
       orderId,
       OrderStatus.APPROVED,
-      { userId, metadata: { interpretation: 'Auto-approved: no tests require doctor approval' } },
+      { userId, metadata: { interpretation: 'Auto-approved: no tests require doctor approval, all results normal' } },
     );
 
     // Fire-and-forget: trigger notifications without blocking the approval response
@@ -580,14 +619,24 @@ export class LabWorkflowService {
     return age;
   }
 
-  async getQueue(page: number = 1, limit: number = 20, clinicId?: string, search?: string) {
+  async getQueue(page: number = 1, limit: number = 20, clinicId?: string, search?: string, status?: string) {
     const skip = (page - 1) * limit;
 
-    const where: any = {
-      status: {
+    const where: any = {};
+
+    // Status filter — support special "RESAMPLE" pseudo-status
+    if (status === 'RESAMPLE') {
+      // Show orders that need re-sampling (rejected samples still in PAID status)
+      where.status = OrderStatus.PAID;
+      where.sampleCondition = { not: null, notIn: ['ACCEPTABLE'] };
+    } else if (status && ['PAID', 'SAMPLE_COLLECTED', 'IN_ANALYSIS', 'VERIFIED'].includes(status)) {
+      where.status = status;
+    } else {
+      // Default: show all lab-relevant statuses
+      where.status = {
         in: [OrderStatus.PAID, OrderStatus.SAMPLE_COLLECTED, OrderStatus.IN_ANALYSIS],
-      },
-    };
+      };
+    }
 
     if (clinicId) {
       where.clinicId = clinicId;
@@ -624,6 +673,30 @@ export class LabWorkflowService {
         limit,
         totalPages: Math.ceil(total / limit),
       },
+    };
+  }
+
+  async getQueueStats(clinicId?: string) {
+    const baseWhere: any = {};
+    if (clinicId) {
+      baseWhere.clinicId = clinicId;
+    }
+
+    const [paid, sampleCollected, inAnalysis, verified, resample] = await Promise.all([
+      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.PAID } }),
+      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.SAMPLE_COLLECTED } }),
+      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.IN_ANALYSIS } }),
+      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.VERIFIED } }),
+      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.PAID, sampleCondition: { not: null, notIn: ['ACCEPTABLE'] } } }),
+    ]);
+
+    return {
+      PAID: paid,
+      SAMPLE_COLLECTED: sampleCollected,
+      IN_ANALYSIS: inAnalysis,
+      VERIFIED: verified,
+      RESAMPLE: resample,
+      ALL: paid + sampleCollected + inAnalysis + verified,
     };
   }
 

@@ -10,6 +10,7 @@ import { EmailService } from './email.service';
 import { WhatsAppService } from './whatsapp.service';
 import { EmailProcessor, WhatsAppProcessor } from './notification.processor';
 import { LabWorkflowModule } from '../lab-workflow/lab-workflow.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { LabWorkflowModule } from '../lab-workflow/lab-workflow.module';
       { name: 'lab-whatsapp-delivery' },
     ),
     forwardRef(() => LabWorkflowModule),
+    AuditModule,
   ],
   controllers: [NotificationController, WhatsAppDeliveryController, PdfReportController],
   providers: [

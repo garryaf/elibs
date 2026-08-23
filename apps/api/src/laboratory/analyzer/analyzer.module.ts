@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { AuditModule } from '../audit/audit.module';
+import { CriticalValueModule } from '../critical-value/critical-value.module';
 import { AnalyzerController } from './analyzer.controller';
 import { AnalyzerService } from './analyzer.service';
 import { AnalyzerImportProcessor } from './analyzer-import.processor';
@@ -9,6 +10,7 @@ import { AnalyzerImportProcessor } from './analyzer-import.processor';
   imports: [
     BullModule.registerQueue({ name: 'analyzer-batch-import' }),
     AuditModule,
+    forwardRef(() => CriticalValueModule),
   ],
   controllers: [AnalyzerController],
   providers: [AnalyzerService, AnalyzerImportProcessor],

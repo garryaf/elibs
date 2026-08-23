@@ -75,10 +75,20 @@ export class MasterDataService implements IMasterDataQueryService {
     if (!category) {
       throw new NotFoundException('Test category not found');
     }
-    return this.prisma.testCategory.update({
-      where: { id },
-      data: dto,
-    });
+    try {
+      return await this.prisma.testCategory.update({
+        where: { id },
+        data: dto,
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Category with this name already exists');
+      }
+      throw error;
+    }
   }
 
   async softDeleteCategory(id: string) {
@@ -172,6 +182,12 @@ export class MasterDataService implements IMasterDataQueryService {
           sampleType: dto.sampleType,
           price: dto.price,
           requiresDoctorApproval: dto.requiresDoctorApproval ?? true,
+          requiresInsurancePreAuth: dto.requiresInsurancePreAuth ?? false,
+          resultType: dto.resultType as any ?? 'NUMERIC',
+          qualitativeOptions: dto.qualitativeOptions ?? [],
+          deltaAlertThreshold: dto.deltaAlertThreshold ?? null,
+          fastingRequired: dto.fastingRequired ?? false,
+          fastingHours: dto.fastingHours ?? null,
           isActive: dto.isActive ?? true,
           tatMinutes: dto.tatMinutes,
           tatCategory: dto.tatCategory,
@@ -219,10 +235,22 @@ export class MasterDataService implements IMasterDataQueryService {
       await this.validateUnit(dto.unit);
     }
 
-    return this.prisma.testMaster.update({
-      where: { id },
-      data: dto,
-    });
+    try {
+      return await this.prisma.testMaster.update({
+        where: { id },
+        data: dto,
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          `Test code '${dto.code ?? ''}' already exists (unique constraint violation)`,
+        );
+      }
+      throw error;
+    }
   }
 
   async softDeleteTest(id: string) {
@@ -459,8 +487,12 @@ export class MasterDataService implements IMasterDataQueryService {
       throw new NotFoundException('Tariff not found');
     }
 
-    return this.prisma.tariff.delete({
+    // FUNC-MD-03: Soft-close tariff by setting effectiveTo = now instead of hard delete.
+    // This preserves pricing history for audit trail.
+    return this.prisma.tariff.update({
       where: { id },
+      data: { effectiveTo: new Date() },
+      include: { test: true, clinic: true, insurance: true },
     });
   }
 
@@ -494,6 +526,7 @@ export class MasterDataService implements IMasterDataQueryService {
         data: {
           testId,
           gender: dto.gender,
+          ageUnit: (dto.ageUnit as any) ?? 'YEARS',
           minAge: dto.minAge ?? 0,
           maxAge: dto.maxAge ?? 150,
           minRef: dto.minRef,

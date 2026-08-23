@@ -515,7 +515,7 @@ class ApiClient {
 
   async approveOrder(
     orderId: string,
-    data: { decision: "APPROVE" | "REJECT"; interpretation?: string; rejectionReason?: string }
+    data: { decision: "APPROVE" | "REJECT"; interpretation?: string; rejectionReason?: string; secondLevelApproval?: boolean }
   ): Promise<ApiResponse<unknown>> {
     return this.post(`/api/v1/lab/${orderId}/approve`, data);
   }
@@ -550,10 +550,12 @@ class ApiClient {
   }
 
   async getLabVolume(params?: {
+    days?: number;
     startDate?: string;
     endDate?: string;
   }): Promise<ApiResponse<unknown>> {
     const qs = new URLSearchParams();
+    if (params?.days) qs.set("days", String(params.days));
     if (params?.startDate) qs.set("startDate", params.startDate);
     if (params?.endDate) qs.set("endDate", params.endDate);
     const query = qs.toString() ? `?${qs.toString()}` : "";
@@ -776,6 +778,8 @@ class ApiClient {
     userId?: string;
     startDate?: string;
     endDate?: string;
+    sortField?: string;
+    sortDir?: string;
   }): Promise<ApiResponse<unknown>> {
     const qs = new URLSearchParams();
     if (params?.page) qs.set("page", String(params.page));
@@ -786,8 +790,50 @@ class ApiClient {
     if (params?.userId) qs.set("userId", params.userId);
     if (params?.startDate) qs.set("startDate", params.startDate);
     if (params?.endDate) qs.set("endDate", params.endDate);
+    if (params?.sortField) qs.set("sortField", params.sortField);
+    if (params?.sortDir) qs.set("sortDir", params.sortDir);
     const query = qs.toString() ? `?${qs.toString()}` : "";
     return this.get(`/api/v1/audit-logs${query}`);
+  }
+
+  async getAuditStats(): Promise<ApiResponse<unknown>> {
+    return this.get("/api/v1/audit-logs/stats");
+  }
+
+  async getAuditActions(): Promise<ApiResponse<unknown>> {
+    return this.get("/api/v1/audit-logs/actions");
+  }
+
+  async getAuditLogById(id: string): Promise<ApiResponse<unknown>> {
+    return this.get(`/api/v1/audit-logs/${id}`);
+  }
+
+  async exportAuditCsv(params?: {
+    entityName?: string;
+    entityId?: string;
+    action?: string;
+    userId?: string;
+    startDate?: string;
+    endDate?: string;
+    sortField?: string;
+    sortDir?: string;
+  }): Promise<Blob> {
+    const qs = new URLSearchParams();
+    if (params?.entityName) qs.set("entityName", params.entityName);
+    if (params?.entityId) qs.set("entityId", params.entityId);
+    if (params?.action) qs.set("action", params.action);
+    if (params?.userId) qs.set("userId", params.userId);
+    if (params?.startDate) qs.set("startDate", params.startDate);
+    if (params?.endDate) qs.set("endDate", params.endDate);
+    if (params?.sortField) qs.set("sortField", params.sortField);
+    if (params?.sortDir) qs.set("sortDir", params.sortDir);
+    const query = qs.toString() ? `?${qs.toString()}` : "";
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const res = await fetch(`${this.baseUrl}/api/v1/audit-logs/export${query}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error("Export failed");
+    return res.blob();
   }
 
   // ─── WhatsApp Delivery ──────────────────────────────────────────────────────

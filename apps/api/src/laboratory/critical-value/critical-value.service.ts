@@ -218,6 +218,7 @@ export class CriticalValueService {
 
   /**
    * List critical value logs with optional filters.
+   * Includes patient, test, and order relations for display.
    */
   async findAll(filters?: {
     status?: CriticalValueStatus;
@@ -243,46 +244,39 @@ export class CriticalValueService {
     return this.prisma.criticalValueLog.findMany({
       where,
       orderBy: { flaggedAt: 'desc' },
+      include: {
+        patient: { select: { name: true, mrn: true } },
+        test: { select: { name: true, code: true } },
+        order: { select: { orderNumber: true } },
+      },
     });
   }
 
   /**
    * Get all unacknowledged critical value logs, optionally filtered by clinicId.
    * Returns logs with notificationStatus in [PENDING, NOTIFIED].
+   * Includes patient, test, and order relations for display.
    */
   async getUnacknowledged(clinicId?: string): Promise<any[]> {
+    const baseWhere: any = {
+      notificationStatus: {
+        in: [CriticalValueStatus.PENDING, CriticalValueStatus.NOTIFIED],
+      },
+    };
+
     if (clinicId) {
-      // Filter by clinicId through the orders table
-      const orderIds = await this.prisma.order.findMany({
-        where: { clinicId },
-        select: { id: true },
-      });
-
-      const logs = await this.prisma.criticalValueLog.findMany({
-        where: {
-          notificationStatus: {
-            in: [CriticalValueStatus.PENDING, CriticalValueStatus.NOTIFIED],
-          },
-          orderId: {
-            in: orderIds.map((o) => o.id),
-          },
-        },
-        orderBy: { flaggedAt: 'desc' },
-      });
-
-      return logs;
+      baseWhere.order = { clinicId };
     }
 
-    const logs = await this.prisma.criticalValueLog.findMany({
-      where: {
-        notificationStatus: {
-          in: [CriticalValueStatus.PENDING, CriticalValueStatus.NOTIFIED],
-        },
-      },
+    return this.prisma.criticalValueLog.findMany({
+      where: baseWhere,
       orderBy: { flaggedAt: 'desc' },
+      include: {
+        patient: { select: { name: true, mrn: true } },
+        test: { select: { name: true, code: true } },
+        order: { select: { orderNumber: true } },
+      },
     });
-
-    return logs;
   }
 
   /**

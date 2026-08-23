@@ -26,6 +26,12 @@ interface UseCriticalValueSocketOptions {
   enabled?: boolean;
 }
 
+/**
+ * Resolve the WebSocket URL.
+ * - If NEXT_PUBLIC_API_URL is set (e.g., production direct), use it.
+ * - Otherwise use same-origin ("") which relies on Next.js rewrites
+ *   proxying /socket.io/* to the API backend.
+ */
 const WS_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export function useCriticalValueSocket(options: UseCriticalValueSocketOptions = {}) {
@@ -46,8 +52,12 @@ export function useCriticalValueSocket(options: UseCriticalValueSocketOptions = 
         ? localStorage.getItem("elis_token")
         : null;
 
+    // Don't attempt connection without a token — the server will immediately
+    // disconnect unauthenticated clients, causing a reconnect loop.
+    if (!token) return;
+
     const socket = io(`${WS_URL}/ws`, {
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       auth: { token },
       reconnection: true,
       reconnectionAttempts: 5,
@@ -59,6 +69,13 @@ export function useCriticalValueSocket(options: UseCriticalValueSocketOptions = 
     socket.on("connect", () => {
       // Join the critical-value room for real-time updates
       socket.emit("join-clinic", "critical-values");
+    });
+
+    socket.on("connect_error", (err) => {
+      // Avoid noisy console spam — log once at debug level
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[WS] connect_error:", err.message);
+      }
     });
 
     socket.on("critical-value:new", (data: CriticalValueAlert) => {

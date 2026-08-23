@@ -112,9 +112,9 @@ function MetricCard({
 }
 
 function formatTat(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 60) return `${Math.round(minutes)}m`;
   const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
+  const m = Math.round(minutes % 60);
   return m > 0 ? `${h}j ${m}m` : `${h}j`;
 }
 
@@ -290,9 +290,7 @@ export default function LabDashboardPage() {
   // Fetch volume from real API
   useEffect(() => {
     setVolumeLoading(true);
-    const endDate = new Date().toISOString().slice(0, 10);
-    const startDate = new Date(Date.now() - dateRange * 86400000).toISOString().slice(0, 10);
-    apiClient.getLabVolume({ startDate, endDate }).then((res) => {
+    apiClient.getLabVolume({ days: dateRange }).then((res) => {
       const d = (res?.data ?? res) as unknown;
       if (Array.isArray(d)) {
         setVolumeData(d as VolumePoint[]);

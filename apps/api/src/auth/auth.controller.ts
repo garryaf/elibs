@@ -19,6 +19,9 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto, @Req() req: any) {
     const user = await this.authService.validateUser(loginDto.email, loginDto.password);
     if (!user) {
+      // Audit failed login attempt (non-blocking)
+      const ipAddress = (req.headers?.['x-forwarded-for'] as string) || req.ip;
+      this.authService.logFailedLogin(loginDto.email, ipAddress);
       throw new UnauthorizedException('Invalid email or password');
     }
     const ipAddress = (req.headers?.['x-forwarded-for'] as string) || req.ip;

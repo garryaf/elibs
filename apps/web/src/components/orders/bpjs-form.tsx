@@ -65,11 +65,24 @@ export function BpjsForm({ orderId }: { orderId: string }) {
 
   const handleVerify = async () => {
     setFormError(null);
+    if (!formData.sepNumber || !formData.sepNumber.trim()) {
+      setFormError("Nomor SEP wajib diisi untuk verifikasi BPJS");
+      return;
+    }
     try {
-      await verifyMutation.mutateAsync({ id: orderId, data: { notes: "Verified manually" } });
-    } catch (e) {
-      console.error(e);
-      setFormError("Gagal memverifikasi BPJS");
+      const verifyPayload: Record<string, unknown> = {
+        sepNumber: formData.sepNumber.trim(),
+      };
+      if (formData.referringFacilityCode) {
+        verifyPayload.referringFacilityCode = formData.referringFacilityCode;
+      }
+      if (formData.classLevel) {
+        verifyPayload.classLevel = parseInt(String(formData.classLevel), 10);
+      }
+      await verifyMutation.mutateAsync({ id: orderId, data: verifyPayload });
+    } catch (e: unknown) {
+      const apiErr = e as { message?: string };
+      setFormError(apiErr?.message || "Gagal memverifikasi BPJS. Pastikan konfigurasi BPJS API sudah benar.");
     }
   };
 

@@ -30,7 +30,7 @@ export class PdfGeneratorService {
    * Includes: clinic header, patient info, test results table with
    * reference ranges and flag indicators, addendums, and report version in footer.
    */
-  async generateReport(order: OrderWithDetails): Promise<Buffer> {
+  async generateReport(order: OrderWithDetails, options?: { accreditationNumber?: string }): Promise<Buffer> {
     this.logger.log(`Generating PDF report for order ${order.orderNumber}`);
 
     return new Promise<Buffer>((resolve, reject) => {
@@ -56,7 +56,12 @@ export class PdfGeneratorService {
         this.renderResultsTable(doc, order);
         this.renderInterpretation(doc, order);
         this.renderAddendums(doc, order);
-        this.renderFooter(doc, order);
+        this.renderFooter(doc, order, options?.accreditationNumber);
+
+        // BP-3: Conditional DRAFT watermark for non-approved orders
+        if (order.status !== 'APPROVED' && order.status !== 'NOTIFIED') {
+          this.renderDraftWatermark(doc);
+        }
 
         doc.end();
       } catch (error) {
@@ -293,7 +298,7 @@ export class PdfGeneratorService {
     }
   }
 
-  private renderFooter(doc: PDFKit.PDFDocument, order: OrderWithDetails): void {
+  private renderFooter(doc: PDFKit.PDFDocument, order: OrderWithDetails, accreditationNumber?: string): void {
     const pages = doc.bufferedPageRange();
     const totalPages = pages.count;
 
@@ -336,12 +341,15 @@ export class PdfGeneratorService {
         { width: 195, align: 'right' },
       );
 
-      // Disclaimer
+      // Disclaimer + Accreditation
+      const disclaimer = accreditationNumber
+        ? `Hasil pemeriksaan ini hanya berlaku untuk sampel yang diperiksa. No. Akreditasi: ${accreditationNumber}. Dokumen ini dicetak oleh eLIS.`
+        : 'Hasil pemeriksaan ini hanya berlaku untuk sampel yang diperiksa. Dokumen ini dicetak oleh eLIS.';
       doc
         .fontSize(6)
         .fillColor('#999999')
         .text(
-          'Hasil pemeriksaan ini hanya berlaku untuk sampel yang diperiksa. Dokumen ini dicetak oleh eLIS.',
+          disclaimer,
           50,
           778,
           { width: 495, align: 'center' },
@@ -350,6 +358,48 @@ export class PdfGeneratorService {
 
     // Reset fill color
     doc.fillColor('#000000');
+  }
+
+  // === BP-3: Draft Watermark ===
+
+  /**
+   * Renders a diagonal "DRAFT" watermark across all pages.
+   * Only called when the order has NOT been approved by a doctor.
+   * Uses bufferPages (already enabled) to iterate over all pages.
+   */
+  private renderDraftWatermark(doc: PDFKit.PDFDocument): void {
+    const pages = doc.bufferedPageRange();
+    const totalPages = pages.count;
+
+    for (let i = 0; i < totalPages; i++) {
+      doc.switchToPage(i);
+
+      // Save graphics state
+      doc.save();
+
+      // Position watermark in center of page, rotated diagonally
+      // A4 page dimensions: 595.28 x 841.89 points
+      const centerX = 297;
+      const centerY = 421;
+
+      doc
+        .translate(centerX, centerY)
+        .rotate(-45)
+        .fontSize(72)
+        .font('Helvetica-Bold')
+        .fillColor('#cc0000')
+        .opacity(0.12)
+        .text('DRAFT', -150, -30, {
+          width: 300,
+          align: 'center',
+        });
+
+      // Restore graphics state
+      doc.restore();
+    }
+
+    // Reset fill color and opacity
+    doc.fillColor('#000000').opacity(1);
   }
 
   // === Helper Methods ===

@@ -41,6 +41,12 @@ export function VisitCreationStep({
   const [bpjsNumber, setBpjsNumber] = useState("");
   const [selectedInsurance, setSelectedInsurance] = useState<DropdownOption | null>(null);
 
+  // FUNC-REG-02: Referral fields
+  const [referringDoctorName, setReferringDoctorName] = useState("");
+  const [referralLetterNo, setReferralLetterNo] = useState("");
+  const [encounterReason, setEncounterReason] = useState("");
+  const [chiefComplaint, setChiefComplaint] = useState("");
+
   // Insurance enrollment state
   const [insuranceEnrollments, setInsuranceEnrollments] = useState<InsuranceEnrollment[]>([]);
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
@@ -51,13 +57,8 @@ export function VisitCreationStep({
   const [errors, setErrors] = useState<FormErrors>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
 
-  // Pre-fetch patient insurance enrollments when BPJS or INSURANCE is selected
+  // FUNC-REG-03: Always load insurance enrollments on mount (for badge display)
   useEffect(() => {
-    if (paymentMethod !== "BPJS" && paymentMethod !== "INSURANCE") {
-      setEnrollmentChecked(false);
-      return;
-    }
-
     let cancelled = false;
     setEnrollmentLoading(true);
 
@@ -101,7 +102,7 @@ export function VisitCreationStep({
     })();
 
     return () => { cancelled = true; };
-  }, [paymentMethod, patient.id]);
+  }, [patient.id]);
 
   // Determine if insurance is available
   const hasInsuranceEnrollment = insuranceEnrollments.length > 0;
@@ -113,7 +114,11 @@ export function VisitCreationStep({
       bpjsNumber !== "" ||
       selectedInsurance !== null ||
       selectedDoctor !== null ||
-      selectedClinic !== null
+      selectedClinic !== null ||
+      referringDoctorName !== "" ||
+      referralLetterNo !== "" ||
+      encounterReason !== "" ||
+      chiefComplaint !== ""
     );
   };
 
@@ -254,6 +259,12 @@ export function VisitCreationStep({
         payload.insuranceId = selectedInsurance.id;
       }
 
+      // FUNC-REG-02: Include referral fields if provided
+      if (referringDoctorName.trim()) payload.referringDoctorName = referringDoctorName.trim();
+      if (referralLetterNo.trim()) payload.referralLetterNo = referralLetterNo.trim();
+      if (encounterReason.trim()) payload.encounterReason = encounterReason.trim();
+      if (chiefComplaint.trim()) payload.chiefComplaint = chiefComplaint.trim();
+
       const res = await apiClient.createVisit(payload);
       const data = (res?.data ?? res) as Record<string, unknown>;
       // Handle both envelope styles
@@ -339,6 +350,18 @@ export function VisitCreationStep({
               <span className="font-mono text-brand">{patient.mrn}</span>
               <span>{formattedDob}</span>
               <span>{genderLabel}</span>
+              {/* FUNC-REG-03: Insurance enrollment badge */}
+              {enrollmentChecked && (
+                insuranceEnrollments.length > 0 ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                    ✓ Asuransi: {insuranceEnrollments.map((e) => e.insuranceName).join(", ")}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    Tidak ada asuransi terdaftar
+                  </span>
+                )
+              )}
             </div>
           </div>
         </div>
@@ -366,6 +389,70 @@ export function VisitCreationStep({
               onChange={setSelectedClinic}
               fetchOptions={fetchClinics}
             />
+          </div>
+        </div>
+
+        {/* FUNC-REG-02: Data Rujukan */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <h2 className="mb-4 text-base font-semibold text-slate-900 dark:text-white">
+            Data Rujukan
+            <span className="ml-2 text-xs font-normal text-slate-400">(opsional)</span>
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="visit-referring-doctor" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Nama Dokter Perujuk
+              </label>
+              <input
+                id="visit-referring-doctor"
+                type="text"
+                maxLength={100}
+                placeholder="dr. Nama Dokter"
+                value={referringDoctorName}
+                onChange={(e) => setReferringDoctorName(e.target.value)}
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </div>
+            <div>
+              <label htmlFor="visit-referral-no" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                No. Surat Rujukan
+              </label>
+              <input
+                id="visit-referral-no"
+                type="text"
+                maxLength={50}
+                placeholder="Nomor surat rujukan"
+                value={referralLetterNo}
+                onChange={(e) => setReferralLetterNo(e.target.value)}
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </div>
+            <div>
+              <label htmlFor="visit-encounter-reason" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Alasan Kunjungan
+              </label>
+              <input
+                id="visit-encounter-reason"
+                type="text"
+                placeholder="Misal: Cek darah rutin, MCU"
+                value={encounterReason}
+                onChange={(e) => setEncounterReason(e.target.value)}
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </div>
+            <div>
+              <label htmlFor="visit-chief-complaint" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Keluhan Utama
+              </label>
+              <input
+                id="visit-chief-complaint"
+                type="text"
+                placeholder="Keluhan pasien (opsional)"
+                value={chiefComplaint}
+                onChange={(e) => setChiefComplaint(e.target.value)}
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </div>
           </div>
         </div>
 

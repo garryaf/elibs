@@ -51,6 +51,7 @@ export class LabWorkflowController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
+    @Query('status') status?: string,
     @Req() req?: any,
   ) {
     const clinicId = req?.dataScope?.clinicId;
@@ -59,6 +60,7 @@ export class LabWorkflowController {
       limit ? parseInt(limit, 10) : 20,
       clinicId,
       search,
+      status,
     );
   }
 
@@ -79,6 +81,15 @@ export class LabWorkflowController {
       clinicId,
       search,
     );
+  }
+
+  @Get('queue/stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SAMPLING, Role.ANALIS, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get lab queue counts per status' })
+  async getQueueStats(@Req() req?: any) {
+    const clinicId = req?.dataScope?.clinicId;
+    return this.labWorkflowService.getQueueStats(clinicId);
   }
 
   @Put(':orderId/results')

@@ -2,10 +2,11 @@ import { Module } from '@nestjs/common';
 import { SettingsController } from './settings.controller';
 import { SettingsService } from './settings.service';
 import { NotificationModule } from '../laboratory/notification/notification.module';
+import { AuditModule } from '../laboratory/audit/audit.module';
 import { SETTINGS_QUERY_SERVICE } from './interfaces/settings-query.interface';
 
 @Module({
-  imports: [NotificationModule],
+  imports: [NotificationModule, AuditModule],
   controllers: [SettingsController],
   providers: [
     SettingsService,

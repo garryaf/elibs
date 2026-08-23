@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
+import * as express from 'express';
+import * as path from 'path';
 import { AppModule } from './app.module';
 import { globalValidationPipe } from './common/pipes/validation.pipe';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -56,6 +58,9 @@ async function bootstrap() {
   app.useGlobalPipes(globalValidationPipe);
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new TransformInterceptor(), new LoggingInterceptor());
+
+  // Serve uploaded files (logos, branding) as static assets
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Start server
   const port = configService.get<number>('PORT')!;

@@ -88,6 +88,40 @@ export const batchInvoiceKeys = {
 
 // ─── Hooks ───────────────────────────────────────────────────────────────────
 
+export function useBatchInvoicePreview(params?: {
+  insuranceId?: string;
+  periodStart?: string;
+  periodEnd?: string;
+}) {
+  const enabled = !!(params?.insuranceId && params?.periodStart && params?.periodEnd);
+  const qs = new URLSearchParams();
+  if (params?.insuranceId) qs.set("insuranceId", params.insuranceId);
+  if (params?.periodStart) qs.set("periodStart", params.periodStart);
+  if (params?.periodEnd) qs.set("periodEnd", params.periodEnd);
+  const query = qs.toString() ? `?${qs.toString()}` : "";
+
+  return useQuery({
+    queryKey: [...batchInvoiceKeys.all, "preview", params] as const,
+    queryFn: () =>
+      apiClient.get<{
+        insurance: { id: string; code: string; name: string; type: string };
+        totalEligible: number;
+        included: number;
+        truncated: boolean;
+        maxOrdersPerBatch: number;
+        totalAmount: number;
+        orders: Array<{
+          id: string;
+          orderNumber: string;
+          totalAmount: number;
+          paidAt: string | null;
+          patient: { id: string; name: string; mrn: string };
+        }>;
+      }>(`/api/v1/batch-invoices/preview${query}`),
+    enabled,
+  });
+}
+
 export function useBatchInvoices(params?: {
   insuranceId?: string;
   status?: BatchInvoiceStatus;

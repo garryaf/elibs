@@ -196,6 +196,8 @@ model TestMaster {
   deltaAlertThreshold      Decimal?   @db.Decimal(5, 2) // Percentage change threshold for delta check alerts
   tatMinutes               Int? // Target TAT dalam menit (misal: 60 = 1 jam, 1440 = 1 hari)
   tatCategory              String?    @db.VarChar(20) // CITO, ROUTINE, STAT
+  fastingRequired          Boolean    @default(false) // Whether patient needs fasting before test
+  fastingHours             Int? // Fasting duration in hours (e.g., 8-12 for glucose)
   isActive                 Boolean    @default(true)
   createdAt                DateTime   @default(now())
   updatedAt                DateTime   @updatedAt
@@ -203,10 +205,12 @@ model TestMaster {
 
   category            TestCategory          @relation(fields: [categoryId], references: [id])
   referenceValues     ReferenceValue[]
+  qualitativeReferenceValues QualitativeReferenceValue[]
   tariffs             Tariff[]
   panelTests          PanelTest[]
   orderDetails        OrderDetail[]
   reagentTestMappings ReagentTestMapping[]
+  criticalValueLogs   CriticalValueLog[]
 
   @@map("test_masters")
 }
@@ -217,10 +221,17 @@ enum ResultType {
   QUALITATIVE
 }
 
+enum AgeUnit {
+  YEARS
+  MONTHS
+  DAYS
+}
+
 model ReferenceValue {
   id          String   @id @default(uuid()) @db.Uuid
   testId      String   @db.Uuid
   gender      Gender
+  ageUnit     AgeUnit  @default(YEARS) // Unit for minAge/maxAge interpretation
   minAge      Int      @default(0)
   maxAge      Int      @default(150)
   minRef      Decimal  @db.Decimal(10, 4)
@@ -232,8 +243,25 @@ model ReferenceValue {
 
   test TestMaster @relation(fields: [testId], references: [id])
 
-  @@unique([testId, gender, minAge, maxAge])
+  @@unique([testId, gender, ageUnit, minAge, maxAge])
   @@map("reference_values")
+}
+
+// === QUALITATIVE REFERENCE VALUES (BP-MD-05) ===
+
+model QualitativeReferenceValue {
+  id          String @id @default(uuid()) @db.Uuid
+  testId      String @db.Uuid
+  optionValue String // The qualitative option (e.g., "Reaktif", "Non-Reaktif", "Positif 1+")
+  flag        Flag   // The flag to assign (NORMAL, HIGH, CRITICAL, LOW)
+  description String? // Optional description (e.g., "Requires immediate follow-up")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  test TestMaster @relation(fields: [testId], references: [id])
+
+  @@unique([testId, optionValue])
+  @@map("qualitative_reference_values")
 }
 
 model Panel {
@@ -241,6 +269,7 @@ model Panel {
   name        String    @unique
   description String?
   price       Decimal   @db.Decimal(12, 2)
+  discount    Decimal   @default(0) @db.Decimal(5, 2) // Discount percentage for panel bundle (0-100)
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -476,15 +505,18 @@ model ReagentTestMapping {
 // === MASTER DATA: SAMPLE TYPE ===
 
 model SampleTypeMaster {
-  id           String    @id @default(uuid()) @db.Uuid
-  code         String    @unique
-  name         String
-  container    String? // e.g., "EDTA Tube", "SST Tube"
-  instructions String?
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  id                 String    @id @default(uuid()) @db.Uuid
+  code               String    @unique
+  name               String
+  container          String? // e.g., "EDTA Tube", "SST Tube"
+  instructions       String?
+  minimumVolume      String? // e.g., "3 mL", "5 mL whole blood"
+  stabilityPeriod    String? // e.g., "24h room temp, 72h refrigerated"
+  storageTemperature String? // e.g., "2-8°C", "Room temp", "-20°C"
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
 
   @@map("sample_types")
 }
@@ -625,6 +657,7 @@ model Patient {
   kelurahanDesaRef  KelurahanDesa?     @relation(fields: [kelurahanDesaId], references: [id])
   orders            Order[]
   visits            Visit[]
+  criticalValueLogs CriticalValueLog[]
 
   @@index([phone])
   @@map("patients")
@@ -673,6 +706,7 @@ model Order {
   cancelledAt       DateTime?
   cancelledBy       String?          @db.Uuid
   cancelReason      String?
+  tatEscalatedAt    DateTime?
   discountAmount    Decimal?         @db.Decimal(12, 2)
   discountReason    String?
   reportVersion     Int              @default(1)
@@ -696,6 +730,7 @@ model Order {
   specimens         Specimen[]
   addendums         OrderAddendum[]
   refunds           Refund[]
+  criticalValueLogs CriticalValueLog[]
 
   @@index([status])
   @@index([patientId])
@@ -1212,6 +1247,10 @@ model CriticalValueLog {
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
 
+  order   Order      @relation(fields: [orderId], references: [id])
+  test    TestMaster @relation(fields: [testId], references: [id])
+  patient Patient    @relation(fields: [patientId], references: [id])
+
   @@index([orderId])
   @@index([notificationStatus])
   @@index([patientId])
@@ -1293,6 +1332,33 @@ model PriceListItem {
 
   @@unique([priceListId, testId])
   @@map("price_list_items")
+}
+
+// === PRICE CHANGE LOG (Audit Trail for Pricing) ===
+
+model PriceChangeLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  entityType    String   @db.VarChar(30) // "TEST_MASTER" | "TARIFF" | "PRICE_LIST_ITEM"
+  entityId      String   @db.Uuid
+  testId        String?  @db.Uuid
+  testCode      String?  @db.VarChar(30)
+  testName      String?
+  previousPrice Decimal  @db.Decimal(12, 2)
+  newPrice      Decimal  @db.Decimal(12, 2)
+  previousDiscount Decimal? @db.Decimal(5, 2)
+  newDiscount   Decimal? @db.Decimal(5, 2)
+  changeType    String   @db.VarChar(30) // "MANUAL" | "BULK_ADJUST" | "APPROVAL"
+  changeReason  String?
+  changedBy     String   @db.Uuid
+  changedByName String?
+  approvalId    String?  @db.Uuid
+  createdAt     DateTime @default(now())
+
+  @@index([testId])
+  @@index([entityType, entityId])
+  @@index([changedBy])
+  @@index([createdAt])
+  @@map("price_change_logs")
 }
 
 // === RECEIPT SEQUENCE ===

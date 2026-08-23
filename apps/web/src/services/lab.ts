@@ -9,6 +9,7 @@ import { apiClient } from "@/lib/api";
 export const labKeys = {
   all: ["lab"] as const,
   queue: (params?: Record<string, unknown>) => [...labKeys.all, "queue", params] as const,
+  queueStats: () => [...labKeys.all, "queue-stats"] as const,
   approvalQueue: (params?: Record<string, unknown>) => [...labKeys.all, "approval-queue", params] as const,
   deltaCheck: (orderId: string) => [...labKeys.all, "delta-check", orderId] as const,
 };
@@ -26,6 +27,13 @@ export function useLabQueue(params?: { page?: number; limit?: number; status?: s
       if (params?.search) qs.set("search", params.search);
       return apiClient.get(`/api/v1/lab/queue?${qs.toString()}`);
     },
+  });
+}
+
+export function useLabQueueStats() {
+  return useQuery({
+    queryKey: labKeys.queueStats(),
+    queryFn: () => apiClient.get("/api/v1/lab/queue/stats"),
   });
 }
 
@@ -76,6 +84,7 @@ export function useConfirmSample() {
       apiClient.post(`/api/v1/lab/${orderId}/sample`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: labKeys.queue() });
+      queryClient.invalidateQueries({ queryKey: labKeys.queueStats() });
     },
   });
 }

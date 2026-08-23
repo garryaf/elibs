@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { PdfGeneratorService, OrderWithDetails } from '../notification/pdf-generator.service';
 
@@ -114,6 +114,16 @@ export class PortalService {
 
     if (!order) {
       throw new NotFoundException('Order tidak ditemukan');
+    }
+
+    // BP-1: Guard — only allow portal access for APPROVED/NOTIFIED orders
+    if (order.status !== 'APPROVED' && order.status !== 'NOTIFIED') {
+      this.logger.warn(
+        `Portal access blocked for order ${order.orderNumber} — status: ${order.status}`,
+      );
+      throw new BadRequestException(
+        'Laporan belum tersedia. Hasil pemeriksaan masih dalam proses validasi oleh dokter.',
+      );
     }
 
     return order;

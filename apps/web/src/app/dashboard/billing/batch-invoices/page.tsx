@@ -164,7 +164,7 @@ export default function BatchInvoicesPage() {
   };
 
   return (
-    <RoleGuard allowedRoles={["SUPER_ADMIN", "ADMIN", "KASIR"]}>
+    <RoleGuard allowedRoles={["SUPER_ADMIN", "ADMIN", "OWNER", "MANAGER", "KASIR"]}>
       <div className="space-y-6">
         {/* Page Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -689,6 +689,7 @@ function BatchInvoiceDetailModal({
   const [actionError, setActionError] = useState<string | null>(null);
   const [showPaidInput, setShowPaidInput] = useState(false);
   const [paidAmount, setPaidAmount] = useState("");
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   // Parse detail from response
   const detail: BatchInvoiceDetail | null = useMemo(() => {
@@ -729,6 +730,7 @@ function BatchInvoiceDetailModal({
     setActionError(null);
     try {
       await cancelMutation.mutateAsync(invoiceId);
+      setShowCancelConfirm(false);
       refetch();
     } catch (err: unknown) {
       const apiErr = err as { message?: string };
@@ -982,9 +984,9 @@ function BatchInvoiceDetailModal({
                       {action.label}
                     </button>
                   ))}
-                  {canCancel && (
+                  {canCancel && !showCancelConfirm && (
                     <button
-                      onClick={handleCancel}
+                      onClick={() => setShowCancelConfirm(true)}
                       disabled={
                         updateStatus.isPending || cancelMutation.isPending
                       }
@@ -993,6 +995,26 @@ function BatchInvoiceDetailModal({
                       <Ban className="h-3.5 w-3.5" />
                       Batalkan
                     </button>
+                  )}
+                  {showCancelConfirm && (
+                    <div className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 dark:border-red-800 dark:bg-red-900/20">
+                      <span className="text-xs text-red-700 dark:text-red-300">
+                        Yakin batalkan invoice ini? Order akan dibebaskan.
+                      </span>
+                      <button
+                        onClick={handleCancel}
+                        disabled={cancelMutation.isPending}
+                        className="rounded-md bg-red-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {cancelMutation.isPending ? "..." : "Ya, Batalkan"}
+                      </button>
+                      <button
+                        onClick={() => setShowCancelConfirm(false)}
+                        className="text-xs font-medium text-red-600 hover:text-red-800 dark:text-red-400"
+                      >
+                        Tidak
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

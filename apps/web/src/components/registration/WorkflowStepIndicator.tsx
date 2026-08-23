@@ -1,12 +1,14 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type StepId = "search" | "register" | "visit-creation";
 
 interface WorkflowStepIndicatorProps {
   currentStep: StepId;
   completedSteps: ("search" | "register")[];
+  onStepClick?: (step: StepId) => void;
 }
 
 const steps: { id: StepId; label: string }[] = [
@@ -18,6 +20,7 @@ const steps: { id: StepId; label: string }[] = [
 export function WorkflowStepIndicator({
   currentStep,
   completedSteps,
+  onStepClick,
 }: WorkflowStepIndicatorProps) {
   return (
     <nav aria-label="Langkah pendaftaran" className="w-full">
@@ -25,6 +28,7 @@ export function WorkflowStepIndicator({
         {steps.map((step, index) => {
           const isCurrent = step.id === currentStep;
           const isCompleted = completedSteps.includes(step.id as "search" | "register");
+          const isClickable = isCompleted && !isCurrent && !!onStepClick;
 
           return (
             <li
@@ -38,52 +42,65 @@ export function WorkflowStepIndicator({
                   {/* Left connector */}
                   {index > 0 && (
                     <div
-                      className={`h-0.5 flex-1 transition-colors ${
+                      className={cn(
+                        "h-0.5 flex-1 transition-colors",
                         isCompleted || isCurrent
                           ? "bg-brand"
                           : "bg-slate-200 dark:bg-slate-700"
-                      }`}
+                      )}
                     />
                   )}
 
-                  {/* Step circle */}
-                  <div
-                    className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all ${
+                  {/* Step circle — clickable if completed */}
+                  <button
+                    type="button"
+                    onClick={() => isClickable && onStepClick(step.id)}
+                    disabled={!isClickable}
+                    className={cn(
+                      "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all",
                       isCurrent
                         ? "bg-brand text-white ring-4 ring-brand/20"
                         : isCompleted
                           ? "bg-brand text-white"
-                          : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
-                    }`}
+                          : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500",
+                      isClickable && "cursor-pointer hover:ring-4 hover:ring-brand/30 hover:scale-110",
+                      !isClickable && "cursor-default"
+                    )}
+                    aria-label={isClickable ? `Kembali ke ${step.label}` : step.label}
+                    title={isClickable ? `Klik untuk kembali ke: ${step.label}` : undefined}
                   >
                     {isCompleted ? (
                       <Check className="h-4 w-4" aria-hidden="true" />
                     ) : (
                       <span>{index + 1}</span>
                     )}
-                  </div>
+                  </button>
 
                   {/* Right connector */}
                   {index < steps.length - 1 && (
                     <div
-                      className={`h-0.5 flex-1 transition-colors ${
+                      className={cn(
+                        "h-0.5 flex-1 transition-colors",
                         isCompleted
                           ? "bg-brand"
                           : "bg-slate-200 dark:bg-slate-700"
-                      }`}
+                      )}
                     />
                   )}
                 </div>
 
                 {/* Step label */}
                 <span
-                  className={`text-xs font-medium transition-colors ${
+                  className={cn(
+                    "text-xs font-medium transition-colors",
                     isCurrent
                       ? "text-brand"
                       : isCompleted
                         ? "text-slate-700 dark:text-slate-300"
-                        : "text-slate-400 dark:text-slate-500"
-                  }`}
+                        : "text-slate-400 dark:text-slate-500",
+                    isClickable && "hover:text-brand cursor-pointer"
+                  )}
+                  onClick={() => isClickable && onStepClick(step.id)}
                 >
                   {step.label}
                 </span>

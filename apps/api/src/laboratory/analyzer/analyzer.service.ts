@@ -1,6 +1,7 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { Flag, ResultType, OrderDetailStatus } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { CriticalValueService } from '../critical-value/critical-value.service';
 import { BatchImportResultDto } from './dto/batch-import-result.dto';
 import { CsvResultRowDto } from './dto/csv-result-row.dto';
 import { SingleResultDto } from './dto/single-result.dto';
@@ -20,7 +21,10 @@ import { SingleResultDto } from './dto/single-result.dto';
 export class AnalyzerService {
   private readonly logger = new Logger(AnalyzerService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly criticalValueService: CriticalValueService,
+  ) {}
 
   /**
    * Import batch results from a CSV file upload.
@@ -91,6 +95,14 @@ export class AnalyzerService {
       return result;
     }
 
+    // Collect critical results to trigger alerts after transaction
+    const criticalResults: Array<{
+      orderId: string;
+      orderDetailId: string;
+      resultValue: string;
+      testId: string;
+    }> = [];
+
     // Persist all valid rows within a single transaction for atomicity
     await this.prisma.$transaction(async (tx) => {
       for (const { row, rowNumber, testConfig } of validatedRows) {
@@ -137,9 +149,33 @@ export class AnalyzerService {
           },
         });
 
+        // Collect critical results for post-transaction alerting
+        if (flag === Flag.CRITICAL) {
+          criticalResults.push({
+            orderId: orderDetail.order.id,
+            orderDetailId: orderDetail.id,
+            resultValue: row.resultValue,
+            testId: orderDetail.testId,
+          });
+        }
+
         result.successCount++;
       }
     });
+
+    // Critical Value Alerts: trigger after transaction commits (non-blocking)
+    for (const critical of criticalResults) {
+      await this.criticalValueService.detectAndAlert(
+        critical.orderId,
+        critical.orderDetailId,
+        critical.resultValue,
+        critical.testId,
+      ).catch((err) => {
+        this.logger.warn(
+          `Failed to trigger critical value alert for batch import detail ${critical.orderDetailId}: ${err.message}`,
+        );
+      });
+    }
 
     // Adjust error count — some rows may have failed inside the transaction
     // (e.g., no matching order detail found)
@@ -449,6 +485,20 @@ export class AnalyzerService {
         status: OrderDetailStatus.RESULT_ENTERED,
       },
     });
+
+    // Critical Value Alert: trigger detection if result is CRITICAL
+    if (flag === Flag.CRITICAL) {
+      await this.criticalValueService.detectAndAlert(
+        orderDetail.order.id,
+        orderDetail.id,
+        dto.resultValue,
+        orderDetail.testId,
+      ).catch((err) => {
+        this.logger.warn(
+          `Failed to trigger critical value alert for order ${dto.orderNumber}, test ${dto.testCode}: ${err.message}`,
+        );
+      });
+    }
 
     this.logger.log(
       `Single result entered for order ${dto.orderNumber}, test ${dto.testCode}`,

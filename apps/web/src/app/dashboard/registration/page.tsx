@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, ClipboardPlus, Eye, FlaskConical, Loader2 } from "lucide-react";
+import { CheckCircle2, ClipboardPlus, Eye, FlaskConical, Loader2, Printer } from "lucide-react";
 import type { PatientOption } from "@/types/visit";
 import { WorkflowStepIndicator } from "@/components/registration/WorkflowStepIndicator";
 import { PatientSearchStep } from "@/components/registration/PatientSearchStep";
@@ -242,6 +242,50 @@ function RegistrationWorkflow() {
                 <Eye className="h-4 w-4" />
                 Lihat Detail
               </button>
+              <button
+                onClick={() => {
+                  const printWindow = window.open("", "_blank");
+                  if (!printWindow) return;
+                  const patientName = state.selectedPatient?.name || "-";
+                  const patientMrn = state.selectedPatient?.mrn || "-";
+                  const visitNumber = state.createdVisit!.visitNumber;
+                  const dateStr = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+                  printWindow.document.write(`
+                    <html>
+                    <head><title>Slip Pendaftaran - ${visitNumber}</title>
+                    <style>
+                      body { font-family: sans-serif; max-width: 400px; margin: 40px auto; padding: 20px; border: 1px solid #ddd; border-radius: 12px; }
+                      h1 { font-size: 18px; text-align: center; margin-bottom: 4px; }
+                      .subtitle { text-align: center; font-size: 12px; color: #666; margin-bottom: 20px; }
+                      .visit-number { text-align: center; font-size: 28px; font-weight: bold; font-family: monospace; margin: 16px 0; padding: 12px; background: #f5f5f5; border-radius: 8px; }
+                      table { width: 100%; border-collapse: collapse; font-size: 13px; }
+                      td { padding: 6px 0; }
+                      td:first-child { color: #666; width: 120px; }
+                      .footer { margin-top: 20px; font-size: 11px; color: #999; text-align: center; }
+                      @media print { body { border: none; margin: 0; } }
+                    </style>
+                    </head>
+                    <body>
+                      <h1>SLIP PENDAFTARAN</h1>
+                      <p class="subtitle">eLIS Laboratory Information System</p>
+                      <div class="visit-number">${visitNumber}</div>
+                      <table>
+                        <tr><td>Nama Pasien</td><td><strong>${patientName}</strong></td></tr>
+                        <tr><td>No. Rekam Medis</td><td>${patientMrn}</td></tr>
+                        <tr><td>Tanggal Daftar</td><td>${dateStr}</td></tr>
+                      </table>
+                      <p class="footer">Tunjukkan slip ini kepada petugas laboratorium.<br/>Simpan sebagai bukti pendaftaran.</p>
+                      <script>window.onload=function(){window.print();setTimeout(function(){window.close()},500);}</script>
+                    </body>
+                    </html>
+                  `);
+                  printWindow.document.close();
+                }}
+                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                <Printer className="h-4 w-4" />
+                Cetak Slip
+              </button>
             </div>
           </div>
         </div>
@@ -266,6 +310,17 @@ function RegistrationWorkflow() {
       <WorkflowStepIndicator
         currentStep={state.currentStep}
         completedSteps={completedSteps}
+        onStepClick={(step) => {
+          if (step === "search") {
+            setState((prev) => ({
+              ...prev,
+              currentStep: "search",
+              selectedPatient: null,
+              createdVisit: null,
+              error: null,
+            }));
+          }
+        }}
       />
 
       {/* Error Banner */}
@@ -311,7 +366,7 @@ function RegistrationWorkflow() {
 //     components that call useSearchParams during SSR / static generation) ─────
 export default function RegistrationWorkflowPage() {
   return (
-    <RoleGuard allowedRoles={["SUPER_ADMIN", "ADMIN", "CS", "SAMPLING"]}>
+    <RoleGuard allowedRoles={["SUPER_ADMIN", "ADMIN", "CS", "KASIR", "KLINIK_PARTNER"]}>
       <Suspense
         fallback={
           <div className="space-y-6">

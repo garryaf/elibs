@@ -21,6 +21,7 @@ import {
   FlaskConical,
   Bell,
   Receipt,
+  ClipboardPlus,
 } from "lucide-react";
 
 // ─── Role-based menu configuration ──────────────────────────────────────────
@@ -63,6 +64,12 @@ const menuGroups: MenuGroup[] = [
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { name: "Pasien", href: "/dashboard/patients", icon: Users },
+      {
+        name: "Pendaftaran",
+        href: "/dashboard/registration",
+        icon: ClipboardPlus,
+        roles: ["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "KASIR", "CS", "KLINIK_PARTNER"],
+      },
       {
         name: "Kunjungan",
         href: "/dashboard/visits",
@@ -110,7 +117,7 @@ const menuGroups: MenuGroup[] = [
         name: "Invoice Batch",
         href: "/dashboard/billing/batch-invoices",
         icon: Receipt,
-        roles: ["SUPER_ADMIN", "ADMIN", "KASIR"],
+        roles: ["SUPER_ADMIN", "ADMIN", "OWNER", "MANAGER", "KASIR"],
       },
     ],
   },

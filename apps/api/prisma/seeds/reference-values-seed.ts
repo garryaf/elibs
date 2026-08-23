@@ -72,9 +72,10 @@ async function main(): Promise<void> {
 
     await prisma.referenceValue.upsert({
       where: {
-        testId_gender_minAge_maxAge: {
+        testId_gender_ageUnit_minAge_maxAge: {
           testId: test.id,
           gender: ref.gender,
+          ageUnit: 'YEARS',
           minAge: ref.minAge,
           maxAge: ref.maxAge,
         },
