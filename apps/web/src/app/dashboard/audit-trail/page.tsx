@@ -152,6 +152,92 @@ function formatTimestamp(ts: string): string {
   });
 }
 
+// ─── Field Label Mapping ──────────────────────────────────────────────────────
+
+const FIELD_LABELS: Record<string, string> = {
+  id: "ID",
+  notes: "Catatan",
+  paidAt: "Waktu Bayar",
+  paidBy: "Dibayar Oleh",
+  status: "Status",
+  barcode: "Barcode",
+  visitId: "ID Kunjungan",
+  clinicId: "Klinik",
+  doctorId: "Dokter",
+  priority: "Prioritas",
+  createdAt: "Dibuat",
+  patientId: "Pasien",
+  updatedAt: "Diperbarui",
+  amountPaid: "Jumlah Bayar",
+  approvedAt: "Waktu Approve",
+  approvedBy: "Diapprove Oleh",
+  notifiedAt: "Waktu Notifikasi",
+  rejectedAt: "Waktu Reject",
+  rejectedBy: "Direject Oleh",
+  verifiedAt: "Waktu Verifikasi",
+  verifiedBy: "Diverifikasi Oleh",
+  barcodeText: "Teks Barcode",
+  cancelledAt: "Waktu Batal",
+  cancelledBy: "Dibatalkan Oleh",
+  discountAmount: "Jumlah Diskon",
+  discountApprovedAt: "Diskon Diapprove",
+  discountApprovedBy: "Diskon Oleh",
+  discountReason: "Alasan Diskon",
+  totalAmount: "Total",
+  name: "Nama",
+  email: "Email",
+  phone: "Telepon",
+  address: "Alamat",
+  dateOfBirth: "Tanggal Lahir",
+  gender: "Jenis Kelamin",
+  medicalRecordNumber: "No. Rekam Medis",
+  code: "Kode",
+  description: "Deskripsi",
+  price: "Harga",
+  unit: "Satuan",
+  category: "Kategori",
+  isActive: "Aktif",
+  referenceRange: "Nilai Rujukan",
+  testCategoryId: "Kategori Tes",
+  insuranceId: "Asuransi",
+  insuranceType: "Tipe Asuransi",
+  paymentMethod: "Metode Bayar",
+  _settingKey: "Kunci Setting",
+  value: "Nilai",
+};
+
+function getFieldLabel(key: string): string {
+  return FIELD_LABELS[key] || key;
+}
+
+// ─── Value Formatting ─────────────────────────────────────────────────────────
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+
+function formatFieldValue(value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "string") {
+    if (UUID_REGEX.test(value)) return value.slice(0, 8) + "…";
+    if (ISO_DATE_REGEX.test(value)) {
+      const d = new Date(value);
+      return d.toLocaleString("id-ID", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+    return value;
+  }
+  if (typeof value === "boolean") return value ? "Ya" : "Tidak";
+  if (typeof value === "number") return value.toLocaleString("id-ID");
+  return JSON.stringify(value);
+}
+
+// ─── JsonDiff Component ───────────────────────────────────────────────────────
+
 function JsonDiff({
   oldValues,
   newValues,
@@ -159,45 +245,96 @@ function JsonDiff({
   oldValues: Record<string, unknown> | null;
   newValues: Record<string, unknown> | null;
 }) {
-  const allKeys = new Set([
-    ...Object.keys(oldValues || {}),
-    ...Object.keys(newValues || {}),
-  ]);
+  const [showAll, setShowAll] = useState(false);
 
-  if (allKeys.size === 0) {
+  const allKeys = Array.from(
+    new Set([
+      ...Object.keys(oldValues || {}),
+      ...Object.keys(newValues || {}),
+    ])
+  );
+
+  const changedKeys = allKeys.filter(
+    (key) => JSON.stringify(oldValues?.[key]) !== JSON.stringify(newValues?.[key])
+  );
+
+  const unchangedCount = allKeys.length - changedKeys.length;
+  const displayKeys = showAll ? allKeys : changedKeys;
+
+  if (allKeys.length === 0) {
     return (
       <p className="text-xs text-slate-400 italic">Tidak ada data perubahan</p>
     );
   }
 
+  if (changedKeys.length === 0) {
+    return (
+      <p className="text-xs text-slate-400 italic">Tidak ada field yang berubah</p>
+    );
+  }
+
   return (
-    <div className="grid gap-2 text-xs">
-      <div className="grid grid-cols-3 gap-2 font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 pb-1">
+    <div className="text-xs">
+      {/* Summary */}
+      <div className="mb-2 flex items-center gap-3">
+        <span className="text-slate-500 dark:text-slate-400">
+          <span className="font-semibold text-amber-600 dark:text-amber-400">{changedKeys.length}</span>
+          {" "}field berubah dari {allKeys.length} total
+        </span>
+        {unchangedCount > 0 && (
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="text-xs text-brand hover:underline transition-colors"
+          >
+            {showAll ? "Sembunyikan yang tidak berubah" : `Tampilkan semua (${allKeys.length})`}
+          </button>
+        )}
+      </div>
+
+      {/* Table header */}
+      <div className="grid grid-cols-[minmax(120px,1fr)_1fr_1fr] gap-2 font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 pb-1 mb-1">
         <span>Field</span>
         <span>Nilai Lama</span>
         <span>Nilai Baru</span>
       </div>
-      {Array.from(allKeys).map((key) => {
-        const oldVal = oldValues?.[key];
-        const newVal = newValues?.[key];
-        const changed = JSON.stringify(oldVal) !== JSON.stringify(newVal);
-        return (
-          <div
-            key={key}
-            className={`grid grid-cols-3 gap-2 rounded px-1 py-0.5 ${changed ? "bg-amber-50 dark:bg-amber-900/10" : ""}`}
-          >
-            <span className="font-medium text-slate-700 dark:text-slate-300 truncate">
-              {key}
-            </span>
-            <span className="text-red-600 dark:text-red-400 truncate">
-              {oldVal !== undefined ? JSON.stringify(oldVal) : "—"}
-            </span>
-            <span className="text-emerald-600 dark:text-emerald-400 truncate">
-              {newVal !== undefined ? JSON.stringify(newVal) : "—"}
-            </span>
-          </div>
-        );
-      })}
+
+      {/* Rows */}
+      <div className="grid gap-0.5">
+        {displayKeys.map((key) => {
+          const oldVal = oldValues?.[key];
+          const newVal = newValues?.[key];
+          const changed = JSON.stringify(oldVal) !== JSON.stringify(newVal);
+          return (
+            <div
+              key={key}
+              className={`grid grid-cols-[minmax(120px,1fr)_1fr_1fr] gap-2 rounded px-2 py-1 ${
+                changed
+                  ? "bg-amber-50 dark:bg-amber-900/10 border-l-2 border-amber-400"
+                  : "opacity-50"
+              }`}
+            >
+              <span
+                className="font-medium text-slate-700 dark:text-slate-300 truncate"
+                title={key}
+              >
+                {getFieldLabel(key)}
+              </span>
+              <span
+                className="text-red-600 dark:text-red-400 truncate"
+                title={oldVal !== undefined && oldVal !== null ? String(oldVal) : ""}
+              >
+                {formatFieldValue(oldVal)}
+              </span>
+              <span
+                className="text-emerald-600 dark:text-emerald-400 truncate"
+                title={newVal !== undefined && newVal !== null ? String(newVal) : ""}
+              >
+                {formatFieldValue(newVal)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -841,10 +978,13 @@ export default function AuditTrailPage() {
               <tbody>
                 {logs.map((log) => {
                   const isExpanded = expandedRow === log.id;
-                  const changeCount = new Set([
+                  const allFieldKeys = Array.from(new Set([
                     ...Object.keys(log.oldValues || {}),
                     ...Object.keys(log.newValues || {}),
-                  ]).size;
+                  ]));
+                  const changeCount = allFieldKeys.filter(
+                    (k) => JSON.stringify((log.oldValues as Record<string, unknown>)?.[k]) !== JSON.stringify((log.newValues as Record<string, unknown>)?.[k])
+                  ).length;
 
                   return (
                     <tr key={log.id} className="group">
@@ -895,8 +1035,7 @@ export default function AuditTrailPage() {
                               {log.entityId.slice(0, 12)}…
                             </div>
                             <div className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">
-                              {changeCount} field
-                              {changeCount !== 1 ? "s" : ""}
+                              {changeCount} perubahan
                             </div>
                           </div>
 

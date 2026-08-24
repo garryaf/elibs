@@ -242,6 +242,90 @@ function OrderStatusTimeline({ currentStatus }: { currentStatus: string }) {
 }
 
 /* ────────────────────────────────────────────────────────────────
+   NEXT STEP ACTION PANEL — Contextual workflow guidance
+──────────────────────────────────────────────────────────────── */
+function NextStepPanel({ order }: { order: OrderApi }) {
+  const status = order.status;
+
+  // Don't show for terminal states or pre-payment
+  if (status === "PENDING_PAYMENT" || status === "PAYMENT_OVERDUE" || status === "DEPOSIT_RECEIVED" || status === "NOTIFIED" || status === "CANCELLED") {
+    return null;
+  }
+
+  const steps: Record<string, { title: string; description: string; action: string; href: string; icon: React.ElementType; color: string }> = {
+    PAID: {
+      title: "Langkah Berikutnya: Pengambilan Sampel",
+      description: "Order sudah lunas. Sampel pasien perlu diambil dan dikonfirmasi di menu Antrian Laboratorium.",
+      action: "Buka Antrian Lab",
+      href: "/dashboard/laboratory/queue",
+      icon: FlaskConical,
+      color: "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/40",
+    },
+    SAMPLE_COLLECTED: {
+      title: "Langkah Berikutnya: Input Hasil Pemeriksaan",
+      description: "Sampel sudah diterima. Analis dapat mulai menginput hasil pemeriksaan.",
+      action: "Input Hasil",
+      href: `/dashboard/laboratory/results/${order.id}`,
+      icon: FlaskConical,
+      color: "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40",
+    },
+    IN_ANALYSIS: {
+      title: "Langkah Berikutnya: Verifikasi Hasil",
+      description: "Hasil sedang diinput/diproses. Setelah semua parameter terisi, analis dapat memverifikasi.",
+      action: "Lihat Hasil",
+      href: `/dashboard/laboratory/results/${order.id}`,
+      icon: ShieldCheck,
+      color: "border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950/40",
+    },
+    VERIFIED: {
+      title: "Langkah Berikutnya: Approval Dokter",
+      description: "Hasil telah diverifikasi analis. Menunggu persetujuan dokter penanggung jawab.",
+      action: "Buka Approval",
+      href: "/dashboard/laboratory/approval",
+      icon: ShieldCheck,
+      color: "border-indigo-200 bg-indigo-50 dark:border-indigo-800 dark:bg-indigo-950/40",
+    },
+    APPROVED: {
+      title: "Order Selesai",
+      description: "Hasil pemeriksaan telah disetujui. Laporan dapat dicetak atau dikirim ke pasien.",
+      action: "Cetak Laporan",
+      href: `/api/v1/orders/${order.id}/report/pdf`,
+      icon: CheckCircle2,
+      color: "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/40",
+    },
+  };
+
+  const step = steps[status];
+  if (!step) return null;
+
+  const Icon = step.icon;
+
+  return (
+    <div className={cn("rounded-2xl border p-5 shadow-sm", step.color)}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/80 shadow-sm dark:bg-slate-900/50">
+            <Icon className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">{step.title}</h3>
+            <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400">{step.description}</p>
+          </div>
+        </div>
+        <a
+          href={step.href}
+          target={status === "APPROVED" ? "_blank" : undefined}
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
+        >
+          <Icon className="h-4 w-4" />
+          {step.action}
+        </a>
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
    PAYMENT HISTORY TIMELINE
 ──────────────────────────────────────────────────────────────── */
 interface PaymentComponentItem {
@@ -584,6 +668,9 @@ export default function OrderDetailPage() {
 
         {/* Order Status Timeline */}
         <OrderStatusTimeline currentStatus={order.status} />
+
+        {/* Next Step Action Panel — contextual workflow guidance */}
+        <NextStepPanel order={order} />
 
         {/* POS Layout */}
         <div className="grid gap-5 lg:grid-cols-5">

@@ -500,6 +500,13 @@ export class OrderService {
       reason: dto.reason,
     });
 
+    // Evaluate if the visit should be marked as COMPLETED after this cancellation
+    if (order.visitId) {
+      await this.visitService.evaluateCompletion(order.visitId).catch(() => {
+        // Non-blocking: don't fail cancellation if visit evaluation fails
+      });
+    }
+
     // Return order with includes
     return this.prisma.order.findUnique({
       where: { id: orderId },

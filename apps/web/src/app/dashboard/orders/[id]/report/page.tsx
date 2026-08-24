@@ -12,12 +12,13 @@ interface ReferenceValueApi {
   id: string;
   testId: string;
   gender?: string | null;
-  ageMin?: number | null;
-  ageMax?: number | null;
-  minValue?: number | null;
-  maxValue?: number | null;
-  unit?: string | null;
-  description?: string | null;
+  ageUnit?: string | null;
+  minAge?: number | null;
+  maxAge?: number | null;
+  minRef?: number | string | null;
+  maxRef?: number | string | null;
+  criticalMin?: number | string | null;
+  criticalMax?: number | string | null;
 }
 
 interface OrderDetailApi {
@@ -118,12 +119,11 @@ function getReferenceRange(detail: OrderDetailApi, patientGender?: string): stri
 
   // Take first match
   const ref = matched[0];
-  if (ref.minValue != null && ref.maxValue != null) {
-    return `${ref.minValue} - ${ref.maxValue}`;
+  if (ref.minRef != null && ref.maxRef != null) {
+    return `${ref.minRef} - ${ref.maxRef}`;
   }
-  if (ref.minValue != null) return `> ${ref.minValue}`;
-  if (ref.maxValue != null) return `< ${ref.maxValue}`;
-  if (ref.description) return ref.description;
+  if (ref.minRef != null) return `> ${ref.minRef}`;
+  if (ref.maxRef != null) return `< ${ref.maxRef}`;
   return "—";
 }
 

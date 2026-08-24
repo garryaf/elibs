@@ -728,9 +728,11 @@ export class VisitService {
       return;
     }
 
-    // Check if ALL orders are in a terminal state (NOTIFIED or CANCELLED)
+    // Check if ALL orders are in a terminal state (APPROVED, NOTIFIED, or CANCELLED)
+    // APPROVED is included because notifications may be skipped (patient didn't consent)
     const allTerminal = orders.every(
       (order) =>
+        order.status === OrderStatus.APPROVED ||
         order.status === OrderStatus.NOTIFIED ||
         order.status === OrderStatus.CANCELLED,
     );

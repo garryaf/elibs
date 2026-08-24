@@ -281,7 +281,7 @@ export class ReportsService {
       deletedAt: null,
     };
 
-    const [patients, total] = await Promise.all([
+    const [patients, total, byGender] = await Promise.all([
       this.prisma.patient.findMany({
         where,
         select: {
@@ -296,13 +296,52 @@ export class ReportsService {
         take: limit,
       }),
       this.prisma.patient.count({ where }),
+      // Aggregate by gender
+      this.prisma.patient.groupBy({
+        by: ['gender'],
+        where,
+        _count: { id: true },
+      }),
     ]);
+
+    // Process daily aggregation
+    const dailyMap = new Map<string, number>();
+    for (const p of patients) {
+      const dateKey = p.createdAt.toISOString().split('T')[0];
+      dailyMap.set(dateKey, (dailyMap.get(dateKey) || 0) + 1);
+    }
+    const daily = Array.from(dailyMap.entries())
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Process gender aggregation
+    const genderBreakdown = byGender.map((g) => ({
+      name: g.gender === 'MALE' ? 'Laki-laki' : g.gender === 'FEMALE' ? 'Perempuan' : (g.gender ?? 'Tidak Diketahui'),
+      count: g._count.id,
+    }));
+
+    // Process age group aggregation
+    const now = new Date();
+    const ageGroups = { '0-17': 0, '18-40': 0, '41-60': 0, '60+': 0 };
+    for (const p of patients) {
+      if (!p.dateOfBirth) continue;
+      const age = Math.floor((now.getTime() - new Date(p.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      if (age <= 17) ageGroups['0-17']++;
+      else if (age <= 40) ageGroups['18-40']++;
+      else if (age <= 60) ageGroups['41-60']++;
+      else ageGroups['60+']++;
+    }
+    const ageBreakdown = Object.entries(ageGroups).map(([name, count]) => ({ name, count }));
 
     return {
       startDate: gte.toISOString().split('T')[0],
       endDate: lte.toISOString().split('T')[0],
       total,
-      data: patients,
+      totalPatients: total,
+      genderBreakdown,
+      ageBreakdown,
+      daily,
+      data: [...genderBreakdown, ...ageBreakdown],
     };
   }
 

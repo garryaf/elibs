@@ -287,12 +287,59 @@ export class NotificationService {
           this.logger.log(
             `Order ${orderId} transitioned to NOTIFIED after all notifications sent`,
           );
+
+          // Evaluate if the visit should be marked as COMPLETED
+          // A visit is complete when ALL its orders are in terminal state (NOTIFIED/CANCELLED)
+          if (order.visitId) {
+            await this.evaluateVisitCompletion(order.visitId);
+          }
         } catch (error) {
           this.logger.error(
             `Failed to transition order ${orderId} to NOTIFIED: ${error}`,
           );
         }
       }
+    }
+  }
+
+  /**
+   * Evaluate if a visit should transition to COMPLETED.
+   * Called after an order reaches a terminal state (APPROVED, NOTIFIED, or CANCELLED).
+   * APPROVED is included because notifications may be skipped (no patient consent).
+   */
+  private async evaluateVisitCompletion(visitId: string): Promise<void> {
+    try {
+      const visit = await this.prisma.visit.findUnique({
+        where: { id: visitId },
+        select: { id: true, status: true },
+      });
+
+      if (!visit || visit.status !== 'IN_PROGRESS') return;
+
+      const orders = await this.prisma.order.findMany({
+        where: { visitId },
+        select: { status: true },
+      });
+
+      if (orders.length === 0) return;
+
+      // Terminal states: APPROVED (results finalized), NOTIFIED (results sent), CANCELLED
+      const allTerminal = orders.every(
+        (o) =>
+          o.status === OrderStatus.APPROVED ||
+          o.status === OrderStatus.NOTIFIED ||
+          o.status === OrderStatus.CANCELLED,
+      );
+
+      if (allTerminal) {
+        await this.prisma.visit.update({
+          where: { id: visitId },
+          data: { status: 'COMPLETED' },
+        });
+        this.logger.log(`Visit ${visitId} auto-transitioned to COMPLETED (all orders terminal)`);
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to evaluate visit completion for ${visitId}: ${error}`);
     }
   }
 

@@ -406,6 +406,11 @@ export class LabWorkflowService {
           );
         });
 
+        // Evaluate visit completion after second-level approval
+        if (order.visitId) {
+          this.evaluateVisitCompletion(order.visitId).catch(() => {});
+        }
+
         return {
           ...updatedOrder,
           secondApprovalBy: userId,
@@ -444,6 +449,11 @@ export class LabWorkflowService {
           error.stack,
         );
       });
+
+      // Evaluate visit completion after approval
+      if (order.visitId) {
+        this.evaluateVisitCompletion(order.visitId).catch(() => {});
+      }
 
       // HIGH-014: Explicitly indicate status change in approval response
       return {
@@ -490,6 +500,92 @@ export class LabWorkflowService {
         autoApproved: false,
       },
     };
+  }
+
+  /**
+   * Recall an approved/notified order back to IN_ANALYSIS for correction.
+   * Only allowed within 24 hours of approval.
+   * DATA-GAP-06: Recall/Amendment mechanism
+   */
+  async recallOrder(orderId: string, reason: string, userId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { patient: true, orderDetails: true },
+    });
+
+    if (!order) {
+      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
+    }
+
+    if (order.status !== OrderStatus.APPROVED && order.status !== OrderStatus.NOTIFIED) {
+      throw new BadRequestException({
+        errorCode: 'ERR_INVALID_STATE',
+        message: 'Only APPROVED or NOTIFIED orders can be recalled',
+      });
+    }
+
+    // Check 24-hour window
+    if (order.approvedAt) {
+      const hoursSinceApproval = (Date.now() - new Date(order.approvedAt).getTime()) / (1000 * 60 * 60);
+      if (hoursSinceApproval > 24) {
+        throw new BadRequestException({
+          errorCode: 'ERR_RECALL_EXPIRED',
+          message: 'Batas waktu recall telah terlewat (maksimal 24 jam setelah approval)',
+        });
+      }
+    }
+
+    if (!reason || !reason.trim()) {
+      throw new BadRequestException({
+        errorCode: 'ERR_VALIDATION',
+        message: 'Reason is required for recall',
+      });
+    }
+
+    const updatedOrder = await this.orderStateMachine.transition(
+      orderId,
+      OrderStatus.IN_ANALYSIS,
+      { userId, reason: reason.trim() },
+    );
+
+    return {
+      ...updatedOrder,
+      statusChange: {
+        from: order.status,
+        to: OrderStatus.IN_ANALYSIS,
+        recalled: true,
+        recallReason: reason.trim(),
+      },
+    };
+  }
+
+  /**
+   * Get workload summary for current user today.
+   * DATA-GAP-12: Workload summary per shift/user
+   */
+  async getMyWorkload(userId: string, clinicId?: string) {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const baseWhere: any = { createdAt: { gte: todayStart } };
+    if (clinicId) baseWhere.clinicId = clinicId;
+
+    const [sampledToday, analyzedToday, verifiedToday, approvedToday] = await Promise.all([
+      this.prisma.order.count({
+        where: { ...baseWhere, sampleCollectedBy: userId, sampleCollectedAt: { gte: todayStart } },
+      }),
+      this.prisma.orderDetail.count({
+        where: { resultEnteredBy: userId, resultEnteredAt: { gte: todayStart } },
+      }),
+      this.prisma.order.count({
+        where: { ...baseWhere, verifiedBy: userId, verifiedAt: { gte: todayStart } },
+      }),
+      this.prisma.order.count({
+        where: { ...baseWhere, approvedBy: userId, approvedAt: { gte: todayStart } },
+      }),
+    ]);
+
+    return { sampledToday, analyzedToday, verifiedToday, approvedToday };
   }
 
   async getApprovalQueue(page: number = 1, limit: number = 20, clinicId?: string, search?: string) {
@@ -603,7 +699,52 @@ export class LabWorkflowService {
       );
     });
 
+    // Evaluate if the visit should be marked as COMPLETED
+    if (order.visitId) {
+      this.evaluateVisitCompletion(order.visitId).catch(() => {});
+    }
+
     return true;
+  }
+
+  /**
+   * Evaluate if a visit should transition to COMPLETED.
+   * A visit is complete when ALL its orders are in a terminal state
+   * (APPROVED, NOTIFIED, or CANCELLED).
+   */
+  private async evaluateVisitCompletion(visitId: string): Promise<void> {
+    try {
+      const visit = await this.prisma.visit.findUnique({
+        where: { id: visitId },
+        select: { id: true, status: true },
+      });
+
+      if (!visit || visit.status !== 'IN_PROGRESS') return;
+
+      const orders = await this.prisma.order.findMany({
+        where: { visitId },
+        select: { status: true },
+      });
+
+      if (orders.length === 0) return;
+
+      const allTerminal = orders.every(
+        (o) =>
+          o.status === OrderStatus.APPROVED ||
+          o.status === OrderStatus.NOTIFIED ||
+          o.status === OrderStatus.CANCELLED,
+      );
+
+      if (allTerminal) {
+        await this.prisma.visit.update({
+          where: { id: visitId },
+          data: { status: 'COMPLETED' },
+        });
+        this.logger.log(`Visit ${visitId} auto-transitioned to COMPLETED (all orders terminal)`);
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to evaluate visit completion for ${visitId}: ${error}`);
+    }
   }
 
   private calculateAge(dateOfBirth: Date): number {
@@ -629,12 +770,18 @@ export class LabWorkflowService {
       // Show orders that need re-sampling (rejected samples still in PAID status)
       where.status = OrderStatus.PAID;
       where.sampleCondition = { not: null, notIn: ['ACCEPTABLE'] };
+    } else if (status === 'COMPLETED_TODAY') {
+      // DATA-GAP-01: Show orders completed (approved/notified) today
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      where.status = { in: [OrderStatus.APPROVED, OrderStatus.NOTIFIED] };
+      where.approvedAt = { gte: todayStart };
     } else if (status && ['PAID', 'SAMPLE_COLLECTED', 'IN_ANALYSIS', 'VERIFIED'].includes(status)) {
       where.status = status;
     } else {
-      // Default: show all lab-relevant statuses
+      // Default: show all lab-relevant statuses (including VERIFIED for consistency with stats)
       where.status = {
-        in: [OrderStatus.PAID, OrderStatus.SAMPLE_COLLECTED, OrderStatus.IN_ANALYSIS],
+        in: [OrderStatus.PAID, OrderStatus.SAMPLE_COLLECTED, OrderStatus.IN_ANALYSIS, OrderStatus.VERIFIED],
       };
     }
 
@@ -646,6 +793,142 @@ export class LabWorkflowService {
       where.OR = [
         { orderNumber: { contains: search, mode: 'insensitive' } },
         { patient: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: status === 'COMPLETED_TODAY' ? { approvedAt: 'desc' } : { createdAt: 'desc' },
+        include: {
+          patient: true,
+          orderDetails: {
+            include: { test: true },
+          },
+        },
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    // DATA-GAP-09: Add rejection count for orders in RESAMPLE or general view
+    const orderIds = data.map((o) => o.id);
+    let rejectionCounts: Record<string, number> = {};
+    if (orderIds.length > 0) {
+      try {
+        const attempts = await this.prisma.sampleCollectionAttempt.groupBy({
+          by: ['orderId'],
+          where: {
+            orderId: { in: orderIds },
+            sampleCondition: { not: 'ACCEPTABLE' },
+          },
+          _count: { id: true },
+        });
+        rejectionCounts = Object.fromEntries(
+          attempts.map((a) => [a.orderId, a._count.id]),
+        );
+      } catch {
+        // SampleCollectionAttempt table may not exist yet — graceful fallback
+      }
+    }
+
+    return {
+      data: data.map((order) => ({
+        ...order,
+        rejectionCount: rejectionCounts[order.id] || 0,
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getQueueStats(clinicId?: string) {
+    const baseWhere: any = {};
+    if (clinicId) {
+      baseWhere.clinicId = clinicId;
+    }
+
+    // DATA-GAP-01: Include completed today count
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const [paid, sampleCollected, inAnalysis, verified, resample, completedToday] = await Promise.all([
+      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.PAID } }),
+      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.SAMPLE_COLLECTED } }),
+      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.IN_ANALYSIS } }),
+      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.VERIFIED } }),
+      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.PAID, sampleCondition: { not: null, notIn: ['ACCEPTABLE'] } } }),
+      this.prisma.order.count({ where: { ...baseWhere, status: { in: [OrderStatus.APPROVED, OrderStatus.NOTIFIED] }, approvedAt: { gte: todayStart } } }),
+    ]);
+
+    return {
+      PAID: paid,
+      SAMPLE_COLLECTED: sampleCollected,
+      IN_ANALYSIS: inAnalysis,
+      VERIFIED: verified,
+      RESAMPLE: resample,
+      COMPLETED_TODAY: completedToday,
+      ALL: paid + sampleCollected + inAnalysis + verified,
+    };
+  }
+
+  async getQueueHistory(
+    page: number = 1,
+    limit: number = 10,
+    clinicId?: string,
+    search?: string,
+    dateFrom?: string,
+    dateTo?: string,
+    status?: string,
+  ) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+
+    // Date range filter (default: 7 days, max: 90 days)
+    const now = new Date();
+    const maxPast = new Date(now);
+    maxPast.setDate(maxPast.getDate() - 90);
+
+    let fromDate: Date;
+    let toDate: Date;
+
+    if (dateFrom) {
+      fromDate = new Date(dateFrom);
+      if (fromDate < maxPast) fromDate = maxPast;
+    } else {
+      fromDate = new Date(now);
+      fromDate.setDate(fromDate.getDate() - 7);
+    }
+    fromDate.setHours(0, 0, 0, 0);
+
+    if (dateTo) {
+      toDate = new Date(dateTo);
+    } else {
+      toDate = new Date(now);
+    }
+    toDate.setHours(23, 59, 59, 999);
+
+    where.createdAt = { gte: fromDate, lte: toDate };
+
+    // Status filter — allow all statuses for history
+    if (status && status !== 'ALL') {
+      where.status = status;
+    }
+
+    if (clinicId) {
+      where.clinicId = clinicId;
+    }
+
+    if (search) {
+      where.OR = [
+        { orderNumber: { contains: search, mode: 'insensitive' } },
+        { patient: { name: { contains: search, mode: 'insensitive' } } },
+        { patient: { mrn: { contains: search, mode: 'insensitive' } } },
       ];
     }
 
@@ -672,31 +955,9 @@ export class LabWorkflowService {
         page,
         limit,
         totalPages: Math.ceil(total / limit),
+        dateFrom: fromDate.toISOString(),
+        dateTo: toDate.toISOString(),
       },
-    };
-  }
-
-  async getQueueStats(clinicId?: string) {
-    const baseWhere: any = {};
-    if (clinicId) {
-      baseWhere.clinicId = clinicId;
-    }
-
-    const [paid, sampleCollected, inAnalysis, verified, resample] = await Promise.all([
-      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.PAID } }),
-      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.SAMPLE_COLLECTED } }),
-      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.IN_ANALYSIS } }),
-      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.VERIFIED } }),
-      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.PAID, sampleCondition: { not: null, notIn: ['ACCEPTABLE'] } } }),
-    ]);
-
-    return {
-      PAID: paid,
-      SAMPLE_COLLECTED: sampleCollected,
-      IN_ANALYSIS: inAnalysis,
-      VERIFIED: verified,
-      RESAMPLE: resample,
-      ALL: paid + sampleCollected + inAnalysis + verified,
     };
   }
 

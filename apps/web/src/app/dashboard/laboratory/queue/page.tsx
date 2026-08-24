@@ -22,10 +22,14 @@ import {
   CheckSquare,
   Square,
   XCircle,
+  History,
+  Calendar,
+  ArrowRight,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
-import { useLabQueue, useLabQueueStats, useConfirmSample, labKeys } from "@/services/lab";
+import { useLabQueue, useLabQueueStats, useLabQueueHistory, useConfirmSample, useVerifyResults, useRecallOrder, useMyWorkload, labKeys } from "@/services/lab";
 import { apiClient } from "@/lib/api";
 import {
   LabStatusBadge,
@@ -88,12 +92,17 @@ interface LabQueueOrder {
   patientName: string;
   patientMrn: string;
   status: OrderStatus;
+  priority?: string;
   createdAt: string;
   paidAt?: string;
   sampleCollectedAt?: string;
   barcodeImage?: string;
   sampleCondition?: string;
   rejectedReason?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  interpretation?: string;
+  rejectionCount?: number;
   totalAmount: number;
   details: {
     id: string;
@@ -101,6 +110,7 @@ interface LabQueueOrder {
     testCode: string;
     testName: string;
     status: string;
+    flag?: string;
     tatMinutes?: number;
     resultType?: string;
   }[];
@@ -108,7 +118,7 @@ interface LabQueueOrder {
 
 // ---------- Constants ----------
 
-type QueueTab = "ALL" | "PAID" | "SAMPLE_COLLECTED" | "IN_ANALYSIS" | "VERIFIED" | "RESAMPLE";
+type QueueTab = "ALL" | "PAID" | "SAMPLE_COLLECTED" | "IN_ANALYSIS" | "VERIFIED" | "RESAMPLE" | "COMPLETED_TODAY" | "HISTORY";
 
 const QUEUE_TABS: { id: QueueTab; label: string; icon: React.ElementType }[] = [
   { id: "ALL", label: "Semua", icon: Clock },
@@ -117,6 +127,8 @@ const QUEUE_TABS: { id: QueueTab; label: string; icon: React.ElementType }[] = [
   { id: "SAMPLE_COLLECTED", label: "Sampel Diterima", icon: Barcode },
   { id: "IN_ANALYSIS", label: "Proses Analisa", icon: FlaskConical },
   { id: "VERIFIED", label: "Terverifikasi", icon: ShieldCheck },
+  { id: "COMPLETED_TODAY", label: "Selesai Hari Ini", icon: CheckCircle2 },
+  { id: "HISTORY", label: "Riwayat", icon: History },
 ];
 
 const PAGE_SIZE = 10;
@@ -142,12 +154,17 @@ function mapApiOrder(o: Record<string, unknown>): LabQueueOrder {
     patientName: (patient?.name as string) ?? "",
     patientMrn: (patient?.mrn as string) ?? "",
     status: o.status as OrderStatus,
+    priority: o.priority as string | undefined,
     createdAt: o.createdAt as string,
     paidAt: o.paidAt as string | undefined,
     sampleCollectedAt: o.sampleCollectedAt as string | undefined,
     barcodeImage: o.barcodeImage as string | undefined,
     sampleCondition: o.sampleCondition as string | undefined,
     rejectedReason: (o.rejectedReason as string) ?? (o.rejectionReason as string) ?? undefined,
+    approvedAt: o.approvedAt as string | undefined,
+    approvedBy: o.approvedBy as string | undefined,
+    interpretation: o.interpretation as string | undefined,
+    rejectionCount: Number(o.rejectionCount) || 0,
     totalAmount: Number(o.totalAmount) || 0,
     details: orderDetails.map((d) => {
       const test = d.test as Record<string, unknown> | undefined;
@@ -157,6 +174,7 @@ function mapApiOrder(o: Record<string, unknown>): LabQueueOrder {
         testCode: (test?.code as string) ?? "",
         testName: (test?.name as string) ?? "",
         status: d.status as string,
+        flag: (d.flag as string) ?? undefined,
         tatMinutes: (test?.tatMinutes as number) ?? undefined,
         resultType: (test?.resultType as string) ?? "NUMERIC",
       };
@@ -204,6 +222,17 @@ export default function LaboratoryQueuePage() {
   const [focusedRowIndex, setFocusedRowIndex] = useState<number>(-1);
   const tableBodyRef = useRef<HTMLTableSectionElement>(null);
 
+  // DATA-GAP-04: History tab state
+  const [historyDateFrom, setHistoryDateFrom] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 7);
+    return d.toISOString().split("T")[0];
+  });
+  const [historyDateTo, setHistoryDateTo] = useState(() => new Date().toISOString().split("T")[0]);
+  const [historyStatus, setHistoryStatus] = useState<string>("ALL");
+
+  // DATA-GAP-03: Track auto-approved orders for visual feedback
+  const [autoApprovedToast, setAutoApprovedToast] = useState<{ orderNumbers: string[]; count: number } | null>(null);
+
   const queryClient = useQueryClient();
 
   // Debounce search (UX-LAB-03: server-side search)
@@ -218,8 +247,18 @@ export default function LaboratoryQueuePage() {
   const { data: queryData, isLoading, error: queryError, refetch } = useLabQueue({
     page,
     limit: PAGE_SIZE,
-    status: activeTab !== "ALL" ? activeTab : undefined,
+    status: activeTab !== "ALL" && activeTab !== "HISTORY" ? activeTab : undefined,
     search: debouncedSearch || undefined,
+  });
+
+  // DATA-GAP-04: History tab query (separate endpoint)
+  const { data: historyData, isLoading: historyLoading } = useLabQueueHistory({
+    page,
+    limit: PAGE_SIZE,
+    search: debouncedSearch || undefined,
+    dateFrom: historyDateFrom,
+    dateTo: historyDateTo,
+    status: historyStatus !== "ALL" ? historyStatus : undefined,
   });
 
   // UX-LAB-04: Get accurate tab counts from dedicated stats endpoint
@@ -227,6 +266,15 @@ export default function LaboratoryQueuePage() {
 
   // UX-LAB-02: Use mutation hook for sample confirmation
   const confirmSampleMutation = useConfirmSample();
+
+  // Task 2.3: Verify mutation for quick-action
+  const verifyMutation = useVerifyResults();
+
+  // Task 3.1: Recall mutation
+  const recallMutation = useRecallOrder();
+
+  // Task 3.5: Workload summary
+  const { data: workloadData } = useMyWorkload();
 
   // UX-GAP-02: Global keyboard shortcuts
   useEffect(() => {
@@ -240,7 +288,7 @@ export default function LaboratoryQueuePage() {
       // Number keys 1-6 switch tabs
       if (!e.ctrlKey && !e.metaKey && !e.altKey) {
         const numKey = parseInt(e.key);
-        if (numKey >= 1 && numKey <= 6) {
+        if (numKey >= 1 && numKey <= QUEUE_TABS.length) {
           e.preventDefault();
           handleTabChange(QUEUE_TABS[numKey - 1].id);
           return;
@@ -261,7 +309,9 @@ export default function LaboratoryQueuePage() {
 
   // Extract data from query response
   const { orders, totalItems } = useMemo(() => {
-    const envelope = queryData as unknown;
+    // Use history data when on HISTORY tab
+    const sourceData = activeTab === "HISTORY" ? historyData : queryData;
+    const envelope = sourceData as unknown;
     let items: LabQueueOrder[] = [];
     let total = 0;
 
@@ -283,11 +333,32 @@ export default function LaboratoryQueuePage() {
     }
 
     return { orders: items, totalItems: total };
-  }, [queryData]);
+  }, [queryData, historyData, activeTab]);
+
+  // DATA-GAP-03: Detect orders that disappeared (likely auto-approved or completed)
+  const prevContextRef = useRef<{ tab: QueueTab; page: number; search: string; ids: Set<string> }>({
+    tab: "ALL", page: 1, search: "", ids: new Set(),
+  });
+  useEffect(() => {
+    if (isLoading) return;
+    const currentIds = new Set(orders.map((o) => o.id));
+    const prev = prevContextRef.current;
+
+    // Only detect disappearances if tab, page, and search haven't changed (same context)
+    if (prev.tab === activeTab && prev.page === page && prev.search === debouncedSearch && prev.ids.size > 0) {
+      const disappeared = Array.from(prev.ids).filter((id) => !currentIds.has(id));
+      if (disappeared.length > 0) {
+        setAutoApprovedToast({ orderNumbers: [], count: disappeared.length });
+        setTimeout(() => setAutoApprovedToast(null), 6000);
+      }
+    }
+
+    prevContextRef.current = { tab: activeTab, page, search: debouncedSearch, ids: currentIds };
+  }, [orders, isLoading, activeTab, page, debouncedSearch]);
 
   // UX-LAB-04: Extract stats from API
   const tabCounts = useMemo(() => {
-    const defaults: Record<QueueTab, number> = { ALL: 0, PAID: 0, RESAMPLE: 0, SAMPLE_COLLECTED: 0, IN_ANALYSIS: 0, VERIFIED: 0 };
+    const defaults: Record<QueueTab, number> = { ALL: 0, PAID: 0, RESAMPLE: 0, SAMPLE_COLLECTED: 0, IN_ANALYSIS: 0, VERIFIED: 0, COMPLETED_TODAY: 0, HISTORY: 0 };
     if (!statsData) return { ...defaults, ALL: totalItems };
 
     const raw = statsData as unknown as Record<string, unknown>;
@@ -300,12 +371,15 @@ export default function LaboratoryQueuePage() {
         SAMPLE_COLLECTED: Number(data.SAMPLE_COLLECTED) || 0,
         IN_ANALYSIS: Number(data.IN_ANALYSIS) || 0,
         VERIFIED: Number(data.VERIFIED) || 0,
+        COMPLETED_TODAY: Number(data.COMPLETED_TODAY) || 0,
+        HISTORY: 0, // History doesn't need a count badge
       };
     }
     return { ...defaults, ALL: totalItems };
   }, [statsData, totalItems]);
 
   const error = queryError ? "Gagal memuat data antrian laboratorium." : null;
+  const currentLoading = activeTab === "HISTORY" ? historyLoading : isLoading;
 
   const handleTabChange = (tab: QueueTab) => {
     setActiveTab(tab);
@@ -386,6 +460,47 @@ export default function LaboratoryQueuePage() {
   return (
     <RoleGuard allowedRoles={["SUPER_ADMIN", "ADMIN", "SAMPLING", "ANALIS"]}>
     <div className="space-y-6">
+      {/* DATA-GAP-03: Auto-approve / order completed toast notification */}
+      {autoApprovedToast && (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/60">
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex-1 text-sm font-medium text-emerald-800 dark:text-emerald-200">
+            {autoApprovedToast.count === 1
+              ? "1 order telah selesai diproses dan dipindahkan dari antrian."
+              : `${autoApprovedToast.count} order telah selesai diproses dan dipindahkan dari antrian.`}
+          </div>
+          <button
+            onClick={() => setAutoApprovedToast(null)}
+            className="shrink-0 rounded-lg p-1 text-emerald-600 hover:bg-emerald-100 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
+            aria-label="Tutup notifikasi"
+          >
+            <XCircle className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* DATA-GAP-12: Workload summary cards */}
+      {workloadData ? (() => {
+        const raw = workloadData as unknown as Record<string, unknown>;
+        const w = (raw?.data ?? raw) as Record<string, unknown>;
+        const items = [
+          { label: "Sampling", value: Number(w?.sampledToday) || 0, color: "text-blue-700 bg-blue-50 dark:text-blue-300 dark:bg-blue-900/20" },
+          { label: "Analisa", value: Number(w?.analyzedToday) || 0, color: "text-brand bg-brand/10 dark:text-brand dark:bg-brand/20" },
+          { label: "Verifikasi", value: Number(w?.verifiedToday) || 0, color: "text-amber-700 bg-amber-50 dark:text-amber-300 dark:bg-amber-900/20" },
+          { label: "Approval", value: Number(w?.approvedToday) || 0, color: "text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-900/20" },
+        ];
+        return (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {items.map((item) => (
+              <div key={item.label} className={cn("flex items-center gap-3 rounded-xl border border-border px-4 py-2.5", item.color)}>
+                <span className="text-2xl font-bold">{item.value}</span>
+                <span className="text-xs font-medium opacity-80">{item.label} hari ini</span>
+              </div>
+            ))}
+          </div>
+        );
+      })() : null}
+
       {/* Status filter tabs & Search */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-border bg-card p-1">
@@ -407,6 +522,7 @@ export default function LaboratoryQueuePage() {
               >
                 <Icon className="h-4 w-4" />
                 {tab.label}
+                {tab.id !== "HISTORY" && (
                 <span
                   className={cn(
                     "ml-1 flex h-5 min-w-[20px] items-center justify-center rounded-full text-[10px] font-bold px-1.5",
@@ -415,6 +531,7 @@ export default function LaboratoryQueuePage() {
                 >
                   {count}
                 </span>
+                )}
               </button>
             );
           })}
@@ -557,6 +674,47 @@ export default function LaboratoryQueuePage() {
         </div>
       )}
 
+      {/* DATA-GAP-04: History date range filter */}
+      {activeTab === "HISTORY" && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted-foreground">Dari:</label>
+            <input
+              type="date"
+              value={historyDateFrom}
+              onChange={(e) => { setHistoryDateFrom(e.target.value); setPage(1); }}
+              className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs outline-none focus:border-brand focus:ring-1 focus:ring-brand/30"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted-foreground">Sampai:</label>
+            <input
+              type="date"
+              value={historyDateTo}
+              onChange={(e) => { setHistoryDateTo(e.target.value); setPage(1); }}
+              className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs outline-none focus:border-brand focus:ring-1 focus:ring-brand/30"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted-foreground">Status:</label>
+            <select
+              value={historyStatus}
+              onChange={(e) => { setHistoryStatus(e.target.value); setPage(1); }}
+              className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs outline-none focus:border-brand focus:ring-1 focus:ring-brand/30"
+            >
+              <option value="ALL">Semua Status</option>
+              <option value="APPROVED">Selesai (Approved)</option>
+              <option value="NOTIFIED">Terkirim (Notified)</option>
+              <option value="CANCELLED">Dibatalkan</option>
+              <option value="PAID">Terbayar</option>
+              <option value="IN_ANALYSIS">Proses Analisa</option>
+              <option value="VERIFIED">Terverifikasi</option>
+            </select>
+          </div>
+        </div>
+      )}
+
       {/* Orders Table */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <table className="w-full text-left text-sm">
@@ -579,7 +737,7 @@ export default function LaboratoryQueuePage() {
             </tr>
           </thead>
           <tbody ref={tableBodyRef} role="rowgroup">
-            {isLoading ? (
+            {currentLoading ? (
               <tr>
                 <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
                   <div className="flex items-center justify-center gap-2">
@@ -643,10 +801,13 @@ export default function LaboratoryQueuePage() {
                     isFocused={focusedRowIndex === index}
                     rowIndex={index}
                     totalRows={orders.length}
+                    activeTab={activeTab}
                     onToggle={() => toggleExpand(order.id)}
                     onSelect={() => toggleSelect(order.id)}
                     onFocusRow={setFocusedRowIndex}
                     confirmSampleMutation={confirmSampleMutation}
+                    verifyMutation={verifyMutation}
+                    recallMutation={recallMutation}
                     queryClient={queryClient}
                   />
                 );
@@ -707,14 +868,17 @@ interface OrderRowProps {
   isFocused: boolean;
   rowIndex: number;
   totalRows: number;
+  activeTab: QueueTab;
   onToggle: () => void;
   onSelect: () => void;
   onFocusRow: (index: number) => void;
   confirmSampleMutation: ReturnType<typeof useConfirmSample>;
+  verifyMutation: ReturnType<typeof useVerifyResults>;
+  recallMutation: ReturnType<typeof useRecallOrder>;
   queryClient: ReturnType<typeof useQueryClient>;
 }
 
-function OrderRow({ order, isExpanded, isSelected, isFocused, rowIndex, totalRows, onToggle, onSelect, onFocusRow, confirmSampleMutation, queryClient }: OrderRowProps) {
+function OrderRow({ order, isExpanded, isSelected, isFocused, rowIndex, totalRows, activeTab, onToggle, onSelect, onFocusRow, confirmSampleMutation, verifyMutation, recallMutation, queryClient }: OrderRowProps) {
   const [confirmSuccess, setConfirmSuccess] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [barcodeError, setBarcodeError] = useState<string | null>(null);
@@ -780,6 +944,17 @@ function OrderRow({ order, isExpanded, isSelected, isFocused, rowIndex, totalRow
   // BP-GAP-01: Check if this order was rejected by doctor (sent back to IN_ANALYSIS)
   const isDoctorRejected = !!order.rejectedReason && order.status === "IN_ANALYSIS";
 
+  // DATA-GAP-08: CITO priority check
+  const isCito = order.priority === "CITO" || order.priority === "URGENT";
+
+  // DATA-GAP-10: Progress indicator for IN_ANALYSIS orders
+  const resultsCompleted = order.details.filter((d) => d.status === "RESULT_ENTERED" || d.status === "VERIFIED" || d.status === "APPROVED").length;
+  const resultsTotal = order.details.length;
+  const allResultsEntered = resultsCompleted === resultsTotal && resultsTotal > 0;
+
+  // DATA-GAP-11: Dual-approval indicator (CRITICAL flags in details)
+  const hasCriticalFlag = order.details.some((d) => d.flag === "CRITICAL");
+
   // UX-GAP-01: Keyboard handler for row navigation
   const handleRowKeyDown = (e: React.KeyboardEvent<HTMLTableRowElement>) => {
     switch (e.key) {
@@ -835,10 +1010,13 @@ function OrderRow({ order, isExpanded, isSelected, isFocused, rowIndex, totalRow
       >
         {/* UX-LAB-06: Checkbox */}
         <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-          {order.status === "PAID" && (
+          {order.status === "PAID" && activeTab !== "COMPLETED_TODAY" && (
             <button onClick={onSelect} className="text-muted-foreground hover:text-brand" aria-label={`Select ${order.orderNumber}`}>
               {isSelected ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4" />}
             </button>
+          )}
+          {activeTab === "COMPLETED_TODAY" && (
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
           )}
         </td>
         <td className="px-4 py-3">
@@ -855,32 +1033,79 @@ function OrderRow({ order, isExpanded, isSelected, isFocused, rowIndex, totalRow
               <RotateCcw className="h-3 w-3" /> Perlu Revisi
             </span>
           )}
+          {/* DATA-GAP-08: CITO/URGENT priority badge */}
+          {isCito && (
+            <span className={cn(
+              "ml-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-bold text-white",
+              order.priority === "CITO" ? "bg-red-600" : "bg-orange-500"
+            )}>
+              {order.priority === "CITO" ? "CITO" : "URGENT"}
+            </span>
+          )}
+          {/* DATA-GAP-11: Dual-approval indicator for VERIFIED orders */}
+          {hasCriticalFlag && order.status === "VERIFIED" && (
+            <span className="ml-2 inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800" title="Order ini mengandung hasil CRITICAL dan membutuhkan persetujuan 2 dokter">
+              <ShieldAlert className="h-3 w-3" /> Dual Approval
+            </span>
+          )}
         </td>
         <td className="px-4 py-3">
           <p className="font-medium text-foreground">{order.patientName}</p>
           <p className="text-xs text-muted-foreground">{order.patientMrn}</p>
         </td>
         <td className="px-4 py-3 hidden sm:table-cell">
-          <LabStatusBadge status={order.status} />
+          {activeTab === "COMPLETED_TODAY" ? (
+            <div className="flex flex-col">
+              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                <CheckCircle2 className="h-3 w-3" /> Selesai
+              </span>
+              {order.approvedAt && (
+                <span className="mt-0.5 text-[10px] text-muted-foreground">
+                  {new Date(order.approvedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
+            </div>
+          ) : (
+            <LabStatusBadge status={order.status} />
+          )}
         </td>
         {/* UX-LAB-05: TAT column with elapsed time */}
         <td className="px-4 py-3 hidden md:table-cell">
-          <div className="flex items-center gap-1.5">
-            <Clock className={cn("h-3 w-3", tatOverdue ? "text-red-500" : "text-muted-foreground")} />
-            <span className={cn("text-xs font-medium", tatOverdue ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
-              {elapsed}
-            </span>
-            {tatOverdue && (
-              <span className="rounded bg-red-100 px-1 py-0.5 text-[9px] font-bold text-red-700 dark:bg-red-900/30 dark:text-red-300">
-                OVERDUE
+          {activeTab === "COMPLETED_TODAY" ? (
+            <div className="flex flex-col text-xs text-muted-foreground">
+              <span>{order.approvedAt ? new Date(order.approvedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "—"}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <Clock className={cn("h-3 w-3", tatOverdue ? "text-red-500" : "text-muted-foreground")} />
+              <span className={cn("text-xs font-medium", tatOverdue ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
+                {elapsed}
               </span>
-            )}
-          </div>
+              {tatOverdue && (
+                <span className="rounded bg-red-100 px-1 py-0.5 text-[9px] font-bold text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                  OVERDUE
+                </span>
+              )}
+            </div>
+          )}
         </td>
         <td className="px-4 py-3 text-right">
-          <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-brand/10 px-2 text-xs font-bold text-brand">
-            {order.details.length}
-          </span>
+          {/* DATA-GAP-10: Progress indicator for IN_ANALYSIS/SAMPLE_COLLECTED */}
+          {(order.status === "IN_ANALYSIS" || order.status === "SAMPLE_COLLECTED") && resultsTotal > 0 ? (
+            <div className="flex items-center justify-end gap-2">
+              <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-brand rounded-full transition-all"
+                  style={{ width: `${(resultsCompleted / resultsTotal) * 100}%` }}
+                />
+              </div>
+              <span className="text-[11px] font-medium text-muted-foreground">{resultsCompleted}/{resultsTotal}</span>
+            </div>
+          ) : (
+            <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-brand/10 px-2 text-xs font-bold text-brand">
+              {order.details.length}
+            </span>
+          )}
         </td>
         <td className="px-4 py-3">
           {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
@@ -990,8 +1215,18 @@ function OrderRow({ order, isExpanded, isSelected, isFocused, rowIndex, totalRow
               )}
               {(order.status === "SAMPLE_COLLECTED" || order.status === "IN_ANALYSIS") && (
                 <a href={`/dashboard/laboratory/results/${order.id}`} className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]">
-                  <FlaskConical className="h-4 w-4" /> Input Hasil
+                  <FlaskConical className="h-4 w-4" /> {order.status === "SAMPLE_COLLECTED" ? "Input Hasil" : allResultsEntered ? "Lihat Hasil" : "Lanjut Input"}
                 </a>
+              )}
+              {/* DATA-GAP-07: Quick verify from queue for IN_ANALYSIS with all results entered */}
+              {order.status === "IN_ANALYSIS" && allResultsEntered && activeTab !== "COMPLETED_TODAY" && activeTab !== "HISTORY" && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); verifyMutation.mutate({ orderId: order.id }); }}
+                  disabled={verifyMutation.isPending}
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-[0.98] disabled:opacity-60"
+                >
+                  {verifyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Verifikasi
+                </button>
               )}
               {/* BP-LAB-03: Rerun button for IN_ANALYSIS orders */}
               {order.status === "IN_ANALYSIS" && (
@@ -1013,6 +1248,48 @@ function OrderRow({ order, isExpanded, isSelected, isFocused, rowIndex, totalRow
                 <a href="/dashboard/laboratory/approval" className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-600 hover:shadow-md active:scale-[0.98]">
                   <ShieldCheck className="h-4 w-4" /> Menunggu Approval Dokter
                 </a>
+              )}
+              {/* Task 3.2: Recall button for APPROVED/NOTIFIED orders (< 24 hours) */}
+              {(order.status === "APPROVED" || order.status === "NOTIFIED") && order.approvedAt && (
+                (() => {
+                  const hoursSince = (Date.now() - new Date(order.approvedAt).getTime()) / (1000 * 60 * 60);
+                  if (hoursSince > 24) return null;
+                  return (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const reason = window.prompt("Alasan recall order ini untuk koreksi:");
+                        if (reason && reason.trim()) {
+                          recallMutation.mutate({ orderId: order.id, reason: reason.trim() });
+                        }
+                      }}
+                      disabled={recallMutation.isPending}
+                      className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-100 active:scale-[0.98] disabled:opacity-60 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+                    >
+                      {recallMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Recall
+                    </button>
+                  );
+                })()
+              )}
+              {/* Task 3.3: Reprint button for APPROVED/NOTIFIED orders */}
+              {(order.status === "APPROVED" || order.status === "NOTIFIED") && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const token = localStorage.getItem("elis_token") || localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+                    window.open(`/api/v1/orders/${order.id}/report/pdf?token=${encodeURIComponent(token)}`, "_blank");
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-all hover:bg-brand/5 active:scale-[0.98]"
+                >
+                  <Printer className="h-4 w-4" /> Cetak Hasil
+                </button>
+              )}
+              {/* DATA-GAP-09: Rejection count badge */}
+              {order.rejectionCount && order.rejectionCount > 1 && (
+                <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                  <AlertTriangle className="h-3 w-3" />
+                  Ditolak {order.rejectionCount}x
+                </span>
               )}
             </div>
 

@@ -92,6 +92,55 @@ export class LabWorkflowController {
     return this.labWorkflowService.getQueueStats(clinicId);
   }
 
+  @Get('queue/history')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get lab queue history with date range filter' })
+  async getQueueHistory(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('status') status?: string,
+    @Req() req?: any,
+  ) {
+    const clinicId = req?.dataScope?.clinicId;
+    return this.labWorkflowService.getQueueHistory(
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 10,
+      clinicId,
+      search,
+      dateFrom,
+      dateTo,
+      status,
+    );
+  }
+
+  @Get('queue/my-workload')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get workload summary for current user today' })
+  async getMyWorkload(
+    @CurrentUser() user: { id: string },
+    @Req() req?: any,
+  ) {
+    const clinicId = req?.dataScope?.clinicId;
+    return this.labWorkflowService.getMyWorkload(user.id, clinicId);
+  }
+
+  @Post(':orderId/recall')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.DOKTER, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Recall an approved order back to IN_ANALYSIS for correction' })
+  async recallOrder(
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+    @Body() body: { reason: string },
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.labWorkflowService.recallOrder(orderId, body.reason, user.id);
+  }
+
   @Put(':orderId/results')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ANALIS, Role.ADMIN, Role.SUPER_ADMIN)

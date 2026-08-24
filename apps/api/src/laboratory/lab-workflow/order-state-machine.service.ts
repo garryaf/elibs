@@ -18,8 +18,8 @@ const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   [OrderStatus.SAMPLE_COLLECTED]: [OrderStatus.IN_ANALYSIS],
   [OrderStatus.IN_ANALYSIS]: [OrderStatus.VERIFIED],
   [OrderStatus.VERIFIED]: [OrderStatus.APPROVED, OrderStatus.IN_ANALYSIS],
-  [OrderStatus.APPROVED]: [OrderStatus.NOTIFIED],
-  [OrderStatus.NOTIFIED]: [],
+  [OrderStatus.APPROVED]: [OrderStatus.NOTIFIED, OrderStatus.IN_ANALYSIS],
+  [OrderStatus.NOTIFIED]: [OrderStatus.IN_ANALYSIS],
   [OrderStatus.CANCELLED]: [],
 };
 
@@ -111,6 +111,14 @@ export class OrderStateMachineService {
       case OrderStatus.IN_ANALYSIS:
         // Only set rejection fields if coming from VERIFIED (rejection scenario)
         if (_fromStatus === OrderStatus.VERIFIED) {
+          return {
+            rejectedAt: now,
+            rejectedBy: context.userId,
+            rejectedReason: context.reason ?? null,
+          };
+        }
+        // Recall from APPROVED or NOTIFIED
+        if (_fromStatus === OrderStatus.APPROVED || _fromStatus === OrderStatus.NOTIFIED) {
           return {
             rejectedAt: now,
             rejectedBy: context.userId,

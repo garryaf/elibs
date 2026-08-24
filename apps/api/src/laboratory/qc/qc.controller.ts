@@ -24,6 +24,13 @@ import { CreateQCSampleDto, RecordQCRunDto } from './dto';
 export class QCController {
   constructor(private readonly qcService: QCService) {}
 
+  @Get('samples')
+  @Roles(Role.ANALIS, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'List all QC samples' })
+  async getQCSamples() {
+    return this.qcService.getQCSamples();
+  }
+
   @Post('samples')
   @Roles(Role.ANALIS, Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Register a new QC sample' })

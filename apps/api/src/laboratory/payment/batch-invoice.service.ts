@@ -37,8 +37,11 @@ export class BatchInvoiceService {
       throw new BadRequestException('periodStart must be before periodEnd');
     }
 
-    // Find all PAID orders for this insurance within the period
-    // that are NOT already included in another batch invoice
+    // Find all orders that have been paid for this insurance within the period
+    // that are NOT already included in another batch invoice.
+    // We filter by paidAt (not null) + not cancelled, instead of status=PAID only,
+    // because orders progress through PAID → SAMPLE_COLLECTED → ... → APPROVED
+    // and we need to capture them regardless of current workflow status.
     // Requirement 6.5: Query via OrderInsurance junction with coverageType PRIMARY
     const eligibleOrdersWhere = {
       orderInsurances: {
@@ -47,11 +50,12 @@ export class BatchInvoiceService {
           coverageType: 'PRIMARY' as const,
         },
       },
-      status: OrderStatus.PAID,
       paidAt: {
+        not: null,
         gte: periodStart,
         lte: periodEnd,
       },
+      status: { not: OrderStatus.CANCELLED },
       batchInvoiceItems: {
         none: {},
       },
@@ -74,7 +78,7 @@ export class BatchInvoiceService {
 
     if (eligibleOrders.length === 0) {
       throw new BadRequestException(
-        'Tidak ada order yang eligible untuk asuransi dan periode yang dipilih. Pastikan ada order dengan status PAID dan asuransi korporat sebagai PRIMARY coverage dalam rentang tanggal tersebut.',
+        'Tidak ada order yang eligible untuk asuransi dan periode yang dipilih. Pastikan ada order yang sudah dibayar (paidAt) dengan asuransi korporat sebagai PRIMARY coverage dalam rentang tanggal tersebut.',
       );
     }
 
@@ -173,11 +177,12 @@ export class BatchInvoiceService {
           coverageType: 'PRIMARY' as const,
         },
       },
-      status: OrderStatus.PAID,
       paidAt: {
+        not: null,
         gte: periodStart,
         lte: periodEnd,
       },
+      status: { not: OrderStatus.CANCELLED },
       batchInvoiceItems: {
         none: {},
       },

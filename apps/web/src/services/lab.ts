@@ -10,6 +10,7 @@ export const labKeys = {
   all: ["lab"] as const,
   queue: (params?: Record<string, unknown>) => [...labKeys.all, "queue", params] as const,
   queueStats: () => [...labKeys.all, "queue-stats"] as const,
+  queueHistory: (params?: Record<string, unknown>) => [...labKeys.all, "queue-history", params] as const,
   approvalQueue: (params?: Record<string, unknown>) => [...labKeys.all, "approval-queue", params] as const,
   deltaCheck: (orderId: string) => [...labKeys.all, "delta-check", orderId] as const,
 };
@@ -34,6 +35,22 @@ export function useLabQueueStats() {
   return useQuery({
     queryKey: labKeys.queueStats(),
     queryFn: () => apiClient.get("/api/v1/lab/queue/stats"),
+  });
+}
+
+export function useLabQueueHistory(params?: { page?: number; limit?: number; search?: string; dateFrom?: string; dateTo?: string; status?: string }) {
+  return useQuery({
+    queryKey: labKeys.queueHistory(params),
+    queryFn: () => {
+      const qs = new URLSearchParams();
+      if (params?.page) qs.set("page", String(params.page));
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.search) qs.set("search", params.search);
+      if (params?.dateFrom) qs.set("dateFrom", params.dateFrom);
+      if (params?.dateTo) qs.set("dateTo", params.dateTo);
+      if (params?.status) qs.set("status", params.status);
+      return apiClient.get(`/api/v1/lab/queue/history?${qs.toString()}`);
+    },
   });
 }
 
@@ -107,6 +124,7 @@ export function useVerifyResults() {
       apiClient.post(`/api/v1/lab/${orderId}/verify`, { verificationNotes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: labKeys.queue() });
+      queryClient.invalidateQueries({ queryKey: labKeys.queueStats() });
       queryClient.invalidateQueries({ queryKey: labKeys.approvalQueue() });
     },
   });
@@ -127,6 +145,33 @@ export function useApproveOrder() {
       apiClient.post(`/api/v1/lab/${orderId}/approve`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: labKeys.approvalQueue() });
+      queryClient.invalidateQueries({ queryKey: labKeys.queue() });
+      queryClient.invalidateQueries({ queryKey: labKeys.queueStats() });
     },
+  });
+}
+
+// ─── Recall Order ────────────────────────────────────────────────────────────
+
+export function useRecallOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orderId, reason }: { orderId: string; reason: string }) =>
+      apiClient.post(`/api/v1/lab/${orderId}/recall`, { reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: labKeys.queue() });
+      queryClient.invalidateQueries({ queryKey: labKeys.queueStats() });
+      queryClient.invalidateQueries({ queryKey: labKeys.queueHistory() });
+    },
+  });
+}
+
+// ─── Workload Summary ────────────────────────────────────────────────────────
+
+export function useMyWorkload() {
+  return useQuery({
+    queryKey: [...labKeys.all, "my-workload"] as const,
+    queryFn: () => apiClient.get("/api/v1/lab/queue/my-workload"),
+    refetchInterval: 60000, // Refresh every 60 seconds
   });
 }

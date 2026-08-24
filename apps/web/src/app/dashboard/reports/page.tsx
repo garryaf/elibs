@@ -10,6 +10,9 @@ import {
   FlaskConical,
   TrendingUp,
   Clock,
+  Shield,
+  Stethoscope,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api";
@@ -19,7 +22,7 @@ import { ToastContainer } from "@/components/ui/ToastContainer";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-type ReportType = "daily" | "monthly" | "patient" | "test" | "revenue" | "tat";
+type ReportType = "daily" | "monthly" | "patient" | "test" | "revenue" | "tat" | "insurance" | "doctor" | "clinic";
 
 interface ReportConfig {
   id: ReportType;
@@ -72,6 +75,27 @@ const REPORT_CONFIGS: ReportConfig[] = [
     icon: Clock,
     color: "text-cyan-600 bg-cyan-50 dark:bg-cyan-900/20 dark:text-cyan-300",
   },
+  {
+    id: "insurance",
+    label: "Klaim Asuransi",
+    description: "Ringkasan klaim asuransi per provider",
+    icon: Shield,
+    color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300",
+  },
+  {
+    id: "doctor",
+    label: "Per Dokter",
+    description: "Volume order dan revenue per dokter perujuk",
+    icon: Stethoscope,
+    color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-300",
+  },
+  {
+    id: "clinic",
+    label: "Per Klinik",
+    description: "Volume order dan revenue per klinik mitra",
+    icon: Building2,
+    color: "text-orange-600 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-300",
+  },
 ];
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -99,6 +123,9 @@ export default function ReportsPage() {
       case "test": type = "top-tests"; break;
       case "patient": type = "new-patients"; break;
       case "tat": type = "turnaround-time"; break;
+      case "insurance": type = "insurance-claims"; break;
+      case "doctor": type = "by-referring-doctor"; break;
+      case "clinic": type = "by-referring-clinic"; break;
     }
 
     if (type) {
@@ -134,6 +161,41 @@ export default function ReportsPage() {
     }
   };
 
+  const handleDownloadCsv = () => {
+    if (!summary) return;
+
+    // Extract data array from summary
+    const dataArray = (summary.data ?? summary.daily ?? []) as Array<Record<string, unknown>>;
+    if (!Array.isArray(dataArray) || dataArray.length === 0) {
+      showError("Tidak ada data untuk diexport.");
+      return;
+    }
+
+    // Build CSV from first item's keys
+    const headers = Object.keys(dataArray[0]).filter((k) => typeof dataArray[0][k] !== "object");
+    const csvRows = [
+      headers.join(","),
+      ...dataArray.map((row) =>
+        headers.map((h) => {
+          const val = row[h];
+          if (val === null || val === undefined) return "";
+          const str = String(val);
+          // Escape CSV values containing commas or quotes
+          return str.includes(",") || str.includes('"') ? `"${str.replace(/"/g, '""')}"` : str;
+        }).join(",")
+      ),
+    ];
+
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `laporan-${selectedReport}-${dateFrom}-to-${dateTo}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const isPdfSupported = selectedReport === "revenue" || selectedReport === "daily";
 
   const config = REPORT_CONFIGS.find((r) => r.id === selectedReport)!;
@@ -154,19 +216,34 @@ export default function ReportsPage() {
             Generate dan unduh laporan operasional laboratorium.
           </p>
         </div>
-        <button 
-          onClick={handleDownloadPdf}
-          disabled={!isPdfSupported}
-          title={isPdfSupported ? "Unduh laporan sebagai PDF" : "Export PDF hanya tersedia untuk Laporan Harian dan Pendapatan"}
-          className={cn(
-            "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all active:scale-[0.98]",
-            isPdfSupported
-              ? "bg-brand text-white shadow-brand/20 hover:bg-brand-dark"
-              : "cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
-          )}>
-          <Download className="h-4 w-4" />
-          Export PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDownloadCsv}
+            disabled={!summary}
+            title="Export data sebagai CSV"
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all active:scale-[0.98]",
+              summary
+                ? "border border-brand text-brand hover:bg-brand/5 dark:border-brand dark:text-brand"
+                : "cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+            )}>
+            <Download className="h-4 w-4" />
+            CSV
+          </button>
+          <button 
+            onClick={handleDownloadPdf}
+            disabled={!isPdfSupported}
+            title={isPdfSupported ? "Unduh laporan sebagai PDF" : "Export PDF hanya tersedia untuk Laporan Harian dan Pendapatan"}
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all active:scale-[0.98]",
+              isPdfSupported
+                ? "bg-brand text-white shadow-brand/20 hover:bg-brand-dark"
+                : "cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+            )}>
+            <Download className="h-4 w-4" />
+            PDF
+          </button>
+        </div>
       </div>
 
       {/* Report Type Selection */}

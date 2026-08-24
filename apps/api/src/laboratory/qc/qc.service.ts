@@ -13,6 +13,15 @@ export class QCService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
+   * List all QC samples, ordered by most recently created first.
+   */
+  async getQCSamples() {
+    return this.prisma.qCSample.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
    * Create a new QC sample record.
    * QC samples are control materials run alongside patient samples to verify
    * analyzer accuracy.
