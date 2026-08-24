@@ -310,6 +310,7 @@ export class MasterDataService implements IMasterDataQueryService {
         name: dto.name,
         description: dto.description,
         price: dto.price,
+        discount: dto.discount ?? 0,
         isActive: dto.isActive ?? true,
         panelTests: {
           create: dto.testIds.map((testId) => ({ testId })),

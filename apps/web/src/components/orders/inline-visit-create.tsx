@@ -44,6 +44,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [conflictVisit, setConflictVisit] = useState<{ visitNumber: string } | null>(null);
   const [loadingPreselected, setLoadingPreselected] = useState(false);
 
   // Patient search state
@@ -60,6 +61,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
       setSelectedPatient(null);
       setPaymentMethod("CASH");
       setError(null);
+      setConflictVisit(null);
       setPatientQuery("");
       setPatientResults([]);
       setShowPatientDropdown(false);
@@ -180,6 +182,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
 
     setSubmitting(true);
     setError(null);
+    setConflictVisit(null);
 
     try {
       const res = await apiClient.createVisit({
@@ -209,12 +212,22 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
       reset();
       onCreated(createdVisit);
     } catch (err: unknown) {
-      const apiErr = err as { message?: string; errors?: Array<{ message: string }> };
-      const message =
-        apiErr?.errors?.[0]?.message ||
-        apiErr?.message ||
-        "Gagal membuat kunjungan. Silakan coba lagi.";
-      setError(message);
+      const apiErr = err as { message?: string; errorCode?: string; status?: number; errors?: Array<{ message: string }> };
+
+      // Handle 409 Conflict — duplicate active visit
+      if (apiErr?.status === 409 || apiErr?.errorCode === "ERR_DUPLICATE_ACTIVE_VISIT") {
+        // Extract visit number from error message (format: "...today (VST-XXXXXX-XXXX)...")
+        const match = apiErr?.message?.match(/\((VST-[\w-]+)\)/);
+        const visitNumber = match ? match[1] : null;
+        setConflictVisit({ visitNumber: visitNumber || "aktif" });
+        setError(null); // Don't show generic error — show conflict UI instead
+      } else {
+        const message =
+          apiErr?.errors?.[0]?.message ||
+          apiErr?.message ||
+          "Gagal membuat kunjungan. Silakan coba lagi.";
+        setError(message);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -369,6 +382,43 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
             </div>
           )}
 
+          {/* Conflict: duplicate active visit */}
+          {conflictVisit && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                  <Search className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                    Kunjungan Aktif Sudah Ada
+                  </p>
+                  <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                    Pasien ini sudah memiliki kunjungan aktif hari ini
+                    {conflictVisit.visitNumber !== "aktif" && (
+                      <span className="font-mono font-semibold"> ({conflictVisit.visitNumber})</span>
+                    )}. Gunakan kunjungan yang sudah ada atau batalkan terlebih dahulu.
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <a
+                      href="/dashboard/visits"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-700"
+                    >
+                      Lihat Kunjungan
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setConflictVisit(null)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300"
+                    >
+                      Tutup
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex items-center justify-end gap-2 pt-2">
             <button
@@ -381,7 +431,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
             </button>
             <button
               type="submit"
-              disabled={submitting || !selectedPatient}
+              disabled={submitting || !selectedPatient || !!conflictVisit}
               className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? (
