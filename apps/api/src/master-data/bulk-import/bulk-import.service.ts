@@ -32,7 +32,7 @@ const ENTITY_SCHEMAS: Record<ImportEntityType, EntitySchema> = {
     fieldTypes: {
       code: 'string',
       name: 'string',
-      categoryId: 'uuid',
+      categoryId: 'string',
       unit: 'string',
       method: 'string',
       sampleType: 'string',
@@ -360,9 +360,45 @@ export class BulkImportService {
   }
 
   private async upsertTest(row: Record<string, string>): Promise<void> {
+    // Resolve categoryId — support both UUID and category name
+    let categoryId = row.categoryId;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (categoryId && !uuidRegex.test(categoryId)) {
+      // Not a UUID — treat as category name and look up
+      const category = await this.prisma.testCategory.findFirst({
+        where: { name: { equals: categoryId, mode: 'insensitive' } },
+        select: { id: true },
+      });
+      if (category) {
+        categoryId = category.id;
+      } else {
+        throw new Error(`Kategori "${categoryId}" tidak ditemukan. Buat kategori terlebih dahulu.`);
+      }
+    } else if (categoryId && uuidRegex.test(categoryId)) {
+      // UUID provided — verify it exists
+      const category = await this.prisma.testCategory.findFirst({
+        where: { id: categoryId },
+        select: { id: true },
+      });
+      if (!category) {
+        // Try to find by matching name from any category (fallback for cross-environment UUIDs)
+        // Use the existing test's category if updating, or throw error if creating
+        const existingTest = await this.prisma.testMaster.findFirst({
+          where: { code: row.code },
+          select: { categoryId: true },
+        });
+        if (existingTest) {
+          categoryId = existingTest.categoryId; // Keep existing category
+        } else {
+          throw new Error(`categoryId "${categoryId}" tidak ditemukan di database. Gunakan nama kategori (misal: "Hematologi") atau UUID yang valid.`);
+        }
+      }
+    }
+
     const data: any = {
       name: row.name,
-      categoryId: row.categoryId,
+      categoryId,
       price: Number(row.price),
     };
 

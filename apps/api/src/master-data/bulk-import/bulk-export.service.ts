@@ -57,13 +57,14 @@ export class BulkExportService {
   private async fetchTests(): Promise<Record<string, any>[]> {
     const tests = await this.prisma.testMaster.findMany({
       where: { isActive: true, deletedAt: null },
+      include: { category: { select: { name: true } } },
       orderBy: { code: 'asc' },
     });
 
     return tests.map((t) => ({
       code: t.code,
       name: t.name,
-      categoryId: t.categoryId,
+      categoryId: (t as any).category?.name || t.categoryId,
       unit: t.unit || '',
       method: t.method || '',
       sampleType: t.sampleType || '',
