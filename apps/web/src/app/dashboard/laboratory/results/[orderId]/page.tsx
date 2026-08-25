@@ -37,6 +37,8 @@ interface TestInfo {
   code: string;
   name: string;
   unit: string | null;
+  resultType?: string;
+  qualitativeOptions?: string[];
   referenceValues: ReferenceValue[];
 }
 
@@ -515,24 +517,45 @@ export default function ResultEntryPage() {
                     </div>
                   )}
 
-                  {/* Input field */}
+                  {/* Input field — conditional based on resultType */}
                   <div className="flex items-center gap-3">
                     <div className="relative flex-1 max-w-xs">
-                      <input
-                        type="text"
-                        placeholder="Masukkan hasil..."
-                        value={entry?.resultValue ?? ""}
-                        onChange={(e) =>
-                          updateResult(detail.id, e.target.value)
-                        }
-                        className={cn(
-                          "h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition-colors focus:border-primary text-foreground placeholder:text-muted-foreground",
-                          flagConfig
-                            ? flagConfig.borderColor
-                            : "border-border"
-                        )}
-                      />
-                      {detail.test?.unit && (
+                      {detail.test?.resultType === "QUALITATIVE" && detail.test?.qualitativeOptions && detail.test.qualitativeOptions.length > 0 ? (
+                        <select
+                          value={entry?.resultValue ?? ""}
+                          onChange={(e) =>
+                            updateResult(detail.id, e.target.value)
+                          }
+                          className={cn(
+                            "h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition-colors focus:border-primary text-foreground",
+                            flagConfig
+                              ? flagConfig.borderColor
+                              : "border-border",
+                            !entry?.resultValue && "text-muted-foreground"
+                          )}
+                        >
+                          <option value="">— Pilih hasil —</option>
+                          {detail.test.qualitativeOptions.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          placeholder={detail.test?.resultType === "TEXT" ? "Masukkan deskripsi hasil..." : "Masukkan hasil..."}
+                          value={entry?.resultValue ?? ""}
+                          onChange={(e) =>
+                            updateResult(detail.id, e.target.value)
+                          }
+                          className={cn(
+                            "h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition-colors focus:border-primary text-foreground placeholder:text-muted-foreground",
+                            flagConfig
+                              ? flagConfig.borderColor
+                              : "border-border"
+                          )}
+                        />
+                      )}
+                      {detail.test?.unit && detail.test?.resultType !== "QUALITATIVE" && (
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
                           {detail.test?.unit}
                         </span>

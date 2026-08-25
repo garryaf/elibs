@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Search,
   Plus,
@@ -609,6 +609,11 @@ function ReferenceValuesContent() {
         </div>
       )}
 
+      {/* ─── Qualitative Reference Values Section ──────────────────────────── */}
+      {selectedTest && (
+        <QualitativeReferenceSection testId={selectedTest.id} testName={selectedTest.name} />
+      )}
+
       {/* ─── Create/Edit Modal ─────────────────────────────────────────────── */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -834,6 +839,161 @@ function ReferenceValuesContent() {
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Qualitative Reference Values Sub-Component ──────────────────────────────
+
+function QualitativeReferenceSection({ testId, testName }: { testId: string; testName: string }) {
+  const [items, setItems] = useState<Array<{ id: string; optionValue: string; flag: string; description?: string }>>([]);
+  const [loading, setLoading] = useState(false);
+  const [newOption, setNewOption] = useState("");
+  const [newFlag, setNewFlag] = useState("NORMAL");
+  const [saving, setSaving] = useState(false);
+
+  // Fetch qualitative references
+  useEffect(() => {
+    setLoading(true);
+    const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || "" : "";
+    fetch(`/api/v1/master/tests/${testId}/qualitative-references`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        const data = res?.data ?? res;
+        if (Array.isArray(data)) setItems(data);
+        else if (data?.data && Array.isArray(data.data)) setItems(data.data);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [testId]);
+
+  const handleAdd = async () => {
+    if (!newOption.trim()) return;
+    setSaving(true);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || "" : "";
+      const resp = await fetch(`/api/v1/master/tests/${testId}/qualitative-references`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ optionValue: newOption.trim(), flag: newFlag }),
+      });
+      const result = await resp.json();
+      if (resp.ok) {
+        const created = result?.data ?? result;
+        setItems((prev) => [...prev, created]);
+        setNewOption("");
+        setNewFlag("NORMAL");
+      } else {
+        alert(result?.message || "Gagal menambahkan");
+      }
+    } catch { alert("Gagal menambahkan"); }
+    setSaving(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Hapus mapping ini?")) return;
+    const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || "" : "";
+    await fetch(`/api/v1/master/tests/${testId}/qualitative-references/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setItems((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  const flagColors: Record<string, string> = {
+    NORMAL: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+    LOW: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+    HIGH: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+    CRITICAL: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+  };
+
+  return (
+    <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-1">
+        Nilai Rujukan Kualitatif
+      </h3>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+        Mapping opsi hasil kualitatif → flag (untuk tes seperti Anti-HBc, HBsAg, Widal, dll)
+      </p>
+
+      {loading ? (
+        <div className="py-4 text-center text-sm text-slate-400">Memuat...</div>
+      ) : (
+        <>
+          {items.length > 0 && (
+            <div className="mb-4 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 dark:bg-slate-900">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">OPSI HASIL</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">FLAG</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-slate-500">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {items.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                      <td className="px-4 py-2.5 font-medium text-slate-800 dark:text-white">{item.optionValue}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={cn("rounded-md px-2 py-0.5 text-xs font-bold", flagColors[item.flag] || "bg-slate-100 text-slate-600")}>
+                          {item.flag}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <button onClick={() => handleDelete(item.id)} className="text-xs text-red-500 hover:text-red-700 font-medium">
+                          Hapus
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {items.length === 0 && (
+            <div className="mb-4 rounded-xl border border-dashed border-slate-200 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
+              Belum ada mapping kualitatif. Tambahkan di bawah.
+            </div>
+          )}
+
+          {/* Add form */}
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Opsi Hasil</label>
+              <input
+                type="text"
+                value={newOption}
+                onChange={(e) => setNewOption(e.target.value)}
+                placeholder="misal: Reaktif, Non-Reaktif, Positif..."
+                className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              />
+            </div>
+            <div className="w-32">
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Flag</label>
+              <select
+                value={newFlag}
+                onChange={(e) => setNewFlag(e.target.value)}
+                className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              >
+                <option value="NORMAL">NORMAL</option>
+                <option value="LOW">LOW</option>
+                <option value="HIGH">HIGH</option>
+                <option value="CRITICAL">CRITICAL</option>
+              </select>
+            </div>
+            <button
+              onClick={handleAdd}
+              disabled={saving || !newOption.trim()}
+              className="h-9 rounded-lg bg-brand px-4 text-xs font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+            >
+              {saving ? "..." : "Tambah"}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

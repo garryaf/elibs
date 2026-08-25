@@ -3,6 +3,7 @@ import { MasterDataController } from './master-data.controller';
 import { TariffController } from './tariff.controller';
 import { CalibrationController } from './calibration.controller';
 import { ReferenceValueController } from './reference-value.controller';
+import { QualitativeReferenceController } from './qualitative-reference.controller';
 import { MasterDataService } from './master-data.service';
 import { ReferenceMasterService } from './reference-master.service';
 import { TariffResolverService } from './tariff-resolver.service';
@@ -30,6 +31,7 @@ import {
     BulkImportController,
     CalibrationController,
     ReferenceValueController,
+    QualitativeReferenceController,
     DoctorController,
     ClinicController,
     InsuranceController,
