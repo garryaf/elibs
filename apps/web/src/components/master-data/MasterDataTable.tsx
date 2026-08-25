@@ -19,11 +19,14 @@ interface MasterDataTableProps {
   meta?: { total: number; page: number; limit: number; totalPages?: number };
   onEdit?: (row: Record<string, unknown>) => void;
   onDelete?: (row: Record<string, unknown>) => void;
+  onBulkDelete?: (ids: string[]) => void;
   onSearch?: (query: string) => void;
   onPageChange?: (page: number) => void;
   isLoading?: boolean;
   /** Optional: render an expanded detail section below a row when clicked */
   renderExpandedRow?: (row: Record<string, unknown>) => React.ReactNode;
+  /** Optional: highlight rows with duplicate names */
+  duplicateNames?: Set<string>;
 }
 
 /**
@@ -52,13 +55,35 @@ export function MasterDataTable({
   meta,
   onEdit,
   onDelete,
+  onBulkDelete,
   onSearch,
   onPageChange,
   isLoading = false,
   renderExpandedRow,
+  duplicateNames,
 }: MasterDataTableProps) {
   const [searchValue, setSearchValue] = useState("");
   const [expandedRowId, setExpandedRowId] = useState<string | number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Reset selection when data changes
+  useEffect(() => { setSelectedIds(new Set()); }, [data]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === data.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(data.map((r) => r.id as string)));
+    }
+  };
 
   // Debounced search
   const debouncedSearch = useDebounce(searchValue, 300);
@@ -104,12 +129,47 @@ export function MasterDataTable({
         </div>
       )}
 
+      {/* Bulk action bar */}
+      {onBulkDelete && selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 dark:border-red-800 dark:bg-red-900/20">
+          <span className="text-sm font-medium text-red-700 dark:text-red-300">{selectedIds.size} dipilih</span>
+          <button
+            onClick={() => {
+              if (confirm(`Hapus ${selectedIds.size} data yang dipilih?`)) {
+                onBulkDelete(Array.from(selectedIds));
+                setSelectedIds(new Set());
+              }
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Hapus Terpilih
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-xs font-medium text-red-600 hover:underline dark:text-red-400"
+          >
+            Batal
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/50">
+                {onBulkDelete && (
+                  <th className="w-10 px-3 py-3.5">
+                    <input
+                      type="checkbox"
+                      checked={data.length > 0 && selectedIds.size === data.length}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand/30"
+                      aria-label="Pilih semua"
+                    />
+                  </th>
+                )}
                 {columns.map((col) => (
                   <th
                     key={col.key}
@@ -129,7 +189,7 @@ export function MasterDataTable({
               {data.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={columns.length + (onEdit || onDelete ? 1 : 0)}
+                    colSpan={columns.length + (onEdit || onDelete ? 1 : 0) + (onBulkDelete ? 1 : 0)}
                     className="py-16 text-center text-sm text-slate-400 dark:text-slate-500"
                   >
                     Tidak ada data yang ditemukan.
@@ -139,6 +199,7 @@ export function MasterDataTable({
                 data.map((row, rowIdx) => {
                   const rowId = (row.id as string | number) ?? rowIdx;
                   const isExpanded = renderExpandedRow && expandedRowId === rowId;
+                  const isDuplicate = duplicateNames && typeof row.name === "string" && duplicateNames.has(row.name);
                   return (
                     <Fragment key={rowId}>
                       <tr
@@ -146,15 +207,31 @@ export function MasterDataTable({
                           "border-b border-slate-100 transition-colors hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30",
                           rowIdx === data.length - 1 && !isExpanded && "border-b-0",
                           renderExpandedRow && "cursor-pointer",
-                          isExpanded && "bg-slate-50/80 dark:bg-slate-900/50"
+                          isExpanded && "bg-slate-50/80 dark:bg-slate-900/50",
+                          isDuplicate && "bg-amber-50/60 dark:bg-amber-900/10"
                         )}
                         onClick={renderExpandedRow ? () => setExpandedRowId(isExpanded ? null : rowId) : undefined}
                       >
+                        {onBulkDelete && (
+                          <td className="w-10 px-3 py-4" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(row.id as string)}
+                              onChange={() => toggleSelect(row.id as string)}
+                              className="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand/30"
+                            />
+                          </td>
+                        )}
                         {columns.map((col) => (
                           <td key={col.key} className="px-5 py-4 text-slate-700 dark:text-slate-300">
                             {col.render
                               ? col.render(row[col.key], row)
                               : renderCellValue(row[col.key])}
+                            {col.key === "name" && isDuplicate && (
+                              <span className="ml-2 inline-flex items-center rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" title="Nama duplikat dengan tes lain">
+                                DUPLIKAT
+                              </span>
+                            )}
                           </td>
                         ))}
                         {(onEdit || onDelete) && (
@@ -186,7 +263,7 @@ export function MasterDataTable({
                       </tr>
                       {isExpanded && (
                         <tr>
-                          <td colSpan={columns.length + (onEdit || onDelete ? 1 : 0)} className="p-0">
+                          <td colSpan={columns.length + (onEdit || onDelete ? 1 : 0) + (onBulkDelete ? 1 : 0)} className="p-0">
                             {renderExpandedRow(row)}
                           </td>
                         </tr>

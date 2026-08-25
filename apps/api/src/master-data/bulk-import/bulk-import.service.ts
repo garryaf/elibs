@@ -177,7 +177,12 @@ export class BulkImportService {
   private parseCsv(fileBuffer: Buffer): Promise<Record<string, string>[]> {
     return new Promise((resolve, reject) => {
       const rows: Record<string, string>[] = [];
-      const stream = Readable.from(fileBuffer);
+      // Strip BOM (Byte Order Mark) if present — common in Excel-exported CSV files
+      let content = fileBuffer;
+      if (content[0] === 0xef && content[1] === 0xbb && content[2] === 0xbf) {
+        content = content.subarray(3);
+      }
+      const stream = Readable.from(content);
 
       stream
         .pipe(
@@ -186,6 +191,7 @@ export class BulkImportService {
             skip_empty_lines: true,
             trim: true,
             relax_column_count: true,
+            bom: true,
           }),
         )
         .on('data', (row: Record<string, string>) => {

@@ -510,6 +510,44 @@ function ConfirmStep({
   const panelsSubtotal = selectedPanels.reduce((s, p) => s + Number(p.price), 0);
   const subtotal = testsSubtotal + panelsSubtotal;
 
+  // Fetch real pricing from backend with tariff resolution info
+  const [pricingPreview, setPricingPreview] = useState<{
+    items: Array<{ testId: string; testCode: string; testName: string; basePrice: number; discount: number; finalPrice: number; resolution: string }>;
+    totalAmount: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const testIds = selectedTests.map((t) => t.id);
+    if (testIds.length === 0) { setPricingPreview(null); return; }
+
+    apiClient.post("/api/v1/orders/preview-pricing", { testIds }).then((res) => {
+      const data = (res as any)?.data ?? res;
+      setPricingPreview(data as any);
+    }).catch(() => { /* fallback to TestMaster.price display */ });
+  }, [selectedTests]);
+
+  // Resolution badge helper
+  const getResolutionBadge = (resolution: string) => {
+    switch (resolution) {
+      case "SPECIFIC":
+        return <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">Tarif Khusus</span>;
+      case "CLINIC_ONLY":
+        return <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[9px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">Tarif Klinik</span>;
+      case "INSURANCE_ONLY":
+        return <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[9px] font-bold text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">Tarif Asuransi</span>;
+      case "DEFAULT":
+        return <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">Tarif Default</span>;
+      case "FALLBACK":
+        return <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">Harga Dasar</span>;
+      default:
+        return null;
+    }
+  };
+
+  // Use server pricing if available
+  const serverTotal = pricingPreview?.totalAmount;
+  const displayTotal = serverTotal != null ? serverTotal : subtotal;
+
   return (
     <div className="space-y-4">
       <div>
@@ -566,19 +604,30 @@ function ConfirmStep({
             </div>
           ))}
           {/* Individual tests */}
-          {selectedTests.map((t) => (
+          {selectedTests.map((t) => {
+            const serverItem = pricingPreview?.items.find((i) => i.testId === t.id);
+            const displayPrice = serverItem ? serverItem.finalPrice : Number(t.price);
+            const hasDiscount = serverItem && serverItem.discount > 0;
+            return (
             <div key={t.id} className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2">
                 <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-400">{t.code}</span>
                 <span className="text-sm text-slate-800 dark:text-slate-200">{t.name}</span>
+                {serverItem && getResolutionBadge(serverItem.resolution)}
               </div>
-              <span className="text-sm font-semibold text-slate-900 dark:text-white">{formatRupiah(Number(t.price))}</span>
+              <div className="flex items-center gap-2">
+                {hasDiscount && (
+                  <span className="text-xs text-slate-400 line-through">{formatRupiah(serverItem.basePrice)}</span>
+                )}
+                <span className="text-sm font-semibold text-slate-900 dark:text-white">{formatRupiah(displayPrice)}</span>
+              </div>
             </div>
-          ))}
+            );
+          })}
         </div>
         <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
           <span className="font-semibold text-slate-700 dark:text-slate-300">Total</span>
-          <span className="text-lg font-bold text-brand">{formatRupiah(subtotal)}</span>
+          <span className="text-lg font-bold text-brand">{formatRupiah(displayTotal)}</span>
         </div>
       </div>
 

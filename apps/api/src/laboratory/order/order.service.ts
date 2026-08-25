@@ -250,6 +250,46 @@ export class OrderService {
     };
   }
 
+  /**
+   * Preview pricing for a list of tests without creating an order.
+   * Returns price, discount, final price, and resolution source per test.
+   */
+  async previewPricing(testIds: string[], clinicId?: string, insuranceId?: string) {
+    if (!testIds || testIds.length === 0) {
+      return { items: [], subtotal: 0, totalDiscount: 0, totalAmount: 0 };
+    }
+
+    const pricing = await this.tariffResolver.resolveOrderTotal(testIds, clinicId, insuranceId);
+
+    // Enrich with test names
+    const tests = await this.prisma.testMaster.findMany({
+      where: { id: { in: testIds }, deletedAt: null },
+      select: { id: true, code: true, name: true, price: true },
+    });
+    const testMap = new Map(tests.map((t) => [t.id, t]));
+
+    const items = pricing.items.map((item) => {
+      const test = testMap.get(item.testId);
+      return {
+        testId: item.testId,
+        testCode: test?.code ?? '',
+        testName: test?.name ?? '',
+        basePrice: item.tariff.basePrice,
+        discount: item.tariff.discount,
+        finalPrice: item.tariff.finalPrice,
+        resolution: item.tariff.resolution,
+        tariffId: item.tariff.tariffId,
+      };
+    });
+
+    return {
+      items,
+      subtotal: pricing.subtotal,
+      totalDiscount: pricing.totalDiscount,
+      totalAmount: pricing.totalAmount,
+    };
+  }
+
   async findAll(query: OrderQueryDto, clinicId?: string) {
     const page = query.page ? parseInt(query.page, 10) : 1;
     const limit = query.limit ? parseInt(query.limit, 10) : 20;

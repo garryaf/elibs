@@ -106,11 +106,17 @@ export class MasterDataService implements IMasterDataQueryService {
 
   // ─── Test Master ──────────────────────────────────────────────────────────────
 
-  async findAllTests(page = 1, limit = 20, categoryId?: string) {
+  async findAllTests(page = 1, limit = 20, categoryId?: string, search?: string) {
     const skip = (page - 1) * limit;
     const where: any = { deletedAt: null };
     if (categoryId) {
       where.categoryId = categoryId;
+    }
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
+      ];
     }
     const [data, total] = await Promise.all([
       this.prisma.testMaster.findMany({

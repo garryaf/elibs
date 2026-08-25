@@ -62,6 +62,16 @@ export class OrderController {
     return this.orderService.create(dto, user.id);
   }
 
+  @Post('preview-pricing')
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('orders:create')
+  @ApiOperation({ summary: 'Preview pricing for tests before creating an order' })
+  async previewPricing(
+    @Body() body: { testIds: string[]; clinicId?: string; insuranceId?: string },
+  ) {
+    return this.orderService.previewPricing(body.testIds, body.clinicId, body.insuranceId);
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @RequirePermission('orders:read')
