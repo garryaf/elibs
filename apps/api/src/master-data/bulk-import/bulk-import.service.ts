@@ -128,14 +128,19 @@ export class BulkImportService {
           await this.upsertRow(entityType, row, schema);
           successCount++;
         } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          // Extract useful info from Prisma errors
+          let friendlyMessage = message;
+          if (message.includes('Foreign key constraint')) {
+            friendlyMessage = `Referensi tidak valid (categoryId/clinicId/insuranceId tidak ditemukan di database)`;
+          } else if (message.includes('Unique constraint')) {
+            friendlyMessage = `Data duplikat (kode sudah ada)`;
+          }
           errors.push({
             row: rowIndex,
             field: '_general',
-            value: '',
-            message:
-              error instanceof Error
-                ? error.message
-                : 'Unknown database error',
+            value: row.code || row.name || '',
+            message: friendlyMessage,
           });
         }
       }
@@ -368,18 +373,22 @@ export class BulkImportService {
       data.requiresDoctorApproval = this.parseBoolean(
         row.requiresDoctorApproval,
       );
-    if (row.isActive) data.isActive = this.parseBoolean(row.isActive);
+    if (row.isActive !== undefined && row.isActive !== '')
+      data.isActive = this.parseBoolean(row.isActive);
 
-    const existing = await this.prisma.testMaster.findFirst({
-      where: { code: row.code, deletedAt: null },
+    // First: check if code exists (including soft-deleted)
+    const existingAny = await this.prisma.testMaster.findFirst({
+      where: { code: row.code },
     });
 
-    if (existing) {
+    if (existingAny) {
+      // Update existing record (and restore if soft-deleted)
       await this.prisma.testMaster.update({
-        where: { id: existing.id },
-        data,
+        where: { id: existingAny.id },
+        data: { ...data, deletedAt: null },
       });
     } else {
+      // Create new record
       await this.prisma.testMaster.create({
         data: { code: row.code, ...data },
       });

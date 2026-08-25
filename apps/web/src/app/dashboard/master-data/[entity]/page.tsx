@@ -962,9 +962,16 @@ export default function MasterDataEntityPage() {
                         const importData = result.data ?? result;
                         const count = importData?.successCount ?? 0;
                         const errorCount = importData?.errorCount ?? 0;
-                        const msg = errorCount > 0
+                        const errors = importData?.errors as Array<{ row: number; field: string; message: string }> | undefined;
+                        let msg = errorCount > 0
                           ? `Import selesai: ${count} data berhasil, ${errorCount} data gagal.`
                           : `Import berhasil: ${count} data diimpor.`;
+                        // Show first 3 error details
+                        if (errors && errors.length > 0) {
+                          const details = errors.slice(0, 3).map((e) => `  Baris ${e.row}: ${e.message}`).join("\n");
+                          msg += `\n\nDetail error:\n${details}`;
+                          if (errors.length > 3) msg += `\n  ... dan ${errors.length - 3} error lainnya`;
+                        }
                         alert(msg);
                         if (count > 0) window.location.reload();
                       } else {
