@@ -29,10 +29,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload) {
     // Check if token has been blocklisted (logout)
-    if (payload.iat && this.tokenBlocklist.isBlocked(payload.sub, payload.iat)) {
+    if (
+      payload.iat &&
+      this.tokenBlocklist.isBlocked(payload.sub, payload.iat)
+    ) {
       throw new UnauthorizedException('Token has been revoked');
     }
 
-    return { sub: payload.sub, id: payload.sub, userId: payload.sub, email: payload.email, role: payload.role, clinicId: payload.clinicId ?? null };
+    return {
+      sub: payload.sub,
+      id: payload.sub,
+      userId: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      clinicId: payload.clinicId ?? null,
+    };
   }
 }

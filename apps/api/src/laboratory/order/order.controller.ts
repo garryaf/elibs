@@ -15,7 +15,12 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiProduces } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiProduces,
+} from '@nestjs/swagger';
 import * as express from 'express';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -30,9 +35,20 @@ import { BarcodeService } from '../../common/barcode/barcode.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
 import { OrderQueryDto } from './dto/order-query.dto';
-import { AddOrderInsuranceDto, UpdateOrderInsuranceDto } from './dto/manage-order-insurance.dto';
-import { CreateBpjsOrderDetailDto, UpdateBpjsOrderDetailDto, VerifyBpjsDto } from './dto/bpjs-order-detail.dto';
-import { SubmitClaimDto, ApproveClaimDto, RejectClaimDto } from './dto/claim.dto';
+import {
+  AddOrderInsuranceDto,
+  UpdateOrderInsuranceDto,
+} from './dto/manage-order-insurance.dto';
+import {
+  CreateBpjsOrderDetailDto,
+  UpdateBpjsOrderDetailDto,
+  VerifyBpjsDto,
+} from './dto/bpjs-order-detail.dto';
+import {
+  SubmitClaimDto,
+  ApproveClaimDto,
+  RejectClaimDto,
+} from './dto/claim.dto';
 import { ProcessFallbackPaymentDto } from './dto/fallback-payment.dto';
 import { VisitIdDeprecationInterceptor } from './interceptors/visit-id-deprecation.interceptor';
 
@@ -65,11 +81,22 @@ export class OrderController {
   @Post('preview-pricing')
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @RequirePermission('orders:create')
-  @ApiOperation({ summary: 'Preview pricing for tests before creating an order' })
+  @ApiOperation({
+    summary: 'Preview pricing for tests before creating an order',
+  })
   async previewPricing(
-    @Body() body: { testIds: string[]; clinicId?: string; insuranceId?: string },
+    @Body()
+    body: {
+      testIds: string[];
+      clinicId?: string;
+      insuranceId?: string;
+    },
   ) {
-    return this.orderService.previewPricing(body.testIds, body.clinicId, body.insuranceId);
+    return this.orderService.previewPricing(
+      body.testIds,
+      body.clinicId,
+      body.insuranceId,
+    );
   }
 
   @Get()
@@ -112,7 +139,10 @@ export class OrderController {
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @RequirePermission('orders:read')
   @ApiOperation({ summary: 'Get order by ID' })
-  async findById(@Param('id', ParseUUIDPipe) id: string, @Req() req: express.Request) {
+  async findById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: express.Request,
+  ) {
     const clinicId = (req as any).dataScope?.clinicId;
     return this.orderService.findById(id, clinicId);
   }
@@ -134,7 +164,9 @@ export class OrderController {
     // Determine the barcode text to encode: prefer barcodeText, fall back to orderNumber
     const text = order.barcodeText ?? order.orderNumber;
     if (!text) {
-      throw new NotFoundException('Barcode text not available. Payment must be processed first.');
+      throw new NotFoundException(
+        'Barcode text not available. Payment must be processed first.',
+      );
     }
 
     const pngBuffer = await this.barcodeService.generateBuffer(text);
@@ -308,7 +340,9 @@ export class OrderController {
 
     // Trigger 72-hour cash fallback workflow after rejection
     try {
-      await this.insuranceRejectionService.initiateClaimRejectionFallback(claimId);
+      await this.insuranceRejectionService.initiateClaimRejectionFallback(
+        claimId,
+      );
     } catch (error) {
       this.logger.warn(
         `Failed to initiate fallback workflow for claim ${claimId}: ${error.message}`,
@@ -331,7 +365,9 @@ export class OrderController {
   @Post(':id/fallback-payment')
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @RequirePermission('orders:manage-claims')
-  @ApiOperation({ summary: 'Process cash fallback payment after insurance rejection' })
+  @ApiOperation({
+    summary: 'Process cash fallback payment after insurance rejection',
+  })
   async processFallbackPayment(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ProcessFallbackPaymentDto,

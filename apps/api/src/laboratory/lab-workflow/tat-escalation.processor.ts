@@ -3,7 +3,10 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { Role, NotificationType, NotificationStatus } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { TatEscalationJobData, TatEscalationService } from './tat-escalation.service';
+import {
+  TatEscalationJobData,
+  TatEscalationService,
+} from './tat-escalation.service';
 
 /**
  * BullMQ processor for the `tat-escalation` queue.
@@ -25,7 +28,9 @@ export class TatEscalationProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<TatEscalationJobData | Record<string, never>>): Promise<void> {
+  async process(
+    job: Job<TatEscalationJobData | Record<string, never>>,
+  ): Promise<void> {
     if (job.name === 'check-overdue') {
       // Periodic check for overdue orders
       await this.tatEscalationService.checkOverdueOrders();
@@ -33,8 +38,20 @@ export class TatEscalationProcessor extends WorkerHost {
     }
 
     if (job.name === 'notify-overdue') {
-      const { orderId, orderNumber, patientName, maxTatMinutes, elapsedMinutes } = job.data as TatEscalationJobData;
-      await this.processNotification(orderId, orderNumber, patientName, maxTatMinutes, elapsedMinutes);
+      const {
+        orderId,
+        orderNumber,
+        patientName,
+        maxTatMinutes,
+        elapsedMinutes,
+      } = job.data as TatEscalationJobData;
+      await this.processNotification(
+        orderId,
+        orderNumber,
+        patientName,
+        maxTatMinutes,
+        elapsedMinutes,
+      );
       return;
     }
 

@@ -6,7 +6,8 @@
  */
 
 // Set valid env vars before any application imports
-process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/testdb?schema=public';
+process.env.DATABASE_URL =
+  'postgresql://user:pass@localhost:5432/testdb?schema=public';
 process.env.JWT_SECRET = 'test-secret-key-that-is-at-least-32-characters-long';
 process.env.JWT_EXPIRATION = '15m';
 process.env.CORS_ORIGINS = 'http://localhost:3000';
@@ -41,7 +42,9 @@ describe('Bootstrap & Middleware Integration (e2e)', () => {
    * Helper to create and initialize a NestJS app with the full middleware
    * chain matching main.ts, using a mocked PrismaService.
    */
-  async function createTestApp(corsOrigins?: string): Promise<INestApplication> {
+  async function createTestApp(
+    corsOrigins?: string,
+  ): Promise<INestApplication> {
     // Override CORS_ORIGINS in process.env if needed for specific tests
     if (corsOrigins !== undefined) {
       process.env.CORS_ORIGINS = corsOrigins;
@@ -59,7 +62,8 @@ describe('Bootstrap & Middleware Integration (e2e)', () => {
     // Replicate main.ts bootstrap sequence
     nestApp.use(helmet());
 
-    const origins = corsOrigins ?? process.env.CORS_ORIGINS ?? 'http://localhost:3000';
+    const origins =
+      corsOrigins ?? process.env.CORS_ORIGINS ?? 'http://localhost:3000';
     nestApp.enableCors({
       origin: origins === '*' ? true : origins.split(',').map((o) => o.trim()),
       credentials: true,
@@ -68,7 +72,10 @@ describe('Bootstrap & Middleware Integration (e2e)', () => {
     nestApp.setGlobalPrefix('api/v1');
     nestApp.useGlobalPipes(globalValidationPipe);
     nestApp.useGlobalFilters(new AllExceptionsFilter());
-    nestApp.useGlobalInterceptors(new TransformInterceptor(), new LoggingInterceptor());
+    nestApp.useGlobalInterceptors(
+      new TransformInterceptor(),
+      new LoggingInterceptor(),
+    );
 
     await nestApp.init();
     return nestApp;
@@ -96,14 +103,17 @@ describe('Bootstrap & Middleware Integration (e2e)', () => {
       // We can't easily test the full module init failure in a single Jest process
       // because the env is set at import time. Instead we validate schema behavior.
       const invalidEnv = {
-        DATABASE_URL: 'postgresql://user:pass@localhost:5432/testdb?schema=public',
+        DATABASE_URL:
+          'postgresql://user:pass@localhost:5432/testdb?schema=public',
         // JWT_SECRET intentionally omitted
         JWT_EXPIRATION: '15m',
         CORS_ORIGINS: 'http://localhost:3000',
         PORT: 4000,
       };
 
-      const { error } = envValidationSchema.validate(invalidEnv, { abortEarly: false });
+      const { error } = envValidationSchema.validate(invalidEnv, {
+        abortEarly: false,
+      });
       expect(error).toBeDefined();
       expect(error!.message).toContain('JWT_SECRET');
     });
@@ -152,7 +162,9 @@ describe('Bootstrap & Middleware Integration (e2e)', () => {
         .set('Access-Control-Request-Method', 'POST');
 
       // When origin is true (wildcard), NestJS reflects the requesting origin
-      expect(res.headers['access-control-allow-origin']).toBe('http://any-origin.example.com');
+      expect(res.headers['access-control-allow-origin']).toBe(
+        'http://any-origin.example.com',
+      );
     });
   });
 
@@ -165,7 +177,9 @@ describe('Bootstrap & Middleware Integration (e2e)', () => {
       // AuthController uses @Controller('api/v1/auth'), so with globalPrefix('api/v1')
       // the full route is /api/v1/api/v1/auth/login
       // This test validates the global prefix is applied by checking a route resolves
-      const res = await request(app.getHttpServer()).post('/api/v1/api/v1/auth/login');
+      const res = await request(app.getHttpServer()).post(
+        '/api/v1/api/v1/auth/login',
+      );
       // Should get 400 or 401 (not 404) — route exists under the global prefix
       expect(res.status).not.toBe(404);
     });
@@ -183,7 +197,9 @@ describe('Bootstrap & Middleware Integration (e2e)', () => {
     });
 
     it('should return 404 in standard error envelope format for unknown endpoints', async () => {
-      const res = await request(app.getHttpServer()).get('/api/v1/nonexistent-endpoint');
+      const res = await request(app.getHttpServer()).get(
+        '/api/v1/nonexistent-endpoint',
+      );
 
       expect(res.status).toBe(404);
       expect(res.body).toMatchObject({

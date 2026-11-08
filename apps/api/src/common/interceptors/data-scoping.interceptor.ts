@@ -32,11 +32,11 @@ export function DataScoped(): MethodDecorator & ClassDecorator {
 
 /**
  * Interceptor that applies department-based data scoping.
- * 
+ *
  * If a user has a departmentId assigned and the endpoint is marked with @DataScoped(),
  * it adds a `departmentScope` property to the request object containing the user's departmentId.
  * Controllers can then use this to filter queries.
- * 
+ *
  * Users with the `data.cross-department` permission bypass scoping.
  */
 @Injectable()

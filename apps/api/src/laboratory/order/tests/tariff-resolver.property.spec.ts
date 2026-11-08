@@ -82,10 +82,7 @@ describe('Tariff Resolver Property Tests', () => {
                       discount: new Decimal(insuranceDiscount),
                     });
                   }
-                  if (
-                    where.clinicId === null &&
-                    where.insuranceId === null
-                  ) {
+                  if (where.clinicId === null && where.insuranceId === null) {
                     return Promise.resolve({
                       id: 'tariff-default',
                       price: new Decimal(defaultPrice),
@@ -171,10 +168,7 @@ describe('Tariff Resolver Property Tests', () => {
                       discount: new Decimal(insuranceDiscount),
                     });
                   }
-                  if (
-                    where.clinicId === null &&
-                    where.insuranceId === null
-                  ) {
+                  if (where.clinicId === null && where.insuranceId === null) {
                     return Promise.resolve({
                       id: 'tariff-default',
                       price: new Decimal(defaultPrice),
@@ -253,10 +247,7 @@ describe('Tariff Resolver Property Tests', () => {
                       discount: new Decimal(insuranceDiscount),
                     });
                   }
-                  if (
-                    where.clinicId === null &&
-                    where.insuranceId === null
-                  ) {
+                  if (where.clinicId === null && where.insuranceId === null) {
                     return Promise.resolve({
                       id: 'tariff-default',
                       price: new Decimal(defaultPrice),
@@ -293,42 +284,46 @@ describe('Tariff Resolver Property Tests', () => {
       const discountArb = fc.float({ min: 0, max: 100, noNaN: true });
 
       fc.assert(
-        fc.asyncProperty(priceArb, discountArb, async (defaultPrice, defaultDiscount) => {
-          const testId = 'test-1';
-          const clinicId = 'clinic-1';
-          const insuranceId = 'insurance-1';
+        fc.asyncProperty(
+          priceArb,
+          discountArb,
+          async (defaultPrice, defaultDiscount) => {
+            const testId = 'test-1';
+            const clinicId = 'clinic-1';
+            const insuranceId = 'insurance-1';
 
-          const mockPrisma = {
-            tariff: {
-              findFirst: jest.fn().mockImplementation(({ where }) => {
-                // Only DEFAULT exists
-                if (where.clinicId === null && where.insuranceId === null) {
-                  return Promise.resolve({
-                    id: 'tariff-default',
-                    price: new Decimal(defaultPrice),
-                    discount: new Decimal(defaultDiscount),
-                  });
-                }
-                return Promise.resolve(null);
-              }),
-            },
-            testMaster: {
-              findFirst: jest.fn(),
-            },
-          };
+            const mockPrisma = {
+              tariff: {
+                findFirst: jest.fn().mockImplementation(({ where }) => {
+                  // Only DEFAULT exists
+                  if (where.clinicId === null && where.insuranceId === null) {
+                    return Promise.resolve({
+                      id: 'tariff-default',
+                      price: new Decimal(defaultPrice),
+                      discount: new Decimal(defaultDiscount),
+                    });
+                  }
+                  return Promise.resolve(null);
+                }),
+              },
+              testMaster: {
+                findFirst: jest.fn(),
+              },
+            };
 
-          const service = new TariffResolverService(mockPrisma as any);
-          const result = await service.resolvePrice(
-            testId,
-            clinicId,
-            insuranceId,
-          );
+            const service = new TariffResolverService(mockPrisma as any);
+            const result = await service.resolvePrice(
+              testId,
+              clinicId,
+              insuranceId,
+            );
 
-          // DEFAULT must win
-          expect(result.resolution).toBe('DEFAULT');
-          expect(result.tariffId).toBe('tariff-default');
-          expect(result.basePrice).toBeCloseTo(defaultPrice, 4);
-        }),
+            // DEFAULT must win
+            expect(result.resolution).toBe('DEFAULT');
+            expect(result.tariffId).toBe('tariff-default');
+            expect(result.basePrice).toBeCloseTo(defaultPrice, 4);
+          },
+        ),
         { numRuns: 100 },
       );
     });
@@ -351,7 +346,10 @@ describe('Tariff Resolver Property Tests', () => {
         discount: fc.float({ min: 0, max: 100, noNaN: true }),
       });
 
-      const testItemsArb = fc.array(testItemArb, { minLength: 1, maxLength: 10 });
+      const testItemsArb = fc.array(testItemArb, {
+        minLength: 1,
+        maxLength: 10,
+      });
 
       fc.assert(
         fc.asyncProperty(testItemsArb, async (testItems) => {
@@ -409,7 +407,10 @@ describe('Tariff Resolver Property Tests', () => {
         discount: fc.float({ min: 0, max: 100, noNaN: true }),
       });
 
-      const testItemsArb = fc.array(testItemArb, { minLength: 1, maxLength: 10 });
+      const testItemsArb = fc.array(testItemArb, {
+        minLength: 1,
+        maxLength: 10,
+      });
 
       fc.assert(
         fc.asyncProperty(testItemsArb, async (testItems) => {

@@ -38,7 +38,8 @@ function patientSearchOracle(
     const mrnMatch = patient.mrn.toLowerCase().includes(queryLower);
     const phoneMatch = patient.phone !== null && patient.phone.includes(query);
     const emailMatch =
-      patient.email !== null && patient.email.toLowerCase().includes(queryLower);
+      patient.email !== null &&
+      patient.email.toLowerCase().includes(queryLower);
     const nikMatch = isDigitsOnly && patient.nik.startsWith(query);
 
     return nameMatch || mrnMatch || phoneMatch || emailMatch || nikMatch;
@@ -58,13 +59,12 @@ interface PatientRecord {
 // Arbitrary for generating a patient record
 const patientRecordArb: fc.Arbitrary<PatientRecord> = fc.record({
   id: fc.uuid(),
-  name: fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0),
+  name: fc
+    .string({ minLength: 1, maxLength: 50 })
+    .filter((s) => s.trim().length > 0),
   mrn: fc.stringMatching(/^RM-\d{6}-\d{4}$/),
   nik: fc.stringMatching(/^\d{16}$/),
-  phone: fc.oneof(
-    fc.constant(null),
-    fc.stringMatching(/^08\d{8,11}$/),
-  ),
+  phone: fc.oneof(fc.constant(null), fc.stringMatching(/^08\d{8,11}$/)),
   email: fc.oneof(
     fc.constant(null),
     fc.string({ minLength: 3, maxLength: 20 }).map((s) => {
@@ -79,13 +79,12 @@ const patientRecordArb: fc.Arbitrary<PatientRecord> = fc.record({
 // Arbitrary for generating a patient with possible soft-delete
 const patientWithDeleteArb: fc.Arbitrary<PatientRecord> = fc.record({
   id: fc.uuid(),
-  name: fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0),
+  name: fc
+    .string({ minLength: 1, maxLength: 50 })
+    .filter((s) => s.trim().length > 0),
   mrn: fc.stringMatching(/^RM-\d{6}-\d{4}$/),
   nik: fc.stringMatching(/^\d{16}$/),
-  phone: fc.oneof(
-    fc.constant(null),
-    fc.stringMatching(/^08\d{8,11}$/),
-  ),
+  phone: fc.oneof(fc.constant(null), fc.stringMatching(/^08\d{8,11}$/)),
   email: fc.oneof(
     fc.constant(null),
     fc.string({ minLength: 3, maxLength: 20 }).map((s) => {
@@ -100,7 +99,9 @@ const patientWithDeleteArb: fc.Arbitrary<PatientRecord> = fc.record({
 });
 
 // Arbitrary for generating a search query of 2+ characters
-const searchQueryArb = fc.string({ minLength: 2, maxLength: 30 }).filter((s) => s.trim().length >= 2);
+const searchQueryArb = fc
+  .string({ minLength: 2, maxLength: 30 })
+  .filter((s) => s.trim().length >= 2);
 
 /**
  * Property 1: Patient search correctness
@@ -131,9 +132,11 @@ describe('Property 1: Patient search correctness', () => {
           for (const patient of results) {
             const nameMatch = patient.name.toLowerCase().includes(queryLower);
             const mrnMatch = patient.mrn.toLowerCase().includes(queryLower);
-            const phoneMatch = patient.phone !== null && patient.phone.includes(query);
+            const phoneMatch =
+              patient.phone !== null && patient.phone.includes(query);
             const emailMatch =
-              patient.email !== null && patient.email.toLowerCase().includes(queryLower);
+              patient.email !== null &&
+              patient.email.toLowerCase().includes(queryLower);
             const nikMatch = isDigitsOnly && patient.nik.startsWith(query);
 
             expect(
@@ -164,9 +167,11 @@ describe('Property 1: Patient search correctness', () => {
             if (!resultIds.has(patient.id)) {
               const nameMatch = patient.name.toLowerCase().includes(queryLower);
               const mrnMatch = patient.mrn.toLowerCase().includes(queryLower);
-              const phoneMatch = patient.phone !== null && patient.phone.includes(query);
+              const phoneMatch =
+                patient.phone !== null && patient.phone.includes(query);
               const emailMatch =
-                patient.email !== null && patient.email.toLowerCase().includes(queryLower);
+                patient.email !== null &&
+                patient.email.toLowerCase().includes(queryLower);
               const nikMatch = isDigitsOnly && patient.nik.startsWith(query);
 
               // If the patient is not in results, none of the conditions should match
@@ -295,7 +300,8 @@ describe('Property 3: Soft-delete exclusion invariant', () => {
               patient.name.toLowerCase().includes(queryLower) ||
               patient.mrn.toLowerCase().includes(queryLower) ||
               (patient.phone !== null && patient.phone.includes(query)) ||
-              (patient.email !== null && patient.email.toLowerCase().includes(queryLower)) ||
+              (patient.email !== null &&
+                patient.email.toLowerCase().includes(queryLower)) ||
               (isDigitsOnly && patient.nik.startsWith(query));
 
             // Regardless of whether the patient would match, it must NOT appear

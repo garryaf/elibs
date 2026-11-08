@@ -48,9 +48,18 @@ describe('PatientService Insurance Property Tests', () => {
         PatientService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: MrnGeneratorService, useValue: mockMrnGeneratorService },
-        { provide: RegionValidationService, useValue: mockRegionValidationService },
+        {
+          provide: RegionValidationService,
+          useValue: mockRegionValidationService,
+        },
         { provide: AuditService, useValue: { log: jest.fn() } },
-        { provide: InsuranceConsolidationService, useValue: { resolvePatientInsuranceId: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            resolvePatientInsuranceId: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -70,12 +79,17 @@ describe('PatientService Insurance Property Tests', () => {
       fc.integer({ min: 1, max: 12 }),
       fc.integer({ min: 1, max: 28 }),
     )
-    .map(([y, m, d]) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+    .map(
+      ([y, m, d]) =>
+        `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
+    );
 
   const genderArb = fc.constantFrom('MALE' as const, 'FEMALE' as const);
 
   const memberNumberArb = fc.option(
-    fc.string({ minLength: 5, maxLength: 20 }).filter((s) => s.trim().length > 0),
+    fc
+      .string({ minLength: 5, maxLength: 20 })
+      .filter((s) => s.trim().length > 0),
     { nil: undefined },
   );
 
@@ -122,7 +136,9 @@ describe('PatientService Insurance Property Tests', () => {
             });
 
             // Mock patientInsurance.create
-            (prismaService.patientInsurance.create as jest.Mock).mockResolvedValue({
+            (
+              prismaService.patientInsurance.create as jest.Mock
+            ).mockResolvedValue({
               id: 'junction-id',
               patientId,
               insuranceId,
@@ -145,15 +161,20 @@ describe('PatientService Insurance Property Tests', () => {
             await service.register(dto);
 
             // ASSERTION 1: patient.create data should NOT include insuranceId
-            const createCall = (prismaService.patient.create as jest.Mock).mock.calls[0][0];
+            const createCall = (prismaService.patient.create as jest.Mock).mock
+              .calls[0][0];
             const createData = createCall.data;
             expect(createData).not.toHaveProperty('insuranceId');
 
             // ASSERTION 2: PatientInsurance junction should be created
-            expect(prismaService.patientInsurance.create).toHaveBeenCalledTimes(1);
+            expect(prismaService.patientInsurance.create).toHaveBeenCalledTimes(
+              1,
+            );
 
             // ASSERTION 3: Junction record has correct values
-            const junctionCall = (prismaService.patientInsurance.create as jest.Mock).mock.calls[0][0];
+            const junctionCall = (
+              prismaService.patientInsurance.create as jest.Mock
+            ).mock.calls[0][0];
             const junctionData = junctionCall.data;
             expect(junctionData.patientId).toBe(patientId);
             expect(junctionData.insuranceId).toBe(insuranceId);
@@ -210,12 +231,15 @@ describe('PatientService Insurance Property Tests', () => {
             await service.register(dto);
 
             // ASSERTION 1: patient.create data should NOT include insuranceId
-            const createCall = (prismaService.patient.create as jest.Mock).mock.calls[0][0];
+            const createCall = (prismaService.patient.create as jest.Mock).mock
+              .calls[0][0];
             const createData = createCall.data;
             expect(createData).not.toHaveProperty('insuranceId');
 
             // ASSERTION 2: PatientInsurance junction should NOT be created
-            expect(prismaService.patientInsurance.create).not.toHaveBeenCalled();
+            expect(
+              prismaService.patientInsurance.create,
+            ).not.toHaveBeenCalled();
           },
         ),
         { numRuns: 100 },
@@ -240,7 +264,12 @@ describe('PatientService Insurance Property Tests', () => {
           uuidArb,
           memberNumberArb,
           fc.boolean(),
-          async (patientId, newInsuranceId, memberNumber, hasExistingJunction) => {
+          async (
+            patientId,
+            newInsuranceId,
+            memberNumber,
+            hasExistingJunction,
+          ) => {
             jest.clearAllMocks();
 
             // Mock patient exists
@@ -269,14 +298,18 @@ describe('PatientService Insurance Property Tests', () => {
 
             // Mock existing junction state
             if (hasExistingJunction) {
-              (prismaService.patientInsurance.findFirst as jest.Mock).mockResolvedValue({
+              (
+                prismaService.patientInsurance.findFirst as jest.Mock
+              ).mockResolvedValue({
                 id: 'existing-junction-id',
                 patientId,
                 insuranceId: 'old-insurance-id',
                 priority: 1,
                 isActive: true,
               });
-              (prismaService.patientInsurance.update as jest.Mock).mockResolvedValue({
+              (
+                prismaService.patientInsurance.update as jest.Mock
+              ).mockResolvedValue({
                 id: 'existing-junction-id',
                 patientId,
                 insuranceId: newInsuranceId,
@@ -284,8 +317,12 @@ describe('PatientService Insurance Property Tests', () => {
                 isActive: true,
               });
             } else {
-              (prismaService.patientInsurance.findFirst as jest.Mock).mockResolvedValue(null);
-              (prismaService.patientInsurance.create as jest.Mock).mockResolvedValue({
+              (
+                prismaService.patientInsurance.findFirst as jest.Mock
+              ).mockResolvedValue(null);
+              (
+                prismaService.patientInsurance.create as jest.Mock
+              ).mockResolvedValue({
                 id: 'new-junction-id',
                 patientId,
                 insuranceId: newInsuranceId,
@@ -305,18 +342,27 @@ describe('PatientService Insurance Property Tests', () => {
             await service.update(patientId, dto);
 
             // ASSERTION 1: patient.update data should NOT include insuranceId
-            const updateCall = (prismaService.patient.update as jest.Mock).mock.calls[0][0];
+            const updateCall = (prismaService.patient.update as jest.Mock).mock
+              .calls[0][0];
             const updateData = updateCall.data;
             expect(updateData).not.toHaveProperty('insuranceId');
 
             // ASSERTION 2: Junction is modified (either create or update)
             if (hasExistingJunction) {
-              expect(prismaService.patientInsurance.update).toHaveBeenCalledTimes(1);
-              const junctionUpdateCall = (prismaService.patientInsurance.update as jest.Mock).mock.calls[0][0];
+              expect(
+                prismaService.patientInsurance.update,
+              ).toHaveBeenCalledTimes(1);
+              const junctionUpdateCall = (
+                prismaService.patientInsurance.update as jest.Mock
+              ).mock.calls[0][0];
               expect(junctionUpdateCall.data.insuranceId).toBe(newInsuranceId);
             } else {
-              expect(prismaService.patientInsurance.create).toHaveBeenCalledTimes(1);
-              const junctionCreateCall = (prismaService.patientInsurance.create as jest.Mock).mock.calls[0][0];
+              expect(
+                prismaService.patientInsurance.create,
+              ).toHaveBeenCalledTimes(1);
+              const junctionCreateCall = (
+                prismaService.patientInsurance.create as jest.Mock
+              ).mock.calls[0][0];
               expect(junctionCreateCall.data.insuranceId).toBe(newInsuranceId);
               expect(junctionCreateCall.data.priority).toBe(1);
               expect(junctionCreateCall.data.isActive).toBe(true);
@@ -338,7 +384,9 @@ describe('PatientService Insurance Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           uuidArb,
-          fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0),
+          fc
+            .string({ minLength: 1, maxLength: 50 })
+            .filter((s) => s.trim().length > 0),
           async (patientId, newName) => {
             jest.clearAllMocks();
 
@@ -374,14 +422,21 @@ describe('PatientService Insurance Property Tests', () => {
             await service.update(patientId, dto);
 
             // ASSERTION 1: patient.update data should NOT include insuranceId
-            const updateCall = (prismaService.patient.update as jest.Mock).mock.calls[0][0];
+            const updateCall = (prismaService.patient.update as jest.Mock).mock
+              .calls[0][0];
             const updateData = updateCall.data;
             expect(updateData).not.toHaveProperty('insuranceId');
 
             // ASSERTION 2: Junction should not be touched
-            expect(prismaService.patientInsurance.findFirst).not.toHaveBeenCalled();
-            expect(prismaService.patientInsurance.create).not.toHaveBeenCalled();
-            expect(prismaService.patientInsurance.update).not.toHaveBeenCalled();
+            expect(
+              prismaService.patientInsurance.findFirst,
+            ).not.toHaveBeenCalled();
+            expect(
+              prismaService.patientInsurance.create,
+            ).not.toHaveBeenCalled();
+            expect(
+              prismaService.patientInsurance.update,
+            ).not.toHaveBeenCalled();
           },
         ),
         { numRuns: 100 },

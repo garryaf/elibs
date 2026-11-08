@@ -40,7 +40,8 @@ export class ReceiptService {
       throw new NotFoundException('Order not found');
     }
 
-    const receiptNumber = await this.receiptSequenceService.generateReceiptNumber();
+    const receiptNumber =
+      await this.receiptSequenceService.generateReceiptNumber();
 
     // Persist receipt number to the order
     await this.receiptSequenceService.persistReceipt(orderId, receiptNumber);
@@ -98,10 +99,19 @@ export class ReceiptService {
   }
 
   private buildCashReceipt(
-    baseReceipt: Omit<CashReceipt, 'type' | 'paymentMethod' | 'amountPaid' | 'change'>,
-    order: { paymentMethod: PaymentMethod | null; amountPaid: unknown; totalAmount: unknown },
+    baseReceipt: Omit<
+      CashReceipt,
+      'type' | 'paymentMethod' | 'amountPaid' | 'change'
+    >,
+    order: {
+      paymentMethod: PaymentMethod | null;
+      amountPaid: unknown;
+      totalAmount: unknown;
+    },
   ): CashReceipt {
-    const amountPaid = order.amountPaid ? Number(order.amountPaid) : baseReceipt.totalAmount;
+    const amountPaid = order.amountPaid
+      ? Number(order.amountPaid)
+      : baseReceipt.totalAmount;
     const change = amountPaid - baseReceipt.totalAmount;
 
     return {
@@ -149,7 +159,9 @@ export class ReceiptService {
     // Get primary insurance info from orderInsurances or fallback to order.insurance
     const primaryOrderInsurance = order.orderInsurances[0];
     const insuranceName =
-      primaryOrderInsurance?.insurance?.name ?? order.insurance?.name ?? 'Unknown';
+      primaryOrderInsurance?.insurance?.name ??
+      order.insurance?.name ??
+      'Unknown';
     const insuranceCode =
       primaryOrderInsurance?.insurance?.code ?? order.insurance?.code ?? '';
 
@@ -201,7 +213,10 @@ export class ReceiptService {
   }
 
   private buildCorporateReceipt(
-    baseReceipt: Omit<CorporateReceipt, 'type' | 'companyName' | 'companyCode' | 'billingNote'>,
+    baseReceipt: Omit<
+      CorporateReceipt,
+      'type' | 'companyName' | 'companyCode' | 'billingNote'
+    >,
     order: {
       insurance: { name: string; code: string } | null;
       orderInsurances: Array<{
@@ -271,5 +286,4 @@ export class ReceiptService {
       finalPrice: Number(detail.finalPrice),
     }));
   }
-
 }

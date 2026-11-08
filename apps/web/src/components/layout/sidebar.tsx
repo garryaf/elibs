@@ -52,11 +52,6 @@ interface MenuGroup {
   defaultOpen?: boolean;
 }
 
-const ALL_ROLES: RoleKey[] = [
-  "SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "KASIR", "CS",
-  "SAMPLING", "ANALIS", "DOKTER", "MARKETING", "KLINIK_PARTNER",
-];
-
 const menuGroups: MenuGroup[] = [
   {
     label: "UTAMA",

@@ -47,7 +47,12 @@ export class PatientCreate {
       const targets: InspectionTarget[] = [
         {
           layer: 'CONTROLLER',
-          patterns: [{ glob: 'src/patients/**/*.ts', purpose: 'Find patient controller' }],
+          patterns: [
+            {
+              glob: 'src/patients/**/*.ts',
+              purpose: 'Find patient controller',
+            },
+          ],
           requiredArtifacts: [
             {
               description: 'Controller decorator',
@@ -90,7 +95,9 @@ export class PatientCreate {
       const targets: InspectionTarget[] = [
         {
           layer: 'SERVICE',
-          patterns: [{ glob: 'src/orders/**/*.ts', purpose: 'Find order service' }],
+          patterns: [
+            { glob: 'src/orders/**/*.ts', purpose: 'Find order service' },
+          ],
           requiredArtifacts: [
             {
               description: 'OrderService class',
@@ -124,7 +131,10 @@ export class PatientCreate {
         {
           layer: 'UI',
           patterns: [
-            { glob: 'src/pages/patients/**/*.tsx', purpose: 'Find patient pages' },
+            {
+              glob: 'src/pages/patients/**/*.tsx',
+              purpose: 'Find patient pages',
+            },
           ],
           requiredArtifacts: [
             {
@@ -162,7 +172,9 @@ export class BillingService {
       const targets: InspectionTarget[] = [
         {
           layer: 'SERVICE',
-          patterns: [{ glob: 'src/billing/**/*.ts', purpose: 'Find billing service' }],
+          patterns: [
+            { glob: 'src/billing/**/*.ts', purpose: 'Find billing service' },
+          ],
           requiredArtifacts: [
             {
               description: 'processPayment method',
@@ -237,7 +249,9 @@ export class BillingService {
         for (let j = 0; j < 10; j++) {
           fs.writeFileSync(
             path.join(dir, `file${j}.ts`),
-            'export const data = ' + JSON.stringify({ value: 'x'.repeat(1000) }) + ';\n',
+            'export const data = ' +
+              JSON.stringify({ value: 'x'.repeat(1000) }) +
+              ';\n',
           );
         }
       }
@@ -386,9 +400,9 @@ export class BillingService {
       // One valid artifact found, one invalid regex - so PARTIAL
       expect(results[0].status).toBe('PARTIAL');
       expect(results[0].issues).toBeDefined();
-      expect(results[0].issues!.some((issue) => issue.includes('Invalid regex'))).toBe(
-        true,
-      );
+      expect(
+        results[0].issues!.some((issue) => issue.includes('Invalid regex')),
+      ).toBe(true);
     });
   });
 
@@ -409,7 +423,10 @@ export class BillingService {
         path.join(uiDir, 'page.tsx'),
         'export function OrderPage() { return <div>Order</div>; }',
       );
-      fs.writeFileSync(path.join(dbDir, 'schema.prisma'), 'model Order { id Int }');
+      fs.writeFileSync(
+        path.join(dbDir, 'schema.prisma'),
+        'model Order { id Int }',
+      );
 
       const tracer = new StackTracer(tmpDir);
       const targets: InspectionTarget[] = [

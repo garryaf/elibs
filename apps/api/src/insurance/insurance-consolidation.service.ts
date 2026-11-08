@@ -237,9 +237,7 @@ export class InsuranceConsolidationService {
    * Tries PatientInsurance with priority=1 first, falls back to Patient.insuranceId
    * if no junction record exists (with deprecation warning).
    */
-  async resolvePatientInsuranceId(
-    patientId: string,
-  ): Promise<string | null> {
+  async resolvePatientInsuranceId(patientId: string): Promise<string | null> {
     // Step 1: Try the junction table (priority=1, active, valid dates)
     const defaultInsurance = await this.getDefaultInsurance(patientId);
 

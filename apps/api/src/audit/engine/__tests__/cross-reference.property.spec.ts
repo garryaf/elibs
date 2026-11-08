@@ -128,10 +128,7 @@ describe('Cross-Reference Deduplication Exclusion Property Tests', () => {
       await fc.assert(
         fc.property(processNameArb, (processName) => {
           // Create an IMPLEMENTED classification
-          const classification = makeClassification(
-            processName,
-            'IMPLEMENTED',
-          );
+          const classification = makeClassification(processName, 'IMPLEMENTED');
 
           // Create a matching Implemented entry
           const entry = makeEntry(

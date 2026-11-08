@@ -27,7 +27,9 @@ export class RbacController {
   constructor(private readonly rbacService: RbacService) {}
 
   @Get('permissions')
-  @ApiOperation({ summary: 'List all permissions, optionally filtered by resource' })
+  @ApiOperation({
+    summary: 'List all permissions, optionally filtered by resource',
+  })
   async listPermissions(@Query('resource') resource?: string) {
     const permissions = await this.rbacService.listPermissions(resource);
     return { data: permissions, total: permissions.length };
@@ -46,14 +48,18 @@ export class RbacController {
   @ApiOperation({ summary: 'Assign or revoke permissions for a role' })
   async assignRolePermissions(
     @Param('role') role: string,
-    @Body() body: { permissions: { permissionId: string; isGranted: boolean }[] },
+    @Body()
+    body: { permissions: { permissionId: string; isGranted: boolean }[] },
   ) {
     const validRole = this.validateRole(role);
     const result = await this.rbacService.assignPermissionsToRole(
       validRole,
       body.permissions,
     );
-    return { message: `Updated ${result.updated} permission(s) for role ${validRole}`, ...result };
+    return {
+      message: `Updated ${result.updated} permission(s) for role ${validRole}`,
+      ...result,
+    };
   }
 
   @Get('matrix')
@@ -119,7 +125,9 @@ export class RbacController {
   private validateRole(role: string): Role {
     const upperRole = role.toUpperCase();
     if (!Object.values(Role).includes(upperRole as Role)) {
-      throw new Error(`Invalid role: ${role}. Valid roles: ${Object.values(Role).join(', ')}`);
+      throw new Error(
+        `Invalid role: ${role}. Valid roles: ${Object.values(Role).join(', ')}`,
+      );
     }
     return upperRole as Role;
   }

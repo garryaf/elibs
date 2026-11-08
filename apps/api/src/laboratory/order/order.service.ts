@@ -14,10 +14,21 @@ import { OrderSequenceService } from './order-sequence.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
 import { OrderQueryDto } from './dto/order-query.dto';
-import { AddOrderInsuranceDto, UpdateOrderInsuranceDto } from './dto/manage-order-insurance.dto';
-import { CreateBpjsOrderDetailDto, UpdateBpjsOrderDetailDto, VerifyBpjsDto } from './dto/bpjs-order-detail.dto';
+import {
+  AddOrderInsuranceDto,
+  UpdateOrderInsuranceDto,
+} from './dto/manage-order-insurance.dto';
+import {
+  CreateBpjsOrderDetailDto,
+  UpdateBpjsOrderDetailDto,
+  VerifyBpjsDto,
+} from './dto/bpjs-order-detail.dto';
 import { BpjsApiService } from './bpjs-api.service';
-import { OrderStatus, BpjsVerificationStatus, PaymentMethod } from '@prisma/client';
+import {
+  OrderStatus,
+  BpjsVerificationStatus,
+  PaymentMethod,
+} from '@prisma/client';
 
 @Injectable()
 export class OrderService {
@@ -55,8 +66,15 @@ export class OrderService {
     const insuranceId = dto.insuranceId ?? visit?.insuranceId ?? null;
 
     // Validate override: if dto.insuranceId is provided and differs from visit's insurance
-    if (insuranceId && dto.insuranceId && dto.insuranceId !== visit?.insuranceId) {
-      await this.consolidationService.validateVisitInsurance(dto.patientId, insuranceId);
+    if (
+      insuranceId &&
+      dto.insuranceId &&
+      dto.insuranceId !== visit?.insuranceId
+    ) {
+      await this.consolidationService.validateVisitInsurance(
+        dto.patientId,
+        insuranceId,
+      );
     }
 
     // For CASH visits, no insurance is required (allow no OrderInsurance records)
@@ -72,7 +90,9 @@ export class OrderService {
       });
       if (panels.length !== dto.panelIds.length) {
         const foundPanelIds = panels.map((p) => p.id);
-        const missingPanelIds = dto.panelIds.filter((id) => !foundPanelIds.includes(id));
+        const missingPanelIds = dto.panelIds.filter(
+          (id) => !foundPanelIds.includes(id),
+        );
         throw new BadRequestException({
           errorCode: 'ERR_VALIDATION',
           message: `Panels not found or inactive: ${missingPanelIds.join(', ')}`,
@@ -137,7 +157,9 @@ export class OrderService {
       }
 
       if (umbrellaIdsToRemove.length > 0) {
-        resolvedTestIds = resolvedTestIds.filter((id) => !umbrellaIdsToRemove.includes(id));
+        resolvedTestIds = resolvedTestIds.filter(
+          (id) => !umbrellaIdsToRemove.includes(id),
+        );
         resolvedTestIds = [...resolvedTestIds, ...expandedFromUmbrella];
       }
     }
@@ -149,7 +171,8 @@ export class OrderService {
     if (resolvedTestIds.length === 0) {
       throw new BadRequestException({
         errorCode: 'ERR_VALIDATION',
-        message: 'Order must contain at least one test. Provide testIds or panelIds with constituent tests.',
+        message:
+          'Order must contain at least one test. Provide testIds or panelIds with constituent tests.',
       });
     }
 
@@ -174,7 +197,9 @@ export class OrderService {
         // Include a warning in the response metadata (not blocking — just informational)
         // The lab workflow will enforce pre-auth before sample collection
         preAuthWarnings.push(
-          ...preAuthTests.map((t) => `Pre-authorization required for test: ${t.name}`)
+          ...preAuthTests.map(
+            (t) => `Pre-authorization required for test: ${t.name}`,
+          ),
         );
       }
     }
@@ -241,7 +266,11 @@ export class OrderService {
     // Return order with details
     const resultOrder = await this.prisma.order.findUnique({
       where: { id: order.id },
-      include: { orderDetails: true, patient: true, visit: { select: { visitNumber: true, status: true } } },
+      include: {
+        orderDetails: true,
+        patient: true,
+        visit: { select: { visitNumber: true, status: true } },
+      },
     });
 
     return {
@@ -254,12 +283,20 @@ export class OrderService {
    * Preview pricing for a list of tests without creating an order.
    * Returns price, discount, final price, and resolution source per test.
    */
-  async previewPricing(testIds: string[], clinicId?: string, insuranceId?: string) {
+  async previewPricing(
+    testIds: string[],
+    clinicId?: string,
+    insuranceId?: string,
+  ) {
     if (!testIds || testIds.length === 0) {
       return { items: [], subtotal: 0, totalDiscount: 0, totalAmount: 0 };
     }
 
-    const pricing = await this.tariffResolver.resolveOrderTotal(testIds, clinicId, insuranceId);
+    const pricing = await this.tariffResolver.resolveOrderTotal(
+      testIds,
+      clinicId,
+      insuranceId,
+    );
 
     // Enrich with test names
     const tests = await this.prisma.testMaster.findMany({
@@ -320,8 +357,14 @@ export class OrderService {
         {
           OR: [
             { orderNumber: { contains: query.search, mode: 'insensitive' } },
-            { patient: { name: { contains: query.search, mode: 'insensitive' } } },
-            { patient: { mrn: { contains: query.search, mode: 'insensitive' } } },
+            {
+              patient: {
+                name: { contains: query.search, mode: 'insensitive' },
+              },
+            },
+            {
+              patient: { mrn: { contains: query.search, mode: 'insensitive' } },
+            },
           ],
         },
       ];
@@ -347,7 +390,13 @@ export class OrderService {
         orderBy: { [sortBy]: sortOrder },
         include: {
           patient: true,
-          orderDetails: { include: { test: { select: { id: true, code: true, name: true, unit: true } } } },
+          orderDetails: {
+            include: {
+              test: {
+                select: { id: true, code: true, name: true, unit: true },
+              },
+            },
+          },
           visit: { select: { visitNumber: true, status: true } },
           orderInsurances: true,
         },
@@ -403,32 +452,31 @@ export class OrderService {
       OrderStatus.NOTIFIED,
     ];
 
-    const [
-      totalOrders,
-      pendingPayment,
-      completed,
-      todayPaidOrders,
-    ] = await Promise.all([
-      // Total orders (excluding cancelled, soft-deleted patients)
-      this.prisma.order.count({ where }),
-      // Pending payment
-      this.prisma.order.count({
-        where: { ...where, status: OrderStatus.PENDING_PAYMENT },
-      }),
-      // Completed (approved + notified)
-      this.prisma.order.count({
-        where: { ...where, status: { in: [OrderStatus.APPROVED, OrderStatus.NOTIFIED] } },
-      }),
-      // Today's revenue: orders paid today
-      this.prisma.order.findMany({
-        where: {
-          ...where,
-          status: { in: paidStatuses },
-          paidAt: { gte: todayStart, lte: todayEnd },
-        },
-        select: { totalAmount: true },
-      }),
-    ]);
+    const [totalOrders, pendingPayment, completed, todayPaidOrders] =
+      await Promise.all([
+        // Total orders (excluding cancelled, soft-deleted patients)
+        this.prisma.order.count({ where }),
+        // Pending payment
+        this.prisma.order.count({
+          where: { ...where, status: OrderStatus.PENDING_PAYMENT },
+        }),
+        // Completed (approved + notified)
+        this.prisma.order.count({
+          where: {
+            ...where,
+            status: { in: [OrderStatus.APPROVED, OrderStatus.NOTIFIED] },
+          },
+        }),
+        // Today's revenue: orders paid today
+        this.prisma.order.findMany({
+          where: {
+            ...where,
+            status: { in: paidStatuses },
+            paidAt: { gte: todayStart, lte: todayEnd },
+          },
+          select: { totalAmount: true },
+        }),
+      ]);
 
     const todayRevenue = todayPaidOrders.reduce(
       (sum, o) => sum + (o.totalAmount ? Number(o.totalAmount) : 0),
@@ -448,7 +496,9 @@ export class OrderService {
       where: { id },
       include: {
         patient: true,
-        clinic: { select: { id: true, name: true, address: true, phone: true } },
+        clinic: {
+          select: { id: true, name: true, address: true, phone: true },
+        },
         doctor: { select: { id: true, name: true, specialization: true } },
         orderDetails: {
           include: {
@@ -475,7 +525,9 @@ export class OrderService {
 
     // DataScope: verify resource belongs to the user's clinic
     if (clinicId && order.clinicId !== clinicId) {
-      throw new ForbiddenException('Access denied: resource belongs to another clinic');
+      throw new ForbiddenException(
+        'Access denied: resource belongs to another clinic',
+      );
     }
 
     // Derive insuranceId from OrderInsurance PRIMARY (backward compatibility)
@@ -521,7 +573,10 @@ export class OrderService {
       throw new NotFoundException('Order not found');
     }
 
-    if (order.status !== OrderStatus.PENDING_PAYMENT && order.status !== OrderStatus.PAYMENT_OVERDUE) {
+    if (
+      order.status !== OrderStatus.PENDING_PAYMENT &&
+      order.status !== OrderStatus.PAYMENT_OVERDUE
+    ) {
       throw new BadRequestException({
         errorCode: 'ERR_INVALID_STATE',
         message: `Cannot transition from ${order.status} to CANCELLED`,
@@ -557,7 +612,9 @@ export class OrderService {
   // ─── Order Insurance Coverage ──────────────────────────────────────────────
 
   async getOrderInsurances(orderId: string) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -574,7 +631,9 @@ export class OrderService {
   }
 
   async addOrderInsurance(orderId: string, dto: AddOrderInsuranceDto) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -589,10 +648,14 @@ export class OrderService {
 
     // Check uniqueness: one coverage type per order
     const existing = await this.prisma.orderInsurance.findUnique({
-      where: { orderId_coverageType: { orderId, coverageType: dto.coverageType } },
+      where: {
+        orderId_coverageType: { orderId, coverageType: dto.coverageType },
+      },
     });
     if (existing) {
-      throw new BadRequestException(`Order already has ${dto.coverageType} coverage assigned`);
+      throw new BadRequestException(
+        `Order already has ${dto.coverageType} coverage assigned`,
+      );
     }
 
     const orderInsurance = await this.prisma.orderInsurance.create({
@@ -614,7 +677,10 @@ export class OrderService {
     return orderInsurance;
   }
 
-  async updateOrderInsurance(orderInsuranceId: string, dto: UpdateOrderInsuranceDto) {
+  async updateOrderInsurance(
+    orderInsuranceId: string,
+    dto: UpdateOrderInsuranceDto,
+  ) {
     const existing = await this.prisma.orderInsurance.findUnique({
       where: { id: orderInsuranceId },
     });
@@ -657,7 +723,9 @@ export class OrderService {
   // ─── BPJS Order Detail ─────────────────────────────────────────────────────
 
   async getBpjsDetail(orderId: string) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -670,7 +738,9 @@ export class OrderService {
   }
 
   async createBpjsDetail(orderId: string, dto: CreateBpjsOrderDetailDto) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -680,12 +750,16 @@ export class OrderService {
       where: { orderId },
     });
     if (existing) {
-      throw new BadRequestException('BPJS detail already exists for this order');
+      throw new BadRequestException(
+        'BPJS detail already exists for this order',
+      );
     }
 
     // Validate SEP number format if provided
     if (dto.sepNumber && !/^\d{1,19}$/.test(dto.sepNumber)) {
-      throw new BadRequestException('SEP number must be numeric and max 19 digits');
+      throw new BadRequestException(
+        'SEP number must be numeric and max 19 digits',
+      );
     }
 
     const bpjsDetail = await this.prisma.bpjsOrderDetail.create({
@@ -716,7 +790,9 @@ export class OrderService {
 
     // Validate SEP number format if provided
     if (dto.sepNumber && !/^\d{1,19}$/.test(dto.sepNumber)) {
-      throw new BadRequestException('SEP number must be numeric and max 19 digits');
+      throw new BadRequestException(
+        'SEP number must be numeric and max 19 digits',
+      );
     }
 
     const data: any = { ...dto };
@@ -744,7 +820,9 @@ export class OrderService {
 
     // Validate SEP format
     if (!/^\d{1,19}$/.test(dto.sepNumber)) {
-      throw new BadRequestException('SEP number must be numeric and max 19 digits');
+      throw new BadRequestException(
+        'SEP number must be numeric and max 19 digits',
+      );
     }
 
     // Look up the visit's BPJS number for eligibility check

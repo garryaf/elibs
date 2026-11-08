@@ -22,7 +22,10 @@ export class UILayerInspector {
    * @param projectRoot - The workspace root path
    * @returns A LayerTrace describing what was found in the UI layer
    */
-  async inspect(target: InspectionTarget, projectRoot: string): Promise<LayerTrace> {
+  async inspect(
+    target: InspectionTarget,
+    projectRoot: string,
+  ): Promise<LayerTrace> {
     const issues: string[] = [];
     const matchedFiles: string[] = [];
 
@@ -37,7 +40,9 @@ export class UILayerInspector {
         });
         matchedFiles.push(...files);
       } catch (err) {
-        issues.push(`Glob pattern error for "${pattern.glob}": ${(err as Error).message}`);
+        issues.push(
+          `Glob pattern error for "${pattern.glob}": ${(err as Error).message}`,
+        );
       }
     }
 
@@ -70,7 +75,11 @@ export class UILayerInspector {
     const missingArtifacts: string[] = [];
 
     for (const artifact of requiredArtifacts) {
-      const result = this.searchArtifactInFiles(artifact.searchPattern, matchedFiles, issues);
+      const result = this.searchArtifactInFiles(
+        artifact.searchPattern,
+        matchedFiles,
+        issues,
+      );
 
       if (result) {
         foundCount++;
@@ -98,7 +107,9 @@ export class UILayerInspector {
       layer: 'UI',
       status,
       filePath: firstMatchedFile,
-      evidence: evidenceParts.join('; ') || `Found ${foundCount}/${requiredArtifacts.length} required UI artifacts`,
+      evidence:
+        evidenceParts.join('; ') ||
+        `Found ${foundCount}/${requiredArtifacts.length} required UI artifacts`,
       issues: issues.length > 0 ? issues : undefined,
     };
   }
@@ -116,7 +127,9 @@ export class UILayerInspector {
     try {
       regex = new RegExp(searchPattern, 'm');
     } catch (err) {
-      issues.push(`Invalid regex pattern "${searchPattern}": ${(err as Error).message}`);
+      issues.push(
+        `Invalid regex pattern "${searchPattern}": ${(err as Error).message}`,
+      );
       return undefined;
     }
 
@@ -132,11 +145,15 @@ export class UILayerInspector {
         const match = regex.exec(content);
 
         if (match) {
-          const lineNumber = content.substring(0, match.index).split('\n').length;
+          const lineNumber = content
+            .substring(0, match.index)
+            .split('\n').length;
           return { filePath: normalizedPath, lineNumber };
         }
       } catch (err) {
-        issues.push(`Error reading file "${normalizedPath}": ${(err as Error).message}`);
+        issues.push(
+          `Error reading file "${normalizedPath}": ${(err as Error).message}`,
+        );
       }
     }
 

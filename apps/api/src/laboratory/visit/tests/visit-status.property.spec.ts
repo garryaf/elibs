@@ -58,9 +58,7 @@ function isAllowedTransition(
   current: VisitStatusType,
   target: VisitStatusType,
 ): boolean {
-  return ALLOWED_TRANSITIONS.some(
-    ([c, t]) => c === current && t === target,
-  );
+  return ALLOWED_TRANSITIONS.some(([c, t]) => c === current && t === target);
 }
 
 /**
@@ -109,7 +107,10 @@ describe('Feature: visit-management, Property 5: Status Transition Enforcement',
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: mockConsolidationService },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: mockConsolidationService,
+        },
       ],
     }).compile();
 
@@ -280,7 +281,14 @@ describe('Feature: visit-management, Property 6: Order Addition Transitions to I
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+            getDefaultInsurance: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -367,7 +375,14 @@ describe('Feature: visit-management, Property 7: Cancellation Precondition', () 
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+            getDefaultInsurance: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -434,11 +449,7 @@ describe('Feature: visit-management, Property 7: Cancellation Precondition', () 
             expect(result.status).toBe(VisitStatus.CANCELLED);
           } else {
             await expect(
-              visitService.cancel(
-                visitId,
-                { reason: 'test reason' },
-                'user-1',
-              ),
+              visitService.cancel(visitId, { reason: 'test reason' }, 'user-1'),
             ).rejects.toThrow(BadRequestException);
           }
         },

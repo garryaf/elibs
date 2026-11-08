@@ -25,9 +25,7 @@ export interface EscalationJobData {
 export class CriticalValueEscalationProcessor extends WorkerHost {
   private readonly logger = new Logger(CriticalValueEscalationProcessor.name);
 
-  constructor(
-    private readonly criticalValueService: CriticalValueService,
-  ) {
+  constructor(private readonly criticalValueService: CriticalValueService) {
     super();
   }
 
@@ -41,9 +39,7 @@ export class CriticalValueEscalationProcessor extends WorkerHost {
     try {
       await this.criticalValueService.escalate(logId);
 
-      this.logger.log(
-        `Critical value escalation completed for log ${logId}`,
-      );
+      this.logger.log(`Critical value escalation completed for log ${logId}`);
     } catch (error) {
       this.logger.error(
         `Critical value escalation failed for log ${logId}: ${error instanceof Error ? error.message : String(error)}`,

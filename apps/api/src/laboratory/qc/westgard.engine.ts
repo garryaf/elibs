@@ -58,8 +58,7 @@ function check12s(
     if (value > upperLimit || value < lowerLimit) {
       return {
         rule: '1-2s',
-        description:
-          'One control measurement exceeds mean ± 2SD (warning)',
+        description: 'One control measurement exceeds mean ± 2SD (warning)',
         dataPoints: [value],
       };
     }
@@ -112,8 +111,7 @@ function check22s(
     if (current > upperLimit && next > upperLimit) {
       return {
         rule: '2-2s',
-        description:
-          'Two consecutive measurements exceed mean + 2SD',
+        description: 'Two consecutive measurements exceed mean + 2SD',
         dataPoints: [current, next],
       };
     }
@@ -122,8 +120,7 @@ function check22s(
     if (current < lowerLimit && next < lowerLimit) {
       return {
         rule: '2-2s',
-        description:
-          'Two consecutive measurements exceed mean - 2SD',
+        description: 'Two consecutive measurements exceed mean - 2SD',
         dataPoints: [current, next],
       };
     }
@@ -186,8 +183,7 @@ function check41s(
     if (window.every((v) => v > upperLimit)) {
       return {
         rule: '4-1s',
-        description:
-          'Four consecutive measurements exceed mean + 1SD',
+        description: 'Four consecutive measurements exceed mean + 1SD',
         dataPoints: window,
       };
     }
@@ -196,8 +192,7 @@ function check41s(
     if (window.every((v) => v < lowerLimit)) {
       return {
         rule: '4-1s',
-        description:
-          'Four consecutive measurements exceed mean - 1SD',
+        description: 'Four consecutive measurements exceed mean - 1SD',
         dataPoints: window,
       };
     }
@@ -208,10 +203,7 @@ function check41s(
 /**
  * 10x Rule (Reject): Ten consecutive measurements are on the same side of the mean.
  */
-function check10x(
-  values: number[],
-  mean: number,
-): WestgardViolation | null {
+function check10x(values: number[], mean: number): WestgardViolation | null {
   if (values.length < 10) return null;
 
   for (let i = 0; i <= values.length - 10; i++) {
@@ -221,8 +213,7 @@ function check10x(
     if (window.every((v) => v > mean)) {
       return {
         rule: '10x',
-        description:
-          'Ten consecutive measurements are above the mean',
+        description: 'Ten consecutive measurements are above the mean',
         dataPoints: window,
       };
     }
@@ -231,8 +222,7 @@ function check10x(
     if (window.every((v) => v < mean)) {
       return {
         rule: '10x',
-        description:
-          'Ten consecutive measurements are below the mean',
+        description: 'Ten consecutive measurements are below the mean',
         dataPoints: window,
       };
     }
@@ -293,9 +283,7 @@ export function evaluateWestgardRules(
     '4-1s',
     '10x',
   ];
-  const hasRejection = violations.some((v) =>
-    rejectionRules.includes(v.rule),
-  );
+  const hasRejection = violations.some((v) => rejectionRules.includes(v.rule));
 
   return {
     passed: !hasRejection,

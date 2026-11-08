@@ -1,4 +1,11 @@
-import { Controller, Get, Query, Res, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Res,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { Role } from '@prisma/client';
@@ -41,7 +48,11 @@ export class ReportsController {
   @ApiOperation({ summary: 'Get orders grouped by payment method' })
   async getOrdersByPaymentMethod(@Query() query: ReportQueryDto) {
     const data = await this.reportsService.getOrdersByPaymentMethod(query);
-    return { success: true, message: 'Orders by payment method retrieved', data };
+    return {
+      success: true,
+      message: 'Orders by payment method retrieved',
+      data,
+    };
   }
 
   @Get('top-tests')
@@ -55,7 +66,11 @@ export class ReportsController {
   @ApiOperation({ summary: 'Get insurance claims summary' })
   async getInsuranceClaims(@Query() query: ReportQueryDto) {
     const data = await this.reportsService.getInsuranceClaims(query);
-    return { success: true, message: 'Insurance claims summary retrieved', data };
+    return {
+      success: true,
+      message: 'Insurance claims summary retrieved',
+      data,
+    };
   }
 
   @Get('turnaround-time')
@@ -86,14 +101,22 @@ export class ReportsController {
   @ApiOperation({ summary: 'Laporan per Dokter Pengirim' })
   async getByReferringDoctor(@Query() query: ReportQueryDto) {
     const data = await this.reportsService.getByReferringDoctor(query);
-    return { success: true, message: 'Report by referring doctor retrieved', data };
+    return {
+      success: true,
+      message: 'Report by referring doctor retrieved',
+      data,
+    };
   }
 
   @Get('by-referring-clinic')
   @ApiOperation({ summary: 'Laporan per Klinik Mitra' })
   async getByReferringClinic(@Query() query: ReportQueryDto) {
     const data = await this.reportsService.getByReferringClinic(query);
-    return { success: true, message: 'Report by referring clinic retrieved', data };
+    return {
+      success: true,
+      message: 'Report by referring clinic retrieved',
+      data,
+    };
   }
 
   @Get('new-patients')
@@ -110,8 +133,7 @@ export class ReportsController {
     @Res() res: Response,
   ) {
     const data = await this.reportsService.getOrdersByStatus(query);
-    const pdfBuffer =
-      await this.pdfReportService.generateOrderSummaryPdf(data);
+    const pdfBuffer = await this.pdfReportService.generateOrderSummaryPdf(data);
 
     res.set({
       'Content-Type': 'application/pdf',

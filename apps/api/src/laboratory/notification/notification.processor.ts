@@ -43,8 +43,16 @@ export class EmailProcessor extends WorkerHost {
   }
 
   async process(job: Job<EmailJobData>): Promise<void> {
-    const { notificationLogId, orderId, orderNumber, email, pdfBase64, recipientType, patientName, doctorName } =
-      job.data;
+    const {
+      notificationLogId,
+      orderId,
+      orderNumber,
+      email,
+      pdfBase64,
+      recipientType,
+      patientName,
+      doctorName,
+    } = job.data;
 
     this.logger.log(
       `Processing email delivery for order ${orderNumber} to ${email}`,
@@ -60,7 +68,13 @@ export class EmailProcessor extends WorkerHost {
       const pdfBuffer = Buffer.from(pdfBase64, 'base64');
 
       if (recipientType === 'doctor_referral' && patientName && doctorName) {
-        await this.emailService.sendToDoctorReferral(email, pdfBuffer, orderNumber, patientName, doctorName);
+        await this.emailService.sendToDoctorReferral(
+          email,
+          pdfBuffer,
+          orderNumber,
+          patientName,
+          doctorName,
+        );
       } else {
         await this.emailService.send(email, pdfBuffer, orderNumber);
       }

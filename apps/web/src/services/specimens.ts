@@ -2,7 +2,7 @@
  * Specimen Service — TanStack Query hooks for specimen tracking domain
  */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { apiClient, STORAGE_KEYS } from "@/lib/api";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -98,17 +98,6 @@ export function useSpecimens(params?: {
 }
 
 /**
- * Fetch specimens for a specific order
- */
-export function useSpecimensByOrder(orderId: string) {
-  return useQuery({
-    queryKey: specimenKeys.byOrder(orderId),
-    queryFn: () => apiClient.get(`/api/v1/orders/${orderId}/specimens`),
-    enabled: !!orderId,
-  });
-}
-
-/**
  * Fetch a single specimen detail with history and handoffs
  */
 export function useSpecimenDetail(id: string) {
@@ -116,46 +105,6 @@ export function useSpecimenDetail(id: string) {
     queryKey: specimenKeys.detail(id),
     queryFn: () => apiClient.get<Specimen>(`/api/v1/specimens/${id}`),
     enabled: !!id,
-  });
-}
-
-/**
- * Record specimen condition
- */
-export function useRecordCondition() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      specimenId,
-      data,
-    }: {
-      specimenId: string;
-      data: {
-        condition: SampleCondition;
-        rejectionReason?: string;
-        transportTemperature?: number;
-        temperatureCompliant?: boolean;
-      };
-    }) => {
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("elis_token")
-          : null;
-      return fetch(`/api/v1/specimens/${specimenId}/condition`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(data),
-      }).then((res) => {
-        if (!res.ok) throw new Error("Failed to update condition");
-        return res.json();
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: specimenKeys.all });
-    },
   });
 }
 
@@ -174,25 +123,6 @@ export function useRegenerateBarcode() {
 }
 
 /**
- * Record custody handoff
- */
-export function useRecordHandoff() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      specimenId,
-      data,
-    }: {
-      specimenId: string;
-      data: { toUserId: string; notes?: string };
-    }) => apiClient.post(`/api/v1/specimens/${specimenId}/handoff`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: specimenKeys.all });
-    },
-  });
-}
-
-/**
  * Generate batch labels (returns a blob for download)
  */
 export function useBatchLabels() {
@@ -200,7 +130,7 @@ export function useBatchLabels() {
     mutationFn: async (specimenIds: string[]) => {
       const token =
         typeof window !== "undefined"
-          ? localStorage.getItem("elis_token")
+          ? localStorage.getItem(STORAGE_KEYS.TOKEN)
           : null;
       const response = await fetch("/api/v1/specimens/batch-labels", {
         method: "POST",

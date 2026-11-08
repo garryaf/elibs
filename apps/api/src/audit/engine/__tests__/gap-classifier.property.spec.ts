@@ -3,7 +3,12 @@
 
 import * as fc from 'fast-check';
 import { GapClassifier } from '../gap-classifier';
-import type { LayerTrace, CriterionResult, GapStatus, StackLayer } from '../interfaces';
+import type {
+  LayerTrace,
+  CriterionResult,
+  GapStatus,
+  StackLayer,
+} from '../interfaces';
 
 const ALL_GAP_STATUSES: GapStatus[] = [
   'IMPLEMENTED',
@@ -14,13 +19,35 @@ const ALL_GAP_STATUSES: GapStatus[] = [
   'MOCK_STATIC',
 ];
 
-const STACK_LAYERS: StackLayer[] = ['UI', 'API', 'CONTROLLER', 'SERVICE', 'REPOSITORY', 'DATABASE'];
+const STACK_LAYERS: StackLayer[] = [
+  'UI',
+  'API',
+  'CONTROLLER',
+  'SERVICE',
+  'REPOSITORY',
+  'DATABASE',
+];
 
-const LAYER_STATUSES: Array<'PRESENT' | 'PARTIAL' | 'ABSENT'> = ['PRESENT', 'PARTIAL', 'ABSENT'];
+const LAYER_STATUSES: Array<'PRESENT' | 'PARTIAL' | 'ABSENT'> = [
+  'PRESENT',
+  'PARTIAL',
+  'ABSENT',
+];
 
 const BROKEN_KEYWORDS = ['runtime error', 'exception', 'broken', 'crash'];
-const WRONG_LOGIC_KEYWORDS = ['contradicts', 'wrong logic', 'incorrect business', 'violates spec'];
-const MOCK_STATIC_KEYWORDS = ['hardcoded', 'placeholder', 'mock', 'static data', 'dummy'];
+const WRONG_LOGIC_KEYWORDS = [
+  'contradicts',
+  'wrong logic',
+  'incorrect business',
+  'violates spec',
+];
+const MOCK_STATIC_KEYWORDS = [
+  'hardcoded',
+  'placeholder',
+  'mock',
+  'static data',
+  'dummy',
+];
 
 // ---------------------------------------------------------------------------
 // Arbitraries
@@ -29,11 +56,16 @@ const MOCK_STATIC_KEYWORDS = ['hardcoded', 'placeholder', 'mock', 'static data',
 const layerTraceArb: fc.Arbitrary<LayerTrace> = fc.record({
   layer: fc.constantFrom(...STACK_LAYERS),
   status: fc.constantFrom(...LAYER_STATUSES),
-  filePath: fc.option(fc.string({ minLength: 1, maxLength: 50 }).map((s) => `src/${s}.ts`), { nil: undefined }),
+  filePath: fc.option(
+    fc.string({ minLength: 1, maxLength: 50 }).map((s) => `src/${s}.ts`),
+    { nil: undefined },
+  ),
   evidence: fc.option(
     fc.oneof(
       fc.string({ minLength: 1, maxLength: 80 }),
-      fc.constantFrom(...MOCK_STATIC_KEYWORDS).map((kw) => `Contains ${kw} values`),
+      fc
+        .constantFrom(...MOCK_STATIC_KEYWORDS)
+        .map((kw) => `Contains ${kw} values`),
     ),
     { nil: undefined },
   ),
@@ -41,7 +73,9 @@ const layerTraceArb: fc.Arbitrary<LayerTrace> = fc.record({
     fc.array(
       fc.oneof(
         fc.string({ minLength: 1, maxLength: 60 }),
-        fc.constantFrom(...BROKEN_KEYWORDS).map((kw) => `Found ${kw} in module`),
+        fc
+          .constantFrom(...BROKEN_KEYWORDS)
+          .map((kw) => `Found ${kw} in module`),
       ),
       { minLength: 1, maxLength: 3 },
     ),
@@ -53,13 +87,21 @@ const criterionResultArb: fc.Arbitrary<CriterionResult> = fc.record({
   criterionId: fc.stringMatching(/^[0-9]{1,2}\.[0-9]{1,2}$/),
   description: fc.string({ minLength: 5, maxLength: 100 }),
   passed: fc.boolean(),
-  evidence: fc.string({ minLength: 1, maxLength: 80 }).map((s) => `src/${s}:10`),
+  evidence: fc
+    .string({ minLength: 1, maxLength: 80 })
+    .map((s) => `src/${s}:10`),
   gap: fc.option(
     fc.oneof(
       fc.string({ minLength: 5, maxLength: 100 }),
-      fc.constantFrom(...BROKEN_KEYWORDS).map((kw) => `Detected ${kw} in implementation`),
-      fc.constantFrom(...WRONG_LOGIC_KEYWORDS).map((kw) => `Logic ${kw} the specification`),
-      fc.constantFrom(...MOCK_STATIC_KEYWORDS).map((kw) => `Uses ${kw} instead of real data`),
+      fc
+        .constantFrom(...BROKEN_KEYWORDS)
+        .map((kw) => `Detected ${kw} in implementation`),
+      fc
+        .constantFrom(...WRONG_LOGIC_KEYWORDS)
+        .map((kw) => `Logic ${kw} the specification`),
+      fc
+        .constantFrom(...MOCK_STATIC_KEYWORDS)
+        .map((kw) => `Uses ${kw} instead of real data`),
     ),
     { nil: undefined },
   ),
@@ -118,7 +160,11 @@ describe('GapClassifier - Property 1: Classification Precedence Determinism', ()
           // If we got status at index N, none of the statuses at indices < N should apply.
           // We verify this by checking that the classifier's logic is consistent.
           // Run again with same inputs — should get same result (determinism).
-          const secondResult = classifier.classify('TestProcess', traces, criteria);
+          const secondResult = classifier.classify(
+            'TestProcess',
+            traces,
+            criteria,
+          );
           expect(secondResult.status).toBe(result.status);
         },
       ),
@@ -152,10 +198,14 @@ describe('GapClassifier - Property 1: Classification Precedence Determinism', ()
       status: fc.constantFrom(...LAYER_STATUSES),
       filePath: fc.constant('src/test.ts'),
       evidence: fc.option(
-        fc.constantFrom(...MOCK_STATIC_KEYWORDS).map((kw) => `Has ${kw} content`),
+        fc
+          .constantFrom(...MOCK_STATIC_KEYWORDS)
+          .map((kw) => `Has ${kw} content`),
         { nil: undefined },
       ),
-      issues: fc.constantFrom(...BROKEN_KEYWORDS).map((kw) => [`Found ${kw} in module`]),
+      issues: fc
+        .constantFrom(...BROKEN_KEYWORDS)
+        .map((kw) => [`Found ${kw} in module`]),
     });
 
     const mixedCriterionArb = fc.record({
@@ -203,7 +253,9 @@ describe('GapClassifier - Property 1: Classification Precedence Determinism', ()
       description: fc.constant('logic check'),
       passed: fc.boolean(),
       evidence: fc.constant('src/logic.ts:5'),
-      gap: fc.constantFrom(...WRONG_LOGIC_KEYWORDS).map((kw) => `Logic ${kw} the specification`),
+      gap: fc
+        .constantFrom(...WRONG_LOGIC_KEYWORDS)
+        .map((kw) => `Logic ${kw} the specification`),
     });
 
     fc.assert(
@@ -219,13 +271,19 @@ describe('GapClassifier - Property 1: Classification Precedence Determinism', ()
           // Ensure no broken keywords in other criteria gaps
           const safeCriteria = otherCriteria.map((c) => ({
             ...c,
-            gap: c.gap && BROKEN_KEYWORDS.some((kw) => c.gap!.toLowerCase().includes(kw))
-              ? undefined
-              : c.gap,
+            gap:
+              c.gap &&
+              BROKEN_KEYWORDS.some((kw) => c.gap!.toLowerCase().includes(kw))
+                ? undefined
+                : c.gap,
           }));
 
           const allCriteria = [wrongLogicCriterion, ...safeCriteria];
-          const result = classifier.classify('TestProcess', safeTrces, allCriteria);
+          const result = classifier.classify(
+            'TestProcess',
+            safeTrces,
+            allCriteria,
+          );
 
           expect(result.status).toBe('WRONG_BUSINESS_LOGIC');
         },

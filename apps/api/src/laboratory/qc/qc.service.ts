@@ -247,9 +247,7 @@ export class QCService {
       };
     }
 
-    const hasFailure = latestRun.results.some(
-      (result) => !result.westgardPass,
-    );
+    const hasFailure = latestRun.results.some((result) => !result.westgardPass);
 
     const violations = latestRun.results
       .filter((r) => !r.westgardPass && r.violatedRule)
@@ -316,9 +314,7 @@ export class QCService {
     ).length;
 
     // Expiring soon (within 30 days)
-    const thirtyDaysFromNow = new Date(
-      Date.now() + 30 * 24 * 60 * 60 * 1000,
-    );
+    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const expiringSoon = activeSamples.filter(
       (sample) => sample.expiryDate <= thirtyDaysFromNow,
     );
@@ -382,9 +378,7 @@ export class QCService {
     }
 
     // If any result in the latest run failed Westgard rules, QC is invalid
-    const hasFailure = latestRun.results.some(
-      (result) => !result.westgardPass,
-    );
+    const hasFailure = latestRun.results.some((result) => !result.westgardPass);
 
     return !hasFailure;
   }

@@ -53,7 +53,4 @@ export interface SplitReceipt extends BaseReceipt {
 }
 
 export type ReceiptData =
-  | CashReceipt
-  | InsuranceReceipt
-  | CorporateReceipt
-  | SplitReceipt;
+  CashReceipt | InsuranceReceipt | CorporateReceipt | SplitReceipt;

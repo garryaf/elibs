@@ -123,50 +123,48 @@ function createMockPrisma(
   patients: PatientRecord[],
   regionNames: Map<string, string>,
 ) {
-  const mockPatientGroupBy = jest
-    .fn()
-    .mockImplementation(({ by, where }) => {
-      const groupField = by[0] as keyof PatientRecord;
+  const mockPatientGroupBy = jest.fn().mockImplementation(({ by, where }) => {
+    const groupField = by[0] as keyof PatientRecord;
 
-      const filtered = patients.filter((p) => {
-        // deletedAt must be null
-        if (p.deletedAt !== null) return false;
+    const filtered = patients.filter((p) => {
+      // deletedAt must be null
+      if (p.deletedAt !== null) return false;
 
-        // Apply where conditions
-        for (const [key, condition] of Object.entries(where)) {
-          if (key === 'deletedAt') continue; // Already checked
+      // Apply where conditions
+      for (const [key, condition] of Object.entries(where)) {
+        if (key === 'deletedAt') continue; // Already checked
 
-          const value = p[key as keyof PatientRecord];
-          if (
-            typeof condition === 'object' &&
-            condition !== null &&
-            'not' in condition
-          ) {
-            if (value === condition.not) return false;
-          } else if (typeof condition === 'string') {
-            if (value !== condition) return false;
-          }
-        }
-
-        return true;
-      });
-
-      // Group by the specified field
-      const groups = new Map<string, number>();
-      for (const p of filtered) {
-        const regionId = p[groupField] as string | null;
-        if (regionId !== null) {
-          groups.set(regionId, (groups.get(regionId) || 0) + 1);
+        const value = p[key as keyof PatientRecord];
+        if (
+          typeof condition === 'object' &&
+          condition !== null &&
+          'not' in condition
+        ) {
+          if (value === condition.not) return false;
+        } else if (typeof condition === 'string') {
+          if (value !== condition) return false;
         }
       }
 
-      return Promise.resolve(
-        Array.from(groups.entries()).map(([id, count]) => ({
-          [groupField]: id,
-          _count: { id: count },
-        })),
-      );
+      return true;
     });
+
+    // Group by the specified field
+    const groups = new Map<string, number>();
+    for (const p of filtered) {
+      const regionId = p[groupField] as string | null;
+      if (regionId !== null) {
+        groups.set(regionId, (groups.get(regionId) || 0) + 1);
+      }
+    }
+
+    return Promise.resolve(
+      Array.from(groups.entries()).map(([id, count]) => ({
+        [groupField]: id,
+        _count: { id: count },
+      })),
+    );
+  });
 
   const createFindMany = () =>
     jest.fn().mockImplementation(({ where }) => {
@@ -195,68 +193,64 @@ describe('Property 10: Dashboard Counting Invariant', () => {
    *
    * **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
    */
-  it(
-    'sum of grouped counts equals total matching patients (no filter - by provinsi)',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(regionPoolArb, async (regionPool) => {
-          // Generate patients using the region pool
-          const patientsArb = fc.array(
-            patientRecordArb(
-              regionPool.provinsiIds,
-              regionPool.kabupatenKotaIds,
-              regionPool.kecamatanIds,
-              regionPool.kelurahanDesaIds,
-            ),
-            { minLength: 1, maxLength: 50 },
-          );
+  it('sum of grouped counts equals total matching patients (no filter - by provinsi)', async () => {
+    await fc.assert(
+      fc.asyncProperty(regionPoolArb, async (regionPool) => {
+        // Generate patients using the region pool
+        const patientsArb = fc.array(
+          patientRecordArb(
+            regionPool.provinsiIds,
+            regionPool.kabupatenKotaIds,
+            regionPool.kecamatanIds,
+            regionPool.kelurahanDesaIds,
+          ),
+          { minLength: 1, maxLength: 50 },
+        );
 
-          await fc.assert(
-            fc.asyncProperty(patientsArb, async (patients) => {
-              // Build region names map
-              const regionNames = new Map<string, string>();
-              regionPool.provinsiIds.forEach((id) =>
-                regionNames.set(id, `Provinsi ${id}`),
-              );
+        await fc.assert(
+          fc.asyncProperty(patientsArb, async (patients) => {
+            // Build region names map
+            const regionNames = new Map<string, string>();
+            regionPool.provinsiIds.forEach((id) =>
+              regionNames.set(id, `Provinsi ${id}`),
+            );
 
-              const mockPrisma = createMockPrisma(patients, regionNames);
-              const service = new DashboardService(mockPrisma);
+            const mockPrisma = createMockPrisma(patients, regionNames);
+            const service = new DashboardService(mockPrisma);
 
-              const result = await service.getRegionDistribution({});
+            const result = await service.getRegionDistribution({});
 
-              // Compute expected groups
-              const expectedGroups = computeExpectedGroups(
-                patients,
-                'provinsiId',
-              );
+            // Compute expected groups
+            const expectedGroups = computeExpectedGroups(
+              patients,
+              'provinsiId',
+            );
 
-              // Property 1: Sum of counts equals total matching patients
-              const totalFromResult = result.reduce(
-                (sum, item) => sum + item.count,
-                0,
-              );
-              const expectedTotal = Array.from(expectedGroups.values()).reduce(
-                (sum, count) => sum + count,
-                0,
-              );
-              expect(totalFromResult).toBe(expectedTotal);
+            // Property 1: Sum of counts equals total matching patients
+            const totalFromResult = result.reduce(
+              (sum, item) => sum + item.count,
+              0,
+            );
+            const expectedTotal = Array.from(expectedGroups.values()).reduce(
+              (sum, count) => sum + count,
+              0,
+            );
+            expect(totalFromResult).toBe(expectedTotal);
 
-              // Property 2: Each individual count matches actual count
-              for (const item of result) {
-                expect(item.count).toBe(expectedGroups.get(item.id) || 0);
-              }
+            // Property 2: Each individual count matches actual count
+            for (const item of result) {
+              expect(item.count).toBe(expectedGroups.get(item.id) || 0);
+            }
 
-              // Property 3: No extra regions in result
-              expect(result.length).toBe(expectedGroups.size);
-            }),
-            { numRuns: 10 },
-          );
-        }),
-        { numRuns: 10 },
-      );
-    },
-    60000,
-  );
+            // Property 3: No extra regions in result
+            expect(result.length).toBe(expectedGroups.size);
+          }),
+          { numRuns: 10 },
+        );
+      }),
+      { numRuns: 10 },
+    );
+  }, 60000);
 
   /**
    * With provinsiId filter: group by kabupatenKota.
@@ -264,71 +258,67 @@ describe('Property 10: Dashboard Counting Invariant', () => {
    *
    * **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
    */
-  it(
-    'sum of grouped counts equals total matching patients (provinsiId filter - by kabupatenKota)',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(regionPoolArb, async (regionPool) => {
-          const filterProvinsiId = regionPool.provinsiIds[0];
+  it('sum of grouped counts equals total matching patients (provinsiId filter - by kabupatenKota)', async () => {
+    await fc.assert(
+      fc.asyncProperty(regionPoolArb, async (regionPool) => {
+        const filterProvinsiId = regionPool.provinsiIds[0];
 
-          const patientsArb = fc.array(
-            patientRecordArb(
-              regionPool.provinsiIds,
-              regionPool.kabupatenKotaIds,
-              regionPool.kecamatanIds,
-              regionPool.kelurahanDesaIds,
-            ),
-            { minLength: 1, maxLength: 50 },
-          );
+        const patientsArb = fc.array(
+          patientRecordArb(
+            regionPool.provinsiIds,
+            regionPool.kabupatenKotaIds,
+            regionPool.kecamatanIds,
+            regionPool.kelurahanDesaIds,
+          ),
+          { minLength: 1, maxLength: 50 },
+        );
 
-          await fc.assert(
-            fc.asyncProperty(patientsArb, async (patients) => {
-              const regionNames = new Map<string, string>();
-              regionPool.kabupatenKotaIds.forEach((id) =>
-                regionNames.set(id, `KabupatenKota ${id}`),
-              );
+        await fc.assert(
+          fc.asyncProperty(patientsArb, async (patients) => {
+            const regionNames = new Map<string, string>();
+            regionPool.kabupatenKotaIds.forEach((id) =>
+              regionNames.set(id, `KabupatenKota ${id}`),
+            );
 
-              const mockPrisma = createMockPrisma(patients, regionNames);
-              const service = new DashboardService(mockPrisma);
+            const mockPrisma = createMockPrisma(patients, regionNames);
+            const service = new DashboardService(mockPrisma);
 
-              const result = await service.getRegionDistribution({
-                provinsiId: filterProvinsiId,
-              });
+            const result = await service.getRegionDistribution({
+              provinsiId: filterProvinsiId,
+            });
 
-              // Compute expected groups: patients with matching provinsiId + kabupatenKotaId not null
-              const expectedGroups = computeExpectedGroups(
-                patients,
-                'kabupatenKotaId',
-                'provinsiId',
-                filterProvinsiId,
-              );
+            // Compute expected groups: patients with matching provinsiId + kabupatenKotaId not null
+            const expectedGroups = computeExpectedGroups(
+              patients,
+              'kabupatenKotaId',
+              'provinsiId',
+              filterProvinsiId,
+            );
 
-              // Property 1: Sum of counts equals total matching patients
-              const totalFromResult = result.reduce(
-                (sum, item) => sum + item.count,
-                0,
-              );
-              const expectedTotal = Array.from(expectedGroups.values()).reduce(
-                (sum, count) => sum + count,
-                0,
-              );
-              expect(totalFromResult).toBe(expectedTotal);
+            // Property 1: Sum of counts equals total matching patients
+            const totalFromResult = result.reduce(
+              (sum, item) => sum + item.count,
+              0,
+            );
+            const expectedTotal = Array.from(expectedGroups.values()).reduce(
+              (sum, count) => sum + count,
+              0,
+            );
+            expect(totalFromResult).toBe(expectedTotal);
 
-              // Property 2: Each individual count matches actual count
-              for (const item of result) {
-                expect(item.count).toBe(expectedGroups.get(item.id) || 0);
-              }
+            // Property 2: Each individual count matches actual count
+            for (const item of result) {
+              expect(item.count).toBe(expectedGroups.get(item.id) || 0);
+            }
 
-              expect(result.length).toBe(expectedGroups.size);
-            }),
-            { numRuns: 10 },
-          );
-        }),
-        { numRuns: 10 },
-      );
-    },
-    60000,
-  );
+            expect(result.length).toBe(expectedGroups.size);
+          }),
+          { numRuns: 10 },
+        );
+      }),
+      { numRuns: 10 },
+    );
+  }, 60000);
 
   /**
    * With kabupatenKotaId filter: group by kecamatan.
@@ -336,71 +326,67 @@ describe('Property 10: Dashboard Counting Invariant', () => {
    *
    * **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
    */
-  it(
-    'sum of grouped counts equals total matching patients (kabupatenKotaId filter - by kecamatan)',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(regionPoolArb, async (regionPool) => {
-          const filterKabupatenKotaId = regionPool.kabupatenKotaIds[0];
+  it('sum of grouped counts equals total matching patients (kabupatenKotaId filter - by kecamatan)', async () => {
+    await fc.assert(
+      fc.asyncProperty(regionPoolArb, async (regionPool) => {
+        const filterKabupatenKotaId = regionPool.kabupatenKotaIds[0];
 
-          const patientsArb = fc.array(
-            patientRecordArb(
-              regionPool.provinsiIds,
-              regionPool.kabupatenKotaIds,
-              regionPool.kecamatanIds,
-              regionPool.kelurahanDesaIds,
-            ),
-            { minLength: 1, maxLength: 50 },
-          );
+        const patientsArb = fc.array(
+          patientRecordArb(
+            regionPool.provinsiIds,
+            regionPool.kabupatenKotaIds,
+            regionPool.kecamatanIds,
+            regionPool.kelurahanDesaIds,
+          ),
+          { minLength: 1, maxLength: 50 },
+        );
 
-          await fc.assert(
-            fc.asyncProperty(patientsArb, async (patients) => {
-              const regionNames = new Map<string, string>();
-              regionPool.kecamatanIds.forEach((id) =>
-                regionNames.set(id, `Kecamatan ${id}`),
-              );
+        await fc.assert(
+          fc.asyncProperty(patientsArb, async (patients) => {
+            const regionNames = new Map<string, string>();
+            regionPool.kecamatanIds.forEach((id) =>
+              regionNames.set(id, `Kecamatan ${id}`),
+            );
 
-              const mockPrisma = createMockPrisma(patients, regionNames);
-              const service = new DashboardService(mockPrisma);
+            const mockPrisma = createMockPrisma(patients, regionNames);
+            const service = new DashboardService(mockPrisma);
 
-              const result = await service.getRegionDistribution({
-                kabupatenKotaId: filterKabupatenKotaId,
-              });
+            const result = await service.getRegionDistribution({
+              kabupatenKotaId: filterKabupatenKotaId,
+            });
 
-              // Compute expected groups: patients with matching kabupatenKotaId + kecamatanId not null
-              const expectedGroups = computeExpectedGroups(
-                patients,
-                'kecamatanId',
-                'kabupatenKotaId',
-                filterKabupatenKotaId,
-              );
+            // Compute expected groups: patients with matching kabupatenKotaId + kecamatanId not null
+            const expectedGroups = computeExpectedGroups(
+              patients,
+              'kecamatanId',
+              'kabupatenKotaId',
+              filterKabupatenKotaId,
+            );
 
-              // Property 1: Sum of counts equals total matching patients
-              const totalFromResult = result.reduce(
-                (sum, item) => sum + item.count,
-                0,
-              );
-              const expectedTotal = Array.from(expectedGroups.values()).reduce(
-                (sum, count) => sum + count,
-                0,
-              );
-              expect(totalFromResult).toBe(expectedTotal);
+            // Property 1: Sum of counts equals total matching patients
+            const totalFromResult = result.reduce(
+              (sum, item) => sum + item.count,
+              0,
+            );
+            const expectedTotal = Array.from(expectedGroups.values()).reduce(
+              (sum, count) => sum + count,
+              0,
+            );
+            expect(totalFromResult).toBe(expectedTotal);
 
-              // Property 2: Each individual count matches actual count
-              for (const item of result) {
-                expect(item.count).toBe(expectedGroups.get(item.id) || 0);
-              }
+            // Property 2: Each individual count matches actual count
+            for (const item of result) {
+              expect(item.count).toBe(expectedGroups.get(item.id) || 0);
+            }
 
-              expect(result.length).toBe(expectedGroups.size);
-            }),
-            { numRuns: 10 },
-          );
-        }),
-        { numRuns: 10 },
-      );
-    },
-    60000,
-  );
+            expect(result.length).toBe(expectedGroups.size);
+          }),
+          { numRuns: 10 },
+        );
+      }),
+      { numRuns: 10 },
+    );
+  }, 60000);
 
   /**
    * With kecamatanId filter: group by kelurahanDesa.
@@ -408,69 +394,65 @@ describe('Property 10: Dashboard Counting Invariant', () => {
    *
    * **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
    */
-  it(
-    'sum of grouped counts equals total matching patients (kecamatanId filter - by kelurahanDesa)',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(regionPoolArb, async (regionPool) => {
-          const filterKecamatanId = regionPool.kecamatanIds[0];
+  it('sum of grouped counts equals total matching patients (kecamatanId filter - by kelurahanDesa)', async () => {
+    await fc.assert(
+      fc.asyncProperty(regionPoolArb, async (regionPool) => {
+        const filterKecamatanId = regionPool.kecamatanIds[0];
 
-          const patientsArb = fc.array(
-            patientRecordArb(
-              regionPool.provinsiIds,
-              regionPool.kabupatenKotaIds,
-              regionPool.kecamatanIds,
-              regionPool.kelurahanDesaIds,
-            ),
-            { minLength: 1, maxLength: 50 },
-          );
+        const patientsArb = fc.array(
+          patientRecordArb(
+            regionPool.provinsiIds,
+            regionPool.kabupatenKotaIds,
+            regionPool.kecamatanIds,
+            regionPool.kelurahanDesaIds,
+          ),
+          { minLength: 1, maxLength: 50 },
+        );
 
-          await fc.assert(
-            fc.asyncProperty(patientsArb, async (patients) => {
-              const regionNames = new Map<string, string>();
-              regionPool.kelurahanDesaIds.forEach((id) =>
-                regionNames.set(id, `KelurahanDesa ${id}`),
-              );
+        await fc.assert(
+          fc.asyncProperty(patientsArb, async (patients) => {
+            const regionNames = new Map<string, string>();
+            regionPool.kelurahanDesaIds.forEach((id) =>
+              regionNames.set(id, `KelurahanDesa ${id}`),
+            );
 
-              const mockPrisma = createMockPrisma(patients, regionNames);
-              const service = new DashboardService(mockPrisma);
+            const mockPrisma = createMockPrisma(patients, regionNames);
+            const service = new DashboardService(mockPrisma);
 
-              const result = await service.getRegionDistribution({
-                kecamatanId: filterKecamatanId,
-              });
+            const result = await service.getRegionDistribution({
+              kecamatanId: filterKecamatanId,
+            });
 
-              // Compute expected groups: patients with matching kecamatanId + kelurahanDesaId not null
-              const expectedGroups = computeExpectedGroups(
-                patients,
-                'kelurahanDesaId',
-                'kecamatanId',
-                filterKecamatanId,
-              );
+            // Compute expected groups: patients with matching kecamatanId + kelurahanDesaId not null
+            const expectedGroups = computeExpectedGroups(
+              patients,
+              'kelurahanDesaId',
+              'kecamatanId',
+              filterKecamatanId,
+            );
 
-              // Property 1: Sum of counts equals total matching patients
-              const totalFromResult = result.reduce(
-                (sum, item) => sum + item.count,
-                0,
-              );
-              const expectedTotal = Array.from(expectedGroups.values()).reduce(
-                (sum, count) => sum + count,
-                0,
-              );
-              expect(totalFromResult).toBe(expectedTotal);
+            // Property 1: Sum of counts equals total matching patients
+            const totalFromResult = result.reduce(
+              (sum, item) => sum + item.count,
+              0,
+            );
+            const expectedTotal = Array.from(expectedGroups.values()).reduce(
+              (sum, count) => sum + count,
+              0,
+            );
+            expect(totalFromResult).toBe(expectedTotal);
 
-              // Property 2: Each individual count matches actual count
-              for (const item of result) {
-                expect(item.count).toBe(expectedGroups.get(item.id) || 0);
-              }
+            // Property 2: Each individual count matches actual count
+            for (const item of result) {
+              expect(item.count).toBe(expectedGroups.get(item.id) || 0);
+            }
 
-              expect(result.length).toBe(expectedGroups.size);
-            }),
-            { numRuns: 10 },
-          );
-        }),
-        { numRuns: 10 },
-      );
-    },
-    60000,
-  );
+            expect(result.length).toBe(expectedGroups.size);
+          }),
+          { numRuns: 10 },
+        );
+      }),
+      { numRuns: 10 },
+    );
+  }, 60000);
 });

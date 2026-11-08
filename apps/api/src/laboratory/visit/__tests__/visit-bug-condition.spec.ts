@@ -79,7 +79,14 @@ describe('Feature: duplicate-active-visit-guard, Property 1: Bug Condition — D
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+            getDefaultInsurance: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -130,7 +137,7 @@ describe('Feature: duplicate-active-visit-guard, Property 1: Bug Condition — D
 
           const dto: CreateVisitDto = {
             patientId,
-            paymentMethod: PaymentMethod.CASH as any,
+            paymentMethod: PaymentMethod.CASH,
           };
 
           // Expected behavior: Should throw ConflictException
@@ -200,7 +207,7 @@ describe('Feature: duplicate-active-visit-guard, Property 1: Bug Condition — D
 
           const dto: CreateVisitDto = {
             patientId,
-            paymentMethod: PaymentMethod.CASH as any,
+            paymentMethod: PaymentMethod.CASH,
           };
 
           // Expected behavior: Should throw ConflictException

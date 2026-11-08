@@ -51,7 +51,13 @@ export class VisitQueryDto {
   clinicId?: string;
 
   @IsOptional()
-  @IsIn(['visitNumber', 'patientName', 'status', 'paymentMethod', 'registrationDate'])
+  @IsIn([
+    'visitNumber',
+    'patientName',
+    'status',
+    'paymentMethod',
+    'registrationDate',
+  ])
   sortBy?: string;
 
   @IsOptional()

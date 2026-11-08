@@ -12,7 +12,7 @@
 
 import * as fc from "fast-check";
 import React from "react";
-import { render, act, fireEvent } from "@testing-library/react";
+import { render, act, fireEvent } from "@/test-utils";
 import "@testing-library/jest-dom";
 import { SearchableDropdown } from "../SearchableDropdown";
 

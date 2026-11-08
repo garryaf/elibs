@@ -87,7 +87,11 @@ describe('Panel Expansion Property Tests', () => {
       mockVisitService,
       mockOrderValidationGuard,
       { validateVisitInsurance: jest.fn() } as any, // consolidationService
-      { transition: jest.fn(), canTransition: jest.fn(), getValidTransitions: jest.fn().mockReturnValue([]) } as any, // orderStateMachine
+      {
+        transition: jest.fn(),
+        canTransition: jest.fn(),
+        getValidTransitions: jest.fn().mockReturnValue([]),
+      } as any, // orderStateMachine
       mockOrderSequenceService,
       { verifyBpjs: jest.fn() } as any, // bpjsApiService
     );
@@ -118,7 +122,10 @@ describe('Panel Expansion Property Tests', () => {
 
             // Compute the expected expanded set: union of direct tests and all panel constituent tests
             const allPanelTestIds = [...panelMapping.values()].flat();
-            const expectedTestIds = new Set([...uniqueDirectTestIds, ...allPanelTestIds]);
+            const expectedTestIds = new Set([
+              ...uniqueDirectTestIds,
+              ...allPanelTestIds,
+            ]);
 
             // Skip if both are empty (order needs at least one test)
             if (expectedTestIds.size === 0) return;
@@ -190,29 +197,33 @@ describe('Panel Expansion Property Tests', () => {
             });
 
             // Mock: $transaction captures created order details
-            mockPrisma.$transaction.mockImplementation(async (callback: any) => {
-              const txProxy = {
-                order: {
-                  create: jest.fn().mockImplementation((args: any) => ({
-                    id: 'created-order-id',
-                    ...args.data,
-                  })),
-                },
-                orderDetail: {
-                  createMany: jest.fn().mockImplementation((args: any) => {
-                    capturedOrderDetails = args.data;
-                    return { count: args.data.length };
-                  }),
-                },
-                orderInsurance: {
-                  create: jest.fn().mockResolvedValue({}),
-                },
-              };
-              return callback(txProxy);
-            });
+            mockPrisma.$transaction.mockImplementation(
+              async (callback: any) => {
+                const txProxy = {
+                  order: {
+                    create: jest.fn().mockImplementation((args: any) => ({
+                      id: 'created-order-id',
+                      ...args.data,
+                    })),
+                  },
+                  orderDetail: {
+                    createMany: jest.fn().mockImplementation((args: any) => {
+                      capturedOrderDetails = args.data;
+                      return { count: args.data.length };
+                    }),
+                  },
+                  orderInsurance: {
+                    create: jest.fn().mockResolvedValue({}),
+                  },
+                };
+                return callback(txProxy);
+              },
+            );
 
             // Mock: visitService transition
-            mockVisitService.transitionToInProgress.mockResolvedValue(undefined);
+            mockVisitService.transitionToInProgress.mockResolvedValue(
+              undefined,
+            );
 
             // Mock: findUnique returns the created order
             mockPrisma.order.findUnique.mockResolvedValue({
@@ -229,14 +240,19 @@ describe('Panel Expansion Property Tests', () => {
             const dto: any = {
               visitId,
               patientId,
-              testIds: uniqueDirectTestIds.length > 0 ? uniqueDirectTestIds : undefined,
+              testIds:
+                uniqueDirectTestIds.length > 0
+                  ? uniqueDirectTestIds
+                  : undefined,
               panelIds,
             };
 
             await orderService.create(dto, 'user-id');
 
             // ASSERT 1: The number of created OrderDetails equals the size of the expected union set (no duplicates)
-            const createdTestIds = capturedOrderDetails.map((d: any) => d.testId);
+            const createdTestIds = capturedOrderDetails.map(
+              (d: any) => d.testId,
+            );
             const createdTestIdSet = new Set(createdTestIds);
 
             expect(createdTestIdSet.size).toBe(expectedTestIds.size);

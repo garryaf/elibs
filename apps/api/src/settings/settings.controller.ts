@@ -12,7 +12,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiConsumes } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import {
   IsString,
@@ -309,7 +315,11 @@ export class SettingsController {
    * Extract IP address from request.
    */
   private getIpAddress(req: express.Request): string {
-    return (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || '';
+    return (
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      req.ip ||
+      ''
+    );
   }
 
   /**
@@ -318,7 +328,11 @@ export class SettingsController {
    */
   @Get()
   @ApiOperation({ summary: 'Get settings by prefix' })
-  @ApiQuery({ name: 'prefix', required: false, description: 'Key prefix filter' })
+  @ApiQuery({
+    name: 'prefix',
+    required: false,
+    description: 'Key prefix filter',
+  })
   async getSettings(@Query('prefix') prefix?: string) {
     if (prefix) {
       return this.settingsService.getSettingsByPrefix(prefix);
@@ -340,11 +354,15 @@ export class SettingsController {
   ) {
     const entries = body.entries;
     if (!entries || !Array.isArray(entries) || entries.length === 0) {
-      throw new BadRequestException('Entries array is required and must not be empty.');
+      throw new BadRequestException(
+        'Entries array is required and must not be empty.',
+      );
     }
 
     // BACK-GEN-01: Validate all keys against whitelist
-    const invalidKeys = this.settingsService.validateKeys(entries.map((e) => e.key));
+    const invalidKeys = this.settingsService.validateKeys(
+      entries.map((e) => e.key),
+    );
     if (invalidKeys.length > 0) {
       throw new BadRequestException(
         `Key tidak dikenali: ${invalidKeys.join(', ')}. Hanya key dengan prefix yang diizinkan yang dapat digunakan.`,
@@ -361,7 +379,9 @@ export class SettingsController {
     // Build new values map (mask sensitive)
     const newValues: Record<string, string> = {};
     for (const entry of entries) {
-      newValues[entry.key] = this.settingsService.isSensitiveKey(entry.key) ? '••••••••' : entry.value;
+      newValues[entry.key] = this.settingsService.isSensitiveKey(entry.key)
+        ? '••••••••'
+        : entry.value;
     }
 
     // BACK-GEN-02: Log audit trail
@@ -405,8 +425,13 @@ export class SettingsController {
   ) {
     // Get old values for audit
     const oldValues = await this.settingsService.getOldValuesForAudit([
-      'smtp_host', 'smtp_port', 'smtp_secure', 'smtp_user', 'smtp_pass',
-      'smtp_sender_name', 'smtp_sender_email',
+      'smtp_host',
+      'smtp_port',
+      'smtp_secure',
+      'smtp_user',
+      'smtp_pass',
+      'smtp_sender_name',
+      'smtp_sender_email',
     ]);
 
     const entries: { key: string; value: string }[] = [
@@ -429,7 +454,9 @@ export class SettingsController {
     // BACK-GEN-02: Audit trail (mask password in new values)
     const newValues: Record<string, string> = {};
     for (const entry of entries) {
-      newValues[entry.key] = this.settingsService.isSensitiveKey(entry.key) ? '••••••••' : entry.value;
+      newValues[entry.key] = this.settingsService.isSensitiveKey(entry.key)
+        ? '••••••••'
+        : entry.value;
     }
 
     await this.auditService.log(
@@ -489,36 +516,65 @@ export class SettingsController {
       numberFormat: settings['general_number_format'] || '1.000,50',
 
       // Numbering (BIZ-GEN-04)
-      orderNumberFormat: settings['general_order_number_format'] || 'LAB-{YYYY}{MM}-{SEQ:5}',
+      orderNumberFormat:
+        settings['general_order_number_format'] || 'LAB-{YYYY}{MM}-{SEQ:5}',
       orderNumberReset: settings['general_order_number_reset'] || 'MONTHLY',
-      visitNumberFormat: settings['general_visit_number_format'] || 'VIS-{YYYY}{MM}{DD}-{SEQ:4}',
-      invoiceNumberFormat: settings['general_invoice_number_format'] || 'INV/{YYYY}/{SEQ:4}',
+      visitNumberFormat:
+        settings['general_visit_number_format'] || 'VIS-{YYYY}{MM}{DD}-{SEQ:4}',
+      invoiceNumberFormat:
+        settings['general_invoice_number_format'] || 'INV/{YYYY}/{SEQ:4}',
       mrnFormat: settings['general_mrn_format'] || 'MRN-{YYYY}-{SEQ:6}',
 
       // Operational (BIZ-GEN-05)
       operatingHoursStart: settings['general_operating_hours_start'] || '07:00',
       operatingHoursEnd: settings['general_operating_hours_end'] || '21:00',
-      operatingDays: settings['general_operating_days'] || 'MON,TUE,WED,THU,FRI,SAT',
+      operatingDays:
+        settings['general_operating_days'] || 'MON,TUE,WED,THU,FRI,SAT',
       is24h: settings['general_is_24h'] === 'true',
 
       // Session & Security (BIZ-GEN-06)
-      sessionTimeoutMinutes: parseInt(settings['general_session_timeout_minutes'] || '60', 10),
-      autoLogoutIdleMinutes: parseInt(settings['general_auto_logout_idle_minutes'] || '30', 10),
-      maxLoginAttempts: parseInt(settings['general_max_login_attempts'] || '5', 10),
-      lockoutDurationMinutes: parseInt(settings['general_lockout_duration_minutes'] || '30', 10),
-      passwordMinLength: parseInt(settings['general_password_min_length'] || '8', 10),
-      requirePasswordChangeDays: parseInt(settings['general_require_password_change_days'] || '0', 10),
+      sessionTimeoutMinutes: parseInt(
+        settings['general_session_timeout_minutes'] || '60',
+        10,
+      ),
+      autoLogoutIdleMinutes: parseInt(
+        settings['general_auto_logout_idle_minutes'] || '30',
+        10,
+      ),
+      maxLoginAttempts: parseInt(
+        settings['general_max_login_attempts'] || '5',
+        10,
+      ),
+      lockoutDurationMinutes: parseInt(
+        settings['general_lockout_duration_minutes'] || '30',
+        10,
+      ),
+      passwordMinLength: parseInt(
+        settings['general_password_min_length'] || '8',
+        10,
+      ),
+      requirePasswordChangeDays: parseInt(
+        settings['general_require_password_change_days'] || '0',
+        10,
+      ),
 
       // Maintenance & Backup (BIZ-GEN-07)
       maintenanceMode: settings['general_maintenance_mode'] === 'true',
       maintenanceMessage: settings['general_maintenance_message'] || '',
-      backupScheduleCron: settings['general_backup_schedule_cron'] || '0 2 * * *',
+      backupScheduleCron:
+        settings['general_backup_schedule_cron'] || '0 2 * * *',
       lastBackupAt: settings['general_last_backup_at'] || null,
 
       // Pagination & Display (BIZ-GEN-08)
-      defaultPageSize: parseInt(settings['general_default_page_size'] || '20', 10),
+      defaultPageSize: parseInt(
+        settings['general_default_page_size'] || '20',
+        10,
+      ),
       defaultSortOrder: settings['general_default_sort_order'] || 'DESC',
-      dashboardDataRetentionDays: parseInt(settings['general_dashboard_data_retention_days'] || '30', 10),
+      dashboardDataRetentionDays: parseInt(
+        settings['general_dashboard_data_retention_days'] || '30',
+        10,
+      ),
     };
   }
 
@@ -533,7 +589,10 @@ export class SettingsController {
       // Facility identity (BIZ-GEN-01)
       { key: 'general_facility_name', value: dto.facilityName },
       { key: 'general_facility_code', value: dto.facilityCode || '' },
-      { key: 'general_facility_type', value: dto.facilityType || 'STANDALONE_LAB' },
+      {
+        key: 'general_facility_type',
+        value: dto.facilityType || 'STANDALONE_LAB',
+      },
       { key: 'general_address', value: dto.address || '' },
       { key: 'general_city', value: dto.city || '' },
       { key: 'general_province', value: dto.province || '' },
@@ -554,35 +613,95 @@ export class SettingsController {
       { key: 'general_number_format', value: dto.numberFormat || '1.000,50' },
 
       // Numbering (BIZ-GEN-04)
-      { key: 'general_order_number_format', value: dto.orderNumberFormat || 'LAB-{YYYY}{MM}-{SEQ:5}' },
-      { key: 'general_order_number_reset', value: dto.orderNumberReset || 'MONTHLY' },
-      { key: 'general_visit_number_format', value: dto.visitNumberFormat || 'VIS-{YYYY}{MM}{DD}-{SEQ:4}' },
-      { key: 'general_invoice_number_format', value: dto.invoiceNumberFormat || 'INV/{YYYY}/{SEQ:4}' },
-      { key: 'general_mrn_format', value: dto.mrnFormat || 'MRN-{YYYY}-{SEQ:6}' },
+      {
+        key: 'general_order_number_format',
+        value: dto.orderNumberFormat || 'LAB-{YYYY}{MM}-{SEQ:5}',
+      },
+      {
+        key: 'general_order_number_reset',
+        value: dto.orderNumberReset || 'MONTHLY',
+      },
+      {
+        key: 'general_visit_number_format',
+        value: dto.visitNumberFormat || 'VIS-{YYYY}{MM}{DD}-{SEQ:4}',
+      },
+      {
+        key: 'general_invoice_number_format',
+        value: dto.invoiceNumberFormat || 'INV/{YYYY}/{SEQ:4}',
+      },
+      {
+        key: 'general_mrn_format',
+        value: dto.mrnFormat || 'MRN-{YYYY}-{SEQ:6}',
+      },
 
       // Operational (BIZ-GEN-05)
-      { key: 'general_operating_hours_start', value: dto.operatingHoursStart || '07:00' },
-      { key: 'general_operating_hours_end', value: dto.operatingHoursEnd || '21:00' },
-      { key: 'general_operating_days', value: dto.operatingDays || 'MON,TUE,WED,THU,FRI,SAT' },
+      {
+        key: 'general_operating_hours_start',
+        value: dto.operatingHoursStart || '07:00',
+      },
+      {
+        key: 'general_operating_hours_end',
+        value: dto.operatingHoursEnd || '21:00',
+      },
+      {
+        key: 'general_operating_days',
+        value: dto.operatingDays || 'MON,TUE,WED,THU,FRI,SAT',
+      },
       { key: 'general_is_24h', value: String(dto.is24h ?? false) },
 
       // Session & Security (BIZ-GEN-06)
-      { key: 'general_session_timeout_minutes', value: String(dto.sessionTimeoutMinutes ?? 60) },
-      { key: 'general_auto_logout_idle_minutes', value: String(dto.autoLogoutIdleMinutes ?? 30) },
-      { key: 'general_max_login_attempts', value: String(dto.maxLoginAttempts ?? 5) },
-      { key: 'general_lockout_duration_minutes', value: String(dto.lockoutDurationMinutes ?? 30) },
-      { key: 'general_password_min_length', value: String(dto.passwordMinLength ?? 8) },
-      { key: 'general_require_password_change_days', value: String(dto.requirePasswordChangeDays ?? 0) },
+      {
+        key: 'general_session_timeout_minutes',
+        value: String(dto.sessionTimeoutMinutes ?? 60),
+      },
+      {
+        key: 'general_auto_logout_idle_minutes',
+        value: String(dto.autoLogoutIdleMinutes ?? 30),
+      },
+      {
+        key: 'general_max_login_attempts',
+        value: String(dto.maxLoginAttempts ?? 5),
+      },
+      {
+        key: 'general_lockout_duration_minutes',
+        value: String(dto.lockoutDurationMinutes ?? 30),
+      },
+      {
+        key: 'general_password_min_length',
+        value: String(dto.passwordMinLength ?? 8),
+      },
+      {
+        key: 'general_require_password_change_days',
+        value: String(dto.requirePasswordChangeDays ?? 0),
+      },
 
       // Maintenance & Backup (BIZ-GEN-07)
-      { key: 'general_maintenance_mode', value: String(dto.maintenanceMode ?? false) },
-      { key: 'general_maintenance_message', value: dto.maintenanceMessage || '' },
-      { key: 'general_backup_schedule_cron', value: dto.backupScheduleCron || '0 2 * * *' },
+      {
+        key: 'general_maintenance_mode',
+        value: String(dto.maintenanceMode ?? false),
+      },
+      {
+        key: 'general_maintenance_message',
+        value: dto.maintenanceMessage || '',
+      },
+      {
+        key: 'general_backup_schedule_cron',
+        value: dto.backupScheduleCron || '0 2 * * *',
+      },
 
       // Pagination & Display (BIZ-GEN-08)
-      { key: 'general_default_page_size', value: String(dto.defaultPageSize ?? 20) },
-      { key: 'general_default_sort_order', value: dto.defaultSortOrder || 'DESC' },
-      { key: 'general_dashboard_data_retention_days', value: String(dto.dashboardDataRetentionDays ?? 30) },
+      {
+        key: 'general_default_page_size',
+        value: String(dto.defaultPageSize ?? 20),
+      },
+      {
+        key: 'general_default_sort_order',
+        value: dto.defaultSortOrder || 'DESC',
+      },
+      {
+        key: 'general_dashboard_data_retention_days',
+        value: String(dto.dashboardDataRetentionDays ?? 30),
+      },
     ];
 
     // BACK-GEN-02: Get old values for audit
@@ -730,7 +849,9 @@ export class SettingsController {
     const { data, overwrite = false } = body;
 
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
-      throw new BadRequestException('Field "data" harus berupa object key-value.');
+      throw new BadRequestException(
+        'Field "data" harus berupa object key-value.',
+      );
     }
 
     const entries = Object.entries(data);
@@ -752,24 +873,34 @@ export class SettingsController {
     }
 
     // Filter out sensitive keys from import (security: prevent importing passwords)
-    const safeEntries = entries.filter(([key]) => !this.settingsService.isSensitiveKey(key));
+    const safeEntries = entries.filter(
+      ([key]) => !this.settingsService.isSensitiveKey(key),
+    );
 
     if (!overwrite) {
       // Only import keys that don't already exist
-      const existingSettings = await this.settingsService.getSettingsByPrefix('');
-      const newEntries = safeEntries.filter(([key]) => !(key in existingSettings));
+      const existingSettings =
+        await this.settingsService.getSettingsByPrefix('');
+      const newEntries = safeEntries.filter(
+        ([key]) => !(key in existingSettings),
+      );
 
       if (newEntries.length === 0) {
         return {
           success: true,
-          message: 'Tidak ada settings baru untuk diimport (semua key sudah ada).',
+          message:
+            'Tidak ada settings baru untuk diimport (semua key sudah ada).',
           imported: 0,
           skipped: safeEntries.length,
         };
       }
 
-      const oldValues = await this.settingsService.getOldValuesForAudit(newEntries.map(([k]) => k));
-      await this.settingsService.bulkUpdate(newEntries.map(([key, value]) => ({ key, value })));
+      const oldValues = await this.settingsService.getOldValuesForAudit(
+        newEntries.map(([k]) => k),
+      );
+      await this.settingsService.bulkUpdate(
+        newEntries.map(([key, value]) => ({ key, value })),
+      );
 
       const newValues: Record<string, string> = {};
       for (const [key, value] of newEntries) {
@@ -795,8 +926,12 @@ export class SettingsController {
     }
 
     // Overwrite mode: import all safe entries
-    const oldValues = await this.settingsService.getOldValuesForAudit(safeEntries.map(([k]) => k));
-    await this.settingsService.bulkUpdate(safeEntries.map(([key, value]) => ({ key, value })));
+    const oldValues = await this.settingsService.getOldValuesForAudit(
+      safeEntries.map(([k]) => k),
+    );
+    await this.settingsService.bulkUpdate(
+      safeEntries.map(([key, value]) => ({ key, value })),
+    );
 
     const newValues: Record<string, string> = {};
     for (const [key, value] of safeEntries) {

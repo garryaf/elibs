@@ -36,7 +36,9 @@ describe('InsuranceConsolidationService Property Tests', () => {
       ],
     }).compile();
 
-    service = module.get<InsuranceConsolidationService>(InsuranceConsolidationService);
+    service = module.get<InsuranceConsolidationService>(
+      InsuranceConsolidationService,
+    );
     prismaService = module.get<PrismaService>(PrismaService);
   });
 
@@ -57,8 +59,12 @@ describe('InsuranceConsolidationService Property Tests', () => {
       id: uuidArb,
       patientId: fc.constant(patientId),
       insuranceId: uuidArb,
-      memberNumber: fc.option(fc.string({ minLength: 5, maxLength: 20 }), { nil: null }),
-      policyNumber: fc.option(fc.string({ minLength: 5, maxLength: 20 }), { nil: null }),
+      memberNumber: fc.option(fc.string({ minLength: 5, maxLength: 20 }), {
+        nil: null,
+      }),
+      policyNumber: fc.option(fc.string({ minLength: 5, maxLength: 20 }), {
+        nil: null,
+      }),
       priority: fc.integer({ min: 1, max: 5 }),
       type: fc.constantFrom('BPJS', 'SWASTA', 'CORPORATE', null),
       bpjsClassLevel: fc.option(fc.integer({ min: 1, max: 3 }), { nil: null }),
@@ -88,7 +94,11 @@ describe('InsuranceConsolidationService Property Tests', () => {
 
     const today = new Date();
     // Set time to start of day for comparison (matching date-only comparison)
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayStart = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
 
     if (record.validFrom !== null) {
       const fromDate = new Date(
@@ -125,7 +135,10 @@ describe('InsuranceConsolidationService Property Tests', () => {
 
       await fc.assert(
         fc.asyncProperty(
-          fc.array(patientInsuranceArb(patientId), { minLength: 1, maxLength: 5 }),
+          fc.array(patientInsuranceArb(patientId), {
+            minLength: 1,
+            maxLength: 5,
+          }),
           uuidArb,
           async (records, testInsuranceId) => {
             // Compute which records are truly active
@@ -133,9 +146,9 @@ describe('InsuranceConsolidationService Property Tests', () => {
             const activeInsuranceIds = activeRecords.map((r) => r.insuranceId);
 
             // Mock getActiveInsurances — the service calls findMany internally
-            (prismaService.patientInsurance.findMany as jest.Mock).mockResolvedValue(
-              activeRecords,
-            );
+            (
+              prismaService.patientInsurance.findMany as jest.Mock
+            ).mockResolvedValue(activeRecords);
 
             const isEnrolled = activeInsuranceIds.includes(testInsuranceId);
 
@@ -166,7 +179,10 @@ describe('InsuranceConsolidationService Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc
-            .array(patientInsuranceArb(patientId), { minLength: 1, maxLength: 5 })
+            .array(patientInsuranceArb(patientId), {
+              minLength: 1,
+              maxLength: 5,
+            })
             .filter((records) => records.some(isRecordActive)),
           async (records) => {
             const activeRecords = records.filter(isRecordActive);
@@ -174,9 +190,9 @@ describe('InsuranceConsolidationService Property Tests', () => {
             // Pick an insuranceId from the active set
             const chosenInsuranceId = activeRecords[0].insuranceId;
 
-            (prismaService.patientInsurance.findMany as jest.Mock).mockResolvedValue(
-              activeRecords,
-            );
+            (
+              prismaService.patientInsurance.findMany as jest.Mock
+            ).mockResolvedValue(activeRecords);
 
             await expect(
               service.validateVisitInsurance(patientId, chosenInsuranceId),
@@ -211,9 +227,9 @@ describe('InsuranceConsolidationService Property Tests', () => {
             validUntil: null,
           })),
           async (priority1Record) => {
-            (prismaService.patientInsurance.findFirst as jest.Mock).mockResolvedValue(
-              priority1Record,
-            );
+            (
+              prismaService.patientInsurance.findFirst as jest.Mock
+            ).mockResolvedValue(priority1Record);
 
             const result = await service.getDefaultInsurance(patientId);
 
@@ -237,7 +253,9 @@ describe('InsuranceConsolidationService Property Tests', () => {
 
       await fc.assert(
         fc.asyncProperty(fc.constant(null), async () => {
-          (prismaService.patientInsurance.findFirst as jest.Mock).mockResolvedValue(null);
+          (
+            prismaService.patientInsurance.findFirst as jest.Mock
+          ).mockResolvedValue(null);
 
           const result = await service.getDefaultInsurance(patientId);
 
@@ -265,7 +283,9 @@ describe('InsuranceConsolidationService Property Tests', () => {
           })),
           async () => {
             // The service query with isActive=true won't find the record
-            (prismaService.patientInsurance.findFirst as jest.Mock).mockResolvedValue(null);
+            (
+              prismaService.patientInsurance.findFirst as jest.Mock
+            ).mockResolvedValue(null);
 
             const result = await service.getDefaultInsurance(patientId);
 
@@ -294,14 +314,19 @@ describe('InsuranceConsolidationService Property Tests', () => {
 
       await fc.assert(
         fc.asyncProperty(
-          fc.array(patientInsuranceArb(patientId), { minLength: 0, maxLength: 8 }),
+          fc.array(patientInsuranceArb(patientId), {
+            minLength: 0,
+            maxLength: 8,
+          }),
           async (allRecords) => {
             // Compute expected active records using our predicate
             const expectedActive = allRecords.filter(isRecordActive);
 
             // Mock the Prisma call to return only the expected active records
             // (simulating what Prisma would return given the WHERE clause in the service)
-            (prismaService.patientInsurance.findMany as jest.Mock).mockResolvedValue(
+            (
+              prismaService.patientInsurance.findMany as jest.Mock
+            ).mockResolvedValue(
               expectedActive.sort((a, b) => a.priority - b.priority),
             );
 
@@ -312,14 +337,14 @@ describe('InsuranceConsolidationService Property Tests', () => {
               expect(record.isActive).toBe(true);
 
               if (record.validFrom !== null) {
-                expect(new Date(record.validFrom).getTime()).toBeLessThanOrEqual(
-                  Date.now(),
-                );
+                expect(
+                  new Date(record.validFrom).getTime(),
+                ).toBeLessThanOrEqual(Date.now());
               }
               if (record.validUntil !== null) {
-                expect(new Date(record.validUntil).getTime()).toBeGreaterThanOrEqual(
-                  new Date().setHours(0, 0, 0, 0),
-                );
+                expect(
+                  new Date(record.validUntil).getTime(),
+                ).toBeGreaterThanOrEqual(new Date().setHours(0, 0, 0, 0));
               }
             }
 
@@ -350,7 +375,9 @@ describe('InsuranceConsolidationService Property Tests', () => {
           ),
           async (inactiveRecords) => {
             // All records are inactive, so none should be returned
-            (prismaService.patientInsurance.findMany as jest.Mock).mockResolvedValue([]);
+            (
+              prismaService.patientInsurance.findMany as jest.Mock
+            ).mockResolvedValue([]);
 
             const result = await service.getActiveInsurances(patientId);
 
@@ -382,7 +409,9 @@ describe('InsuranceConsolidationService Property Tests', () => {
           ),
           async (expiredRecords) => {
             // These expired records should be filtered out by the service query
-            (prismaService.patientInsurance.findMany as jest.Mock).mockResolvedValue([]);
+            (
+              prismaService.patientInsurance.findMany as jest.Mock
+            ).mockResolvedValue([]);
 
             const result = await service.getActiveInsurances(patientId);
 
@@ -414,7 +443,9 @@ describe('InsuranceConsolidationService Property Tests', () => {
           ),
           async (futureRecords) => {
             // These future records should be filtered out by the service query
-            (prismaService.patientInsurance.findMany as jest.Mock).mockResolvedValue([]);
+            (
+              prismaService.patientInsurance.findMany as jest.Mock
+            ).mockResolvedValue([]);
 
             const result = await service.getActiveInsurances(patientId);
 
@@ -446,7 +477,9 @@ describe('InsuranceConsolidationService Property Tests', () => {
           ),
           async (activeNoBoundsRecords) => {
             // All these records should be returned (active, no date constraints)
-            (prismaService.patientInsurance.findMany as jest.Mock).mockResolvedValue(
+            (
+              prismaService.patientInsurance.findMany as jest.Mock
+            ).mockResolvedValue(
               activeNoBoundsRecords.sort((a, b) => a.priority - b.priority),
             );
 

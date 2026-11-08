@@ -31,8 +31,7 @@ export class RegionSyncService {
    * Use the final destination URL directly to avoid the 301 redirect
    * from emsifa.github.io → www.emsifa.com which can cause timeouts.
    */
-  private readonly baseUrl =
-    'https://www.emsifa.com/api-wilayah-indonesia/api';
+  private readonly baseUrl = 'https://www.emsifa.com/api-wilayah-indonesia/api';
   private readonly logger = new Logger(RegionSyncService.name);
 
   /** Concurrency limit — keep below Prisma's default connection pool (10) */
@@ -132,9 +131,8 @@ export class RegionSyncService {
       // Level 1: Provinces
       this.logger.log('Starting region sync...');
       this.syncProgress.currentLevel = 'provinsi';
-      const provinces = await this.fetchWithRetry<EmsifaProvince[]>(
-        '/provinces.json',
-      );
+      const provinces =
+        await this.fetchWithRetry<EmsifaProvince[]>('/provinces.json');
       this.syncProgress.progress.provinsi.total = provinces.length;
       await this.upsertProvincesBatch(provinces);
       this.syncProgress.progress.provinsi.done = provinces.length;
@@ -216,9 +214,7 @@ export class RegionSyncService {
       );
       this.logger.log(`Synced ${result.kelurahanDesa} kelurahan/desa`);
 
-      this.logger.log(
-        `Region sync completed. Errors: ${result.errors.length}`,
-      );
+      this.logger.log(`Region sync completed. Errors: ${result.errors.length}`);
 
       this.syncProgress.status = 'completed';
       this.syncProgress.result = result;

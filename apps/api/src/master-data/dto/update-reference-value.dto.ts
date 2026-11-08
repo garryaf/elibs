@@ -1,11 +1,4 @@
-import {
-  IsEnum,
-  IsInt,
-  IsNumber,
-  IsOptional,
-  Min,
-  Max,
-} from 'class-validator';
+import { IsEnum, IsInt, IsNumber, IsOptional, Min, Max } from 'class-validator';
 import { Gender } from '@prisma/client';
 
 export class UpdateReferenceValueDto {

@@ -23,18 +23,24 @@ export class ReportsService {
   async getRevenueSummary(query: ReportQueryDto) {
     const { gte, lte } = this.getDateRange(query);
 
-    const orders = await this.prisma.order.findMany({
-      where: {
-        paidAt: { gte, lte },
-        amountPaid: { not: null },
-      },
-      select: {
-        paidAt: true,
-        amountPaid: true,
-        totalAmount: true,
-      },
-      orderBy: { paidAt: 'asc' },
-    });
+    const [orders, processedRefunds, pendingRefunds] = await Promise.all([
+      this.prisma.order.findMany({
+        where: {
+          paidAt: { gte, lte },
+          amountPaid: { not: null },
+        },
+        select: { paidAt: true, amountPaid: true },
+        orderBy: { paidAt: 'asc' },
+      }),
+      this.prisma.refund.findMany({
+        where: { status: 'PROCESSED', processedAt: { gte, lte } },
+        select: { amount: true, processedAt: true },
+      }),
+      this.prisma.refund.aggregate({
+        where: { status: { in: ['PENDING', 'APPROVED'] }, createdAt: { gte, lte } },
+        _sum: { amount: true },
+      }),
+    ]);
 
     // Group by day
     const dailyMap = new Map<string, { revenue: number; count: number }>();
@@ -47,21 +53,37 @@ export class ReportsService {
       dailyMap.set(dateKey, existing);
     }
 
+    for (const refund of processedRefunds) {
+      if (!refund.processedAt) continue;
+      const dateKey = refund.processedAt.toISOString().split('T')[0];
+      const existing = dailyMap.get(dateKey) || { revenue: 0, count: 0 };
+      existing.revenue -= Number(refund.amount);
+      dailyMap.set(dateKey, existing);
+    }
+
     const daily = Array.from(dailyMap.entries()).map(([date, data]) => ({
       date,
       revenue: data.revenue,
       orderCount: data.count,
     }));
 
-    const totalRevenue = orders.reduce(
+    const grossCollection = orders.reduce(
       (sum, o) => sum + Number(o.amountPaid ?? 0),
       0,
     );
+    const processedRefundAmount = processedRefunds.reduce(
+      (sum, refund) => sum + Number(refund.amount),
+      0,
+    );
+    const totalRevenue = grossCollection - processedRefundAmount;
 
     return {
       startDate: gte.toISOString().split('T')[0],
       endDate: lte.toISOString().split('T')[0],
       totalRevenue,
+      grossCollection,
+      processedRefundAmount,
+      pendingRefundAmount: Number(pendingRefunds._sum.amount ?? 0),
       totalOrders: orders.length,
       daily,
     };
@@ -86,7 +108,12 @@ export class ReportsService {
 
     const total = data.reduce((sum, d) => sum + d.count, 0);
 
-    return { startDate: gte.toISOString().split('T')[0], endDate: lte.toISOString().split('T')[0], total, data };
+    return {
+      startDate: gte.toISOString().split('T')[0],
+      endDate: lte.toISOString().split('T')[0],
+      total,
+      data,
+    };
   }
 
   /**
@@ -113,7 +140,12 @@ export class ReportsService {
 
     const totalRevenue = data.reduce((sum, d) => sum + d.revenue, 0);
 
-    return { startDate: gte.toISOString().split('T')[0], endDate: lte.toISOString().split('T')[0], totalRevenue, data };
+    return {
+      startDate: gte.toISOString().split('T')[0],
+      endDate: lte.toISOString().split('T')[0],
+      totalRevenue,
+      data,
+    };
   }
 
   /**
@@ -150,7 +182,12 @@ export class ReportsService {
       totalRevenue: Number(item._sum.finalPrice ?? 0),
     }));
 
-    return { startDate: gte.toISOString().split('T')[0], endDate: lte.toISOString().split('T')[0], limit, data };
+    return {
+      startDate: gte.toISOString().split('T')[0],
+      endDate: lte.toISOString().split('T')[0],
+      limit,
+      data,
+    };
   }
 
   /**
@@ -205,9 +242,7 @@ export class ReportsService {
     });
 
     // Enrich with doctor names
-    const doctorIds = results
-      .map((r) => r.doctorId!)
-      .filter(Boolean);
+    const doctorIds = results.map((r) => r.doctorId!).filter(Boolean);
     const doctors = await this.prisma.doctor.findMany({
       where: { id: { in: doctorIds } },
       select: { id: true, name: true, code: true, specialization: true },
@@ -246,9 +281,7 @@ export class ReportsService {
     });
 
     // Enrich with clinic names
-    const clinicIds = results
-      .map((r) => r.clinicId!)
-      .filter(Boolean);
+    const clinicIds = results.map((r) => r.clinicId!).filter(Boolean);
     const clinics = await this.prisma.clinic.findMany({
       where: { id: { in: clinicIds } },
       select: { id: true, name: true, code: true },
@@ -316,7 +349,12 @@ export class ReportsService {
 
     // Process gender aggregation
     const genderBreakdown = byGender.map((g) => ({
-      name: g.gender === 'MALE' ? 'Laki-laki' : g.gender === 'FEMALE' ? 'Perempuan' : (g.gender ?? 'Tidak Diketahui'),
+      name:
+        g.gender === 'MALE'
+          ? 'Laki-laki'
+          : g.gender === 'FEMALE'
+            ? 'Perempuan'
+            : (g.gender ?? 'Tidak Diketahui'),
       count: g._count.id,
     }));
 
@@ -325,13 +363,19 @@ export class ReportsService {
     const ageGroups = { '0-17': 0, '18-40': 0, '41-60': 0, '60+': 0 };
     for (const p of patients) {
       if (!p.dateOfBirth) continue;
-      const age = Math.floor((now.getTime() - new Date(p.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      const age = Math.floor(
+        (now.getTime() - new Date(p.dateOfBirth).getTime()) /
+          (365.25 * 24 * 60 * 60 * 1000),
+      );
       if (age <= 17) ageGroups['0-17']++;
       else if (age <= 40) ageGroups['18-40']++;
       else if (age <= 60) ageGroups['41-60']++;
       else ageGroups['60+']++;
     }
-    const ageBreakdown = Object.entries(ageGroups).map(([name, count]) => ({ name, count }));
+    const ageBreakdown = Object.entries(ageGroups).map(([name, count]) => ({
+      name,
+      count,
+    }));
 
     return {
       startDate: gte.toISOString().split('T')[0],

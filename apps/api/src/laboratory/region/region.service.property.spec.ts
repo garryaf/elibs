@@ -101,11 +101,7 @@ function createMockPrismaForRegionQuery(
     },
     kabupatenKota: {
       findMany: jest.fn().mockImplementation(({ where, skip, take }) => {
-        let filtered = filterRecords(
-          kabupatenKotaRecords,
-          where,
-          'provinsiId',
-        );
+        let filtered = filterRecords(kabupatenKotaRecords, where, 'provinsiId');
         filtered = filtered.slice(skip || 0, (skip || 0) + (take || 50));
         return Promise.resolve(
           filtered.map((r) => ({
@@ -126,7 +122,11 @@ function createMockPrismaForRegionQuery(
     },
     kecamatan: {
       findMany: jest.fn().mockImplementation(({ where, skip, take }) => {
-        let filtered = filterRecords(kecamatanRecords, where, 'kabupatenKotaId');
+        let filtered = filterRecords(
+          kecamatanRecords,
+          where,
+          'kabupatenKotaId',
+        );
         filtered = filtered.slice(skip || 0, (skip || 0) + (take || 50));
         return Promise.resolve(
           filtered.map((r) => ({
@@ -182,246 +182,219 @@ describe('Property 4: Active-Filtered Parent-Scoped Query', () => {
    * findKabupatenKotaByProvinsi SHALL return only records that are active AND
    * belong to the specified provinsiId.
    */
-  it(
-    'should return only active KabupatenKota records belonging to the specified provinsiId',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          regionIdArb,
-          regionRecordListArb('placeholder').chain((records) =>
-            regionIdArb.map((targetId) => ({
-              targetParentId: targetId,
-              records: records.map((r) => ({
-                ...r,
-                parentId: r.isActive
-                  ? r.parentId
-                  : fc.sample(
-                      fc.oneof(fc.constant(targetId), regionIdArb),
-                      1,
-                    )[0],
-              })),
+  it('should return only active KabupatenKota records belonging to the specified provinsiId', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        regionIdArb,
+        regionRecordListArb('placeholder').chain((records) =>
+          regionIdArb.map((targetId) => ({
+            targetParentId: targetId,
+            records: records.map((r) => ({
+              ...r,
+              parentId: r.isActive
+                ? r.parentId
+                : fc.sample(fc.oneof(fc.constant(targetId), regionIdArb), 1)[0],
             })),
-          ),
-          async (_seed, generated) => {
-            const { targetParentId, records } = generated;
-
-            const mockPrisma = createMockPrismaForRegionQuery(
-              records,
-              [],
-              [],
-              [],
-            );
-            const service = new RegionService(mockPrisma);
-
-            const result = await service.findKabupatenKotaByProvinsi(
-              targetParentId,
-              1,
-              50,
-            );
-
-            // Property: every returned record must be active and belong to the target parent
-            for (const item of result.data) {
-              const sourceRecord = records.find((r) => r.id === item.id);
-              if (sourceRecord) {
-                expect(sourceRecord.isActive).toBe(true);
-                expect(sourceRecord.parentId).toBe(targetParentId);
-              }
-            }
-
-            // Property: no active record belonging to the target parent should be missing
-            const expectedActiveChildren = records.filter(
-              (r) => r.isActive && r.parentId === targetParentId,
-            );
-            const expectedSlice = expectedActiveChildren.slice(0, 50);
-            expect(result.data.length).toBe(expectedSlice.length);
-          },
+          })),
         ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+        async (_seed, generated) => {
+          const { targetParentId, records } = generated;
+
+          const mockPrisma = createMockPrismaForRegionQuery(
+            records,
+            [],
+            [],
+            [],
+          );
+          const service = new RegionService(mockPrisma);
+
+          const result = await service.findKabupatenKotaByProvinsi(
+            targetParentId,
+            1,
+            50,
+          );
+
+          // Property: every returned record must be active and belong to the target parent
+          for (const item of result.data) {
+            const sourceRecord = records.find((r) => r.id === item.id);
+            if (sourceRecord) {
+              expect(sourceRecord.isActive).toBe(true);
+              expect(sourceRecord.parentId).toBe(targetParentId);
+            }
+          }
+
+          // Property: no active record belonging to the target parent should be missing
+          const expectedActiveChildren = records.filter(
+            (r) => r.isActive && r.parentId === targetParentId,
+          );
+          const expectedSlice = expectedActiveChildren.slice(0, 50);
+          expect(result.data.length).toBe(expectedSlice.length);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * For any set of Kecamatan records with varying isActive and kabupatenKotaId,
    * findKecamatanByKabupatenKota SHALL return only records that are active AND
    * belong to the specified kabupatenKotaId.
    */
-  it(
-    'should return only active Kecamatan records belonging to the specified kabupatenKotaId',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          regionIdArb,
-          regionRecordListArb('placeholder').chain((records) =>
-            regionIdArb.map((targetId) => ({
-              targetParentId: targetId,
-              records: records.map((r) => ({
-                ...r,
-                parentId: r.isActive
-                  ? r.parentId
-                  : fc.sample(
-                      fc.oneof(fc.constant(targetId), regionIdArb),
-                      1,
-                    )[0],
-              })),
+  it('should return only active Kecamatan records belonging to the specified kabupatenKotaId', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        regionIdArb,
+        regionRecordListArb('placeholder').chain((records) =>
+          regionIdArb.map((targetId) => ({
+            targetParentId: targetId,
+            records: records.map((r) => ({
+              ...r,
+              parentId: r.isActive
+                ? r.parentId
+                : fc.sample(fc.oneof(fc.constant(targetId), regionIdArb), 1)[0],
             })),
-          ),
-          async (_seed, generated) => {
-            const { targetParentId, records } = generated;
-
-            const mockPrisma = createMockPrismaForRegionQuery(
-              [],
-              records,
-              [],
-              [],
-            );
-            const service = new RegionService(mockPrisma);
-
-            const result = await service.findKecamatanByKabupatenKota(
-              targetParentId,
-              1,
-              50,
-            );
-
-            // Property: every returned record must be active and belong to the target parent
-            for (const item of result.data) {
-              const sourceRecord = records.find((r) => r.id === item.id);
-              if (sourceRecord) {
-                expect(sourceRecord.isActive).toBe(true);
-                expect(sourceRecord.parentId).toBe(targetParentId);
-              }
-            }
-
-            // Property: no active record belonging to the target parent should be missing
-            const expectedActiveChildren = records.filter(
-              (r) => r.isActive && r.parentId === targetParentId,
-            );
-            const expectedSlice = expectedActiveChildren.slice(0, 50);
-            expect(result.data.length).toBe(expectedSlice.length);
-          },
+          })),
         ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+        async (_seed, generated) => {
+          const { targetParentId, records } = generated;
+
+          const mockPrisma = createMockPrismaForRegionQuery(
+            [],
+            records,
+            [],
+            [],
+          );
+          const service = new RegionService(mockPrisma);
+
+          const result = await service.findKecamatanByKabupatenKota(
+            targetParentId,
+            1,
+            50,
+          );
+
+          // Property: every returned record must be active and belong to the target parent
+          for (const item of result.data) {
+            const sourceRecord = records.find((r) => r.id === item.id);
+            if (sourceRecord) {
+              expect(sourceRecord.isActive).toBe(true);
+              expect(sourceRecord.parentId).toBe(targetParentId);
+            }
+          }
+
+          // Property: no active record belonging to the target parent should be missing
+          const expectedActiveChildren = records.filter(
+            (r) => r.isActive && r.parentId === targetParentId,
+          );
+          const expectedSlice = expectedActiveChildren.slice(0, 50);
+          expect(result.data.length).toBe(expectedSlice.length);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * For any set of KelurahanDesa records with varying isActive and kecamatanId,
    * findKelurahanDesaByKecamatan SHALL return only records that are active AND
    * belong to the specified kecamatanId.
    */
-  it(
-    'should return only active KelurahanDesa records belonging to the specified kecamatanId',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          regionIdArb,
-          regionRecordListArb('placeholder').chain((records) =>
-            regionIdArb.map((targetId) => ({
-              targetParentId: targetId,
-              records: records.map((r) => ({
-                ...r,
-                parentId: r.isActive
-                  ? r.parentId
-                  : fc.sample(
-                      fc.oneof(fc.constant(targetId), regionIdArb),
-                      1,
-                    )[0],
-              })),
+  it('should return only active KelurahanDesa records belonging to the specified kecamatanId', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        regionIdArb,
+        regionRecordListArb('placeholder').chain((records) =>
+          regionIdArb.map((targetId) => ({
+            targetParentId: targetId,
+            records: records.map((r) => ({
+              ...r,
+              parentId: r.isActive
+                ? r.parentId
+                : fc.sample(fc.oneof(fc.constant(targetId), regionIdArb), 1)[0],
             })),
-          ),
-          async (_seed, generated) => {
-            const { targetParentId, records } = generated;
-
-            const mockPrisma = createMockPrismaForRegionQuery(
-              [],
-              [],
-              records,
-              [],
-            );
-            const service = new RegionService(mockPrisma);
-
-            const result = await service.findKelurahanDesaByKecamatan(
-              targetParentId,
-              1,
-              50,
-            );
-
-            // Property: every returned record must be active and belong to the target parent
-            for (const item of result.data) {
-              const sourceRecord = records.find((r) => r.id === item.id);
-              if (sourceRecord) {
-                expect(sourceRecord.isActive).toBe(true);
-                expect(sourceRecord.parentId).toBe(targetParentId);
-              }
-            }
-
-            // Property: no active record belonging to the target parent should be missing
-            const expectedActiveChildren = records.filter(
-              (r) => r.isActive && r.parentId === targetParentId,
-            );
-            const expectedSlice = expectedActiveChildren.slice(0, 50);
-            expect(result.data.length).toBe(expectedSlice.length);
-          },
+          })),
         ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+        async (_seed, generated) => {
+          const { targetParentId, records } = generated;
+
+          const mockPrisma = createMockPrismaForRegionQuery(
+            [],
+            [],
+            records,
+            [],
+          );
+          const service = new RegionService(mockPrisma);
+
+          const result = await service.findKelurahanDesaByKecamatan(
+            targetParentId,
+            1,
+            50,
+          );
+
+          // Property: every returned record must be active and belong to the target parent
+          for (const item of result.data) {
+            const sourceRecord = records.find((r) => r.id === item.id);
+            if (sourceRecord) {
+              expect(sourceRecord.isActive).toBe(true);
+              expect(sourceRecord.parentId).toBe(targetParentId);
+            }
+          }
+
+          // Property: no active record belonging to the target parent should be missing
+          const expectedActiveChildren = records.filter(
+            (r) => r.isActive && r.parentId === targetParentId,
+          );
+          const expectedSlice = expectedActiveChildren.slice(0, 50);
+          expect(result.data.length).toBe(expectedSlice.length);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * For any set of Provinsi records with varying isActive flags,
    * findAllProvinsi SHALL return only active records (no parent filtering
    * since Provinsi is the top level).
    */
-  it(
-    'should return only active Provinsi records (top-level, no parent filter)',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.array(
-            fc.record({
-              id: regionIdArb,
-              name: regionNameArb,
-              isActive: fc.boolean(),
-            }),
-            { minLength: 0, maxLength: 20 },
-          ),
-          async (provinsiRecords) => {
-            const mockPrisma = createMockPrismaForRegionQuery(
-              [],
-              [],
-              [],
-              provinsiRecords,
-            );
-            const service = new RegionService(mockPrisma);
-
-            const result = await service.findAllProvinsi(1, 50);
-
-            // Property: every returned record must be active
-            const expectedActive = provinsiRecords.filter((r) => r.isActive);
-            const expectedSlice = expectedActive.slice(0, 50);
-            expect(result.data.length).toBe(expectedSlice.length);
-
-            // Property: no inactive record should appear in results
-            for (const item of result.data) {
-              const sourceRecord = provinsiRecords.find(
-                (r) => r.id === item.id,
-              );
-              if (sourceRecord) {
-                expect(sourceRecord.isActive).toBe(true);
-              }
-            }
-          },
+  it('should return only active Provinsi records (top-level, no parent filter)', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(
+          fc.record({
+            id: regionIdArb,
+            name: regionNameArb,
+            isActive: fc.boolean(),
+          }),
+          { minLength: 0, maxLength: 20 },
         ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+        async (provinsiRecords) => {
+          const mockPrisma = createMockPrismaForRegionQuery(
+            [],
+            [],
+            [],
+            provinsiRecords,
+          );
+          const service = new RegionService(mockPrisma);
+
+          const result = await service.findAllProvinsi(1, 50);
+
+          // Property: every returned record must be active
+          const expectedActive = provinsiRecords.filter((r) => r.isActive);
+          const expectedSlice = expectedActive.slice(0, 50);
+          expect(result.data.length).toBe(expectedSlice.length);
+
+          // Property: no inactive record should appear in results
+          for (const item of result.data) {
+            const sourceRecord = provinsiRecords.find((r) => r.id === item.id);
+            if (sourceRecord) {
+              expect(sourceRecord.isActive).toBe(true);
+            }
+          }
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 });
 
 // Feature: master-wilayah-indonesia, Property 5: Case-Insensitive Partial Name Search
@@ -537,163 +510,148 @@ describe('Property 5: Case-Insensitive Partial Name Search', () => {
    * For any region name and any substring of that name (with any casing applied),
    * the search through findAllProvinsi SHALL include that record in results.
    */
-  it(
-    'should find a region record when searching with any substring of its name in any casing',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          searchRegionIdArb,
-          searchRegionNameArb,
-          substringParamsArb,
-          caseTransformArb,
-          async (id, name, substringParams, caseTransform) => {
-            // Extract a substring from the region name
-            const substring = extractSubstring(
-              name,
-              substringParams.startIndex,
-              substringParams.length,
-            );
+  it('should find a region record when searching with any substring of its name in any casing', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        searchRegionIdArb,
+        searchRegionNameArb,
+        substringParamsArb,
+        caseTransformArb,
+        async (id, name, substringParams, caseTransform) => {
+          // Extract a substring from the region name
+          const substring = extractSubstring(
+            name,
+            substringParams.startIndex,
+            substringParams.length,
+          );
 
-            // Apply random case transformation
-            const searchQuery = applyCaseTransform(substring, caseTransform);
+          // Apply random case transformation
+          const searchQuery = applyCaseTransform(substring, caseTransform);
 
-            // Create mock with one region record
-            const mockPrisma = createSearchMockPrisma([{ id, name }]);
-            const service = new RegionService(mockPrisma);
+          // Create mock with one region record
+          const mockPrisma = createSearchMockPrisma([{ id, name }]);
+          const service = new RegionService(mockPrisma);
 
-            // Execute search
-            const result = await service.findAllProvinsi(1, 50, searchQuery);
+          // Execute search
+          const result = await service.findAllProvinsi(1, 50, searchQuery);
 
-            // The record must be found in results
-            expect(result.data.length).toBeGreaterThanOrEqual(1);
-            expect(result.data.some((item) => item.id === id)).toBe(true);
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+          // The record must be found in results
+          expect(result.data.length).toBeGreaterThanOrEqual(1);
+          expect(result.data.some((item) => item.id === id)).toBe(true);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * Verifies that the service correctly passes the search parameter to Prisma
    * with `contains` and `mode: 'insensitive'` configuration.
    */
-  it(
-    'should pass search query to Prisma with contains and mode insensitive',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          searchRegionNameArb,
-          caseTransformArb,
-          async (searchTerm, caseTransform) => {
-            const transformedSearch = applyCaseTransform(
-              searchTerm,
-              caseTransform,
-            );
+  it('should pass search query to Prisma with contains and mode insensitive', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        searchRegionNameArb,
+        caseTransformArb,
+        async (searchTerm, caseTransform) => {
+          const transformedSearch = applyCaseTransform(
+            searchTerm,
+            caseTransform,
+          );
 
-            const mockPrisma = {
-              provinsi: {
-                findMany: jest.fn().mockResolvedValue([]),
-                count: jest.fn().mockResolvedValue(0),
-              },
-            } as unknown as PrismaService;
+          const mockPrisma = {
+            provinsi: {
+              findMany: jest.fn().mockResolvedValue([]),
+              count: jest.fn().mockResolvedValue(0),
+            },
+          } as unknown as PrismaService;
 
-            const service = new RegionService(mockPrisma);
+          const service = new RegionService(mockPrisma);
 
-            await service.findAllProvinsi(1, 50, transformedSearch);
+          await service.findAllProvinsi(1, 50, transformedSearch);
 
-            // Verify findMany was called with correct where clause
-            expect(mockPrisma.provinsi.findMany).toHaveBeenCalledWith(
-              expect.objectContaining({
-                where: expect.objectContaining({
-                  isActive: true,
-                  name: {
-                    contains: transformedSearch,
-                    mode: 'insensitive',
-                  },
-                }),
+          // Verify findMany was called with correct where clause
+          expect(mockPrisma.provinsi.findMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+              where: expect.objectContaining({
+                isActive: true,
+                name: {
+                  contains: transformedSearch,
+                  mode: 'insensitive',
+                },
               }),
-            );
+            }),
+          );
 
-            // Verify count was called with the same where clause
-            expect(mockPrisma.provinsi.count).toHaveBeenCalledWith(
-              expect.objectContaining({
-                where: expect.objectContaining({
-                  isActive: true,
-                  name: {
-                    contains: transformedSearch,
-                    mode: 'insensitive',
-                  },
-                }),
+          // Verify count was called with the same where clause
+          expect(mockPrisma.provinsi.count).toHaveBeenCalledWith(
+            expect.objectContaining({
+              where: expect.objectContaining({
+                isActive: true,
+                name: {
+                  contains: transformedSearch,
+                  mode: 'insensitive',
+                },
               }),
-            );
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+            }),
+          );
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * Verifies the property across multiple records: when searching with a substring
    * of one specific record's name, that record appears in results among others.
    */
-  it(
-    'should include the matching record among multiple records when searching by partial name',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.array(
-            fc.record({
-              id: searchRegionIdArb,
-              name: searchRegionNameArb,
-            }),
-            { minLength: 2, maxLength: 10 },
-          ),
-          fc.nat(),
-          substringParamsArb,
-          caseTransformArb,
-          async (records, targetIndex, substringParams, caseTransform) => {
-            // Ensure unique IDs
-            const uniqueRecords = records.filter(
-              (r, i, arr) => arr.findIndex((x) => x.id === r.id) === i,
-            );
-            if (uniqueRecords.length < 1) return;
-
-            // Pick a target record
-            const target = uniqueRecords[targetIndex % uniqueRecords.length];
-
-            // Extract substring from target's name
-            const substring = extractSubstring(
-              target.name,
-              substringParams.startIndex,
-              substringParams.length,
-            );
-
-            // Apply case transformation
-            const searchQuery = applyCaseTransform(substring, caseTransform);
-
-            // Create mock with all records
-            const mockPrisma = createSearchMockPrisma(uniqueRecords);
-            const service = new RegionService(mockPrisma);
-
-            const result = await service.findAllProvinsi(1, 50, searchQuery);
-
-            // The target record must be in the results
-            expect(
-              result.data.some((item) => item.id === target.id),
-            ).toBe(true);
-          },
+  it('should include the matching record among multiple records when searching by partial name', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(
+          fc.record({
+            id: searchRegionIdArb,
+            name: searchRegionNameArb,
+          }),
+          { minLength: 2, maxLength: 10 },
         ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
-});
+        fc.nat(),
+        substringParamsArb,
+        caseTransformArb,
+        async (records, targetIndex, substringParams, caseTransform) => {
+          // Ensure unique IDs
+          const uniqueRecords = records.filter(
+            (r, i, arr) => arr.findIndex((x) => x.id === r.id) === i,
+          );
+          if (uniqueRecords.length < 1) return;
 
+          // Pick a target record
+          const target = uniqueRecords[targetIndex % uniqueRecords.length];
+
+          // Extract substring from target's name
+          const substring = extractSubstring(
+            target.name,
+            substringParams.startIndex,
+            substringParams.length,
+          );
+
+          // Apply case transformation
+          const searchQuery = applyCaseTransform(substring, caseTransform);
+
+          // Create mock with all records
+          const mockPrisma = createSearchMockPrisma(uniqueRecords);
+          const service = new RegionService(mockPrisma);
+
+          const result = await service.findAllProvinsi(1, 50, searchQuery);
+
+          // The target record must be in the results
+          expect(result.data.some((item) => item.id === target.id)).toBe(true);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
+});
 
 /**
  * Property 6: Pagination Completeness and No Overlap
@@ -755,15 +713,13 @@ function createMockPrismaForPagination(
 }
 
 // Generator for a list of active region records with guaranteed unique IDs
-const paginationRegionListArb = fc
-  .integer({ min: 0, max: 50 })
-  .map((count) =>
-    Array.from({ length: count }, (_, i) => ({
-      id: String(i + 1).padStart(4, '0'),
-      name: `Region ${String(i + 1).padStart(4, '0')}`,
-      isActive: true,
-    })),
-  );
+const paginationRegionListArb = fc.integer({ min: 0, max: 50 }).map((count) =>
+  Array.from({ length: count }, (_, i) => ({
+    id: String(i + 1).padStart(4, '0'),
+    name: `Region ${String(i + 1).padStart(4, '0')}`,
+    isActive: true,
+  })),
+);
 
 // Generator for page size (limit), between 1 and 20
 const pageSizeArb = fc.integer({ min: 1, max: 20 });
@@ -773,97 +729,88 @@ describe('Property 6: Pagination Completeness and No Overlap', () => {
    * The union of all pages should contain every record exactly once.
    * No record should be missing and no record should appear in multiple pages.
    */
-  it(
-    'should return all records exactly once when iterating through all pages',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          paginationRegionListArb,
-          pageSizeArb,
-          async (records, pageSize) => {
-            const prisma = createMockPrismaForPagination(records);
-            const service = new RegionService(prisma);
+  it('should return all records exactly once when iterating through all pages', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        paginationRegionListArb,
+        pageSizeArb,
+        async (records, pageSize) => {
+          const prisma = createMockPrismaForPagination(records);
+          const service = new RegionService(prisma);
 
-            // Get first page to determine total pages
-            const firstResult = await service.findAllProvinsi(1, pageSize);
-            const totalPages = firstResult.meta.totalPages;
-            const expectedTotal = firstResult.meta.total;
+          // Get first page to determine total pages
+          const firstResult = await service.findAllProvinsi(1, pageSize);
+          const totalPages = firstResult.meta.totalPages;
+          const expectedTotal = firstResult.meta.total;
 
-            // Verify meta.total matches actual active record count
-            const activeCount = records.filter((r) => r.isActive).length;
-            expect(expectedTotal).toBe(activeCount);
+          // Verify meta.total matches actual active record count
+          const activeCount = records.filter((r) => r.isActive).length;
+          expect(expectedTotal).toBe(activeCount);
 
-            // Verify totalPages calculation is correct
-            const expectedTotalPages =
-              activeCount === 0 ? 0 : Math.ceil(activeCount / pageSize);
-            expect(totalPages).toBe(expectedTotalPages);
+          // Verify totalPages calculation is correct
+          const expectedTotalPages =
+            activeCount === 0 ? 0 : Math.ceil(activeCount / pageSize);
+          expect(totalPages).toBe(expectedTotalPages);
 
-            // Collect all IDs across all pages
-            const allIds: string[] = [];
+          // Collect all IDs across all pages
+          const allIds: string[] = [];
 
-            for (let page = 1; page <= totalPages; page++) {
-              const result = await service.findAllProvinsi(page, pageSize);
-              allIds.push(...result.data.map((item) => item.id));
+          for (let page = 1; page <= totalPages; page++) {
+            const result = await service.findAllProvinsi(page, pageSize);
+            allIds.push(...result.data.map((item) => item.id));
 
-              // Each page should have at most pageSize items
-              expect(result.data.length).toBeLessThanOrEqual(pageSize);
+            // Each page should have at most pageSize items
+            expect(result.data.length).toBeLessThanOrEqual(pageSize);
 
-              // Meta should be consistent across pages
-              expect(result.meta.total).toBe(expectedTotal);
-              expect(result.meta.totalPages).toBe(totalPages);
-              expect(result.meta.limit).toBe(pageSize);
-              expect(result.meta.page).toBe(page);
-            }
+            // Meta should be consistent across pages
+            expect(result.meta.total).toBe(expectedTotal);
+            expect(result.meta.totalPages).toBe(totalPages);
+            expect(result.meta.limit).toBe(pageSize);
+            expect(result.meta.page).toBe(page);
+          }
 
-            // Union of all pages should equal the full set size
-            expect(allIds.length).toBe(expectedTotal);
+          // Union of all pages should equal the full set size
+          expect(allIds.length).toBe(expectedTotal);
 
-            // No duplicates: unique IDs count should match total IDs count
-            const uniqueIds = new Set(allIds);
-            expect(uniqueIds.size).toBe(allIds.length);
+          // No duplicates: unique IDs count should match total IDs count
+          const uniqueIds = new Set(allIds);
+          expect(uniqueIds.size).toBe(allIds.length);
 
-            // Every active record in the dataset should appear in the collected results
-            const activeRecordIds = records
-              .filter((r) => r.isActive)
-              .map((r) => r.id)
-              .sort();
-            const collectedIds = [...allIds].sort();
-            expect(collectedIds).toEqual(activeRecordIds);
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+          // Every active record in the dataset should appear in the collected results
+          const activeRecordIds = records
+            .filter((r) => r.isActive)
+            .map((r) => r.id)
+            .sort();
+          const collectedIds = [...allIds].sort();
+          expect(collectedIds).toEqual(activeRecordIds);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * When there are zero records, pagination should report zero total and
    * zero pages with an empty result.
    */
-  it(
-    'should handle empty result set correctly with zero total and zero pages',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(pageSizeArb, async (pageSize) => {
-          const prisma = createMockPrismaForPagination([]);
-          const service = new RegionService(prisma);
+  it('should handle empty result set correctly with zero total and zero pages', async () => {
+    await fc.assert(
+      fc.asyncProperty(pageSizeArb, async (pageSize) => {
+        const prisma = createMockPrismaForPagination([]);
+        const service = new RegionService(prisma);
 
-          const result = await service.findAllProvinsi(1, pageSize);
+        const result = await service.findAllProvinsi(1, pageSize);
 
-          expect(result.data).toEqual([]);
-          expect(result.meta.total).toBe(0);
-          expect(result.meta.totalPages).toBe(0);
-          expect(result.meta.page).toBe(1);
-          expect(result.meta.limit).toBe(pageSize);
-        }),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+        expect(result.data).toEqual([]);
+        expect(result.meta.total).toBe(0);
+        expect(result.meta.totalPages).toBe(0);
+        expect(result.meta.page).toBe(1);
+        expect(result.meta.limit).toBe(pageSize);
+      }),
+      { numRuns: 100 },
+    );
+  }, 60000);
 });
-
 
 // Feature: master-wilayah-indonesia, Property 11: Sync Idempotency
 
@@ -950,120 +897,107 @@ describe('Property 11: Sync Idempotency', () => {
    * the same record count after first run as after the second run.
    * No duplicate records are created.
    */
-  it(
-    'should produce the same record count after running sync twice as after running once',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(emsifaProvinceListArb, async (provinces) => {
-          const store = new InMemoryRegionStore();
+  it('should produce the same record count after running sync twice as after running once', async () => {
+    await fc.assert(
+      fc.asyncProperty(emsifaProvinceListArb, async (provinces) => {
+        const store = new InMemoryRegionStore();
 
-          // First sync run
-          simulateSyncUpsert(store, provinces);
-          const countAfterFirstSync = store.getCount();
-          const stateAfterFirstSync = store.getSnapshot();
+        // First sync run
+        simulateSyncUpsert(store, provinces);
+        const countAfterFirstSync = store.getCount();
+        const stateAfterFirstSync = store.getSnapshot();
 
-          // Second sync run (same data)
-          simulateSyncUpsert(store, provinces);
-          const countAfterSecondSync = store.getCount();
-          const stateAfterSecondSync = store.getSnapshot();
+        // Second sync run (same data)
+        simulateSyncUpsert(store, provinces);
+        const countAfterSecondSync = store.getCount();
+        const stateAfterSecondSync = store.getSnapshot();
 
-          // Property: record count after second sync equals record count after first sync
-          expect(countAfterSecondSync).toBe(countAfterFirstSync);
+        // Property: record count after second sync equals record count after first sync
+        expect(countAfterSecondSync).toBe(countAfterFirstSync);
 
-          // Property: data state after second sync is identical to state after first sync
-          expect(stateAfterSecondSync.size).toBe(stateAfterFirstSync.size);
-          for (const [id, record] of stateAfterFirstSync.entries()) {
-            const secondRecord = stateAfterSecondSync.get(id);
-            expect(secondRecord).toBeDefined();
-            expect(secondRecord!.id).toBe(record.id);
-            expect(secondRecord!.name).toBe(record.name);
-            expect(secondRecord!.isActive).toBe(record.isActive);
-          }
-        }),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+        // Property: data state after second sync is identical to state after first sync
+        expect(stateAfterSecondSync.size).toBe(stateAfterFirstSync.size);
+        for (const [id, record] of stateAfterFirstSync.entries()) {
+          const secondRecord = stateAfterSecondSync.get(id);
+          expect(secondRecord).toBeDefined();
+          expect(secondRecord!.id).toBe(record.id);
+          expect(secondRecord!.name).toBe(record.name);
+          expect(secondRecord!.isActive).toBe(record.isActive);
+        }
+      }),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * After sync, the record count matches the number of unique IDs in the input
    * data — no duplicates are created regardless of how many times the sync runs.
    */
-  it(
-    'should have record count equal to unique input IDs after multiple syncs (no duplicates)',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(emsifaProvinceListArb, async (provinces) => {
-          const store = new InMemoryRegionStore();
+  it('should have record count equal to unique input IDs after multiple syncs (no duplicates)', async () => {
+    await fc.assert(
+      fc.asyncProperty(emsifaProvinceListArb, async (provinces) => {
+        const store = new InMemoryRegionStore();
 
-          // Run sync three times to ensure idempotency beyond two runs
-          simulateSyncUpsert(store, provinces);
-          simulateSyncUpsert(store, provinces);
-          simulateSyncUpsert(store, provinces);
+        // Run sync three times to ensure idempotency beyond two runs
+        simulateSyncUpsert(store, provinces);
+        simulateSyncUpsert(store, provinces);
+        simulateSyncUpsert(store, provinces);
 
-          // Expected unique IDs from input
-          const uniqueIds = new Set(provinces.map((p) => p.id));
+        // Expected unique IDs from input
+        const uniqueIds = new Set(provinces.map((p) => p.id));
 
-          // Property: record count equals unique input ID count
-          expect(store.getCount()).toBe(uniqueIds.size);
+        // Property: record count equals unique input ID count
+        expect(store.getCount()).toBe(uniqueIds.size);
 
-          // Property: all IDs in the store are unique (Map guarantees this, but verify)
-          const allRecords = store.getAll();
-          const storeIds = new Set(allRecords.map((r) => r.id));
-          expect(storeIds.size).toBe(allRecords.length);
-        }),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+        // Property: all IDs in the store are unique (Map guarantees this, but verify)
+        const allRecords = store.getAll();
+        const storeIds = new Set(allRecords.map((r) => r.id));
+        expect(storeIds.size).toBe(allRecords.length);
+      }),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * For input with duplicate IDs (same province appearing multiple times),
    * the upsert should keep only one record per unique ID — the last name wins.
    */
-  it(
-    'should handle duplicate IDs in input by keeping one record per unique ID with last name',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(emsifaProvinceListArb, async (provinces) => {
-          const store = new InMemoryRegionStore();
+  it('should handle duplicate IDs in input by keeping one record per unique ID with last name', async () => {
+    await fc.assert(
+      fc.asyncProperty(emsifaProvinceListArb, async (provinces) => {
+        const store = new InMemoryRegionStore();
 
-          // First sync
-          simulateSyncUpsert(store, provinces);
+        // First sync
+        simulateSyncUpsert(store, provinces);
 
-          // The expected final state: for each unique ID, the last occurrence's name wins
-          const expectedState = new Map<string, string>();
-          for (const prov of provinces) {
-            expectedState.set(prov.id, prov.name);
-          }
+        // The expected final state: for each unique ID, the last occurrence's name wins
+        const expectedState = new Map<string, string>();
+        for (const prov of provinces) {
+          expectedState.set(prov.id, prov.name);
+        }
 
-          // Verify record count matches unique IDs
-          expect(store.getCount()).toBe(expectedState.size);
+        // Verify record count matches unique IDs
+        expect(store.getCount()).toBe(expectedState.size);
 
-          // Verify each record has the correct (last) name
-          const allRecords = store.getAll();
-          for (const record of allRecords) {
-            expect(expectedState.has(record.id)).toBe(true);
-            expect(record.name).toBe(expectedState.get(record.id));
-          }
+        // Verify each record has the correct (last) name
+        const allRecords = store.getAll();
+        for (const record of allRecords) {
+          expect(expectedState.has(record.id)).toBe(true);
+          expect(record.name).toBe(expectedState.get(record.id));
+        }
 
-          // Run sync again — same result
-          simulateSyncUpsert(store, provinces);
-          expect(store.getCount()).toBe(expectedState.size);
-          const allRecordsAfterSecond = store.getAll();
-          for (const record of allRecordsAfterSecond) {
-            expect(record.name).toBe(expectedState.get(record.id));
-          }
-        }),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+        // Run sync again — same result
+        simulateSyncUpsert(store, provinces);
+        expect(store.getCount()).toBe(expectedState.size);
+        const allRecordsAfterSecond = store.getAll();
+        for (const record of allRecordsAfterSecond) {
+          expect(record.name).toBe(expectedState.get(record.id));
+        }
+      }),
+      { numRuns: 100 },
+    );
+  }, 60000);
 });
-
 
 // Feature: master-wilayah-indonesia, Property 2: EMSIFA ID Preservation Through Sync
 
@@ -1093,14 +1027,13 @@ describe('Property 2: EMSIFA ID Preservation Through Sync', () => {
     .map((s) => s.toUpperCase());
 
   // Generator for an array of EMSIFA province records with unique IDs
-  const emsifaProvincesArb = fc
-    .uniqueArray(
-      fc.record({
-        id: emsifaProvinceIdArb,
-        name: emsifaNameArb,
-      }),
-      { selector: (r) => r.id, minLength: 1, maxLength: 10 },
-    );
+  const emsifaProvincesArb = fc.uniqueArray(
+    fc.record({
+      id: emsifaProvinceIdArb,
+      name: emsifaNameArb,
+    }),
+    { selector: (r) => r.id, minLength: 1, maxLength: 10 },
+  );
 
   // Generator for an array of EMSIFA regency records with unique IDs
   const emsifaRegenciesArb = (provinceId: string) =>
@@ -1128,25 +1061,119 @@ describe('Property 2: EMSIFA ID Preservation Through Sync', () => {
    * every upsert call to prisma.provinsi.upsert SHALL have where.id and create.id
    * equal to the original EMSIFA province code.
    */
-  it(
-    'should preserve EMSIFA province IDs as primary keys through upsert',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(emsifaProvincesArb, async (provinces) => {
+  it('should preserve EMSIFA province IDs as primary keys through upsert', async () => {
+    await fc.assert(
+      fc.asyncProperty(emsifaProvincesArb, async (provinces) => {
+        // Track all upsert calls
+        const provinsiUpsertCalls: Array<{
+          where: any;
+          create: any;
+          update: any;
+        }> = [];
+
+        // Mock PrismaService
+        const mockPrisma = {
+          provinsi: {
+            upsert: jest.fn().mockImplementation((args) => {
+              provinsiUpsertCalls.push(args);
+              return Promise.resolve({
+                id: args.create.id,
+                name: args.create.name,
+              });
+            }),
+          },
+          kabupatenKota: {
+            findMany: jest.fn().mockResolvedValue([]),
+            upsert: jest.fn().mockResolvedValue({}),
+          },
+          kecamatan: {
+            findMany: jest.fn().mockResolvedValue([]),
+            upsert: jest.fn().mockResolvedValue({}),
+          },
+          kelurahanDesa: {
+            upsert: jest.fn().mockResolvedValue({}),
+          },
+        } as unknown as PrismaService;
+
+        // Mock global fetch to return generated provinces and empty arrays for sub-levels
+        global.fetch = jest.fn().mockImplementation((url: string) => {
+          if (url.includes('/provinces.json')) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve(provinces),
+            });
+          }
+          // Return empty arrays for regencies (no sub-levels to process)
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve([]),
+          });
+        });
+
+        const service = new RegionSyncService(mockPrisma);
+        await service.syncAll();
+
+        // Property: each upsert call's where.id and create.id must match the original EMSIFA code
+        expect(provinsiUpsertCalls.length).toBe(provinces.length);
+
+        for (let i = 0; i < provinces.length; i++) {
+          const originalId = provinces[i].id;
+          const upsertCall = provinsiUpsertCalls[i];
+
+          // where.id must equal the original EMSIFA code
+          expect(upsertCall.where.id).toBe(originalId);
+          // create.id must equal the original EMSIFA code
+          expect(upsertCall.create.id).toBe(originalId);
+        }
+      }),
+      { numRuns: 100 },
+    );
+  }, 60000);
+
+  /**
+   * For any array of generated EMSIFA regency records, after syncAll() processes them,
+   * every upsert call to prisma.kabupatenKota.upsert SHALL have where.id and create.id
+   * equal to the original EMSIFA regency code.
+   */
+  it('should preserve EMSIFA regency IDs as primary keys through upsert', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        emsifaProvincesArb.chain((provinces) => {
+          // For each province, generate regencies
+          if (provinces.length === 0) {
+            return fc.constant({
+              provinces,
+              regenciesByProvince: {},
+            });
+          }
+          // Use the first province to generate regencies
+          return emsifaRegenciesArb(provinces[0].id).map((regencies) => ({
+            provinces,
+            regenciesByProvince: { [provinces[0].id]: regencies },
+          }));
+        }),
+        async ({ provinces, regenciesByProvince }) => {
           // Track all upsert calls
-          const provinsiUpsertCalls: Array<{ where: any; create: any; update: any }> = [];
+          const kabupatenKotaUpsertCalls: Array<{
+            where: any;
+            create: any;
+            update: any;
+          }> = [];
 
           // Mock PrismaService
           const mockPrisma = {
             provinsi: {
-              upsert: jest.fn().mockImplementation((args) => {
-                provinsiUpsertCalls.push(args);
-                return Promise.resolve({ id: args.create.id, name: args.create.name });
-              }),
+              upsert: jest.fn().mockResolvedValue({}),
             },
             kabupatenKota: {
               findMany: jest.fn().mockResolvedValue([]),
-              upsert: jest.fn().mockResolvedValue({}),
+              upsert: jest.fn().mockImplementation((args) => {
+                kabupatenKotaUpsertCalls.push(args);
+                return Promise.resolve({
+                  id: args.create.id,
+                  name: args.create.name,
+                });
+              }),
             },
             kecamatan: {
               findMany: jest.fn().mockResolvedValue([]),
@@ -1157,7 +1184,7 @@ describe('Property 2: EMSIFA ID Preservation Through Sync', () => {
             },
           } as unknown as PrismaService;
 
-          // Mock global fetch to return generated provinces and empty arrays for sub-levels
+          // Mock global fetch
           global.fetch = jest.fn().mockImplementation((url: string) => {
             if (url.includes('/provinces.json')) {
               return Promise.resolve({
@@ -1165,133 +1192,50 @@ describe('Property 2: EMSIFA ID Preservation Through Sync', () => {
                 json: () => Promise.resolve(provinces),
               });
             }
-            // Return empty arrays for regencies (no sub-levels to process)
+            // Check if requesting regencies for a specific province
+            const regencyMatch = url.match(/\/regencies\/(\d+)\.json/);
+            if (regencyMatch) {
+              const provId = regencyMatch[1];
+              const regencies = regenciesByProvince[provId] || [];
+              return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(regencies),
+              });
+            }
+            // Return empty arrays for districts/villages
             return Promise.resolve({
               ok: true,
               json: () => Promise.resolve([]),
             });
-          }) as jest.Mock;
+          });
 
           const service = new RegionSyncService(mockPrisma);
           await service.syncAll();
 
-          // Property: each upsert call's where.id and create.id must match the original EMSIFA code
-          expect(provinsiUpsertCalls.length).toBe(provinces.length);
+          // Collect all expected regencies
+          const allExpectedRegencies =
+            Object.values(regenciesByProvince).flat();
 
-          for (let i = 0; i < provinces.length; i++) {
-            const originalId = provinces[i].id;
-            const upsertCall = provinsiUpsertCalls[i];
+          // Property: each upsert call's where.id and create.id must match the original EMSIFA code
+          expect(kabupatenKotaUpsertCalls.length).toBe(
+            allExpectedRegencies.length,
+          );
+
+          for (let i = 0; i < allExpectedRegencies.length; i++) {
+            const originalId = allExpectedRegencies[i].id;
+            const upsertCall = kabupatenKotaUpsertCalls[i];
 
             // where.id must equal the original EMSIFA code
             expect(upsertCall.where.id).toBe(originalId);
             // create.id must equal the original EMSIFA code
             expect(upsertCall.create.id).toBe(originalId);
           }
-        }),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
-
-  /**
-   * For any array of generated EMSIFA regency records, after syncAll() processes them,
-   * every upsert call to prisma.kabupatenKota.upsert SHALL have where.id and create.id
-   * equal to the original EMSIFA regency code.
-   */
-  it(
-    'should preserve EMSIFA regency IDs as primary keys through upsert',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          emsifaProvincesArb.chain((provinces) => {
-            // For each province, generate regencies
-            if (provinces.length === 0) {
-              return fc.constant({ provinces, regenciesByProvince: {} as Record<string, Array<{ id: string; name: string; province_id: string }>> });
-            }
-            // Use the first province to generate regencies
-            return emsifaRegenciesArb(provinces[0].id).map((regencies) => ({
-              provinces,
-              regenciesByProvince: { [provinces[0].id]: regencies } as Record<string, Array<{ id: string; name: string; province_id: string }>>,
-            }));
-          }),
-          async ({ provinces, regenciesByProvince }) => {
-            // Track all upsert calls
-            const kabupatenKotaUpsertCalls: Array<{ where: any; create: any; update: any }> = [];
-
-            // Mock PrismaService
-            const mockPrisma = {
-              provinsi: {
-                upsert: jest.fn().mockResolvedValue({}),
-              },
-              kabupatenKota: {
-                findMany: jest.fn().mockResolvedValue([]),
-                upsert: jest.fn().mockImplementation((args) => {
-                  kabupatenKotaUpsertCalls.push(args);
-                  return Promise.resolve({ id: args.create.id, name: args.create.name });
-                }),
-              },
-              kecamatan: {
-                findMany: jest.fn().mockResolvedValue([]),
-                upsert: jest.fn().mockResolvedValue({}),
-              },
-              kelurahanDesa: {
-                upsert: jest.fn().mockResolvedValue({}),
-              },
-            } as unknown as PrismaService;
-
-            // Mock global fetch
-            global.fetch = jest.fn().mockImplementation((url: string) => {
-              if (url.includes('/provinces.json')) {
-                return Promise.resolve({
-                  ok: true,
-                  json: () => Promise.resolve(provinces),
-                });
-              }
-              // Check if requesting regencies for a specific province
-              const regencyMatch = url.match(/\/regencies\/(\d+)\.json/);
-              if (regencyMatch) {
-                const provId = regencyMatch[1];
-                const regencies = regenciesByProvince[provId] || [];
-                return Promise.resolve({
-                  ok: true,
-                  json: () => Promise.resolve(regencies),
-                });
-              }
-              // Return empty arrays for districts/villages
-              return Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve([]),
-              });
-            }) as jest.Mock;
-
-            const service = new RegionSyncService(mockPrisma);
-            await service.syncAll();
-
-            // Collect all expected regencies
-            const allExpectedRegencies = Object.values(regenciesByProvince).flat();
-
-            // Property: each upsert call's where.id and create.id must match the original EMSIFA code
-            expect(kabupatenKotaUpsertCalls.length).toBe(allExpectedRegencies.length);
-
-            for (let i = 0; i < allExpectedRegencies.length; i++) {
-              const originalId = allExpectedRegencies[i].id;
-              const upsertCall = kabupatenKotaUpsertCalls[i];
-
-              // where.id must equal the original EMSIFA code
-              expect(upsertCall.where.id).toBe(originalId);
-              // create.id must equal the original EMSIFA code
-              expect(upsertCall.create.id).toBe(originalId);
-            }
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 });
-
 
 // Feature: master-wilayah-indonesia, Property 3: Upsert Preserves isActive Flag
 
@@ -1314,7 +1258,9 @@ describe('Property 2: EMSIFA ID Preservation Through Sync', () => {
  */
 const prop3ProvinceArb = fc.record({
   id: fc.stringMatching(/^\d{2}$/),
-  name: fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0),
+  name: fc
+    .string({ minLength: 1, maxLength: 50 })
+    .filter((s) => s.trim().length > 0),
 });
 
 describe('Property 3: Upsert Preserves isActive Flag', () => {
@@ -1323,340 +1269,362 @@ describe('Property 3: Upsert Preserves isActive Flag', () => {
    * SHALL only contain `name` and SHALL NOT contain `isActive`.
    * This ensures existing isActive values are never overwritten during sync.
    */
-  it(
-    'should only update name and never include isActive in the upsert update object',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.array(prop3ProvinceArb, { minLength: 1, maxLength: 20 }),
-          async (provinces) => {
-            // Ensure unique IDs to avoid duplicate test inputs
-            const uniqueProvinces = provinces.filter(
-              (p, i, arr) => arr.findIndex((x) => x.id === p.id) === i,
-            );
-            if (uniqueProvinces.length === 0) return;
+  it('should only update name and never include isActive in the upsert update object', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(prop3ProvinceArb, { minLength: 1, maxLength: 20 }),
+        async (provinces) => {
+          // Ensure unique IDs to avoid duplicate test inputs
+          const uniqueProvinces = provinces.filter(
+            (p, i, arr) => arr.findIndex((x) => x.id === p.id) === i,
+          );
+          if (uniqueProvinces.length === 0) return;
 
-            // Track all upsert calls to verify the update argument
-            const upsertCalls: Array<{ where: any; update: any; create: any }> = [];
+          // Track all upsert calls to verify the update argument
+          const upsertCalls: Array<{ where: any; update: any; create: any }> =
+            [];
 
-            const mockPrisma = {
-              provinsi: {
-                upsert: jest.fn().mockImplementation((args) => {
-                  upsertCalls.push(args);
-                  return Promise.resolve({ id: args.create.id, name: args.update.name });
-                }),
-              },
-              kabupatenKota: {
-                findMany: jest.fn().mockResolvedValue([]),
-                upsert: jest.fn().mockResolvedValue({}),
-              },
-              kecamatan: {
-                findMany: jest.fn().mockResolvedValue([]),
-                upsert: jest.fn().mockResolvedValue({}),
-              },
-              kelurahanDesa: {
-                upsert: jest.fn().mockResolvedValue({}),
-              },
-            } as unknown as PrismaService;
-
-            // Mock global fetch to return our generated provinces at the top level
-            // and empty arrays for child levels
-            const mockFetch = jest.fn().mockImplementation((url: string) => {
-              if (url.includes('/provinces.json')) {
+          const mockPrisma = {
+            provinsi: {
+              upsert: jest.fn().mockImplementation((args) => {
+                upsertCalls.push(args);
                 return Promise.resolve({
-                  ok: true,
-                  json: () => Promise.resolve(uniqueProvinces),
+                  id: args.create.id,
+                  name: args.update.name,
                 });
-              }
-              // Return empty arrays for regencies/districts/villages
+              }),
+            },
+            kabupatenKota: {
+              findMany: jest.fn().mockResolvedValue([]),
+              upsert: jest.fn().mockResolvedValue({}),
+            },
+            kecamatan: {
+              findMany: jest.fn().mockResolvedValue([]),
+              upsert: jest.fn().mockResolvedValue({}),
+            },
+            kelurahanDesa: {
+              upsert: jest.fn().mockResolvedValue({}),
+            },
+          } as unknown as PrismaService;
+
+          // Mock global fetch to return our generated provinces at the top level
+          // and empty arrays for child levels
+          const mockFetch = jest.fn().mockImplementation((url: string) => {
+            if (url.includes('/provinces.json')) {
               return Promise.resolve({
                 ok: true,
-                json: () => Promise.resolve([]),
+                json: () => Promise.resolve(uniqueProvinces),
               });
-            });
-
-            const originalFetch = global.fetch;
-            global.fetch = mockFetch as any;
-
-            try {
-              const syncService = new RegionSyncService(mockPrisma);
-              await syncService.syncAll();
-
-              // Verify that upsert was called for each province
-              expect(upsertCalls.length).toBe(uniqueProvinces.length);
-
-              // Property: For EVERY upsert call, the `update` object must contain
-              // `name` and must NOT contain `isActive`
-              for (const call of upsertCalls) {
-                // The update object should contain name
-                expect(call.update).toHaveProperty('name');
-                // The update object must NOT contain isActive
-                expect(call.update).not.toHaveProperty('isActive');
-
-                // Verify the update object only has the expected keys
-                const updateKeys = Object.keys(call.update);
-                expect(updateKeys).toEqual(['name']);
-              }
-            } finally {
-              global.fetch = originalFetch;
             }
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+            // Return empty arrays for regencies/districts/villages
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve([]),
+            });
+          });
+
+          const originalFetch = global.fetch;
+          global.fetch = mockFetch as any;
+
+          try {
+            const syncService = new RegionSyncService(mockPrisma);
+            await syncService.syncAll();
+
+            // Verify that upsert was called for each province
+            expect(upsertCalls.length).toBe(uniqueProvinces.length);
+
+            // Property: For EVERY upsert call, the `update` object must contain
+            // `name` and must NOT contain `isActive`
+            for (const call of upsertCalls) {
+              // The update object should contain name
+              expect(call.update).toHaveProperty('name');
+              // The update object must NOT contain isActive
+              expect(call.update).not.toHaveProperty('isActive');
+
+              // Verify the update object only has the expected keys
+              const updateKeys = Object.keys(call.update);
+              expect(updateKeys).toEqual(['name']);
+            }
+          } finally {
+            global.fetch = originalFetch;
+          }
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * For any existing region records with random isActive values, when the sync
    * service upserts them, the name in the update object SHALL match the EMSIFA
    * data while isActive is never touched.
    */
-  it(
-    'should update name to match EMSIFA data while preserving isActive for existing records',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.array(
-            fc.record({
-              id: fc.stringMatching(/^\d{2}$/),
-              existingName: fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0),
-              newName: fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0),
-              isActive: fc.boolean(),
-            }),
-            { minLength: 1, maxLength: 15 },
-          ),
-          async (records) => {
-            // Ensure unique IDs
-            const uniqueRecords = records.filter(
-              (r, i, arr) => arr.findIndex((x) => x.id === r.id) === i,
-            );
-            if (uniqueRecords.length === 0) return;
+  it('should update name to match EMSIFA data while preserving isActive for existing records', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(
+          fc.record({
+            id: fc.stringMatching(/^\d{2}$/),
+            existingName: fc
+              .string({ minLength: 1, maxLength: 50 })
+              .filter((s) => s.trim().length > 0),
+            newName: fc
+              .string({ minLength: 1, maxLength: 50 })
+              .filter((s) => s.trim().length > 0),
+            isActive: fc.boolean(),
+          }),
+          { minLength: 1, maxLength: 15 },
+        ),
+        async (records) => {
+          // Ensure unique IDs
+          const uniqueRecords = records.filter(
+            (r, i, arr) => arr.findIndex((x) => x.id === r.id) === i,
+          );
+          if (uniqueRecords.length === 0) return;
 
-            // EMSIFA data to sync (with new names)
-            const emsifaData = uniqueRecords.map((r) => ({
-              id: r.id,
-              name: r.newName,
-            }));
+          // EMSIFA data to sync (with new names)
+          const emsifaData = uniqueRecords.map((r) => ({
+            id: r.id,
+            name: r.newName,
+          }));
 
-            // Track upsert calls
-            const upsertCalls: Array<{ where: any; update: any; create: any }> = [];
+          // Track upsert calls
+          const upsertCalls: Array<{ where: any; update: any; create: any }> =
+            [];
 
-            const mockPrisma = {
-              provinsi: {
-                upsert: jest.fn().mockImplementation((args) => {
-                  upsertCalls.push(args);
-                  return Promise.resolve({ id: args.create.id, name: args.update.name });
-                }),
-              },
-              kabupatenKota: {
-                findMany: jest.fn().mockResolvedValue([]),
-                upsert: jest.fn().mockResolvedValue({}),
-              },
-              kecamatan: {
-                findMany: jest.fn().mockResolvedValue([]),
-                upsert: jest.fn().mockResolvedValue({}),
-              },
-              kelurahanDesa: {
-                upsert: jest.fn().mockResolvedValue({}),
-              },
-            } as unknown as PrismaService;
-
-            const mockFetch = jest.fn().mockImplementation((url: string) => {
-              if (url.includes('/provinces.json')) {
+          const mockPrisma = {
+            provinsi: {
+              upsert: jest.fn().mockImplementation((args) => {
+                upsertCalls.push(args);
                 return Promise.resolve({
-                  ok: true,
-                  json: () => Promise.resolve(emsifaData),
+                  id: args.create.id,
+                  name: args.update.name,
                 });
-              }
+              }),
+            },
+            kabupatenKota: {
+              findMany: jest.fn().mockResolvedValue([]),
+              upsert: jest.fn().mockResolvedValue({}),
+            },
+            kecamatan: {
+              findMany: jest.fn().mockResolvedValue([]),
+              upsert: jest.fn().mockResolvedValue({}),
+            },
+            kelurahanDesa: {
+              upsert: jest.fn().mockResolvedValue({}),
+            },
+          } as unknown as PrismaService;
+
+          const mockFetch = jest.fn().mockImplementation((url: string) => {
+            if (url.includes('/provinces.json')) {
               return Promise.resolve({
                 ok: true,
-                json: () => Promise.resolve([]),
+                json: () => Promise.resolve(emsifaData),
               });
-            });
-
-            const originalFetch = global.fetch;
-            global.fetch = mockFetch as any;
-
-            try {
-              const syncService = new RegionSyncService(mockPrisma);
-              await syncService.syncAll();
-
-              // For each upsert call, verify:
-              // 1. The update.name matches the EMSIFA new name
-              // 2. isActive is NOT in the update object
-              for (let i = 0; i < upsertCalls.length; i++) {
-                const call = upsertCalls[i];
-                const matchingEmsifa = emsifaData.find(
-                  (e) => e.id === call.where.id,
-                );
-
-                // Name should be updated to match EMSIFA data
-                expect(call.update.name).toBe(matchingEmsifa!.name);
-
-                // isActive must NOT be in the update — preserving whatever the DB has
-                expect(call.update).not.toHaveProperty('isActive');
-                expect(Object.keys(call.update)).toEqual(['name']);
-              }
-            } finally {
-              global.fetch = originalFetch;
             }
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve([]),
+            });
+          });
+
+          const originalFetch = global.fetch;
+          global.fetch = mockFetch as any;
+
+          try {
+            const syncService = new RegionSyncService(mockPrisma);
+            await syncService.syncAll();
+
+            // For each upsert call, verify:
+            // 1. The update.name matches the EMSIFA new name
+            // 2. isActive is NOT in the update object
+            for (let i = 0; i < upsertCalls.length; i++) {
+              const call = upsertCalls[i];
+              const matchingEmsifa = emsifaData.find(
+                (e) => e.id === call.where.id,
+              );
+
+              // Name should be updated to match EMSIFA data
+              expect(call.update.name).toBe(matchingEmsifa!.name);
+
+              // isActive must NOT be in the update — preserving whatever the DB has
+              expect(call.update).not.toHaveProperty('isActive');
+              expect(Object.keys(call.update)).toEqual(['name']);
+            }
+          } finally {
+            global.fetch = originalFetch;
+          }
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * Verifies the property holds for all region levels (KabupatenKota, Kecamatan,
    * KelurahanDesa), not just Provinsi. The upsert update object at every level
    * must only contain `name` and never `isActive`.
    */
-  it(
-    'should preserve isActive across all region levels (kabupatenKota, kecamatan, kelurahanDesa)',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.record({
-            provinceId: fc.stringMatching(/^\d{2}$/),
-            provinceName: fc.string({ minLength: 1, maxLength: 30 }).filter((s) => s.trim().length > 0),
-            regencyId: fc.stringMatching(/^\d{4}$/),
-            regencyName: fc.string({ minLength: 1, maxLength: 30 }).filter((s) => s.trim().length > 0),
-            districtId: fc.stringMatching(/^\d{6}$/),
-            districtName: fc.string({ minLength: 1, maxLength: 30 }).filter((s) => s.trim().length > 0),
-            villageId: fc.stringMatching(/^\d{10}$/),
-            villageName: fc.string({ minLength: 1, maxLength: 30 }).filter((s) => s.trim().length > 0),
-          }),
-          async (data) => {
-            // Track upsert calls per level
-            const provinsiUpserts: any[] = [];
-            const kabupatenKotaUpserts: any[] = [];
-            const kecamatanUpserts: any[] = [];
-            const kelurahanDesaUpserts: any[] = [];
+  it('should preserve isActive across all region levels (kabupatenKota, kecamatan, kelurahanDesa)', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.record({
+          provinceId: fc.stringMatching(/^\d{2}$/),
+          provinceName: fc
+            .string({ minLength: 1, maxLength: 30 })
+            .filter((s) => s.trim().length > 0),
+          regencyId: fc.stringMatching(/^\d{4}$/),
+          regencyName: fc
+            .string({ minLength: 1, maxLength: 30 })
+            .filter((s) => s.trim().length > 0),
+          districtId: fc.stringMatching(/^\d{6}$/),
+          districtName: fc
+            .string({ minLength: 1, maxLength: 30 })
+            .filter((s) => s.trim().length > 0),
+          villageId: fc.stringMatching(/^\d{10}$/),
+          villageName: fc
+            .string({ minLength: 1, maxLength: 30 })
+            .filter((s) => s.trim().length > 0),
+        }),
+        async (data) => {
+          // Track upsert calls per level
+          const provinsiUpserts: any[] = [];
+          const kabupatenKotaUpserts: any[] = [];
+          const kecamatanUpserts: any[] = [];
+          const kelurahanDesaUpserts: any[] = [];
 
-            const mockPrisma = {
-              provinsi: {
-                upsert: jest.fn().mockImplementation((args) => {
-                  provinsiUpserts.push(args);
-                  return Promise.resolve({ id: args.create.id, name: args.update.name });
-                }),
-              },
-              kabupatenKota: {
-                findMany: jest.fn().mockResolvedValue([{ id: data.regencyId }]),
-                upsert: jest.fn().mockImplementation((args) => {
-                  kabupatenKotaUpserts.push(args);
-                  return Promise.resolve({ id: args.create.id, name: args.update.name });
-                }),
-              },
-              kecamatan: {
-                findMany: jest.fn().mockResolvedValue([{ id: data.districtId }]),
-                upsert: jest.fn().mockImplementation((args) => {
-                  kecamatanUpserts.push(args);
-                  return Promise.resolve({ id: args.create.id, name: args.update.name });
-                }),
-              },
-              kelurahanDesa: {
-                upsert: jest.fn().mockImplementation((args) => {
-                  kelurahanDesaUpserts.push(args);
-                  return Promise.resolve({ id: args.create.id, name: args.update.name });
-                }),
-              },
-            } as unknown as PrismaService;
+          const mockPrisma = {
+            provinsi: {
+              upsert: jest.fn().mockImplementation((args) => {
+                provinsiUpserts.push(args);
+                return Promise.resolve({
+                  id: args.create.id,
+                  name: args.update.name,
+                });
+              }),
+            },
+            kabupatenKota: {
+              findMany: jest.fn().mockResolvedValue([{ id: data.regencyId }]),
+              upsert: jest.fn().mockImplementation((args) => {
+                kabupatenKotaUpserts.push(args);
+                return Promise.resolve({
+                  id: args.create.id,
+                  name: args.update.name,
+                });
+              }),
+            },
+            kecamatan: {
+              findMany: jest.fn().mockResolvedValue([{ id: data.districtId }]),
+              upsert: jest.fn().mockImplementation((args) => {
+                kecamatanUpserts.push(args);
+                return Promise.resolve({
+                  id: args.create.id,
+                  name: args.update.name,
+                });
+              }),
+            },
+            kelurahanDesa: {
+              upsert: jest.fn().mockImplementation((args) => {
+                kelurahanDesaUpserts.push(args);
+                return Promise.resolve({
+                  id: args.create.id,
+                  name: args.update.name,
+                });
+              }),
+            },
+          } as unknown as PrismaService;
 
-            const mockFetch = jest.fn().mockImplementation((url: string) => {
-              if (url.includes('/provinces.json')) {
-                return Promise.resolve({
-                  ok: true,
-                  json: () =>
-                    Promise.resolve([{ id: data.provinceId, name: data.provinceName }]),
-                });
-              }
-              if (url.includes('/regencies/')) {
-                return Promise.resolve({
-                  ok: true,
-                  json: () =>
-                    Promise.resolve([
-                      {
-                        id: data.regencyId,
-                        province_id: data.provinceId,
-                        name: data.regencyName,
-                      },
-                    ]),
-                });
-              }
-              if (url.includes('/districts/')) {
-                return Promise.resolve({
-                  ok: true,
-                  json: () =>
-                    Promise.resolve([
-                      {
-                        id: data.districtId,
-                        regency_id: data.regencyId,
-                        name: data.districtName,
-                      },
-                    ]),
-                });
-              }
-              if (url.includes('/villages/')) {
-                return Promise.resolve({
-                  ok: true,
-                  json: () =>
-                    Promise.resolve([
-                      {
-                        id: data.villageId,
-                        district_id: data.districtId,
-                        name: data.villageName,
-                      },
-                    ]),
-                });
-              }
+          const mockFetch = jest.fn().mockImplementation((url: string) => {
+            if (url.includes('/provinces.json')) {
               return Promise.resolve({
                 ok: true,
-                json: () => Promise.resolve([]),
+                json: () =>
+                  Promise.resolve([
+                    { id: data.provinceId, name: data.provinceName },
+                  ]),
               });
-            });
-
-            const originalFetch = global.fetch;
-            global.fetch = mockFetch as any;
-
-            try {
-              const syncService = new RegionSyncService(mockPrisma);
-              await syncService.syncAll();
-
-              // Verify Provinsi upserts: update only has name
-              for (const call of provinsiUpserts) {
-                expect(Object.keys(call.update)).toEqual(['name']);
-                expect(call.update).not.toHaveProperty('isActive');
-              }
-
-              // Verify KabupatenKota upserts: update only has name
-              for (const call of kabupatenKotaUpserts) {
-                expect(Object.keys(call.update)).toEqual(['name']);
-                expect(call.update).not.toHaveProperty('isActive');
-              }
-
-              // Verify Kecamatan upserts: update only has name
-              for (const call of kecamatanUpserts) {
-                expect(Object.keys(call.update)).toEqual(['name']);
-                expect(call.update).not.toHaveProperty('isActive');
-              }
-
-              // Verify KelurahanDesa upserts: update only has name
-              for (const call of kelurahanDesaUpserts) {
-                expect(Object.keys(call.update)).toEqual(['name']);
-                expect(call.update).not.toHaveProperty('isActive');
-              }
-            } finally {
-              global.fetch = originalFetch;
             }
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+            if (url.includes('/regencies/')) {
+              return Promise.resolve({
+                ok: true,
+                json: () =>
+                  Promise.resolve([
+                    {
+                      id: data.regencyId,
+                      province_id: data.provinceId,
+                      name: data.regencyName,
+                    },
+                  ]),
+              });
+            }
+            if (url.includes('/districts/')) {
+              return Promise.resolve({
+                ok: true,
+                json: () =>
+                  Promise.resolve([
+                    {
+                      id: data.districtId,
+                      regency_id: data.regencyId,
+                      name: data.districtName,
+                    },
+                  ]),
+              });
+            }
+            if (url.includes('/villages/')) {
+              return Promise.resolve({
+                ok: true,
+                json: () =>
+                  Promise.resolve([
+                    {
+                      id: data.villageId,
+                      district_id: data.districtId,
+                      name: data.villageName,
+                    },
+                  ]),
+              });
+            }
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve([]),
+            });
+          });
+
+          const originalFetch = global.fetch;
+          global.fetch = mockFetch as any;
+
+          try {
+            const syncService = new RegionSyncService(mockPrisma);
+            await syncService.syncAll();
+
+            // Verify Provinsi upserts: update only has name
+            for (const call of provinsiUpserts) {
+              expect(Object.keys(call.update)).toEqual(['name']);
+              expect(call.update).not.toHaveProperty('isActive');
+            }
+
+            // Verify KabupatenKota upserts: update only has name
+            for (const call of kabupatenKotaUpserts) {
+              expect(Object.keys(call.update)).toEqual(['name']);
+              expect(call.update).not.toHaveProperty('isActive');
+            }
+
+            // Verify Kecamatan upserts: update only has name
+            for (const call of kecamatanUpserts) {
+              expect(Object.keys(call.update)).toEqual(['name']);
+              expect(call.update).not.toHaveProperty('isActive');
+            }
+
+            // Verify KelurahanDesa upserts: update only has name
+            for (const call of kelurahanDesaUpserts) {
+              expect(Object.keys(call.update)).toEqual(['name']);
+              expect(call.update).not.toHaveProperty('isActive');
+            }
+          } finally {
+            global.fetch = originalFetch;
+          }
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 });

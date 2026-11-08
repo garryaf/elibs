@@ -27,7 +27,12 @@ describe('UILayerInspector', () => {
     it('should return ABSENT status', async () => {
       const target: InspectionTarget = {
         layer: 'UI',
-        patterns: [{ glob: 'apps/web/src/components/patients/**/*.tsx', purpose: 'Patient pages' }],
+        patterns: [
+          {
+            glob: 'apps/web/src/components/patients/**/*.tsx',
+            purpose: 'Patient pages',
+          },
+        ],
         requiredArtifacts: [],
       };
 
@@ -41,11 +46,19 @@ describe('UILayerInspector', () => {
 
   describe('when files match but no required artifacts defined', () => {
     it('should return PRESENT status based on file existence', async () => {
-      createFile('apps/web/src/components/patients/PatientList.tsx', 'export default function PatientList() { return <div />; }');
+      createFile(
+        'apps/web/src/components/patients/PatientList.tsx',
+        'export default function PatientList() { return <div />; }',
+      );
 
       const target: InspectionTarget = {
         layer: 'UI',
-        patterns: [{ glob: 'apps/web/src/components/patients/**/*.tsx', purpose: 'Patient pages' }],
+        patterns: [
+          {
+            glob: 'apps/web/src/components/patients/**/*.tsx',
+            purpose: 'Patient pages',
+          },
+        ],
         requiredArtifacts: [],
       };
 
@@ -88,12 +101,26 @@ export default function PatientsPage() {
       const target: InspectionTarget = {
         layer: 'UI',
         patterns: [
-          { glob: 'apps/web/src/components/patients/**/*.tsx', purpose: 'Patient components' },
-          { glob: 'apps/web/src/app/dashboard/patients/**/*.tsx', purpose: 'Patient pages' },
+          {
+            glob: 'apps/web/src/components/patients/**/*.tsx',
+            purpose: 'Patient components',
+          },
+          {
+            glob: 'apps/web/src/app/dashboard/patients/**/*.tsx',
+            purpose: 'Patient pages',
+          },
         ],
         requiredArtifacts: [
-          { description: 'Form component', searchPattern: '<form|useForm|<Form', layer: 'UI' },
-          { description: 'Page component', searchPattern: 'export default function', layer: 'UI' },
+          {
+            description: 'Form component',
+            searchPattern: '<form|useForm|<Form',
+            layer: 'UI',
+          },
+          {
+            description: 'Page component',
+            searchPattern: 'export default function',
+            layer: 'UI',
+          },
         ],
       };
 
@@ -102,7 +129,9 @@ export default function PatientsPage() {
       expect(result.layer).toBe('UI');
       expect(result.status).toBe('PRESENT');
       expect(result.filePath).toBeDefined();
-      expect(result.evidence).toContain('Found: Form component, Page component');
+      expect(result.evidence).toContain(
+        'Found: Form component, Page component',
+      );
     });
   });
 
@@ -120,12 +149,27 @@ export default function PatientsPage() {
       const target: InspectionTarget = {
         layer: 'UI',
         patterns: [
-          { glob: 'apps/web/src/app/dashboard/patients/**/*.tsx', purpose: 'Patient pages' },
+          {
+            glob: 'apps/web/src/app/dashboard/patients/**/*.tsx',
+            purpose: 'Patient pages',
+          },
         ],
         requiredArtifacts: [
-          { description: 'Form component', searchPattern: '<form|useForm|<Form', layer: 'UI' },
-          { description: 'Page component', searchPattern: 'export default function', layer: 'UI' },
-          { description: 'Route definition', searchPattern: "path:\\s*['\"/]patients", layer: 'UI' },
+          {
+            description: 'Form component',
+            searchPattern: '<form|useForm|<Form',
+            layer: 'UI',
+          },
+          {
+            description: 'Page component',
+            searchPattern: 'export default function',
+            layer: 'UI',
+          },
+          {
+            description: 'Route definition',
+            searchPattern: 'path:\\s*[\'"/]patients',
+            layer: 'UI',
+          },
         ],
       };
 
@@ -134,7 +178,9 @@ export default function PatientsPage() {
       expect(result.layer).toBe('UI');
       expect(result.status).toBe('PARTIAL');
       expect(result.evidence).toContain('Found: Page component');
-      expect(result.evidence).toContain('Missing: Form component, Route definition');
+      expect(result.evidence).toContain(
+        'Missing: Form component, Route definition',
+      );
     });
   });
 
@@ -148,11 +194,22 @@ export default function PatientsPage() {
       const target: InspectionTarget = {
         layer: 'UI',
         patterns: [
-          { glob: 'apps/web/src/components/patients/**/*.tsx', purpose: 'Patient components' },
+          {
+            glob: 'apps/web/src/components/patients/**/*.tsx',
+            purpose: 'Patient components',
+          },
         ],
         requiredArtifacts: [
-          { description: 'Form component', searchPattern: '<form|useForm|<Form', layer: 'UI' },
-          { description: 'Route definition', searchPattern: "path:\\s*['\"/]patients", layer: 'UI' },
+          {
+            description: 'Form component',
+            searchPattern: '<form|useForm|<Form',
+            layer: 'UI',
+          },
+          {
+            description: 'Route definition',
+            searchPattern: 'path:\\s*[\'"/]patients',
+            layer: 'UI',
+          },
         ],
       };
 
@@ -160,7 +217,9 @@ export default function PatientsPage() {
 
       expect(result.layer).toBe('UI');
       expect(result.status).toBe('ABSENT');
-      expect(result.evidence).toContain('Missing: Form component, Route definition');
+      expect(result.evidence).toContain(
+        'Missing: Form component, Route definition',
+      );
     });
   });
 
@@ -179,10 +238,17 @@ export default function PatientsPage() {
       const target: InspectionTarget = {
         layer: 'UI',
         patterns: [
-          { glob: 'apps/web/src/app/dashboard/patients/**/*.tsx', purpose: 'Patient pages' },
+          {
+            glob: 'apps/web/src/app/dashboard/patients/**/*.tsx',
+            purpose: 'Patient pages',
+          },
         ],
         requiredArtifacts: [
-          { description: 'Page export', searchPattern: 'export default function', layer: 'UI' },
+          {
+            description: 'Page export',
+            searchPattern: 'export default function',
+            layer: 'UI',
+          },
         ],
       };
 
@@ -204,7 +270,11 @@ import { Route } from 'react-router-dom';
         layer: 'UI',
         patterns: [{ glob: 'apps/web/src/**/*.tsx', purpose: 'Route files' }],
         requiredArtifacts: [
-          { description: 'Route definition', searchPattern: '<Route\\s+path=', layer: 'UI' },
+          {
+            description: 'Route definition',
+            searchPattern: '<Route\\s+path=',
+            layer: 'UI',
+          },
         ],
       };
 
@@ -226,7 +296,12 @@ export function PatientForm() { const form = useForm(); return null; }
 
       const target: InspectionTarget = {
         layer: 'UI',
-        patterns: [{ glob: 'apps/web/src/components/patients/**/*.tsx', purpose: 'Patient forms' }],
+        patterns: [
+          {
+            glob: 'apps/web/src/components/patients/**/*.tsx',
+            purpose: 'Patient forms',
+          },
+        ],
         requiredArtifacts: [
           { description: 'Form usage', searchPattern: 'useForm', layer: 'UI' },
         ],
@@ -246,7 +321,12 @@ export function PatientForm() { const form = useForm(); return null; }
 
       const target: InspectionTarget = {
         layer: 'UI',
-        patterns: [{ glob: 'apps/web/src/components/patients/**/*.tsx', purpose: 'Patient forms' }],
+        patterns: [
+          {
+            glob: 'apps/web/src/components/patients/**/*.tsx',
+            purpose: 'Patient forms',
+          },
+        ],
         requiredArtifacts: [
           { description: 'HTML form', searchPattern: '<form', layer: 'UI' },
         ],
@@ -260,13 +340,25 @@ export function PatientForm() { const form = useForm(); return null; }
 
   describe('error handling', () => {
     it('should handle invalid regex patterns gracefully', async () => {
-      createFile('apps/web/src/components/patients/page.tsx', 'export default function() {}');
+      createFile(
+        'apps/web/src/components/patients/page.tsx',
+        'export default function() {}',
+      );
 
       const target: InspectionTarget = {
         layer: 'UI',
-        patterns: [{ glob: 'apps/web/src/components/patients/**/*.tsx', purpose: 'Pages' }],
+        patterns: [
+          {
+            glob: 'apps/web/src/components/patients/**/*.tsx',
+            purpose: 'Pages',
+          },
+        ],
         requiredArtifacts: [
-          { description: 'Bad pattern', searchPattern: '[invalid(regex', layer: 'UI' },
+          {
+            description: 'Bad pattern',
+            searchPattern: '[invalid(regex',
+            layer: 'UI',
+          },
         ],
       };
 
@@ -293,14 +385,22 @@ export function PatientForm() { const form = useForm(); return null; }
 
     it('should report issues when files cannot be read', async () => {
       // Create a file then make it unreadable
-      const filePath = path.join(tmpDir, 'apps/web/src/components/patients/locked.tsx');
+      const filePath = path.join(
+        tmpDir,
+        'apps/web/src/components/patients/locked.tsx',
+      );
       fs.mkdirSync(path.dirname(filePath), { recursive: true });
       fs.writeFileSync(filePath, 'content');
       fs.chmodSync(filePath, 0o000);
 
       const target: InspectionTarget = {
         layer: 'UI',
-        patterns: [{ glob: 'apps/web/src/components/patients/**/*.tsx', purpose: 'Pages' }],
+        patterns: [
+          {
+            glob: 'apps/web/src/components/patients/**/*.tsx',
+            purpose: 'Pages',
+          },
+        ],
         requiredArtifacts: [
           { description: 'Export', searchPattern: 'export', layer: 'UI' },
         ],
@@ -313,7 +413,9 @@ export function PatientForm() { const form = useForm(); return null; }
 
       expect(result.status).toBe('ABSENT');
       expect(result.issues).toBeDefined();
-      expect(result.issues!.some((i) => i.includes('Error reading file'))).toBe(true);
+      expect(result.issues!.some((i) => i.includes('Error reading file'))).toBe(
+        true,
+      );
     });
   });
 
@@ -331,12 +433,22 @@ export function PatientForm() { const form = useForm(); return null; }
       const target: InspectionTarget = {
         layer: 'UI',
         patterns: [
-          { glob: 'apps/web/src/components/patients/**/*.tsx', purpose: 'Components' },
-          { glob: 'apps/web/src/app/dashboard/patients/**/*.tsx', purpose: 'Pages' },
+          {
+            glob: 'apps/web/src/components/patients/**/*.tsx',
+            purpose: 'Components',
+          },
+          {
+            glob: 'apps/web/src/app/dashboard/patients/**/*.tsx',
+            purpose: 'Pages',
+          },
         ],
         requiredArtifacts: [
           { description: 'Form tag', searchPattern: '<form', layer: 'UI' },
-          { description: 'Page export', searchPattern: 'export default function', layer: 'UI' },
+          {
+            description: 'Page export',
+            searchPattern: 'export default function',
+            layer: 'UI',
+          },
         ],
       };
 

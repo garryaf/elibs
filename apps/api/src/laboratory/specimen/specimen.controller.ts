@@ -52,9 +52,7 @@ export class SpecimenController {
   @Get('specimens/:id')
   @Roles(Role.ADMIN, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get specimen detail by ID' })
-  async getSpecimenDetail(
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  async getSpecimenDetail(@Param('id', ParseUUIDPipe) id: string) {
     return this.specimenService.getSpecimenById(id);
   }
 
@@ -71,17 +69,9 @@ export class SpecimenController {
   }
 
   @Get('orders/:orderId/specimens')
-  @Roles(
-    Role.ADMIN,
-    Role.SAMPLING,
-    Role.ANALIS,
-    Role.DOKTER,
-    Role.SUPER_ADMIN,
-  )
+  @Roles(Role.ADMIN, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'List specimens for an order' })
-  async listSpecimens(
-    @Param('orderId', ParseUUIDPipe) orderId: string,
-  ) {
+  async listSpecimens(@Param('orderId', ParseUUIDPipe) orderId: string) {
     return this.specimenService.getSpecimensByOrder(orderId);
   }
 
@@ -90,10 +80,7 @@ export class SpecimenController {
   @Post('specimens/batch-labels')
   @Roles(Role.ADMIN, Role.SAMPLING, Role.ANALIS, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Generate ZPL batch labels for specimens' })
-  async generateBatchLabels(
-    @Body() dto: BatchLabelsDto,
-    @Res() res: Response,
-  ) {
+  async generateBatchLabels(@Body() dto: BatchLabelsDto, @Res() res: Response) {
     const zplBuffer = await this.specimenService.generateBatchLabels(
       dto.specimenIds,
     );
@@ -120,7 +107,9 @@ export class SpecimenController {
 
   @Post('specimens/:id/regenerate-barcode')
   @Roles(Role.ADMIN, Role.SAMPLING)
-  @ApiOperation({ summary: 'Regenerate specimen barcode (ADMIN, SAMPLING only)' })
+  @ApiOperation({
+    summary: 'Regenerate specimen barcode (ADMIN, SAMPLING only)',
+  })
   async regenerateBarcode(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: { id: string; role: Role },
@@ -142,17 +131,9 @@ export class SpecimenController {
   }
 
   @Get('specimens/:id/history')
-  @Roles(
-    Role.ADMIN,
-    Role.SAMPLING,
-    Role.ANALIS,
-    Role.DOKTER,
-    Role.SUPER_ADMIN,
-  )
+  @Roles(Role.ADMIN, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get collection attempt history for a specimen' })
-  async getCollectionHistory(
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  async getCollectionHistory(@Param('id', ParseUUIDPipe) id: string) {
     return this.specimenService.getCollectionHistory(id);
   }
 }

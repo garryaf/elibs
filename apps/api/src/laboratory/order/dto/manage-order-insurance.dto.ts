@@ -1,4 +1,13 @@
-import { IsUUID, IsOptional, IsString, IsEnum, IsNumber, Min, MaxLength, IsDateString } from 'class-validator';
+import {
+  IsUUID,
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsNumber,
+  Min,
+  MaxLength,
+  IsDateString,
+} from 'class-validator';
 import { CoverageType, ClaimStatus } from '@prisma/client';
 
 export class AddOrderInsuranceDto {

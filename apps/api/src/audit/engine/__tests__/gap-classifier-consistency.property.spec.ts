@@ -50,10 +50,7 @@ describe('GapClassifier — Property 7: Layer Trace Consistency', () => {
       fc.constant('implementation found'),
       fc.constant('code verified'),
     ),
-    issues: fc.oneof(
-      fc.constant(undefined),
-      fc.constant([] as string[]),
-    ),
+    issues: fc.oneof(fc.constant(undefined), fc.constant([] as string[])),
   });
 
   /**
@@ -62,7 +59,11 @@ describe('GapClassifier — Property 7: Layer Trace Consistency', () => {
    */
   const arbMixedLayerTrace: fc.Arbitrary<LayerTrace> = fc.record({
     layer: fc.constantFrom(...STACK_LAYERS),
-    status: fc.constantFrom('PRESENT' as const, 'PARTIAL' as const, 'ABSENT' as const),
+    status: fc.constantFrom(
+      'PRESENT' as const,
+      'PARTIAL' as const,
+      'ABSENT' as const,
+    ),
     filePath: fc.oneof(
       fc.constant(undefined),
       fc.string({ minLength: 1, maxLength: 50 }),
@@ -90,9 +91,9 @@ describe('GapClassifier — Property 7: Layer Trace Consistency', () => {
    * Generate a CriterionResult that always passes with no triggering keywords.
    */
   const arbPassedCriterion: fc.Arbitrary<CriterionResult> = fc.record({
-    criterionId: fc.tuple(fc.nat({ max: 15 }), fc.nat({ max: 9 })).map(
-      ([a, b]) => `${a + 1}.${b + 1}`,
-    ),
+    criterionId: fc
+      .tuple(fc.nat({ max: 15 }), fc.nat({ max: 9 }))
+      .map(([a, b]) => `${a + 1}.${b + 1}`),
     description: fc.string({ minLength: 1, maxLength: 80 }),
     passed: fc.constant(true),
     evidence: fc.string({ minLength: 1, maxLength: 80 }),
@@ -103,9 +104,9 @@ describe('GapClassifier — Property 7: Layer Trace Consistency', () => {
    * Generate an arbitrary CriterionResult with mixed pass/fail and potential gap keywords.
    */
   const arbMixedCriterion: fc.Arbitrary<CriterionResult> = fc.record({
-    criterionId: fc.tuple(fc.nat({ max: 15 }), fc.nat({ max: 9 })).map(
-      ([a, b]) => `${a + 1}.${b + 1}`,
-    ),
+    criterionId: fc
+      .tuple(fc.nat({ max: 15 }), fc.nat({ max: 9 }))
+      .map(([a, b]) => `${a + 1}.${b + 1}`),
     description: fc.string({ minLength: 1, maxLength: 80 }),
     passed: fc.boolean(),
     evidence: fc.string({ minLength: 1, maxLength: 80 }),

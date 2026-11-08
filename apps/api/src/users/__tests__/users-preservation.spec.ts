@@ -159,7 +159,11 @@ describe('Preservation: UsersService read operations and failed mutations', () =
      * **Validates: Requirements 3.5**
      */
     it('softDelete() on last SUPER_ADMIN should throw ConflictException', async () => {
-      const superAdminUser = { ...mockUser, id: 'super-admin-001', role: Role.SUPER_ADMIN };
+      const superAdminUser = {
+        ...mockUser,
+        id: 'super-admin-001',
+        role: Role.SUPER_ADMIN,
+      };
       prismaService.user.findUnique.mockResolvedValue(superAdminUser);
       // No other super admins exist
       prismaService.user.count.mockResolvedValue(0);
@@ -223,12 +227,18 @@ describe('Preservation: UsersService read operations and failed mutations', () =
         .tuple(
           // Include at least one sensitive field
           fc.array(
-            fc.tuple(sensitiveFieldArb, fc.string({ minLength: 1, maxLength: 50 })),
+            fc.tuple(
+              sensitiveFieldArb,
+              fc.string({ minLength: 1, maxLength: 50 }),
+            ),
             { minLength: 1, maxLength: 6 },
           ),
           // Include some non-sensitive fields
           fc.array(
-            fc.tuple(nonSensitiveKeyArb, fc.oneof(fc.string(), fc.integer(), fc.boolean())),
+            fc.tuple(
+              nonSensitiveKeyArb,
+              fc.oneof(fc.string(), fc.integer(), fc.boolean()),
+            ),
             { minLength: 0, maxLength: 5 },
           ),
         )

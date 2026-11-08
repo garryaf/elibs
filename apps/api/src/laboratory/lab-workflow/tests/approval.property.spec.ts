@@ -117,15 +117,18 @@ describe('Property 12: Auto-Approval When No Doctor Required', () => {
           // First call: verifyResults queries the order (IN_ANALYSIS)
           // Second call: autoApproveIfEligible queries the order again (now VERIFIED)
           (prismaService.order.findUnique as jest.Mock)
-            .mockResolvedValueOnce(mockOrder)         // verifyResults initial query
-            .mockResolvedValueOnce(mockVerifiedOrder)  // autoApproveIfEligible query
-            .mockResolvedValue(mockVerifiedOrder);     // any subsequent calls
+            .mockResolvedValueOnce(mockOrder) // verifyResults initial query
+            .mockResolvedValueOnce(mockVerifiedOrder) // autoApproveIfEligible query
+            .mockResolvedValue(mockVerifiedOrder); // any subsequent calls
 
           // First transition: IN_ANALYSIS → VERIFIED
           // Second transition: VERIFIED → APPROVED (auto-approval)
           orderStateMachine.transition
             .mockResolvedValueOnce(mockVerifiedOrder)
-            .mockResolvedValueOnce({ ...mockOrder, status: OrderStatus.APPROVED });
+            .mockResolvedValueOnce({
+              ...mockOrder,
+              status: OrderStatus.APPROVED,
+            });
 
           await service.verifyResults(orderId, {}, userId);
 
@@ -204,12 +207,11 @@ describe('Property 12: Auto-Approval When No Doctor Required', () => {
           // First call: verifyResults queries the order (IN_ANALYSIS)
           // Second call: autoApproveIfEligible queries the order (VERIFIED)
           (prismaService.order.findUnique as jest.Mock)
-            .mockResolvedValueOnce(mockOrder)          // verifyResults initial query
+            .mockResolvedValueOnce(mockOrder) // verifyResults initial query
             .mockResolvedValueOnce(mockVerifiedOrder); // autoApproveIfEligible query
 
           // Only one transition call for IN_ANALYSIS → VERIFIED
-          orderStateMachine.transition
-            .mockResolvedValueOnce(mockVerifiedOrder);
+          orderStateMachine.transition.mockResolvedValueOnce(mockVerifiedOrder);
 
           await service.verifyResults(orderId, {}, userId);
 

@@ -87,7 +87,10 @@ export class DatabaseLayerInspector {
    * @param projectRoot - The absolute path to the project root directory
    * @returns A LayerTrace indicating PRESENT, PARTIAL, or ABSENT status
    */
-  async inspect(target: InspectionTarget, projectRoot: string): Promise<LayerTrace> {
+  async inspect(
+    target: InspectionTarget,
+    projectRoot: string,
+  ): Promise<LayerTrace> {
     const issues: string[] = [];
 
     // Step 1: Resolve schema file path
@@ -149,7 +152,9 @@ export class DatabaseLayerInspector {
       try {
         regex = new RegExp(artifact.searchPattern, 'm');
       } catch (err) {
-        issues.push(`Invalid regex "${artifact.searchPattern}": ${(err as Error).message}`);
+        issues.push(
+          `Invalid regex "${artifact.searchPattern}": ${(err as Error).message}`,
+        );
         continue;
       }
 
@@ -157,7 +162,9 @@ export class DatabaseLayerInspector {
       if (match) {
         foundCount++;
         // Calculate line number from match index
-        const lineNumber = schemaContent.substring(0, match.index).split('\n').length;
+        const lineNumber = schemaContent
+          .substring(0, match.index)
+          .split('\n').length;
         lineReferences.push(lineNumber);
       }
     }
@@ -250,7 +257,8 @@ export class DatabaseLayerInspector {
       const fieldName = fieldMatch[1];
       const fieldType = fieldMatch[2] + (fieldMatch[3] || '');
       const modifiers = fieldMatch[4] || '';
-      const isOptional = modifiers.includes('?') || trimmed.includes(`${fieldType}?`);
+      const isOptional =
+        modifiers.includes('?') || trimmed.includes(`${fieldType}?`);
       const isRelation = RELATION_REGEX.test(trimmed);
       const hasUnique = FIELD_UNIQUE_REGEX.test(trimmed);
 
@@ -346,7 +354,10 @@ export class DatabaseLayerInspector {
    * Looks for a pattern with purpose containing "schema" or "prisma",
    * otherwise defaults to `apps/api/prisma/schema.prisma`.
    */
-  private resolveSchemaPath(target: InspectionTarget, projectRoot: string): string {
+  private resolveSchemaPath(
+    target: InspectionTarget,
+    projectRoot: string,
+  ): string {
     // Check if any pattern points to a schema file
     for (const pattern of target.patterns) {
       if (

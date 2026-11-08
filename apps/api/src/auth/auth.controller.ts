@@ -1,5 +1,19 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UnauthorizedException, UseGuards, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UnauthorizedException,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -14,10 +28,16 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 attempts per minute
   @ApiOperation({ summary: 'User login with email and password' })
-  @ApiResponse({ status: 200, description: 'Login successful, returns access and refresh tokens' })
+  @ApiResponse({
+    status: 200,
+    description: 'Login successful, returns access and refresh tokens',
+  })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Body() loginDto: LoginDto, @Req() req: any) {
-    const user = await this.authService.validateUser(loginDto.email, loginDto.password);
+    const user = await this.authService.validateUser(
+      loginDto.email,
+      loginDto.password,
+    );
     if (!user) {
       // Audit failed login attempt (non-blocking)
       const ipAddress = (req.headers?.['x-forwarded-for'] as string) || req.ip;
@@ -61,8 +81,15 @@ export class AuthController {
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '');
       try {
-        const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-        await this.authService.logout(decoded.sub, decoded.iat, decoded.exp, ipAddress);
+        const decoded = JSON.parse(
+          Buffer.from(token.split('.')[1], 'base64').toString(),
+        );
+        await this.authService.logout(
+          decoded.sub,
+          decoded.iat,
+          decoded.exp,
+          ipAddress,
+        );
       } catch {
         // If decoding fails, still return success (token might be malformed but user is authenticated)
       }

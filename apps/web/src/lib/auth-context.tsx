@@ -8,7 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { apiClient, type LoginPayload } from "./api";
+import { apiClient, STORAGE_KEYS, type LoginPayload } from "./api";
 
 export interface AuthUser {
   email: string;
@@ -26,8 +26,8 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const TOKEN_KEY = "elis_token";
-const USER_KEY = "elis_user";
+const TOKEN_KEY = STORAGE_KEYS.TOKEN;
+const USER_KEY = STORAGE_KEYS.USER;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(TOKEN_KEY, accessToken);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
     if (refreshToken) {
-      localStorage.setItem("elis_refresh_token", refreshToken);
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
     }
 
     // Set cookies for middleware route protection (httpOnly not possible from client)
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-    localStorage.removeItem("elis_refresh_token");
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
 
     // Clear auth cookies
     document.cookie = "elis_authenticated=; path=/; max-age=0";

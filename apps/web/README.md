@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# eLIS Web
 
-## Getting Started
+Next.js frontend for the Enterprise Laboratory Information System (eLIS). It
+provides the authenticated operational dashboard and the public result portal.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 20+
+- The eLIS API running at `http://localhost:3001`, or another configured API
+  endpoint
+- Dependencies installed from the repository root with `npm ci`
+
+For the supported full-stack local environment, run `make setup` and
+`make dev-up` from the repository root. See [the root README](../../README.md).
+
+## Configuration
+
+The browser client uses relative `/api/*` requests by default. During local
+development, `next.config.ts` proxies them to `http://localhost:3001` unless
+`API_URL` is set.
+
+| Variable | Purpose |
+| --- | --- |
+| `API_URL` | Server-side proxy target; defaults to `http://localhost:3001` |
+| `NEXT_PUBLIC_API_URL` | Optional browser-side API base URL override |
+
+When using Docker Compose, the web container is configured to reach the API
+over the internal Docker network. Avoid putting secrets in `NEXT_PUBLIC_*`
+variables because they are included in browser bundles.
+
+## Development
+
+From `apps/web`:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000` and sign in with an account from
+[TEST-CREDENTIALS.md](../../TEST-CREDENTIALS.md). Route conventions are
+documented in [ROUTING.md](ROUTING.md).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Quality checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm test
+npm run test:e2e
+npm run build
+```
 
-## Learn More
+## Production
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Create an optimized build with `npm run build` and serve it with
+`npm run start`. In the standard deployment, Nginx proxies `/api/` and
+`/socket.io/` traffic to the NestJS service. The production compose profile and
+operational setup are documented in [../../deploy/README.md](../../deploy/README.md).

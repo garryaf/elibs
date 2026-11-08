@@ -4,7 +4,10 @@ import { CryptoService } from '../crypto/crypto.service';
 import { createPiiEncryptionExtension } from './pii-encryption.extension';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   private _extendedClient: ReturnType<typeof this.withPiiExtension> | undefined;
 
   constructor(private readonly cryptoService: CryptoService) {

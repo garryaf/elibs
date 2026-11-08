@@ -65,8 +65,14 @@ describe('Order Notes Property Tests', () => {
       mockVisitService,
       mockOrderValidationGuard,
       { validateVisitInsurance: jest.fn() } as any,
-      { transition: jest.fn(), canTransition: jest.fn(), getValidTransitions: jest.fn().mockReturnValue([]) } as any,
-      { generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001') } as any,
+      {
+        transition: jest.fn(),
+        canTransition: jest.fn(),
+        getValidTransitions: jest.fn().mockReturnValue([]),
+      } as any,
+      {
+        generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001'),
+      } as any,
     );
   });
 
@@ -145,26 +151,32 @@ describe('Order Notes Property Tests', () => {
             const expectedPersistedNotes = notes ?? null;
 
             // Mock: $transaction captures create args and simulates persistence
-            mockPrisma.$transaction.mockImplementation(async (callback: any) => {
-              const txProxy = {
-                order: {
-                  create: jest.fn().mockImplementation((args: any) => {
-                    capturedOrderData = args.data;
-                    return {
-                      id: 'created-order-id',
-                      ...args.data,
-                    };
-                  }),
-                },
-                orderDetail: {
-                  createMany: jest.fn().mockResolvedValue({ count: uniqueTestIds.length }),
-                },
-              };
-              return callback(txProxy);
-            });
+            mockPrisma.$transaction.mockImplementation(
+              async (callback: any) => {
+                const txProxy = {
+                  order: {
+                    create: jest.fn().mockImplementation((args: any) => {
+                      capturedOrderData = args.data;
+                      return {
+                        id: 'created-order-id',
+                        ...args.data,
+                      };
+                    }),
+                  },
+                  orderDetail: {
+                    createMany: jest
+                      .fn()
+                      .mockResolvedValue({ count: uniqueTestIds.length }),
+                  },
+                };
+                return callback(txProxy);
+              },
+            );
 
             // Mock: visitService transition
-            mockVisitService.transitionToInProgress.mockResolvedValue(undefined);
+            mockVisitService.transitionToInProgress.mockResolvedValue(
+              undefined,
+            );
 
             // Mock: findUnique returns the persisted order (simulates round-trip retrieval)
             mockPrisma.order.findUnique.mockImplementation(() => ({
@@ -198,7 +210,7 @@ describe('Order Notes Property Tests', () => {
             expect(capturedOrderData.notes).toBe(expectedPersistedNotes);
 
             // ASSERT: findById (simulated via findUnique mock) returns the same value
-            expect(result!.notes).toBe(expectedPersistedNotes);
+            expect(result.notes).toBe(expectedPersistedNotes);
 
             // Reset mocks for next iteration
             jest.clearAllMocks();

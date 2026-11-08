@@ -98,9 +98,7 @@ export class PdfReportProcessor extends WorkerHost {
     // Generate the PDF using pdfkit-based PdfGeneratorService
     // Includes: clinic header, patient info, results table with reference ranges
     // and flag indicators (H/L/C!), addendums, and report version in footer
-    const pdfBuffer = await this.pdfGeneratorService.generateReport(
-      order as unknown as OrderWithDetails,
-    );
+    const pdfBuffer = await this.pdfGeneratorService.generateReport(order);
 
     const pdfBase64 = pdfBuffer.toString('base64');
 

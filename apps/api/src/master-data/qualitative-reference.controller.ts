@@ -19,7 +19,10 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { DataScopeInterceptor } from '../common/interceptors/data-scope.interceptor';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { CreateQualitativeRefDto, UpdateQualitativeRefDto } from './dto/create-qualitative-ref.dto';
+import {
+  CreateQualitativeRefDto,
+  UpdateQualitativeRefDto,
+} from './dto/create-qualitative-ref.dto';
 
 @ApiTags('Master Data - Qualitative Reference Values')
 @ApiBearerAuth()
@@ -31,9 +34,16 @@ export class QualitativeReferenceController {
 
   @Get()
   @Roles(
-    Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN,
-    Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS,
-    Role.DOKTER, Role.KLINIK_PARTNER,
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+    Role.SAMPLING,
+    Role.ANALIS,
+    Role.DOKTER,
+    Role.KLINIK_PARTNER,
   )
   @ApiOperation({ summary: 'List qualitative reference values for a test' })
   async findAll(@Param('testId', ParseUUIDPipe) testId: string) {

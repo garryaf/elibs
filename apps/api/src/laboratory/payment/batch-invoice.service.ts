@@ -5,8 +5,11 @@ import {
 } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { BatchInvoiceStatus, OrderStatus } from '@prisma/client';
-import { CreateBatchInvoiceDto, UpdateBatchInvoiceStatusDto } from './dto/batch-invoice.dto';
+import { BatchInvoiceStatus, ClaimStatus, CoverageType, OrderStatus } from '@prisma/client';
+import {
+  CreateBatchInvoiceDto,
+  UpdateBatchInvoiceStatusDto,
+} from './dto/batch-invoice.dto';
 
 const MAX_ORDERS_PER_BATCH = 500;
 
@@ -37,24 +40,18 @@ export class BatchInvoiceService {
       throw new BadRequestException('periodStart must be before periodEnd');
     }
 
-    // Find all orders that have been paid for this insurance within the period
-    // that are NOT already included in another batch invoice.
-    // We filter by paidAt (not null) + not cancelled, instead of status=PAID only,
-    // because orders progress through PAID → SAMPLE_COLLECTED → ... → APPROVED
-    // and we need to capture them regardless of current workflow status.
-    // Requirement 6.5: Query via OrderInsurance junction with coverageType PRIMARY
+    // Invoice only approved, unpaid coverage. An invoice represents a payer
+    // receivable, so patient payment timestamps must never define eligibility.
     const eligibleOrdersWhere = {
       orderInsurances: {
         some: {
           insuranceId: dto.insuranceId,
-          coverageType: 'PRIMARY' as const,
+          coverageType: CoverageType.PRIMARY,
+          claimStatus: { in: [ClaimStatus.APPROVED, ClaimStatus.PARTIALLY_APPROVED] },
+          coveredAmount: { not: null },
         },
       },
-      paidAt: {
-        not: null,
-        gte: periodStart,
-        lte: periodEnd,
-      },
+      createdAt: { gte: periodStart, lte: periodEnd },
       status: { not: OrderStatus.CANCELLED },
       batchInvoiceItems: {
         none: {},
@@ -70,15 +67,23 @@ export class BatchInvoiceService {
       where: eligibleOrdersWhere,
       select: {
         id: true,
-        totalAmount: true,
+        orderInsurances: {
+          where: {
+            insuranceId: dto.insuranceId,
+            coverageType: CoverageType.PRIMARY,
+            claimStatus: { in: [ClaimStatus.APPROVED, ClaimStatus.PARTIALLY_APPROVED] },
+            coveredAmount: { not: null },
+          },
+          select: { coveredAmount: true },
+        },
       },
-      orderBy: { paidAt: 'asc' },
+      orderBy: { createdAt: 'asc' },
       take: MAX_ORDERS_PER_BATCH,
     });
 
     if (eligibleOrders.length === 0) {
       throw new BadRequestException(
-        'Tidak ada order yang eligible untuk asuransi dan periode yang dipilih. Pastikan ada order yang sudah dibayar (paidAt) dengan asuransi korporat sebagai PRIMARY coverage dalam rentang tanggal tersebut.',
+        'Tidak ada coverage asuransi korporat yang telah disetujui dan belum ditagihkan untuk periode yang dipilih.',
       );
     }
 
@@ -86,7 +91,7 @@ export class BatchInvoiceService {
 
     // Calculate total amount
     const totalAmount = eligibleOrders.reduce(
-      (sum, order) => sum.plus(order.totalAmount),
+      (sum, order) => sum.plus(order.orderInsurances[0].coveredAmount!),
       new Decimal(0),
     );
 
@@ -110,16 +115,24 @@ export class BatchInvoiceService {
             createMany: {
               data: eligibleOrders.map((order) => ({
                 orderId: order.id,
+                amount: order.orderInsurances[0].coveredAmount!,
               })),
             },
           },
         },
         include: {
-          insurance: { select: { id: true, code: true, name: true, type: true } },
+          insurance: {
+            select: { id: true, code: true, name: true, type: true },
+          },
           items: {
             include: {
               order: {
-                select: { id: true, orderNumber: true, totalAmount: true, paidAt: true },
+                select: {
+                  id: true,
+                  orderNumber: true,
+                  totalAmount: true,
+                  paidAt: true,
+                },
               },
             },
           },
@@ -146,7 +159,9 @@ export class BatchInvoiceService {
     periodEnd: string;
   }) {
     if (!params.insuranceId || !params.periodStart || !params.periodEnd) {
-      throw new BadRequestException('insuranceId, periodStart, and periodEnd are required');
+      throw new BadRequestException(
+        'insuranceId, periodStart, and periodEnd are required',
+      );
     }
 
     const insurance = await this.prisma.insurance.findFirst({
@@ -174,14 +189,12 @@ export class BatchInvoiceService {
       orderInsurances: {
         some: {
           insuranceId: params.insuranceId,
-          coverageType: 'PRIMARY' as const,
+          coverageType: CoverageType.PRIMARY,
+          claimStatus: { in: [ClaimStatus.APPROVED, ClaimStatus.PARTIALLY_APPROVED] },
+          coveredAmount: { not: null },
         },
       },
-      paidAt: {
-        not: null,
-        gte: periodStart,
-        lte: periodEnd,
-      },
+      createdAt: { gte: periodStart, lte: periodEnd },
       status: { not: OrderStatus.CANCELLED },
       batchInvoiceItems: {
         none: {},
@@ -195,22 +208,34 @@ export class BatchInvoiceService {
         select: {
           id: true,
           orderNumber: true,
-          totalAmount: true,
-          paidAt: true,
+          orderInsurances: {
+            where: {
+              insuranceId: params.insuranceId,
+              coverageType: CoverageType.PRIMARY,
+              claimStatus: { in: [ClaimStatus.APPROVED, ClaimStatus.PARTIALLY_APPROVED] },
+              coveredAmount: { not: null },
+            },
+            select: { coveredAmount: true },
+          },
           patient: { select: { id: true, name: true, mrn: true } },
         },
-        orderBy: { paidAt: 'asc' },
+        orderBy: { createdAt: 'asc' },
         take: MAX_ORDERS_PER_BATCH,
       }),
     ]);
 
     const totalAmount = orders.reduce(
-      (sum, order) => sum.plus(order.totalAmount),
+      (sum, order) => sum.plus(order.orderInsurances[0].coveredAmount!),
       new Decimal(0),
     );
 
     return {
-      insurance: { id: insurance.id, code: insurance.code, name: insurance.name, type: insurance.type },
+      insurance: {
+        id: insurance.id,
+        code: insurance.code,
+        name: insurance.name,
+        type: insurance.type,
+      },
       periodStart: params.periodStart,
       periodEnd: params.periodEnd,
       totalEligible,
@@ -244,7 +269,9 @@ export class BatchInvoiceService {
       this.prisma.batchInvoice.findMany({
         where,
         include: {
-          insurance: { select: { id: true, code: true, name: true, type: true } },
+          insurance: {
+            select: { id: true, code: true, name: true, type: true },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -385,7 +412,9 @@ export class BatchInvoiceService {
           orderCount: 0,
         },
         include: {
-          insurance: { select: { id: true, code: true, name: true, type: true } },
+          insurance: {
+            select: { id: true, code: true, name: true, type: true },
+          },
         },
       });
     });
@@ -397,27 +426,31 @@ export class BatchInvoiceService {
     currentStatus: BatchInvoiceStatus,
     newStatus: BatchInvoiceStatus,
   ) {
-    const allowedTransitions: Record<BatchInvoiceStatus, BatchInvoiceStatus[]> = {
-      [BatchInvoiceStatus.DRAFT]: [BatchInvoiceStatus.SENT, BatchInvoiceStatus.CANCELLED],
-      [BatchInvoiceStatus.SENT]: [
-        BatchInvoiceStatus.PAID,
-        BatchInvoiceStatus.PARTIALLY_PAID,
-        BatchInvoiceStatus.OVERDUE,
-        BatchInvoiceStatus.CANCELLED,
-      ],
-      [BatchInvoiceStatus.PARTIALLY_PAID]: [
-        BatchInvoiceStatus.PAID,
-        BatchInvoiceStatus.OVERDUE,
-        BatchInvoiceStatus.CANCELLED,
-      ],
-      [BatchInvoiceStatus.OVERDUE]: [
-        BatchInvoiceStatus.PAID,
-        BatchInvoiceStatus.PARTIALLY_PAID,
-        BatchInvoiceStatus.CANCELLED,
-      ],
-      [BatchInvoiceStatus.PAID]: [],
-      [BatchInvoiceStatus.CANCELLED]: [],
-    };
+    const allowedTransitions: Record<BatchInvoiceStatus, BatchInvoiceStatus[]> =
+      {
+        [BatchInvoiceStatus.DRAFT]: [
+          BatchInvoiceStatus.SENT,
+          BatchInvoiceStatus.CANCELLED,
+        ],
+        [BatchInvoiceStatus.SENT]: [
+          BatchInvoiceStatus.PAID,
+          BatchInvoiceStatus.PARTIALLY_PAID,
+          BatchInvoiceStatus.OVERDUE,
+          BatchInvoiceStatus.CANCELLED,
+        ],
+        [BatchInvoiceStatus.PARTIALLY_PAID]: [
+          BatchInvoiceStatus.PAID,
+          BatchInvoiceStatus.OVERDUE,
+          BatchInvoiceStatus.CANCELLED,
+        ],
+        [BatchInvoiceStatus.OVERDUE]: [
+          BatchInvoiceStatus.PAID,
+          BatchInvoiceStatus.PARTIALLY_PAID,
+          BatchInvoiceStatus.CANCELLED,
+        ],
+        [BatchInvoiceStatus.PAID]: [],
+        [BatchInvoiceStatus.CANCELLED]: [],
+      };
 
     const allowed = allowedTransitions[currentStatus];
     if (!allowed || !allowed.includes(newStatus)) {
@@ -427,7 +460,11 @@ export class BatchInvoiceService {
     }
   }
 
-  private async generateInvoiceNumber(tx?: { batchInvoiceSequence: { upsert: typeof this.prisma.batchInvoiceSequence.upsert } }): Promise<string> {
+  private async generateInvoiceNumber(tx?: {
+    batchInvoiceSequence: {
+      upsert: typeof this.prisma.batchInvoiceSequence.upsert;
+    };
+  }): Promise<string> {
     const client = tx || this.prisma;
     const now = new Date();
     const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;

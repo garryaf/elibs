@@ -889,6 +889,7 @@ model BatchInvoiceItem {
   id             String @id @default(uuid()) @db.Uuid
   batchInvoiceId String @db.Uuid
   orderId        String @db.Uuid
+  amount         Decimal @default(0) @db.Decimal(14, 2)
 
   batchInvoice BatchInvoice @relation(fields: [batchInvoiceId], references: [id])
   order        Order        @relation(fields: [orderId], references: [id])

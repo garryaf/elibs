@@ -55,7 +55,12 @@ export class BarcodeService {
    */
   async generateBuffer(
     text: string,
-    options?: { bcid?: string; scale?: number; height?: number; includetext?: boolean },
+    options?: {
+      bcid?: string;
+      scale?: number;
+      height?: number;
+      includetext?: boolean;
+    },
   ): Promise<Buffer> {
     return bwipjs.toBuffer({
       bcid: options?.bcid ?? 'code128',
@@ -76,7 +81,12 @@ export class BarcodeService {
    */
   async generateImage(
     text: string,
-    options?: { bcid?: string; scale?: number; height?: number; includetext?: boolean },
+    options?: {
+      bcid?: string;
+      scale?: number;
+      height?: number;
+      includetext?: boolean;
+    },
   ): Promise<string> {
     const pngBuffer = await this.generateBuffer(text, options);
     return pngBuffer.toString('base64');

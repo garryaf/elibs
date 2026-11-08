@@ -33,23 +33,30 @@ const MOCK_PROVINCES = [
   { id: '12', name: 'SUMATERA UTARA' },
 ];
 
-const MOCK_REGENCIES: Record<string, Array<{ id: string; province_id: string; name: string }>> = {
+const MOCK_REGENCIES: Record<
+  string,
+  Array<{ id: string; province_id: string; name: string }>
+> = {
   '11': [
     { id: '1101', province_id: '11', name: 'KAB. SIMEULUE' },
     { id: '1102', province_id: '11', name: 'KAB. ACEH SINGKIL' },
   ],
-  '12': [
-    { id: '1201', province_id: '12', name: 'KAB. NIAS' },
-  ],
+  '12': [{ id: '1201', province_id: '12', name: 'KAB. NIAS' }],
 };
 
-const MOCK_DISTRICTS: Record<string, Array<{ id: string; regency_id: string; name: string }>> = {
+const MOCK_DISTRICTS: Record<
+  string,
+  Array<{ id: string; regency_id: string; name: string }>
+> = {
   '1101': [{ id: '110101', regency_id: '1101', name: 'TEUPAH SELATAN' }],
   '1102': [{ id: '110201', regency_id: '1102', name: 'PULAU BANYAK' }],
   '1201': [{ id: '120101', regency_id: '1201', name: 'GUNUNGSITOLI' }],
 };
 
-const MOCK_VILLAGES: Record<string, Array<{ id: string; district_id: string; name: string }>> = {
+const MOCK_VILLAGES: Record<
+  string,
+  Array<{ id: string; district_id: string; name: string }>
+> = {
   '110101': [{ id: '1101011001', district_id: '110101', name: 'LATIUNG' }],
   '110201': [{ id: '1102011001', district_id: '110201', name: 'PULAU BALAI' }],
   '120101': [{ id: '1201011001', district_id: '120101', name: 'ILIR' }],
@@ -61,7 +68,12 @@ describe('Property 2: Sync continues on partial EMSIFA failure', () => {
    */
 
   let service: RegionSyncService;
-  let mockPrisma: jest.Mocked<Pick<PrismaService, 'provinsi' | 'kabupatenKota' | 'kecamatan' | 'kelurahanDesa'>>;
+  let mockPrisma: jest.Mocked<
+    Pick<
+      PrismaService,
+      'provinsi' | 'kabupatenKota' | 'kecamatan' | 'kelurahanDesa'
+    >
+  >;
   let fetchSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -72,15 +84,15 @@ describe('Property 2: Sync continues on partial EMSIFA failure', () => {
       } as any,
       kabupatenKota: {
         upsert: jest.fn().mockResolvedValue({}),
-        findMany: jest.fn().mockResolvedValue(
-          Object.keys(MOCK_DISTRICTS).map((id) => ({ id })),
-        ),
+        findMany: jest
+          .fn()
+          .mockResolvedValue(Object.keys(MOCK_DISTRICTS).map((id) => ({ id }))),
       } as any,
       kecamatan: {
         upsert: jest.fn().mockResolvedValue({}),
-        findMany: jest.fn().mockResolvedValue(
-          Object.keys(MOCK_VILLAGES).map((id) => ({ id })),
-        ),
+        findMany: jest
+          .fn()
+          .mockResolvedValue(Object.keys(MOCK_VILLAGES).map((id) => ({ id }))),
       } as any,
       kelurahanDesa: {
         upsert: jest.fn().mockResolvedValue({}),
@@ -106,62 +118,80 @@ describe('Property 2: Sync continues on partial EMSIFA failure', () => {
    * When a level succeeds, the corresponding mock data is returned.
    */
   function setupFetchMock(pattern: FailurePattern): void {
-    fetchSpy = jest.spyOn(global, 'fetch').mockImplementation(async (input: RequestInfo | URL) => {
-      const url = typeof input === 'string' ? input : input.toString();
+    fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockImplementation(async (input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input.toString();
 
-      // Level 1: Provinces
-      if (url.includes('/provinces.json')) {
-        if (!pattern.provinsiSucceeds) {
-          return { ok: false, status: 500, statusText: 'Internal Server Error' } as Response;
+        // Level 1: Provinces
+        if (url.includes('/provinces.json')) {
+          if (!pattern.provinsiSucceeds) {
+            return {
+              ok: false,
+              status: 500,
+              statusText: 'Internal Server Error',
+            } as Response;
+          }
+          return {
+            ok: true,
+            json: async () => MOCK_PROVINCES,
+          } as Response;
         }
-        return {
-          ok: true,
-          json: async () => MOCK_PROVINCES,
-        } as Response;
-      }
 
-      // Level 2: Regencies
-      if (url.includes('/regencies/')) {
-        if (!pattern.kabupatenKotaSucceeds) {
-          return { ok: false, status: 500, statusText: 'Internal Server Error' } as Response;
+        // Level 2: Regencies
+        if (url.includes('/regencies/')) {
+          if (!pattern.kabupatenKotaSucceeds) {
+            return {
+              ok: false,
+              status: 500,
+              statusText: 'Internal Server Error',
+            } as Response;
+          }
+          const match = url.match(/\/regencies\/(\d+)\.json/);
+          const provId = match?.[1] ?? '';
+          return {
+            ok: true,
+            json: async () => MOCK_REGENCIES[provId] ?? [],
+          } as Response;
         }
-        const match = url.match(/\/regencies\/(\d+)\.json/);
-        const provId = match?.[1] ?? '';
-        return {
-          ok: true,
-          json: async () => MOCK_REGENCIES[provId] ?? [],
-        } as Response;
-      }
 
-      // Level 3: Districts
-      if (url.includes('/districts/')) {
-        if (!pattern.kecamatanSucceeds) {
-          return { ok: false, status: 500, statusText: 'Internal Server Error' } as Response;
+        // Level 3: Districts
+        if (url.includes('/districts/')) {
+          if (!pattern.kecamatanSucceeds) {
+            return {
+              ok: false,
+              status: 500,
+              statusText: 'Internal Server Error',
+            } as Response;
+          }
+          const match = url.match(/\/districts\/(\d+)\.json/);
+          const regId = match?.[1] ?? '';
+          return {
+            ok: true,
+            json: async () => MOCK_DISTRICTS[regId] ?? [],
+          } as Response;
         }
-        const match = url.match(/\/districts\/(\d+)\.json/);
-        const regId = match?.[1] ?? '';
-        return {
-          ok: true,
-          json: async () => MOCK_DISTRICTS[regId] ?? [],
-        } as Response;
-      }
 
-      // Level 4: Villages
-      if (url.includes('/villages/')) {
-        if (!pattern.kelurahanDesaSucceeds) {
-          return { ok: false, status: 500, statusText: 'Internal Server Error' } as Response;
+        // Level 4: Villages
+        if (url.includes('/villages/')) {
+          if (!pattern.kelurahanDesaSucceeds) {
+            return {
+              ok: false,
+              status: 500,
+              statusText: 'Internal Server Error',
+            } as Response;
+          }
+          const match = url.match(/\/villages\/(\d+)\.json/);
+          const distId = match?.[1] ?? '';
+          return {
+            ok: true,
+            json: async () => MOCK_VILLAGES[distId] ?? [],
+          } as Response;
         }
-        const match = url.match(/\/villages\/(\d+)\.json/);
-        const distId = match?.[1] ?? '';
-        return {
-          ok: true,
-          json: async () => MOCK_VILLAGES[distId] ?? [],
-        } as Response;
-      }
 
-      // Unknown URL
-      return { ok: false, status: 404, statusText: 'Not Found' } as Response;
-    });
+        // Unknown URL
+        return { ok: false, status: 404, statusText: 'Not Found' } as Response;
+      });
   }
 
   it('should handle any combination of EMSIFA level failures gracefully (100 iterations)', async () => {
@@ -183,7 +213,9 @@ describe('Property 2: Sync continues on partial EMSIFA failure', () => {
           // Adjust the prisma mock based on whether provinces succeed.
           if (!pattern.provinsiSucceeds) {
             // If provinces fail, no regencies exist to query districts from
-            (mockPrisma.kabupatenKota.findMany as jest.Mock).mockResolvedValue([]);
+            (mockPrisma.kabupatenKota.findMany as jest.Mock).mockResolvedValue(
+              [],
+            );
             (mockPrisma.kecamatan.findMany as jest.Mock).mockResolvedValue([]);
           } else if (!pattern.kabupatenKotaSucceeds) {
             // If kabupaten/kota fails, findMany still returns existing records from DB
@@ -233,17 +265,23 @@ describe('Property 2: Sync continues on partial EMSIFA failure', () => {
             // For each level 2-4, verify error/success behavior
             if (pattern.kabupatenKotaSucceeds) {
               // All regencies should be counted
-              const expectedRegencyCount = Object.values(MOCK_REGENCIES)
-                .reduce((sum, arr) => sum + arr.length, 0);
+              const expectedRegencyCount = Object.values(MOCK_REGENCIES).reduce(
+                (sum, arr) => sum + arr.length,
+                0,
+              );
               expect(result.kabupatenKota).toBe(expectedRegencyCount);
               // No kabupaten_kota errors
-              const kabErrors = result.errors.filter((e) => e.level === 'kabupaten_kota');
+              const kabErrors = result.errors.filter(
+                (e) => e.level === 'kabupaten_kota',
+              );
               expect(kabErrors).toHaveLength(0);
             } else {
               // All regency fetches fail — count should be 0
               expect(result.kabupatenKota).toBe(0);
               // Errors should be recorded for each province's regency fetch
-              const kabErrors = result.errors.filter((e) => e.level === 'kabupaten_kota');
+              const kabErrors = result.errors.filter(
+                (e) => e.level === 'kabupaten_kota',
+              );
               expect(kabErrors.length).toBeGreaterThan(0);
               // Each error should have correct structure
               for (const err of kabErrors) {
@@ -263,11 +301,15 @@ describe('Property 2: Sync continues on partial EMSIFA failure', () => {
                 0,
               );
               expect(result.kecamatan).toBe(expectedDistrictCount);
-              const kecErrors = result.errors.filter((e) => e.level === 'kecamatan');
+              const kecErrors = result.errors.filter(
+                (e) => e.level === 'kecamatan',
+              );
               expect(kecErrors).toHaveLength(0);
             } else {
               expect(result.kecamatan).toBe(0);
-              const kecErrors = result.errors.filter((e) => e.level === 'kecamatan');
+              const kecErrors = result.errors.filter(
+                (e) => e.level === 'kecamatan',
+              );
               expect(kecErrors.length).toBeGreaterThan(0);
               for (const err of kecErrors) {
                 expect(err).toHaveProperty('level', 'kecamatan');
@@ -285,11 +327,15 @@ describe('Property 2: Sync continues on partial EMSIFA failure', () => {
                 0,
               );
               expect(result.kelurahanDesa).toBe(expectedVillageCount);
-              const kelErrors = result.errors.filter((e) => e.level === 'kelurahan_desa');
+              const kelErrors = result.errors.filter(
+                (e) => e.level === 'kelurahan_desa',
+              );
               expect(kelErrors).toHaveLength(0);
             } else {
               expect(result.kelurahanDesa).toBe(0);
-              const kelErrors = result.errors.filter((e) => e.level === 'kelurahan_desa');
+              const kelErrors = result.errors.filter(
+                (e) => e.level === 'kelurahan_desa',
+              );
               expect(kelErrors.length).toBeGreaterThan(0);
               for (const err of kelErrors) {
                 expect(err).toHaveProperty('level', 'kelurahan_desa');

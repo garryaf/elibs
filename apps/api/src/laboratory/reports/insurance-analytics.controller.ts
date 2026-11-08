@@ -1,4 +1,10 @@
-import { Controller, Get, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { Role } from '@prisma/client';
@@ -23,7 +29,8 @@ export class InsuranceAnalyticsController {
   @Get('breakdown')
   @ApiOperation({ summary: 'Get insurer breakdown analytics' })
   async getInsurerBreakdown(@Query() query: InsuranceReportQueryDto) {
-    const data = await this.insuranceAnalyticsService.getInsurerBreakdown(query);
+    const data =
+      await this.insuranceAnalyticsService.getInsurerBreakdown(query);
     return { success: true, message: 'Insurer breakdown retrieved', data };
   }
 

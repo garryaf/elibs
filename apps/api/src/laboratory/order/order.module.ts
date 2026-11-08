@@ -18,9 +18,36 @@ import { LabWorkflowModule } from '../lab-workflow/lab-workflow.module';
 import { BarcodeModule } from '../../common/barcode/barcode.module';
 
 @Module({
-  imports: [ConfigModule, VisitModule, AuditModule, InsuranceModule, LabWorkflowModule, BarcodeModule],
+  imports: [
+    ConfigModule,
+    VisitModule,
+    AuditModule,
+    InsuranceModule,
+    LabWorkflowModule,
+    BarcodeModule,
+  ],
   controllers: [OrderController, MigrationController],
-  providers: [OrderService, OrderSequenceService, ClaimService, InsuranceRejectionService, TariffResolverService, OrderValidationGuard, MigrationService, BpjsApiService, BpjsVerificationExpirationService],
-  exports: [OrderService, OrderSequenceService, ClaimService, InsuranceRejectionService, TariffResolverService, OrderValidationGuard, MigrationService, BpjsApiService, BpjsVerificationExpirationService],
+  providers: [
+    OrderService,
+    OrderSequenceService,
+    ClaimService,
+    InsuranceRejectionService,
+    TariffResolverService,
+    OrderValidationGuard,
+    MigrationService,
+    BpjsApiService,
+    BpjsVerificationExpirationService,
+  ],
+  exports: [
+    OrderService,
+    OrderSequenceService,
+    ClaimService,
+    InsuranceRejectionService,
+    TariffResolverService,
+    OrderValidationGuard,
+    MigrationService,
+    BpjsApiService,
+    BpjsVerificationExpirationService,
+  ],
 })
 export class OrderModule {}

@@ -47,7 +47,9 @@ export class BulkPricingController {
    */
   @Post('bulk-adjust')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Execute bulk price adjustment (or create approval request)' })
+  @ApiOperation({
+    summary: 'Execute bulk price adjustment (or create approval request)',
+  })
   async executeBulkAdjust(
     @Body() dto: BulkAdjustRequestDto,
     @CurrentUser() user: { id: string; name?: string },
@@ -97,6 +99,9 @@ export class BulkPricingController {
     @Param('testId', ParseUUIDPipe) testId: string,
     @Query('limit') limit?: string,
   ) {
-    return this.bulkPricingService.getPriceHistory(testId, limit ? parseInt(limit, 10) : 20);
+    return this.bulkPricingService.getPriceHistory(
+      testId,
+      limit ? parseInt(limit, 10) : 20,
+    );
   }
 }

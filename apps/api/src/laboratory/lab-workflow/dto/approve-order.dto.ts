@@ -1,4 +1,10 @@
-import { IsBoolean, IsEnum, IsOptional, IsString, ValidateIf } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsString,
+  ValidateIf,
+} from 'class-validator';
 
 export class ApproveOrderDto {
   @IsEnum(['APPROVE', 'REJECT'], {

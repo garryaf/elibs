@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PdfReportProcessor, PdfGenerationJobData, PdfGenerationResult } from '../pdf-report.processor';
+import {
+  PdfReportProcessor,
+  PdfGenerationJobData,
+  PdfGenerationResult,
+} from '../pdf-report.processor';
 import { PdfGeneratorService } from '../pdf-generator.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { Job } from 'bullmq';
@@ -14,14 +18,23 @@ describe('PdfReportProcessor', () => {
     orderNumber: 'LAB-202608-0001',
     reportVersion: 1,
     interpretation: null,
-    patient: { name: 'John Doe', mrn: 'MRN001', dateOfBirth: new Date(), gender: 'MALE' },
+    patient: {
+      name: 'John Doe',
+      mrn: 'MRN001',
+      dateOfBirth: new Date(),
+      gender: 'MALE',
+    },
     clinic: { name: 'Test Clinic', address: '123 Test St', phone: '021-555' },
     doctor: { name: 'Dr. Smith', email: 'dr@test.com' },
     orderDetails: [
       {
         resultValue: '5.5',
         flag: 'NORMAL',
-        test: { name: 'Hemoglobin', unit: 'g/dL', referenceValues: [{ minRef: 12, maxRef: 16 }] },
+        test: {
+          name: 'Hemoglobin',
+          unit: 'g/dL',
+          referenceValues: [{ minRef: 12, maxRef: 16 }],
+        },
       },
     ],
     addendums: [],
@@ -50,8 +63,8 @@ describe('PdfReportProcessor', () => {
     }).compile();
 
     processor = module.get<PdfReportProcessor>(PdfReportProcessor);
-    prismaService = module.get(PrismaService) as any;
-    pdfGeneratorService = module.get(PdfGeneratorService) as any;
+    prismaService = module.get(PrismaService);
+    pdfGeneratorService = module.get(PdfGeneratorService);
   });
 
   it('should be defined', () => {
@@ -61,7 +74,9 @@ describe('PdfReportProcessor', () => {
   describe('process', () => {
     it('should generate PDF and return result with correct fields', async () => {
       const pdfBuffer = Buffer.from('fake-pdf-content');
-      (prismaService.order.findUnique as jest.Mock).mockResolvedValue(mockOrder);
+      (prismaService.order.findUnique as jest.Mock).mockResolvedValue(
+        mockOrder,
+      );
       pdfGeneratorService.generateReport.mockResolvedValue(pdfBuffer);
 
       const job = {
@@ -94,7 +109,9 @@ describe('PdfReportProcessor', () => {
       (prismaService.order.update as jest.Mock).mockResolvedValue({
         reportVersion: 2,
       });
-      (prismaService.order.findUnique as jest.Mock).mockResolvedValue(mockOrder);
+      (prismaService.order.findUnique as jest.Mock).mockResolvedValue(
+        mockOrder,
+      );
       pdfGeneratorService.generateReport.mockResolvedValue(pdfBuffer);
 
       const job = {
@@ -113,7 +130,9 @@ describe('PdfReportProcessor', () => {
 
     it('should NOT increment reportVersion when incrementVersion is false/undefined', async () => {
       const pdfBuffer = Buffer.from('fake-pdf-content');
-      (prismaService.order.findUnique as jest.Mock).mockResolvedValue(mockOrder);
+      (prismaService.order.findUnique as jest.Mock).mockResolvedValue(
+        mockOrder,
+      );
       pdfGeneratorService.generateReport.mockResolvedValue(pdfBuffer);
 
       const job = {
@@ -130,13 +149,25 @@ describe('PdfReportProcessor', () => {
       const orderWithAddendums = {
         ...mockOrder,
         addendums: [
-          { id: 'a1', version: 1, content: 'First addendum', createdAt: new Date() },
-          { id: 'a2', version: 2, content: 'Second addendum', createdAt: new Date() },
+          {
+            id: 'a1',
+            version: 1,
+            content: 'First addendum',
+            createdAt: new Date(),
+          },
+          {
+            id: 'a2',
+            version: 2,
+            content: 'Second addendum',
+            createdAt: new Date(),
+          },
         ],
       };
 
       const pdfBuffer = Buffer.from('pdf-with-addendums');
-      (prismaService.order.findUnique as jest.Mock).mockResolvedValue(orderWithAddendums);
+      (prismaService.order.findUnique as jest.Mock).mockResolvedValue(
+        orderWithAddendums,
+      );
       pdfGeneratorService.generateReport.mockResolvedValue(pdfBuffer);
 
       const job = {

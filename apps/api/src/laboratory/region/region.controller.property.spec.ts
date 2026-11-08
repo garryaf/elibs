@@ -70,7 +70,11 @@ describe('Property 1: Sync endpoint rejects all unauthorized roles', () => {
         canActivate: (context: any) => {
           // Always authenticate — attach user with the role under test
           const req = context.switchToHttp().getRequest();
-          req.user = { id: 'test-user-id', email: 'test@test.com', role: currentRole };
+          req.user = {
+            id: 'test-user-id',
+            email: 'test@test.com',
+            role: currentRole,
+          };
           return true;
         },
       })

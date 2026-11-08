@@ -41,7 +41,10 @@ export class LabWorkflowService {
     });
 
     if (!order) {
-      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
+      throw new NotFoundException({
+        errorCode: 'ERR_NOT_FOUND',
+        message: 'Order not found',
+      });
     }
 
     if (!order.visitId) {
@@ -64,12 +67,17 @@ export class LabWorkflowService {
     });
 
     if (bpjsDetailForExpiry) {
-      const verificationCheck = await this.bpjsVerificationExpirationService.checkVerificationValidity(orderId);
+      const verificationCheck =
+        await this.bpjsVerificationExpirationService.checkVerificationValidity(
+          orderId,
+        );
 
       if (verificationCheck.isExpired) {
         throw new BadRequestException({
           errorCode: 'ERR_BPJS_VERIFICATION_EXPIRED',
-          message: verificationCheck.message || 'Verifikasi BPJS telah kedaluwarsa. Silakan lakukan verifikasi ulang sebelum pengambilan sampel.',
+          message:
+            verificationCheck.message ||
+            'Verifikasi BPJS telah kedaluwarsa. Silakan lakukan verifikasi ulang sebelum pengambilan sampel.',
         });
       }
     }
@@ -88,14 +96,21 @@ export class LabWorkflowService {
 
       if (testsRequiringPreAuth.length > 0) {
         // If we reach here and bpjsDetail exists, it's guaranteed not expired (checked above)
-        const isVerified = bpjsDetailForExpiry?.verificationStatus === 'VERIFIED';
+        const isVerified =
+          bpjsDetailForExpiry?.verificationStatus === 'VERIFIED';
 
         // Check if any OrderInsurance claim is at least submitted
-        const hasClaimApproval =
-          ['APPROVED', 'PARTIALLY_APPROVED', 'SUBMITTED', 'UNDER_REVIEW'].includes(primaryOrderInsurance.claimStatus);
+        const hasClaimApproval = [
+          'APPROVED',
+          'PARTIALLY_APPROVED',
+          'SUBMITTED',
+          'UNDER_REVIEW',
+        ].includes(primaryOrderInsurance.claimStatus);
 
         if (!isVerified && !hasClaimApproval) {
-          const testNames = testsRequiringPreAuth.map((od) => od.test.name).join(', ');
+          const testNames = testsRequiringPreAuth
+            .map((od) => od.test.name)
+            .join(', ');
           throw new BadRequestException({
             errorCode: 'ERR_PRE_AUTH_REQUIRED',
             message: `Pemeriksaan berikut memerlukan pre-otorisasi asuransi sebelum pengambilan sampel: ${testNames}. Pastikan verifikasi BPJS/asuransi telah dilakukan.`,
@@ -149,7 +164,10 @@ export class LabWorkflowService {
     });
 
     if (!order) {
-      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
+      throw new NotFoundException({
+        errorCode: 'ERR_NOT_FOUND',
+        message: 'Order not found',
+      });
     }
 
     if (!order.visitId) {
@@ -165,7 +183,8 @@ export class LabWorkflowService {
     ) {
       throw new BadRequestException({
         errorCode: 'ERR_INVALID_STATE',
-        message: 'Order must be in SAMPLE_COLLECTED or IN_ANALYSIS status for result entry',
+        message:
+          'Order must be in SAMPLE_COLLECTED or IN_ANALYSIS status for result entry',
       });
     }
 
@@ -219,16 +238,18 @@ export class LabWorkflowService {
 
       // Critical Value Alert: trigger detection if result is CRITICAL
       if (flag === Flag.CRITICAL) {
-        await this.criticalValueService.detectAndAlert(
-          orderId,
-          entry.orderDetailId,
-          entry.resultValue,
-          orderDetail.testId,
-        ).catch((err) => {
-          this.logger.warn(
-            `Failed to trigger critical value alert for order ${orderId}, detail ${entry.orderDetailId}: ${err.message}`,
-          );
-        });
+        await this.criticalValueService
+          .detectAndAlert(
+            orderId,
+            entry.orderDetailId,
+            entry.resultValue,
+            orderDetail.testId,
+          )
+          .catch((err) => {
+            this.logger.warn(
+              `Failed to trigger critical value alert for order ${orderId}, detail ${entry.orderDetailId}: ${err.message}`,
+            );
+          });
       }
     }
 
@@ -267,7 +288,10 @@ export class LabWorkflowService {
     });
 
     if (!order) {
-      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
+      throw new NotFoundException({
+        errorCode: 'ERR_NOT_FOUND',
+        message: 'Order not found',
+      });
     }
 
     if (!order.visitId) {
@@ -329,7 +353,10 @@ export class LabWorkflowService {
     });
 
     if (!order) {
-      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
+      throw new NotFoundException({
+        errorCode: 'ERR_NOT_FOUND',
+        message: 'Order not found',
+      });
     }
 
     if (!order.visitId) {
@@ -373,19 +400,27 @@ export class LabWorkflowService {
             to: OrderStatus.VERIFIED,
             awaitingSecondApproval: true,
           },
-          message: 'Order contains CRITICAL results. Second-level approval required before final release.',
+          message:
+            'Order contains CRITICAL results. Second-level approval required before final release.',
         };
       }
 
       // If second-level approval is being provided
-      if (hasCritical && order.secondApprovalRequired && dto.secondLevelApproval) {
+      if (
+        hasCritical &&
+        order.secondApprovalRequired &&
+        dto.secondLevelApproval
+      ) {
         const now = new Date();
         const updatedOrder = await this.orderStateMachine.transition(
           orderId,
           OrderStatus.APPROVED,
           {
             userId,
-            metadata: { interpretation: dto.interpretation, secondLevelApproval: true },
+            metadata: {
+              interpretation: dto.interpretation,
+              secondLevelApproval: true,
+            },
           },
         );
 
@@ -399,12 +434,14 @@ export class LabWorkflowService {
         });
 
         // Fire-and-forget: trigger notifications without blocking the approval response
-        this.notificationService.triggerNotifications(orderId).catch((error) => {
-          this.logger.error(
-            `Failed to trigger notifications for order ${orderId}: ${error.message}`,
-            error.stack,
-          );
-        });
+        this.notificationService
+          .triggerNotifications(orderId)
+          .catch((error) => {
+            this.logger.error(
+              `Failed to trigger notifications for order ${orderId}: ${error.message}`,
+              error.stack,
+            );
+          });
 
         // Evaluate visit completion after second-level approval
         if (order.visitId) {
@@ -425,10 +462,15 @@ export class LabWorkflowService {
       }
 
       // If second-level approval is required but not provided yet
-      if (hasCritical && order.secondApprovalRequired && !dto.secondLevelApproval) {
+      if (
+        hasCritical &&
+        order.secondApprovalRequired &&
+        !dto.secondLevelApproval
+      ) {
         throw new BadRequestException({
           errorCode: 'ERR_SECOND_APPROVAL_REQUIRED',
-          message: 'Order contains CRITICAL results and requires second-level approval. Set secondLevelApproval=true to confirm.',
+          message:
+            'Order contains CRITICAL results and requires second-level approval. Set secondLevelApproval=true to confirm.',
         });
       }
 
@@ -514,10 +556,16 @@ export class LabWorkflowService {
     });
 
     if (!order) {
-      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
+      throw new NotFoundException({
+        errorCode: 'ERR_NOT_FOUND',
+        message: 'Order not found',
+      });
     }
 
-    if (order.status !== OrderStatus.APPROVED && order.status !== OrderStatus.NOTIFIED) {
+    if (
+      order.status !== OrderStatus.APPROVED &&
+      order.status !== OrderStatus.NOTIFIED
+    ) {
       throw new BadRequestException({
         errorCode: 'ERR_INVALID_STATE',
         message: 'Only APPROVED or NOTIFIED orders can be recalled',
@@ -526,11 +574,13 @@ export class LabWorkflowService {
 
     // Check 24-hour window
     if (order.approvedAt) {
-      const hoursSinceApproval = (Date.now() - new Date(order.approvedAt).getTime()) / (1000 * 60 * 60);
+      const hoursSinceApproval =
+        (Date.now() - new Date(order.approvedAt).getTime()) / (1000 * 60 * 60);
       if (hoursSinceApproval > 24) {
         throw new BadRequestException({
           errorCode: 'ERR_RECALL_EXPIRED',
-          message: 'Batas waktu recall telah terlewat (maksimal 24 jam setelah approval)',
+          message:
+            'Batas waktu recall telah terlewat (maksimal 24 jam setelah approval)',
         });
       }
     }
@@ -570,25 +620,46 @@ export class LabWorkflowService {
     const baseWhere: any = { createdAt: { gte: todayStart } };
     if (clinicId) baseWhere.clinicId = clinicId;
 
-    const [sampledToday, analyzedToday, verifiedToday, approvedToday] = await Promise.all([
-      this.prisma.order.count({
-        where: { ...baseWhere, sampleCollectedBy: userId, sampleCollectedAt: { gte: todayStart } },
-      }),
-      this.prisma.orderDetail.count({
-        where: { resultEnteredBy: userId, resultEnteredAt: { gte: todayStart } },
-      }),
-      this.prisma.order.count({
-        where: { ...baseWhere, verifiedBy: userId, verifiedAt: { gte: todayStart } },
-      }),
-      this.prisma.order.count({
-        where: { ...baseWhere, approvedBy: userId, approvedAt: { gte: todayStart } },
-      }),
-    ]);
+    const [sampledToday, analyzedToday, verifiedToday, approvedToday] =
+      await Promise.all([
+        this.prisma.order.count({
+          where: {
+            ...baseWhere,
+            sampleCollectedBy: userId,
+            sampleCollectedAt: { gte: todayStart },
+          },
+        }),
+        this.prisma.orderDetail.count({
+          where: {
+            resultEnteredBy: userId,
+            resultEnteredAt: { gte: todayStart },
+          },
+        }),
+        this.prisma.order.count({
+          where: {
+            ...baseWhere,
+            verifiedBy: userId,
+            verifiedAt: { gte: todayStart },
+          },
+        }),
+        this.prisma.order.count({
+          where: {
+            ...baseWhere,
+            approvedBy: userId,
+            approvedAt: { gte: todayStart },
+          },
+        }),
+      ]);
 
     return { sampledToday, analyzedToday, verifiedToday, approvedToday };
   }
 
-  async getApprovalQueue(page: number = 1, limit: number = 20, clinicId?: string, search?: string) {
+  async getApprovalQueue(
+    page: number = 1,
+    limit: number = 20,
+    clinicId?: string,
+    search?: string,
+  ) {
     const skip = (page - 1) * limit;
 
     const where: any = {
@@ -652,7 +723,10 @@ export class LabWorkflowService {
     };
   }
 
-  async autoApproveIfEligible(orderId: string, userId: string): Promise<boolean> {
+  async autoApproveIfEligible(
+    orderId: string,
+    userId: string,
+  ): Promise<boolean> {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: { orderDetails: { include: { test: true } } },
@@ -685,11 +759,13 @@ export class LabWorkflowService {
       return false;
     }
 
-    await this.orderStateMachine.transition(
-      orderId,
-      OrderStatus.APPROVED,
-      { userId, metadata: { interpretation: 'Auto-approved: no tests require doctor approval, all results normal' } },
-    );
+    await this.orderStateMachine.transition(orderId, OrderStatus.APPROVED, {
+      userId,
+      metadata: {
+        interpretation:
+          'Auto-approved: no tests require doctor approval, all results normal',
+      },
+    });
 
     // Fire-and-forget: trigger notifications without blocking the approval response
     this.notificationService.triggerNotifications(orderId).catch((error) => {
@@ -740,10 +816,14 @@ export class LabWorkflowService {
           where: { id: visitId },
           data: { status: 'COMPLETED' },
         });
-        this.logger.log(`Visit ${visitId} auto-transitioned to COMPLETED (all orders terminal)`);
+        this.logger.log(
+          `Visit ${visitId} auto-transitioned to COMPLETED (all orders terminal)`,
+        );
       }
     } catch (error) {
-      this.logger.warn(`Failed to evaluate visit completion for ${visitId}: ${error}`);
+      this.logger.warn(
+        `Failed to evaluate visit completion for ${visitId}: ${error}`,
+      );
     }
   }
 
@@ -760,7 +840,13 @@ export class LabWorkflowService {
     return age;
   }
 
-  async getQueue(page: number = 1, limit: number = 20, clinicId?: string, search?: string, status?: string) {
+  async getQueue(
+    page: number = 1,
+    limit: number = 20,
+    clinicId?: string,
+    search?: string,
+    status?: string,
+  ) {
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -776,12 +862,20 @@ export class LabWorkflowService {
       todayStart.setHours(0, 0, 0, 0);
       where.status = { in: [OrderStatus.APPROVED, OrderStatus.NOTIFIED] };
       where.approvedAt = { gte: todayStart };
-    } else if (status && ['PAID', 'SAMPLE_COLLECTED', 'IN_ANALYSIS', 'VERIFIED'].includes(status)) {
+    } else if (
+      status &&
+      ['PAID', 'SAMPLE_COLLECTED', 'IN_ANALYSIS', 'VERIFIED'].includes(status)
+    ) {
       where.status = status;
     } else {
       // Default: show all lab-relevant statuses (including VERIFIED for consistency with stats)
       where.status = {
-        in: [OrderStatus.PAID, OrderStatus.SAMPLE_COLLECTED, OrderStatus.IN_ANALYSIS, OrderStatus.VERIFIED],
+        in: [
+          OrderStatus.PAID,
+          OrderStatus.SAMPLE_COLLECTED,
+          OrderStatus.IN_ANALYSIS,
+          OrderStatus.VERIFIED,
+        ],
       };
     }
 
@@ -801,7 +895,10 @@ export class LabWorkflowService {
         where,
         skip,
         take: limit,
-        orderBy: status === 'COMPLETED_TODAY' ? { approvedAt: 'desc' } : { createdAt: 'desc' },
+        orderBy:
+          status === 'COMPLETED_TODAY'
+            ? { approvedAt: 'desc' }
+            : { createdAt: 'desc' },
         include: {
           patient: true,
           orderDetails: {
@@ -857,13 +954,40 @@ export class LabWorkflowService {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [paid, sampleCollected, inAnalysis, verified, resample, completedToday] = await Promise.all([
-      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.PAID } }),
-      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.SAMPLE_COLLECTED } }),
-      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.IN_ANALYSIS } }),
-      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.VERIFIED } }),
-      this.prisma.order.count({ where: { ...baseWhere, status: OrderStatus.PAID, sampleCondition: { not: null, notIn: ['ACCEPTABLE'] } } }),
-      this.prisma.order.count({ where: { ...baseWhere, status: { in: [OrderStatus.APPROVED, OrderStatus.NOTIFIED] }, approvedAt: { gte: todayStart } } }),
+    const [
+      paid,
+      sampleCollected,
+      inAnalysis,
+      verified,
+      resample,
+      completedToday,
+    ] = await Promise.all([
+      this.prisma.order.count({
+        where: { ...baseWhere, status: OrderStatus.PAID },
+      }),
+      this.prisma.order.count({
+        where: { ...baseWhere, status: OrderStatus.SAMPLE_COLLECTED },
+      }),
+      this.prisma.order.count({
+        where: { ...baseWhere, status: OrderStatus.IN_ANALYSIS },
+      }),
+      this.prisma.order.count({
+        where: { ...baseWhere, status: OrderStatus.VERIFIED },
+      }),
+      this.prisma.order.count({
+        where: {
+          ...baseWhere,
+          status: OrderStatus.PAID,
+          sampleCondition: { not: null, notIn: ['ACCEPTABLE'] },
+        },
+      }),
+      this.prisma.order.count({
+        where: {
+          ...baseWhere,
+          status: { in: [OrderStatus.APPROVED, OrderStatus.NOTIFIED] },
+          approvedAt: { gte: todayStart },
+        },
+      }),
     ]);
 
     return {
@@ -968,17 +1092,23 @@ export class LabWorkflowService {
     });
 
     if (!order) {
-      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
+      throw new NotFoundException({
+        errorCode: 'ERR_NOT_FOUND',
+        message: 'Order not found',
+      });
     }
 
     // Use DeltaCheckService to get enriched results with percentageChange
-    const deltaResults = await this.deltaCheckService.performDeltaCheckForOrder(orderId);
+    const deltaResults =
+      await this.deltaCheckService.performDeltaCheckForOrder(orderId);
 
     // Combine delta results with full history for backwards compatibility
     const results = [];
 
     for (const detail of order.orderDetails) {
-      const deltaResult = deltaResults.find((r) => r.orderDetailId === detail.id);
+      const deltaResult = deltaResults.find(
+        (r) => r.orderDetailId === detail.id,
+      );
 
       const history = await this.prisma.orderDetail.findMany({
         where: {

@@ -151,25 +151,29 @@ describe('Property 14: Report version monotonicity', () => {
     const startingVersionArb = fc.integer({ min: 1, max: 100 });
 
     fc.assert(
-      fc.property(startingVersionArb, addendumCountArb, (startVersion, count) => {
-        // Simulate starting from an arbitrary version
-        const versions: number[] = [];
-        let reportVersion = startVersion;
+      fc.property(
+        startingVersionArb,
+        addendumCountArb,
+        (startVersion, count) => {
+          // Simulate starting from an arbitrary version
+          const versions: number[] = [];
+          let reportVersion = startVersion;
 
-        for (let i = 0; i < count; i++) {
-          reportVersion += 1;
-          versions.push(reportVersion);
-        }
+          for (let i = 0; i < count; i++) {
+            reportVersion += 1;
+            versions.push(reportVersion);
+          }
 
-        // All versions are strictly monotonically increasing
-        expect(isStrictlyMonotonic(versions)).toBe(true);
+          // All versions are strictly monotonically increasing
+          expect(isStrictlyMonotonic(versions)).toBe(true);
 
-        // First version after addendum is startVersion + 1
-        expect(versions[0]).toBe(startVersion + 1);
+          // First version after addendum is startVersion + 1
+          expect(versions[0]).toBe(startVersion + 1);
 
-        // Final version is startVersion + count
-        expect(versions[versions.length - 1]).toBe(startVersion + count);
-      }),
+          // Final version is startVersion + count
+          expect(versions[versions.length - 1]).toBe(startVersion + count);
+        },
+      ),
       { numRuns: 1000 },
     );
   });

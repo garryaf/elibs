@@ -31,26 +31,42 @@ describe('ValidationPipe - Property 5: Rejects payloads with unknown properties'
   // Arbitrary that generates a valid base DTO plus at least one extra unknown property
   const validBaseArbitrary = fc.record({
     name: fc.string({ minLength: 1 }),
-    email: fc.tuple(
-      fc.string({ minLength: 1, maxLength: 10, unit: 'grapheme-ascii' }),
-      fc.string({ minLength: 1, maxLength: 10, unit: 'grapheme-ascii' }),
-    ).map(([user, domain]) => `${user.replace(/[^a-z0-9]/gi, 'x')}@${domain.replace(/[^a-z0-9]/gi, 'x')}.com`),
+    email: fc
+      .tuple(
+        fc.string({ minLength: 1, maxLength: 10, unit: 'grapheme-ascii' }),
+        fc.string({ minLength: 1, maxLength: 10, unit: 'grapheme-ascii' }),
+      )
+      .map(
+        ([user, domain]) =>
+          `${user.replace(/[^a-z0-9]/gi, 'x')}@${domain.replace(/[^a-z0-9]/gi, 'x')}.com`,
+      ),
     age: fc.integer({ min: 0, max: 1000 }),
   });
 
   // Reserved JS property names to avoid generating (would break object behavior)
   const reservedKeys = new Set([
-    'name', 'email', 'age',
-    'toString', 'valueOf', 'constructor', 'hasOwnProperty',
-    'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString',
-    '__proto__', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__',
+    'name',
+    'email',
+    'age',
+    'toString',
+    'valueOf',
+    'constructor',
+    'hasOwnProperty',
+    'isPrototypeOf',
+    'propertyIsEnumerable',
+    'toLocaleString',
+    '__proto__',
+    '__defineGetter__',
+    '__defineSetter__',
+    '__lookupGetter__',
+    '__lookupSetter__',
   ]);
 
   // Generate unknown property keys that aren't in the DTO or reserved
   const unknownPropsArbitrary = fc.dictionary(
-    fc.string({ minLength: 1, maxLength: 20, unit: 'grapheme-ascii' }).filter(
-      (key) => !reservedKeys.has(key),
-    ),
+    fc
+      .string({ minLength: 1, maxLength: 20, unit: 'grapheme-ascii' })
+      .filter((key) => !reservedKeys.has(key)),
     fc.oneof(fc.string(), fc.integer(), fc.boolean(), fc.constant(null)),
     { minKeys: 1, maxKeys: 5 },
   );
@@ -135,14 +151,19 @@ describe('ValidationPipe - Property 6: Validation failure response conforms to e
             // If transform passes (unlikely with missing fields), that's fine
           } catch (error) {
             expect(error).toBeInstanceOf(BadRequestException);
-            const response = (error as BadRequestException).getResponse() as Record<string, unknown>;
+            const response = (
+              error as BadRequestException
+            ).getResponse() as Record<string, unknown>;
 
             // Verify structure: must have message and errors
             expect(response).toHaveProperty('message');
             expect(response).toHaveProperty('errors');
             expect(Array.isArray(response.errors)).toBe(true);
 
-            const errors = response.errors as Array<{ field?: string; constraint: string }>;
+            const errors = response.errors as Array<{
+              field?: string;
+              constraint: string;
+            }>;
 
             // Each error entry must have a constraint string
             for (const entry of errors) {
@@ -198,11 +219,18 @@ describe('ValidationPipe - Property 6: Validation failure response conforms to e
             });
           } catch (error) {
             expect(error).toBeInstanceOf(BadRequestException);
-            const response = (error as BadRequestException).getResponse() as Record<string, unknown>;
-            const errors = response.errors as Array<{ field?: string; constraint: string }>;
+            const response = (
+              error as BadRequestException
+            ).getResponse() as Record<string, unknown>;
+            const errors = response.errors as Array<{
+              field?: string;
+              constraint: string;
+            }>;
 
             // We expect at least as many errors as fields invalidated
-            expect(errors.length).toBeGreaterThanOrEqual(fieldsToInvalidate.length);
+            expect(errors.length).toBeGreaterThanOrEqual(
+              fieldsToInvalidate.length,
+            );
 
             // Each invalidated field must be represented in the errors
             for (const field of fieldsToInvalidate) {
@@ -228,9 +256,14 @@ describe('ValidationPipe - Property 6: Validation failure response conforms to e
             });
           } catch (error) {
             expect(error).toBeInstanceOf(BadRequestException);
-            const response = (error as BadRequestException).getResponse() as Record<string, unknown>;
+            const response = (
+              error as BadRequestException
+            ).getResponse() as Record<string, unknown>;
 
-            const errors = response.errors as Array<{ field?: string; constraint: string }>;
+            const errors = response.errors as Array<{
+              field?: string;
+              constraint: string;
+            }>;
             expect(errors.length).toBeGreaterThan(0);
 
             // Every error entry must have a non-empty constraint string

@@ -63,12 +63,7 @@ export class LabWebSocketGateway
         return;
       }
 
-      const payload = this.jwtService.verify(token) as {
-        sub: string;
-        email: string;
-        role: string;
-        clinicId: string | null;
-      };
+      const payload = this.jwtService.verify(token);
 
       // Attach user info to socket data for later use
       client.data.userId = payload.sub;
@@ -180,7 +175,9 @@ export class LabWebSocketGateway
    * Event listener: bridge EventEmitter2 `notification.status` to WebSocket.
    */
   @OnEvent('notification.status')
-  handleNotificationStatusEvent(payload: NotificationStatusPayload & { userId?: string }): void {
+  handleNotificationStatusEvent(
+    payload: NotificationStatusPayload & { userId?: string },
+  ): void {
     if (payload.userId) {
       this.emitNotificationStatus(payload.userId, payload);
     }

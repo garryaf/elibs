@@ -191,10 +191,7 @@ function encryptNikInWhere<T extends Record<string, unknown>>(
 
       if ('not' in filterObj) {
         const notVal = filterObj['not'];
-        if (
-          typeof notVal === 'string' &&
-          !cryptoService.isEncrypted(notVal)
-        ) {
+        if (typeof notVal === 'string' && !cryptoService.isEncrypted(notVal)) {
           filterObj['not'] = cryptoService.encrypt(notVal);
         }
       }
@@ -240,10 +237,7 @@ function encryptNikInWhere<T extends Record<string, unknown>>(
  * Decrypt the `nik` field in a query result.
  * Handles null results gracefully.
  */
-function decryptNikInResult<T>(
-  result: T,
-  cryptoService: CryptoService,
-): T {
+function decryptNikInResult<T>(result: T, cryptoService: CryptoService): T {
   if (!result || typeof result !== 'object') return result;
 
   const record = result as Record<string, unknown>;

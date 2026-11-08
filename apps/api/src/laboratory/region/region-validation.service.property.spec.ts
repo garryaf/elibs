@@ -82,197 +82,174 @@ describe('Property 1: Referential Integrity Enforcement', () => {
    * in the Provinsi table, the database SHALL reject the insertion with a
    * foreign key constraint error (P2003).
    */
-  it(
-    'should reject KabupatenKota insertion when provinsiId does not exist in parent table',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          regionIdArb,
-          regionIdArb,
-          regionNameArb,
-          async (nonexistentProvinsiId, kabupatenKotaId, name) => {
-            // Empty set = no known parents, so any ID is nonexistent
-            const prisma = createMockPrismaWithFkEnforcement(new Set());
+  it('should reject KabupatenKota insertion when provinsiId does not exist in parent table', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        regionIdArb,
+        regionIdArb,
+        regionNameArb,
+        async (nonexistentProvinsiId, kabupatenKotaId, name) => {
+          // Empty set = no known parents, so any ID is nonexistent
+          const prisma = createMockPrismaWithFkEnforcement(new Set());
 
-            await expect(
-              prisma.kabupatenKota.create({
-                data: {
-                  id: kabupatenKotaId,
-                  provinsiId: nonexistentProvinsiId,
-                  name,
-                  isActive: true,
-                },
-              }),
-            ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
+          await expect(
+            prisma.kabupatenKota.create({
+              data: {
+                id: kabupatenKotaId,
+                provinsiId: nonexistentProvinsiId,
+                name,
+                isActive: true,
+              },
+            }),
+          ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
 
-            try {
-              await prisma.kabupatenKota.create({
-                data: {
-                  id: kabupatenKotaId,
-                  provinsiId: nonexistentProvinsiId,
-                  name,
-                  isActive: true,
-                },
-              });
-            } catch (error) {
-              expect(error).toBeInstanceOf(
-                Prisma.PrismaClientKnownRequestError,
-              );
-              expect((error as Prisma.PrismaClientKnownRequestError).code).toBe(
-                'P2003',
-              );
-            }
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+          try {
+            await prisma.kabupatenKota.create({
+              data: {
+                id: kabupatenKotaId,
+                provinsiId: nonexistentProvinsiId,
+                name,
+                isActive: true,
+              },
+            });
+          } catch (error) {
+            expect(error).toBeInstanceOf(Prisma.PrismaClientKnownRequestError);
+            expect((error as Prisma.PrismaClientKnownRequestError).code).toBe(
+              'P2003',
+            );
+          }
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * For any child region (Kecamatan) with a kabupatenKotaId that does not exist
    * in the KabupatenKota table, the database SHALL reject the insertion with a
    * foreign key constraint error (P2003).
    */
-  it(
-    'should reject Kecamatan insertion when kabupatenKotaId does not exist in parent table',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          regionIdArb,
-          regionIdArb,
-          regionNameArb,
-          async (nonexistentKabupatenKotaId, kecamatanId, name) => {
-            const prisma = createMockPrismaWithFkEnforcement(new Set());
+  it('should reject Kecamatan insertion when kabupatenKotaId does not exist in parent table', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        regionIdArb,
+        regionIdArb,
+        regionNameArb,
+        async (nonexistentKabupatenKotaId, kecamatanId, name) => {
+          const prisma = createMockPrismaWithFkEnforcement(new Set());
 
-            await expect(
-              prisma.kecamatan.create({
-                data: {
-                  id: kecamatanId,
-                  kabupatenKotaId: nonexistentKabupatenKotaId,
-                  name,
-                  isActive: true,
-                },
-              }),
-            ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
+          await expect(
+            prisma.kecamatan.create({
+              data: {
+                id: kecamatanId,
+                kabupatenKotaId: nonexistentKabupatenKotaId,
+                name,
+                isActive: true,
+              },
+            }),
+          ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
 
-            try {
-              await prisma.kecamatan.create({
-                data: {
-                  id: kecamatanId,
-                  kabupatenKotaId: nonexistentKabupatenKotaId,
-                  name,
-                  isActive: true,
-                },
-              });
-            } catch (error) {
-              expect(error).toBeInstanceOf(
-                Prisma.PrismaClientKnownRequestError,
-              );
-              expect((error as Prisma.PrismaClientKnownRequestError).code).toBe(
-                'P2003',
-              );
-            }
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+          try {
+            await prisma.kecamatan.create({
+              data: {
+                id: kecamatanId,
+                kabupatenKotaId: nonexistentKabupatenKotaId,
+                name,
+                isActive: true,
+              },
+            });
+          } catch (error) {
+            expect(error).toBeInstanceOf(Prisma.PrismaClientKnownRequestError);
+            expect((error as Prisma.PrismaClientKnownRequestError).code).toBe(
+              'P2003',
+            );
+          }
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * For any child region (KelurahanDesa) with a kecamatanId that does not exist
    * in the Kecamatan table, the database SHALL reject the insertion with a
    * foreign key constraint error (P2003).
    */
-  it(
-    'should reject KelurahanDesa insertion when kecamatanId does not exist in parent table',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          regionIdArb,
-          regionIdArb,
-          regionNameArb,
-          async (nonexistentKecamatanId, kelurahanDesaId, name) => {
-            const prisma = createMockPrismaWithFkEnforcement(new Set());
+  it('should reject KelurahanDesa insertion when kecamatanId does not exist in parent table', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        regionIdArb,
+        regionIdArb,
+        regionNameArb,
+        async (nonexistentKecamatanId, kelurahanDesaId, name) => {
+          const prisma = createMockPrismaWithFkEnforcement(new Set());
 
-            await expect(
-              prisma.kelurahanDesa.create({
-                data: {
-                  id: kelurahanDesaId,
-                  kecamatanId: nonexistentKecamatanId,
-                  name,
-                  isActive: true,
-                },
-              }),
-            ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
+          await expect(
+            prisma.kelurahanDesa.create({
+              data: {
+                id: kelurahanDesaId,
+                kecamatanId: nonexistentKecamatanId,
+                name,
+                isActive: true,
+              },
+            }),
+          ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
 
-            try {
-              await prisma.kelurahanDesa.create({
-                data: {
-                  id: kelurahanDesaId,
-                  kecamatanId: nonexistentKecamatanId,
-                  name,
-                  isActive: true,
-                },
-              });
-            } catch (error) {
-              expect(error).toBeInstanceOf(
-                Prisma.PrismaClientKnownRequestError,
-              );
-              expect((error as Prisma.PrismaClientKnownRequestError).code).toBe(
-                'P2003',
-              );
-            }
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+          try {
+            await prisma.kelurahanDesa.create({
+              data: {
+                id: kelurahanDesaId,
+                kecamatanId: nonexistentKecamatanId,
+                name,
+                isActive: true,
+              },
+            });
+          } catch (error) {
+            expect(error).toBeInstanceOf(Prisma.PrismaClientKnownRequestError);
+            expect((error as Prisma.PrismaClientKnownRequestError).code).toBe(
+              'P2003',
+            );
+          }
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * Confirms that when a parent ID IS valid (exists in the known set),
    * the insertion succeeds — proving the rejection is specifically caused
    * by the nonexistent parent ID.
    */
-  it(
-    'should accept child insertion when parent ID exists (control property)',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          regionIdArb,
-          regionIdArb,
-          regionNameArb,
-          async (existingProvinsiId, kabupatenKotaId, name) => {
-            // The parent ID IS in the known set, so it should succeed
-            const prisma = createMockPrismaWithFkEnforcement(
-              new Set([existingProvinsiId]),
-            );
+  it('should accept child insertion when parent ID exists (control property)', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        regionIdArb,
+        regionIdArb,
+        regionNameArb,
+        async (existingProvinsiId, kabupatenKotaId, name) => {
+          // The parent ID IS in the known set, so it should succeed
+          const prisma = createMockPrismaWithFkEnforcement(
+            new Set([existingProvinsiId]),
+          );
 
-            const result = await prisma.kabupatenKota.create({
-              data: {
-                id: kabupatenKotaId,
-                provinsiId: existingProvinsiId,
-                name,
-                isActive: true,
-              },
-            });
+          const result = await prisma.kabupatenKota.create({
+            data: {
+              id: kabupatenKotaId,
+              provinsiId: existingProvinsiId,
+              name,
+              isActive: true,
+            },
+          });
 
-            expect(result).toBeDefined();
-            expect(result.provinsiId).toBe(existingProvinsiId);
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+          expect(result).toBeDefined();
+          expect(result.provinsiId).toBe(existingProvinsiId);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 });
-
 
 // Feature: master-wilayah-indonesia, Property 9: Region Hierarchy Validation
 import { Test, TestingModule } from '@nestjs/testing';
@@ -331,11 +308,13 @@ const partialSelectionArb9 = fc
 function createMockPrismaForValidation(returnRecord: boolean) {
   return {
     kelurahanDesa: {
-      findFirst: jest.fn().mockResolvedValue(
-        returnRecord
-          ? { id: '1234567890', kecamatanId: '123456', name: 'Test' }
-          : null,
-      ),
+      findFirst: jest
+        .fn()
+        .mockResolvedValue(
+          returnRecord
+            ? { id: '1234567890', kecamatanId: '123456', name: 'Test' }
+            : null,
+        ),
     },
   } as unknown as PrismaService;
 }
@@ -345,222 +324,206 @@ describe('Property 9: Region Hierarchy Validation', () => {
    * Valid hierarchy chains: when all four IDs form a consistent parent-child chain,
    * the service SHALL return true.
    */
-  it(
-    'should accept submission when all four region IDs form a valid parent-child chain',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          provinsiIdArb9,
-          kabupatenKotaIdArb9,
-          kecamatanIdArb9,
-          kelurahanDesaIdArb9,
-          async (provinsiId, kabupatenKotaId, kecamatanId, kelurahanDesaId) => {
-            // Mock Prisma returns a record → valid chain
-            const mockPrisma = createMockPrismaForValidation(true);
+  it('should accept submission when all four region IDs form a valid parent-child chain', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        provinsiIdArb9,
+        kabupatenKotaIdArb9,
+        kecamatanIdArb9,
+        kelurahanDesaIdArb9,
+        async (provinsiId, kabupatenKotaId, kecamatanId, kelurahanDesaId) => {
+          // Mock Prisma returns a record → valid chain
+          const mockPrisma = createMockPrismaForValidation(true);
 
-            const module: TestingModule = await Test.createTestingModule({
-              providers: [
-                RegionValidationService,
-                { provide: PrismaService, useValue: mockPrisma },
-              ],
-            }).compile();
-
-            const service = module.get<RegionValidationService>(
+          const module: TestingModule = await Test.createTestingModule({
+            providers: [
               RegionValidationService,
-            );
+              { provide: PrismaService, useValue: mockPrisma },
+            ],
+          }).compile();
 
-            const result = await service.validateHierarchy(
-              provinsiId,
-              kabupatenKotaId,
-              kecamatanId,
-              kelurahanDesaId,
-            );
+          const service = module.get<RegionValidationService>(
+            RegionValidationService,
+          );
 
-            expect(result).toBe(true);
+          const result = await service.validateHierarchy(
+            provinsiId,
+            kabupatenKotaId,
+            kecamatanId,
+            kelurahanDesaId,
+          );
 
-            // Verify the query was called with the correct nested where clause
-            expect(mockPrisma.kelurahanDesa.findFirst).toHaveBeenCalledWith({
-              where: {
-                id: kelurahanDesaId,
-                kecamatanId: kecamatanId,
-                kecamatan: {
-                  kabupatenKotaId: kabupatenKotaId,
-                  kabupatenKota: {
-                    provinsiId: provinsiId,
-                  },
+          expect(result).toBe(true);
+
+          // Verify the query was called with the correct nested where clause
+          expect(mockPrisma.kelurahanDesa.findFirst).toHaveBeenCalledWith({
+            where: {
+              id: kelurahanDesaId,
+              kecamatanId: kecamatanId,
+              kecamatan: {
+                kabupatenKotaId: kabupatenKotaId,
+                kabupatenKota: {
+                  provinsiId: provinsiId,
                 },
               },
-            });
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+            },
+          });
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * Invalid hierarchy chains: when all four IDs are provided but they do NOT form
    * a valid chain, the service SHALL throw BadRequestException with
    * "Region hierarchy is inconsistent".
    */
-  it(
-    'should reject submission when region IDs do not form a valid parent-child chain',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          provinsiIdArb9,
-          kabupatenKotaIdArb9,
-          kecamatanIdArb9,
-          kelurahanDesaIdArb9,
-          async (provinsiId, kabupatenKotaId, kecamatanId, kelurahanDesaId) => {
-            // Mock Prisma returns null → invalid chain
-            const mockPrisma = createMockPrismaForValidation(false);
+  it('should reject submission when region IDs do not form a valid parent-child chain', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        provinsiIdArb9,
+        kabupatenKotaIdArb9,
+        kecamatanIdArb9,
+        kelurahanDesaIdArb9,
+        async (provinsiId, kabupatenKotaId, kecamatanId, kelurahanDesaId) => {
+          // Mock Prisma returns null → invalid chain
+          const mockPrisma = createMockPrismaForValidation(false);
 
-            const module: TestingModule = await Test.createTestingModule({
-              providers: [
-                RegionValidationService,
-                { provide: PrismaService, useValue: mockPrisma },
-              ],
-            }).compile();
-
-            const service = module.get<RegionValidationService>(
+          const module: TestingModule = await Test.createTestingModule({
+            providers: [
               RegionValidationService,
+              { provide: PrismaService, useValue: mockPrisma },
+            ],
+          }).compile();
+
+          const service = module.get<RegionValidationService>(
+            RegionValidationService,
+          );
+
+          await expect(
+            service.validateHierarchy(
+              provinsiId,
+              kabupatenKotaId,
+              kecamatanId,
+              kelurahanDesaId,
+            ),
+          ).rejects.toThrow(BadRequestException);
+
+          try {
+            await service.validateHierarchy(
+              provinsiId,
+              kabupatenKotaId,
+              kecamatanId,
+              kelurahanDesaId,
             );
-
-            await expect(
-              service.validateHierarchy(
-                provinsiId,
-                kabupatenKotaId,
-                kecamatanId,
-                kelurahanDesaId,
-              ),
-            ).rejects.toThrow(BadRequestException);
-
-            try {
-              await service.validateHierarchy(
-                provinsiId,
-                kabupatenKotaId,
-                kecamatanId,
-                kelurahanDesaId,
-              );
-            } catch (error) {
-              expect(error).toBeInstanceOf(BadRequestException);
-              expect((error as BadRequestException).getResponse()).toMatchObject({
-                message: 'Region hierarchy is inconsistent',
-              });
-            }
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+          } catch (error) {
+            expect(error).toBeInstanceOf(BadRequestException);
+            expect((error as BadRequestException).getResponse()).toMatchObject({
+              message: 'Region hierarchy is inconsistent',
+            });
+          }
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
   /**
    * Partial selections: when some but not all region levels are filled,
    * the service SHALL throw BadRequestException with
    * "All region levels are required when any region is selected".
    */
-  it(
-    'should reject partial selections where some levels are filled and some are empty',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          partialSelectionArb9,
-          async ([provinsiId, kabupatenKotaId, kecamatanId, kelurahanDesaId]) => {
-            // For partial selections, PrismaService shouldn't even be called
-            const mockPrisma = createMockPrismaForValidation(false);
+  it('should reject partial selections where some levels are filled and some are empty', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        partialSelectionArb9,
+        async ([provinsiId, kabupatenKotaId, kecamatanId, kelurahanDesaId]) => {
+          // For partial selections, PrismaService shouldn't even be called
+          const mockPrisma = createMockPrismaForValidation(false);
 
-            const module: TestingModule = await Test.createTestingModule({
-              providers: [
-                RegionValidationService,
-                { provide: PrismaService, useValue: mockPrisma },
-              ],
-            }).compile();
-
-            const service = module.get<RegionValidationService>(
+          const module: TestingModule = await Test.createTestingModule({
+            providers: [
               RegionValidationService,
-            );
+              { provide: PrismaService, useValue: mockPrisma },
+            ],
+          }).compile();
 
-            await expect(
-              service.validateHierarchy(
-                provinsiId,
-                kabupatenKotaId,
-                kecamatanId,
-                kelurahanDesaId,
-              ),
-            ).rejects.toThrow(BadRequestException);
+          const service = module.get<RegionValidationService>(
+            RegionValidationService,
+          );
 
-            try {
-              await service.validateHierarchy(
-                provinsiId,
-                kabupatenKotaId,
-                kecamatanId,
-                kelurahanDesaId,
-              );
-            } catch (error) {
-              expect(error).toBeInstanceOf(BadRequestException);
-              expect((error as BadRequestException).getResponse()).toMatchObject({
-                message:
-                  'All region levels are required when any region is selected',
-              });
-            }
+          await expect(
+            service.validateHierarchy(
+              provinsiId,
+              kabupatenKotaId,
+              kecamatanId,
+              kelurahanDesaId,
+            ),
+          ).rejects.toThrow(BadRequestException);
 
-            // Prisma should NOT be called for partial selections
-            expect(mockPrisma.kelurahanDesa.findFirst).not.toHaveBeenCalled();
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
-
-  /**
-   * All-empty selection: when all four region levels are empty (null/undefined/''),
-   * the service SHALL return true without querying the database.
-   */
-  it(
-    'should accept submission when all region levels are empty',
-    async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          emptyValueArb9,
-          emptyValueArb9,
-          emptyValueArb9,
-          emptyValueArb9,
-          async (provinsiId, kabupatenKotaId, kecamatanId, kelurahanDesaId) => {
-            const mockPrisma = createMockPrismaForValidation(false);
-
-            const module: TestingModule = await Test.createTestingModule({
-              providers: [
-                RegionValidationService,
-                { provide: PrismaService, useValue: mockPrisma },
-              ],
-            }).compile();
-
-            const service = module.get<RegionValidationService>(
-              RegionValidationService,
-            );
-
-            const result = await service.validateHierarchy(
+          try {
+            await service.validateHierarchy(
               provinsiId,
               kabupatenKotaId,
               kecamatanId,
               kelurahanDesaId,
             );
+          } catch (error) {
+            expect(error).toBeInstanceOf(BadRequestException);
+            expect((error as BadRequestException).getResponse()).toMatchObject({
+              message:
+                'All region levels are required when any region is selected',
+            });
+          }
 
-            expect(result).toBe(true);
+          // Prisma should NOT be called for partial selections
+          expect(mockPrisma.kelurahanDesa.findFirst).not.toHaveBeenCalled();
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 
-            // Prisma should NOT be called when all empty
-            expect(mockPrisma.kelurahanDesa.findFirst).not.toHaveBeenCalled();
-          },
-        ),
-        { numRuns: 100 },
-      );
-    },
-    60000,
-  );
+  /**
+   * All-empty selection: when all four region levels are empty (null/undefined/''),
+   * the service SHALL return true without querying the database.
+   */
+  it('should accept submission when all region levels are empty', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        emptyValueArb9,
+        emptyValueArb9,
+        emptyValueArb9,
+        emptyValueArb9,
+        async (provinsiId, kabupatenKotaId, kecamatanId, kelurahanDesaId) => {
+          const mockPrisma = createMockPrismaForValidation(false);
+
+          const module: TestingModule = await Test.createTestingModule({
+            providers: [
+              RegionValidationService,
+              { provide: PrismaService, useValue: mockPrisma },
+            ],
+          }).compile();
+
+          const service = module.get<RegionValidationService>(
+            RegionValidationService,
+          );
+
+          const result = await service.validateHierarchy(
+            provinsiId,
+            kabupatenKotaId,
+            kecamatanId,
+            kelurahanDesaId,
+          );
+
+          expect(result).toBe(true);
+
+          // Prisma should NOT be called when all empty
+          expect(mockPrisma.kelurahanDesa.findFirst).not.toHaveBeenCalled();
+        },
+      ),
+      { numRuns: 100 },
+    );
+  }, 60000);
 });

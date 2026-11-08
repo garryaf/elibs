@@ -20,12 +20,21 @@ describe('loadAuditConfig', () => {
     expect(config.projectRoot).toBe(path.resolve(tmpDir));
     expect(config.apiSourcePath).toBe(path.resolve(tmpDir, 'apps/api/src'));
     expect(config.webSourcePath).toBe(path.resolve(tmpDir, 'apps/web/src'));
-    expect(config.prismaSchemaPath).toBe(path.resolve(tmpDir, 'apps/api/prisma/schema.prisma'));
-    expect(config.auditStatusPath).toBe(path.resolve(tmpDir, 'docs/AUDIT_STATUS.md'));
-    expect(config.functionalSpecPath).toBe(
-      path.resolve(tmpDir, 'Functiona spec/FS-TS-ELIS-LAB-NCR0001_Laboratory-Management.md'),
+    expect(config.prismaSchemaPath).toBe(
+      path.resolve(tmpDir, 'apps/api/prisma/schema.prisma'),
     );
-    expect(config.outputPath).toBe(path.resolve(tmpDir, 'docs/audit-report.md'));
+    expect(config.auditStatusPath).toBe(
+      path.resolve(tmpDir, 'docs/AUDIT_STATUS.md'),
+    );
+    expect(config.functionalSpecPath).toBe(
+      path.resolve(
+        tmpDir,
+        'Functiona spec/FS-TS-ELIS-LAB-NCR0001_Laboratory-Management.md',
+      ),
+    );
+    expect(config.outputPath).toBe(
+      path.resolve(tmpDir, 'docs/audit-report.md'),
+    );
     expect(config.maxDashboardPages).toBe(50);
   });
 
@@ -75,6 +84,8 @@ describe('loadAuditConfig', () => {
 
   it('should set default outputPath to docs/audit-report.md', () => {
     const config = loadAuditConfig(tmpDir);
-    expect(config.outputPath).toBe(path.resolve(tmpDir, 'docs/audit-report.md'));
+    expect(config.outputPath).toBe(
+      path.resolve(tmpDir, 'docs/audit-report.md'),
+    );
   });
 });

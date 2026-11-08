@@ -141,7 +141,8 @@ export class TatEscalationService implements OnModuleInit {
 
       if (maxTat === 0) continue; // No TAT configured for any test
 
-      const elapsed = (now.getTime() - order.sampleCollectedAt!.getTime()) / 60000;
+      const elapsed =
+        (now.getTime() - order.sampleCollectedAt!.getTime()) / 60000;
 
       if (elapsed > maxTat) {
         overdueOrders.push({
@@ -206,7 +207,10 @@ export class TatEscalationService implements OnModuleInit {
         'Order',
         order.id,
         { maxTatMinutes: order.maxTatMinutes },
-        { elapsedMinutes: order.elapsedMinutes, escalatedAt: new Date().toISOString() },
+        {
+          elapsedMinutes: order.elapsedMinutes,
+          escalatedAt: new Date().toISOString(),
+        },
       );
 
       this.logger.warn(

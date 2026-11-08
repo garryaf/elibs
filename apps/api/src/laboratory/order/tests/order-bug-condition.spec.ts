@@ -80,7 +80,9 @@ describe('Bug Condition: SUPER_ADMIN and DB-Permissioned Roles Can Access Order 
             }),
           } as any;
 
-          jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(permission);
+          jest
+            .spyOn(reflector, 'getAllAndOverride')
+            .mockReturnValue(permission);
 
           const result = await guard.canActivate(mockContext);
 
@@ -106,7 +108,9 @@ describe('Bug Condition: SUPER_ADMIN and DB-Permissioned Roles Can Access Order 
    */
   describe('PermissionGuard allows DB-permissioned roles through', () => {
     it('roles with orders:create DB permission should pass PermissionGuard', async () => {
-      const dbPermissionedRoleArb = fc.constantFrom(...DB_PERMISSIONED_ROLES_NOT_IN_OLD_LIST);
+      const dbPermissionedRoleArb = fc.constantFrom(
+        ...DB_PERMISSIONED_ROLES_NOT_IN_OLD_LIST,
+      );
 
       await fc.assert(
         fc.asyncProperty(dbPermissionedRoleArb, async (role) => {
@@ -134,7 +138,9 @@ describe('Bug Condition: SUPER_ADMIN and DB-Permissioned Roles Can Access Order 
             }),
           } as any;
 
-          jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue('orders:create');
+          jest
+            .spyOn(reflector, 'getAllAndOverride')
+            .mockReturnValue('orders:create');
 
           const result = await guard.canActivate(mockContext);
 
@@ -182,7 +188,9 @@ describe('Bug Condition: SUPER_ADMIN and DB-Permissioned Roles Can Access Order 
         }),
       } as any;
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue('orders:create');
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue('orders:create');
 
       const result = await guard.canActivate(mockContext);
 
@@ -221,7 +229,9 @@ describe('Bug Condition: SUPER_ADMIN and DB-Permissioned Roles Can Access Order 
         }),
       } as any;
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue('orders:create');
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue('orders:create');
 
       const result = await guard.canActivate(mockContext);
 

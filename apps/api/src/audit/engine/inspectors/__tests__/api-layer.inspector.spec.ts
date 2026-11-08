@@ -74,7 +74,9 @@ export class PatientController {
 
     const target: InspectionTarget = {
       layer: 'API',
-      patterns: [{ glob: 'src/patient/**/*.ts', purpose: 'Patient controller' }],
+      patterns: [
+        { glob: 'src/patient/**/*.ts', purpose: 'Patient controller' },
+      ],
       requiredArtifacts: [
         {
           description: 'POST endpoint',
@@ -171,7 +173,9 @@ export class LabController {
 
     const target: InspectionTarget = {
       layer: 'API',
-      patterns: [{ glob: 'src/lab/**/*.ts', purpose: 'Lab workflow controller' }],
+      patterns: [
+        { glob: 'src/lab/**/*.ts', purpose: 'Lab workflow controller' },
+      ],
       requiredArtifacts: [],
     };
 

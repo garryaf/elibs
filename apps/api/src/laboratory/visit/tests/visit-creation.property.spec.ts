@@ -62,7 +62,14 @@ describe('Feature: visit-management, Property 2: Visit Creation Produces REGISTE
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+            getDefaultInsurance: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -117,7 +124,7 @@ describe('Feature: visit-management, Property 2: Visit Creation Produces REGISTE
 
           const dto: CreateVisitDto = {
             patientId,
-            paymentMethod: PaymentMethod.CASH as any,
+            paymentMethod: PaymentMethod.CASH,
           };
 
           const result = await visitService.create(dto, userId);
@@ -126,9 +133,7 @@ describe('Feature: visit-management, Property 2: Visit Creation Produces REGISTE
           expect(result.status).toBe('REGISTERED');
 
           // visitNumber must match format VST-YYYYMM-XXXX
-          const parsed = VisitNumberGeneratorService.parse(
-            result.visitNumber,
-          );
+          const parsed = VisitNumberGeneratorService.parse(result.visitNumber);
           expect(parsed).not.toBeNull();
           expect(parsed!.year).toMatch(/^\d{4}$/);
           expect(parsed!.month).toMatch(/^\d{2}$/);
@@ -190,7 +195,14 @@ describe('Feature: visit-management, Property 3: BPJS Number Validation', () => 
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+            getDefaultInsurance: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -230,7 +242,7 @@ describe('Feature: visit-management, Property 3: BPJS Number Validation', () => 
         async (bpjsNumber) => {
           const dto: CreateVisitDto = {
             patientId: 'patient-id',
-            paymentMethod: PaymentMethod.BPJS as any,
+            paymentMethod: PaymentMethod.BPJS,
             bpjsNumber,
           };
 
@@ -299,7 +311,14 @@ describe('Feature: visit-management, Property 4: CASH Payment Ignores Insurance 
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+            getDefaultInsurance: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -342,7 +361,9 @@ describe('Feature: visit-management, Property 4: CASH Payment Ignores Insurance 
   it('should always succeed regardless of bpjsNumber or insuranceId values when paymentMethod is CASH', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.option(fc.string({ minLength: 0, maxLength: 50 }), { nil: undefined }),
+        fc.option(fc.string({ minLength: 0, maxLength: 50 }), {
+          nil: undefined,
+        }),
         fc.option(fc.uuid(), { nil: undefined }),
         async (bpjsNumber, insuranceId) => {
           // Mock insurance as existing if an insuranceId is provided (FK validation
@@ -358,7 +379,7 @@ describe('Feature: visit-management, Property 4: CASH Payment Ignores Insurance 
 
           const dto: CreateVisitDto = {
             patientId: 'patient-id',
-            paymentMethod: PaymentMethod.CASH as any,
+            paymentMethod: PaymentMethod.CASH,
             bpjsNumber: bpjsNumber ?? undefined,
             insuranceId: insuranceId ?? undefined,
           };

@@ -1,4 +1,10 @@
-import { Controller, Get, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -15,13 +21,29 @@ export class DashboardController {
 
   @Get('executive-summary')
   @CacheTTL(15000) // 15 seconds - dashboard refreshes frequently
-  @Roles(Role.OWNER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN, Role.KASIR, Role.CS, Role.MARKETING)
+  @Roles(
+    Role.OWNER,
+    Role.MANAGER,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+    Role.KASIR,
+    Role.CS,
+    Role.MARKETING,
+  )
   async getExecutiveSummary() {
     return this.dashboardService.getExecutiveSummary();
   }
 
   @Get('recent-orders')
-  @Roles(Role.OWNER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN, Role.KASIR, Role.CS, Role.MARKETING)
+  @Roles(
+    Role.OWNER,
+    Role.MANAGER,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+    Role.KASIR,
+    Role.CS,
+    Role.MARKETING,
+  )
   async getRecentOrders() {
     return this.dashboardService.getRecentOrders();
   }

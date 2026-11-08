@@ -67,7 +67,10 @@ describe('Unit Validation: MasterDataService enforces MeasurementUnit lookup', (
       providers: [
         MasterDataService,
         { provide: PrismaService, useValue: prismaService },
-        { provide: TariffResolverService, useValue: { getActiveTariff: jest.fn() } },
+        {
+          provide: TariffResolverService,
+          useValue: { getActiveTariff: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -79,7 +82,9 @@ describe('Unit Validation: MasterDataService enforces MeasurementUnit lookup', (
       // No duplicate code
       prismaService.testMaster.findFirst.mockResolvedValue(null);
       // Valid unit found
-      prismaService.measurementUnit.findFirst.mockResolvedValue(validUnitRecord);
+      prismaService.measurementUnit.findFirst.mockResolvedValue(
+        validUnitRecord,
+      );
       // Create succeeds
       prismaService.testMaster.create.mockResolvedValue({
         ...existingTest,
@@ -116,7 +121,9 @@ describe('Unit Validation: MasterDataService enforces MeasurementUnit lookup', (
         price: 50000,
       };
 
-      await expect(service.createTest(dto)).rejects.toThrow(BadRequestException);
+      await expect(service.createTest(dto)).rejects.toThrow(
+        BadRequestException,
+      );
 
       try {
         await service.createTest(dto);
@@ -158,7 +165,9 @@ describe('Unit Validation: MasterDataService enforces MeasurementUnit lookup', (
       // Test exists
       prismaService.testMaster.findFirst.mockResolvedValue(existingTest);
       // Valid unit found
-      prismaService.measurementUnit.findFirst.mockResolvedValue(validUnitRecord);
+      prismaService.measurementUnit.findFirst.mockResolvedValue(
+        validUnitRecord,
+      );
       // Update succeeds
       prismaService.testMaster.update.mockResolvedValue({
         ...existingTest,

@@ -58,7 +58,10 @@ const createVisitDtoArb = (patientId: string) =>
   fc
     .record({
       paymentMethod: paymentMethodArb.filter(
-        (pm) => pm !== PaymentMethod.BPJS && pm !== PaymentMethod.INSURANCE && pm !== PaymentMethod.INSURANCE_CASH_FALLBACK,
+        (pm) =>
+          pm !== PaymentMethod.BPJS &&
+          pm !== PaymentMethod.INSURANCE &&
+          pm !== PaymentMethod.INSURANCE_CASH_FALLBACK,
       ),
       doctorId: fc.option(fc.uuid(), { nil: undefined }),
       clinicId: fc.option(fc.uuid(), { nil: undefined }),
@@ -119,7 +122,14 @@ describe('Feature: duplicate-active-visit-guard, Property 2: Preservation — No
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+            getDefaultInsurance: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -169,9 +179,15 @@ describe('Feature: duplicate-active-visit-guard, Property 2: Preservation — No
       createdAt: new Date(),
       updatedAt: new Date(),
       patient: { id: patientId, name: 'Patient' },
-      doctor: args.data.doctorId ? { id: args.data.doctorId, name: 'Dr. Test' } : null,
-      clinic: args.data.clinicId ? { id: args.data.clinicId, name: 'Test Clinic' } : null,
-      insurance: args.data.insuranceId ? { id: args.data.insuranceId, name: 'Test Insurance' } : null,
+      doctor: args.data.doctorId
+        ? { id: args.data.doctorId, name: 'Dr. Test' }
+        : null,
+      clinic: args.data.clinicId
+        ? { id: args.data.clinicId, name: 'Test Clinic' }
+        : null,
+      insurance: args.data.insuranceId
+        ? { id: args.data.insuranceId, name: 'Test Insurance' }
+        : null,
     }));
   }
 
@@ -190,7 +206,10 @@ describe('Feature: duplicate-active-visit-guard, Property 2: Preservation — No
           fc.uuid(), // patientId
           fc.uuid(), // userId
           paymentMethodArb.filter(
-            (pm) => pm !== PaymentMethod.BPJS && pm !== PaymentMethod.INSURANCE && pm !== PaymentMethod.INSURANCE_CASH_FALLBACK,
+            (pm) =>
+              pm !== PaymentMethod.BPJS &&
+              pm !== PaymentMethod.INSURANCE &&
+              pm !== PaymentMethod.INSURANCE_CASH_FALLBACK,
           ),
           async (patientId, userId, paymentMethod) => {
             // Reset mocks for each run
@@ -210,7 +229,7 @@ describe('Feature: duplicate-active-visit-guard, Property 2: Preservation — No
 
             const dto: CreateVisitDto = {
               patientId,
-              paymentMethod: paymentMethod as any,
+              paymentMethod: paymentMethod,
             };
 
             const result = await visitService.create(dto, userId);
@@ -255,7 +274,10 @@ describe('Feature: duplicate-active-visit-guard, Property 2: Preservation — No
           fc.uuid(), // patientId
           fc.uuid(), // userId
           paymentMethodArb.filter(
-            (pm) => pm !== PaymentMethod.BPJS && pm !== PaymentMethod.INSURANCE && pm !== PaymentMethod.INSURANCE_CASH_FALLBACK,
+            (pm) =>
+              pm !== PaymentMethod.BPJS &&
+              pm !== PaymentMethod.INSURANCE &&
+              pm !== PaymentMethod.INSURANCE_CASH_FALLBACK,
           ),
           async (patientId, userId, paymentMethod) => {
             jest.clearAllMocks();
@@ -274,7 +296,7 @@ describe('Feature: duplicate-active-visit-guard, Property 2: Preservation — No
 
             const dto: CreateVisitDto = {
               patientId,
-              paymentMethod: paymentMethod as any,
+              paymentMethod: paymentMethod,
             };
 
             const result = await visitService.create(dto, userId);
@@ -304,7 +326,10 @@ describe('Feature: duplicate-active-visit-guard, Property 2: Preservation — No
           fc.uuid(), // patientId
           fc.uuid(), // userId
           paymentMethodArb.filter(
-            (pm) => pm !== PaymentMethod.BPJS && pm !== PaymentMethod.INSURANCE && pm !== PaymentMethod.INSURANCE_CASH_FALLBACK,
+            (pm) =>
+              pm !== PaymentMethod.BPJS &&
+              pm !== PaymentMethod.INSURANCE &&
+              pm !== PaymentMethod.INSURANCE_CASH_FALLBACK,
           ),
           async (patientId, userId, paymentMethod) => {
             jest.clearAllMocks();
@@ -322,7 +347,7 @@ describe('Feature: duplicate-active-visit-guard, Property 2: Preservation — No
 
             const dto: CreateVisitDto = {
               patientId,
-              paymentMethod: paymentMethod as any,
+              paymentMethod: paymentMethod,
             };
 
             const result = await visitService.create(dto, userId);
@@ -352,7 +377,10 @@ describe('Feature: duplicate-active-visit-guard, Property 2: Preservation — No
           fc.uuid(), // patientId
           fc.uuid(), // userId
           paymentMethodArb.filter(
-            (pm) => pm !== PaymentMethod.BPJS && pm !== PaymentMethod.INSURANCE && pm !== PaymentMethod.INSURANCE_CASH_FALLBACK,
+            (pm) =>
+              pm !== PaymentMethod.BPJS &&
+              pm !== PaymentMethod.INSURANCE &&
+              pm !== PaymentMethod.INSURANCE_CASH_FALLBACK,
           ),
           async (patientId, userId, paymentMethod) => {
             jest.clearAllMocks();
@@ -371,7 +399,7 @@ describe('Feature: duplicate-active-visit-guard, Property 2: Preservation — No
 
             const dto: CreateVisitDto = {
               patientId,
-              paymentMethod: paymentMethod as any,
+              paymentMethod: paymentMethod,
             };
 
             const result = await visitService.create(dto, userId);
@@ -477,7 +505,10 @@ describe('Feature: duplicate-active-visit-guard, Property 2: Preservation — No
           // Generate a scenario: patient has some number of CANCELLED/COMPLETED visits today
           fc.array(
             fc.record({
-              status: fc.constantFrom(VisitStatus.CANCELLED, VisitStatus.COMPLETED),
+              status: fc.constantFrom(
+                VisitStatus.CANCELLED,
+                VisitStatus.COMPLETED,
+              ),
               visitNumber: fc.constant('VST-202507-0099'),
             }),
             { minLength: 1, maxLength: 3 },
@@ -498,7 +529,7 @@ describe('Feature: duplicate-active-visit-guard, Property 2: Preservation — No
 
             const dto: CreateVisitDto = {
               patientId,
-              paymentMethod: PaymentMethod.CASH as any,
+              paymentMethod: PaymentMethod.CASH,
             };
 
             const result = await visitService.create(dto, userId);

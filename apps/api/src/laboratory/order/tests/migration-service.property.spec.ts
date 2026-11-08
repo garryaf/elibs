@@ -13,7 +13,10 @@ const validUuidV4Arb = fc.uuid().filter((u) => UUID_V4_REGEX.test(u));
  * Arbitrary that generates valid dates (filtering out NaN/invalid dates).
  */
 const validDateArb = fc
-  .date({ min: new Date('2020-01-01T00:00:00.000Z'), max: new Date('2026-12-31T23:59:59.999Z') })
+  .date({
+    min: new Date('2020-01-01T00:00:00.000Z'),
+    max: new Date('2026-12-31T23:59:59.999Z'),
+  })
   .filter((d) => !isNaN(d.getTime()));
 
 /**
@@ -169,40 +172,46 @@ describe('MigrationService Property Tests', () => {
             let sequenceCounter = 0;
 
             // Mock $transaction to execute the callback with a mock tx
-            mockPrisma.$transaction.mockImplementation(async (callback: Function) => {
-              const mockTx = {
-                visit: {
-                  create: jest.fn().mockImplementation((args: any) => {
-                    const visit = { id: `synthetic-visit-${visitCreateCalls.length}`, ...args.data };
-                    visitCreateCalls.push(args);
-                    return visit;
-                  }),
-                },
-                order: {
-                  updateMany: jest.fn().mockImplementation((args: any) => {
-                    orderUpdateManyCalls.push(args);
-                    return { count: args.where.id.in.length };
-                  }),
-                  count: jest.fn().mockResolvedValue(0), // zero NULLs remaining
-                },
-                auditLog: {
-                  create: jest.fn().mockImplementation((args: any) => {
-                    auditLogCreateCalls.push(args);
-                    return args.data;
-                  }),
-                },
-                visitSequence: {
-                  findUniqueOrThrow: jest.fn().mockImplementation(() => {
-                    sequenceCounter++;
-                    return { id: 'mock', lastValue: sequenceCounter };
-                  }),
-                },
-                $executeRaw: jest.fn().mockResolvedValue(1),
-              };
-              return callback(mockTx);
-            });
+            mockPrisma.$transaction.mockImplementation(
+              async (callback: Function) => {
+                const mockTx = {
+                  visit: {
+                    create: jest.fn().mockImplementation((args: any) => {
+                      const visit = {
+                        id: `synthetic-visit-${visitCreateCalls.length}`,
+                        ...args.data,
+                      };
+                      visitCreateCalls.push(args);
+                      return visit;
+                    }),
+                  },
+                  order: {
+                    updateMany: jest.fn().mockImplementation((args: any) => {
+                      orderUpdateManyCalls.push(args);
+                      return { count: args.where.id.in.length };
+                    }),
+                    count: jest.fn().mockResolvedValue(0), // zero NULLs remaining
+                  },
+                  auditLog: {
+                    create: jest.fn().mockImplementation((args: any) => {
+                      auditLogCreateCalls.push(args);
+                      return args.data;
+                    }),
+                  },
+                  visitSequence: {
+                    findUniqueOrThrow: jest.fn().mockImplementation(() => {
+                      sequenceCounter++;
+                      return { id: 'mock', lastValue: sequenceCounter };
+                    }),
+                  },
+                  $executeRaw: jest.fn().mockResolvedValue(1),
+                };
+                return callback(mockTx);
+              },
+            );
 
-            const result = await migrationService.runLegacyMigration(adminUserId);
+            const result =
+              await migrationService.runLegacyMigration(adminUserId);
 
             // Compute expected groups
             const expectedGroups = groupByPatientDate(legacyOrders);
@@ -265,32 +274,37 @@ describe('MigrationService Property Tests', () => {
 
             let sequenceCounter = 0;
 
-            mockPrisma.$transaction.mockImplementation(async (callback: Function) => {
-              const mockTx = {
-                visit: {
-                  create: jest.fn().mockImplementation((args: any) => {
-                    const visit = { id: `synthetic-visit-${visitCreateCalls.length}`, ...args.data };
-                    visitCreateCalls.push(args);
-                    return visit;
-                  }),
-                },
-                order: {
-                  updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-                  count: jest.fn().mockResolvedValue(0),
-                },
-                auditLog: {
-                  create: jest.fn().mockResolvedValue({}),
-                },
-                visitSequence: {
-                  findUniqueOrThrow: jest.fn().mockImplementation(() => {
-                    sequenceCounter++;
-                    return { id: 'mock', lastValue: sequenceCounter };
-                  }),
-                },
-                $executeRaw: jest.fn().mockResolvedValue(1),
-              };
-              return callback(mockTx);
-            });
+            mockPrisma.$transaction.mockImplementation(
+              async (callback: Function) => {
+                const mockTx = {
+                  visit: {
+                    create: jest.fn().mockImplementation((args: any) => {
+                      const visit = {
+                        id: `synthetic-visit-${visitCreateCalls.length}`,
+                        ...args.data,
+                      };
+                      visitCreateCalls.push(args);
+                      return visit;
+                    }),
+                  },
+                  order: {
+                    updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+                    count: jest.fn().mockResolvedValue(0),
+                  },
+                  auditLog: {
+                    create: jest.fn().mockResolvedValue({}),
+                  },
+                  visitSequence: {
+                    findUniqueOrThrow: jest.fn().mockImplementation(() => {
+                      sequenceCounter++;
+                      return { id: 'mock', lastValue: sequenceCounter };
+                    }),
+                  },
+                  $executeRaw: jest.fn().mockResolvedValue(1),
+                };
+                return callback(mockTx);
+              },
+            );
 
             await migrationService.runLegacyMigration(adminUserId);
 
@@ -314,7 +328,8 @@ describe('MigrationService Property Tests', () => {
             expect(visitCreateCalls.length).toBe(expectedMonths.length);
 
             for (let i = 0; i < visitCreateCalls.length; i++) {
-              const visitNumber = visitCreateCalls[i].data.visitNumber as string;
+              const visitNumber = visitCreateCalls[i].data
+                .visitNumber as string;
 
               // Format should be VST-YYYYMM-XXXX
               expect(visitNumber).toMatch(/^VST-\d{6}-\d{4}$/);
@@ -358,35 +373,40 @@ describe('MigrationService Property Tests', () => {
 
             let sequenceCounter = 0;
 
-            mockPrisma.$transaction.mockImplementation(async (callback: Function) => {
-              const mockTx = {
-                visit: {
-                  create: jest.fn().mockImplementation((args: any) => {
-                    const visit = { id: `synthetic-visit-${visitCreateCalls.length}`, ...args.data };
-                    visitCreateCalls.push(args);
-                    return visit;
-                  }),
-                },
-                order: {
-                  updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-                  count: jest.fn().mockResolvedValue(0),
-                },
-                auditLog: {
-                  create: jest.fn().mockImplementation((args: any) => {
-                    auditLogCreateCalls.push(args);
-                    return args.data;
-                  }),
-                },
-                visitSequence: {
-                  findUniqueOrThrow: jest.fn().mockImplementation(() => {
-                    sequenceCounter++;
-                    return { id: 'mock', lastValue: sequenceCounter };
-                  }),
-                },
-                $executeRaw: jest.fn().mockResolvedValue(1),
-              };
-              return callback(mockTx);
-            });
+            mockPrisma.$transaction.mockImplementation(
+              async (callback: Function) => {
+                const mockTx = {
+                  visit: {
+                    create: jest.fn().mockImplementation((args: any) => {
+                      const visit = {
+                        id: `synthetic-visit-${visitCreateCalls.length}`,
+                        ...args.data,
+                      };
+                      visitCreateCalls.push(args);
+                      return visit;
+                    }),
+                  },
+                  order: {
+                    updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+                    count: jest.fn().mockResolvedValue(0),
+                  },
+                  auditLog: {
+                    create: jest.fn().mockImplementation((args: any) => {
+                      auditLogCreateCalls.push(args);
+                      return args.data;
+                    }),
+                  },
+                  visitSequence: {
+                    findUniqueOrThrow: jest.fn().mockImplementation(() => {
+                      sequenceCounter++;
+                      return { id: 'mock', lastValue: sequenceCounter };
+                    }),
+                  },
+                  $executeRaw: jest.fn().mockResolvedValue(1),
+                };
+                return callback(mockTx);
+              },
+            );
 
             await migrationService.runLegacyMigration(adminUserId);
 
@@ -407,7 +427,7 @@ describe('MigrationService Property Tests', () => {
             // Verify order IDs in audit entries match orders in each group
             const allAuditOrderIds: string[] = [];
             for (const call of auditLogCreateCalls) {
-              const newValues = call.data.newValues as any;
+              const newValues = call.data.newValues;
               expect(newValues).toBeDefined();
               expect(newValues.migratedOrderIds).toBeDefined();
               expect(Array.isArray(newValues.migratedOrderIds)).toBe(true);

@@ -47,11 +47,7 @@ export class VerificationService {
    * @param userId - The real userId of the verifier
    * @param notes - Optional verification notes from the UI
    */
-  async verifyDetail(
-    orderDetailId: string,
-    userId: string,
-    notes?: string,
-  ) {
+  async verifyDetail(orderDetailId: string, userId: string, notes?: string) {
     const orderDetail = await this.prisma.orderDetail.findUnique({
       where: { id: orderDetailId },
       include: { order: true, test: true },
@@ -245,12 +241,12 @@ export class VerificationService {
 
     // Get existing previousResults array or start fresh
     const existingPreviousResults = Array.isArray(orderDetail.previousResults)
-      ? (orderDetail.previousResults as Prisma.JsonArray)
+      ? orderDetail.previousResults
       : [];
 
     const updatedPreviousResults: Prisma.JsonArray = [
       ...existingPreviousResults,
-      previousResultEntry as unknown as Prisma.JsonValue,
+      previousResultEntry,
     ];
 
     const newRerunCount = orderDetail.rerunCount + 1;

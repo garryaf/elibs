@@ -43,7 +43,10 @@ export interface ReferenceRange {
  * @param range - The reference range configuration
  * @returns The computed result flag
  */
-export function applyAutoFlag(value: number, range: ReferenceRange): ResultFlag {
+export function applyAutoFlag(
+  value: number,
+  range: ReferenceRange,
+): ResultFlag {
   const { minRef, maxRef, criticalMin, criticalMax } = range;
 
   // Check NORMAL first (inclusive bounds)

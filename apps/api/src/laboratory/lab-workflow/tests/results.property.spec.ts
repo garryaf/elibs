@@ -87,13 +87,16 @@ describe('Result Entry Property Tests', () => {
             (prismaService.orderDetail.findMany as jest.Mock).mockReset();
 
             // Create N OrderDetails, all with null resultValue initially
-            const orderDetails = Array.from({ length: totalDetails }, (_, i) => ({
-              id: `detail-${i}`,
-              orderId,
-              testId: `test-${i}`,
-              resultValue: null,
-              status: 'PENDING',
-            }));
+            const orderDetails = Array.from(
+              { length: totalDetails },
+              (_, i) => ({
+                id: `detail-${i}`,
+                orderId,
+                testId: `test-${i}`,
+                resultValue: null,
+                status: 'PENDING',
+              }),
+            );
 
             const mockOrder = {
               id: orderId,
@@ -110,7 +113,9 @@ describe('Result Entry Property Tests', () => {
               orderDetails,
             };
 
-            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(mockOrder);
+            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(
+              mockOrder,
+            );
 
             // After entering partial results, simulate that some still have null
             const updatedOrderDetails = orderDetails.map((od, i) => ({
@@ -164,13 +169,16 @@ describe('Result Entry Property Tests', () => {
             (prismaService.orderDetail.findMany as jest.Mock).mockReset();
 
             // Create N OrderDetails, all with null resultValue
-            const orderDetails = Array.from({ length: totalDetails }, (_, i) => ({
-              id: `detail-${i}`,
-              orderId,
-              testId: `test-${i}`,
-              resultValue: null,
-              status: 'PENDING',
-            }));
+            const orderDetails = Array.from(
+              { length: totalDetails },
+              (_, i) => ({
+                id: `detail-${i}`,
+                orderId,
+                testId: `test-${i}`,
+                resultValue: null,
+                status: 'PENDING',
+              }),
+            );
 
             const mockOrder = {
               id: orderId,
@@ -188,8 +196,9 @@ describe('Result Entry Property Tests', () => {
             };
 
             (prismaService.order.findUnique as jest.Mock)
-              .mockResolvedValueOnce(mockOrder)  // First call in enterResults
-              .mockResolvedValue({               // Return call at end
+              .mockResolvedValueOnce(mockOrder) // First call in enterResults
+              .mockResolvedValue({
+                // Return call at end
                 ...mockOrder,
                 status: OrderStatus.IN_ANALYSIS,
                 orderDetails: orderDetails.map((od) => ({
@@ -243,13 +252,16 @@ describe('Result Entry Property Tests', () => {
             (prismaService.orderDetail.update as jest.Mock).mockReset();
             (prismaService.orderDetail.findMany as jest.Mock).mockReset();
 
-            const orderDetails = Array.from({ length: totalDetails }, (_, i) => ({
-              id: `detail-${i}`,
-              orderId,
-              testId: `test-${i}`,
-              resultValue: null,
-              status: 'PENDING',
-            }));
+            const orderDetails = Array.from(
+              { length: totalDetails },
+              (_, i) => ({
+                id: `detail-${i}`,
+                orderId,
+                testId: `test-${i}`,
+                resultValue: null,
+                status: 'PENDING',
+              }),
+            );
 
             // Order is already IN_ANALYSIS (re-entering results after rejection)
             const mockOrder = {
@@ -267,7 +279,9 @@ describe('Result Entry Property Tests', () => {
               orderDetails,
             };
 
-            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(mockOrder);
+            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(
+              mockOrder,
+            );
 
             // All results are filled after entering
             const updatedOrderDetails = orderDetails.map((od) => ({

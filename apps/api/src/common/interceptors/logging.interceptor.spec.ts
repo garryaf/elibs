@@ -58,7 +58,10 @@ describe('LoggingInterceptor - Property Tests', () => {
           fc.property(
             fc.constantFrom('GET', 'POST', 'PUT', 'DELETE', 'PATCH'),
             fc
-              .array(fc.stringMatching(/^[a-z0-9]+$/), { minLength: 1, maxLength: 4 })
+              .array(fc.stringMatching(/^[a-z0-9]+$/), {
+                minLength: 1,
+                maxLength: 4,
+              })
               .map((segments) => '/' + segments.join('/')),
             fc.integer({ min: 100, max: 599 }),
             (method, path, statusCode) => {
@@ -107,13 +110,21 @@ describe('LoggingInterceptor - Property Tests', () => {
             logSpy.mockClear();
 
             const interceptor = new LoggingInterceptor();
-            const { context, response } = createMockContext('GET', '/test', 200, requestId);
+            const { context, response } = createMockContext(
+              'GET',
+              '/test',
+              200,
+              requestId,
+            );
             const callHandler = createMockCallHandler();
 
             interceptor.intercept(context, callHandler).subscribe();
 
             // Response header should echo the provided X-Request-ID
-            expect(response.setHeader).toHaveBeenCalledWith('X-Request-ID', requestId);
+            expect(response.setHeader).toHaveBeenCalledWith(
+              'X-Request-ID',
+              requestId,
+            );
 
             // Log entry should contain the same requestId
             expect(logSpy).toHaveBeenCalledTimes(1);
@@ -135,13 +146,20 @@ describe('LoggingInterceptor - Property Tests', () => {
           fc.property(
             fc.constantFrom('GET', 'POST', 'PUT', 'DELETE', 'PATCH'),
             fc
-              .array(fc.stringMatching(/^[a-z0-9]+$/), { minLength: 1, maxLength: 4 })
+              .array(fc.stringMatching(/^[a-z0-9]+$/), {
+                minLength: 1,
+                maxLength: 4,
+              })
               .map((segments) => '/' + segments.join('/')),
             (method, path) => {
               logSpy.mockClear();
 
               const interceptor = new LoggingInterceptor();
-              const { context, response } = createMockContext(method, path, 200);
+              const { context, response } = createMockContext(
+                method,
+                path,
+                200,
+              );
               const callHandler = createMockCallHandler();
 
               interceptor.intercept(context, callHandler).subscribe();

@@ -7,6 +7,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { CreateRefundDto } from './dto/create-refund.dto';
+import { UpdateRefundStatusDto } from './dto/update-refund-status.dto';
 import { Refund, RefundStatus } from '@prisma/client';
 
 @Injectable()
@@ -35,7 +36,11 @@ export class RefundService {
         refunds: {
           where: {
             status: {
-              in: [RefundStatus.PENDING, RefundStatus.APPROVED, RefundStatus.PROCESSED],
+              in: [
+                RefundStatus.PENDING,
+                RefundStatus.APPROVED,
+                RefundStatus.PROCESSED,
+              ],
             },
           },
           select: { amount: true },
@@ -117,5 +122,103 @@ export class RefundService {
       where: { orderId },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async listRefunds(params: {
+    page?: number;
+    limit?: number;
+    status?: RefundStatus;
+    search?: string;
+  }) {
+    const page = Math.max(1, params.page || 1);
+    const limit = Math.min(100, Math.max(1, params.limit || 20));
+    const where = {
+      ...(params.status ? { status: params.status } : {}),
+      ...(params.search
+        ? {
+            order: {
+              OR: [
+                { orderNumber: { contains: params.search, mode: 'insensitive' as const } },
+                {
+                  patient: {
+                    OR: [
+                      { name: { contains: params.search, mode: 'insensitive' as const } },
+                      { mrn: { contains: params.search, mode: 'insensitive' as const } },
+                    ],
+                  },
+                },
+              ],
+            },
+          }
+        : {}),
+    };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.refund.findMany({
+        where,
+        include: {
+          order: {
+            select: {
+              id: true,
+              orderNumber: true,
+              status: true,
+              totalAmount: true,
+              amountPaid: true,
+              patient: { select: { id: true, name: true, mrn: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.refund.count({ where }),
+    ]);
+
+    return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+  }
+
+  async updateStatus(
+    refundId: string,
+    dto: UpdateRefundStatusDto,
+    userId: string,
+  ): Promise<Refund> {
+    const refund = await this.prisma.refund.findUnique({ where: { id: refundId } });
+    if (!refund) throw new NotFoundException('Refund not found');
+
+    const allowedTransitions: Record<RefundStatus, RefundStatus[]> = {
+      [RefundStatus.PENDING]: [RefundStatus.APPROVED, RefundStatus.REJECTED],
+      [RefundStatus.APPROVED]: [RefundStatus.PROCESSED],
+      [RefundStatus.PROCESSED]: [],
+      [RefundStatus.REJECTED]: [],
+    };
+    if (!allowedTransitions[refund.status].includes(dto.status)) {
+      throw new BadRequestException(
+        `Cannot transition refund from ${refund.status} to ${dto.status}`,
+      );
+    }
+    if (dto.status === RefundStatus.PROCESSED && !dto.reference?.trim()) {
+      throw new BadRequestException('Settlement reference is required to process a refund');
+    }
+
+    const updated = await this.prisma.refund.update({
+      where: { id: refundId },
+      data: {
+        status: dto.status,
+        ...(dto.status === RefundStatus.PROCESSED
+          ? { processedAt: new Date(), processedBy: userId, reference: dto.reference!.trim() }
+          : {}),
+      },
+    });
+    await this.auditService.log(
+      userId,
+      `REFUND_${dto.status}`,
+      'Refund',
+      refundId,
+      { status: refund.status },
+      { status: dto.status, reference: dto.reference ?? null },
+      null,
+    );
+    return updated;
   }
 }

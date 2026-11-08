@@ -34,13 +34,17 @@ describe('Feature: laboratory-workflow-refactor, Property 14: Visit Search Filte
   );
 
   // Arbitrary for patient names
-  const patientNameArb = fc.string({ minLength: 2, maxLength: 30 }).filter((s) => s.trim().length > 0);
+  const patientNameArb = fc
+    .string({ minLength: 2, maxLength: 30 })
+    .filter((s) => s.trim().length > 0);
 
   // Arbitrary for MRN
   const mrnArb = fc.stringMatching(/^MRN-[0-9]{4,8}$/);
 
   // Arbitrary for visit numbers
-  const visitNumberArb = fc.stringMatching(/^VST-20(2[0-9])(0[1-9]|1[0-2])-[0-9]{4}$/);
+  const visitNumberArb = fc.stringMatching(
+    /^VST-20(2[0-9])(0[1-9]|1[0-2])-[0-9]{4}$/,
+  );
 
   it('search results SHALL only contain visits where visitNumber, patient name, or MRN contains the search term (case-insensitive)', async () => {
     await fc.assert(
@@ -64,7 +68,9 @@ describe('Feature: laboratory-workflow-refactor, Property 14: Visit Search Filte
           // Determine which visits match the search criteria
           const matchingVisits = allVisits.filter((v) => {
             const term = searchTerm.toLowerCase();
-            const matchesVisitNumber = v.visitNumber.toLowerCase().includes(term);
+            const matchesVisitNumber = v.visitNumber
+              .toLowerCase()
+              .includes(term);
             const matchesName = v.patient.name.toLowerCase().includes(term);
             const matchesMrn = v.patient.mrn.toLowerCase().includes(term);
             return matchesVisitNumber || matchesName || matchesMrn;
@@ -87,7 +93,11 @@ describe('Feature: laboratory-workflow-refactor, Property 14: Visit Search Filte
                   visitNumber: v.visitNumber,
                   status: v.status,
                   patientId: v.patientId,
-                  patient: { id: v.patient.id, name: v.patient.name, mrn: v.patient.mrn },
+                  patient: {
+                    id: v.patient.id,
+                    name: v.patient.name,
+                    mrn: v.patient.mrn,
+                  },
                   doctor: null,
                   clinic: null,
                   insurance: null,
@@ -117,8 +127,14 @@ describe('Feature: laboratory-workflow-refactor, Property 14: Visit Search Filte
           expect(findManyCall.where).toHaveProperty('OR');
           expect(findManyCall.where.OR).toEqual(
             expect.arrayContaining([
-              { patient: { name: { contains: searchTerm, mode: 'insensitive' } } },
-              { patient: { mrn: { contains: searchTerm, mode: 'insensitive' } } },
+              {
+                patient: {
+                  name: { contains: searchTerm, mode: 'insensitive' },
+                },
+              },
+              {
+                patient: { mrn: { contains: searchTerm, mode: 'insensitive' } },
+              },
               { visitNumber: { contains: searchTerm, mode: 'insensitive' } },
             ]),
           );
@@ -172,7 +188,9 @@ describe('Feature: laboratory-workflow-refactor, Property 14: Visit Search Filte
 
           // Invariant: where clause includes OR search criteria
           expect(findManyCall.where.OR).toEqual([
-            { patient: { name: { contains: searchTerm, mode: 'insensitive' } } },
+            {
+              patient: { name: { contains: searchTerm, mode: 'insensitive' } },
+            },
             { patient: { mrn: { contains: searchTerm, mode: 'insensitive' } } },
             { visitNumber: { contains: searchTerm, mode: 'insensitive' } },
           ]);
@@ -190,18 +208,28 @@ describe('Feature: laboratory-workflow-refactor, Property 14: Visit Search Filte
         fc.integer({ min: 0, max: 50 }),
         async (searchTerm, requestedLimit, totalMatchingVisits) => {
           const effectiveLimit = Math.min(requestedLimit, 100);
-          const expectedReturnCount = Math.min(totalMatchingVisits, effectiveLimit);
+          const expectedReturnCount = Math.min(
+            totalMatchingVisits,
+            effectiveLimit,
+          );
 
-          const mockResults = Array.from({ length: expectedReturnCount }, (_, i) => ({
-            id: `visit-${i}`,
-            visitNumber: `VST-202601-${String(i + 1).padStart(4, '0')}`,
-            status: VisitStatus.REGISTERED,
-            patientId: `patient-${i}`,
-            patient: { id: `patient-${i}`, name: `Patient ${i}`, mrn: `MRN-${i}` },
-            doctor: null,
-            clinic: null,
-            insurance: null,
-          }));
+          const mockResults = Array.from(
+            { length: expectedReturnCount },
+            (_, i) => ({
+              id: `visit-${i}`,
+              visitNumber: `VST-202601-${String(i + 1).padStart(4, '0')}`,
+              status: VisitStatus.REGISTERED,
+              patientId: `patient-${i}`,
+              patient: {
+                id: `patient-${i}`,
+                name: `Patient ${i}`,
+                mrn: `MRN-${i}`,
+              },
+              doctor: null,
+              clinic: null,
+              insurance: null,
+            }),
+          );
 
           const mockPrisma = {
             visit: {
@@ -234,9 +262,10 @@ describe('Feature: laboratory-workflow-refactor, Property 14: Visit Search Filte
           expect(findManyCall.take).toBe(effectiveLimit);
 
           // Invariant 4: totalPages calculation is correct
-          const expectedTotalPages = totalMatchingVisits === 0
-            ? 0
-            : Math.ceil(totalMatchingVisits / effectiveLimit);
+          const expectedTotalPages =
+            totalMatchingVisits === 0
+              ? 0
+              : Math.ceil(totalMatchingVisits / effectiveLimit);
           expect(result.meta.totalPages).toBe(expectedTotalPages);
         },
       ),

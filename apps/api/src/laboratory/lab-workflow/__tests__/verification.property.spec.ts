@@ -53,8 +53,7 @@ describe('Property 6: Per-parameter verification completeness', () => {
       status,
       resultValue: status !== OrderDetailStatus.PENDING ? '42' : null,
       flag: null,
-      verifiedAt:
-        status === OrderDetailStatus.VERIFIED ? new Date() : null,
+      verifiedAt: status === OrderDetailStatus.VERIFIED ? new Date() : null,
       verifiedBy:
         status === OrderDetailStatus.VERIFIED ? 'user-verifier' : null,
       rejectedAt: null,
@@ -174,15 +173,13 @@ describe('Property 6: Per-parameter verification completeness', () => {
       OrderDetailStatus.APPROVED,
     );
 
-    const positionAndCountArb = fc
-      .nat({ max: 49 })
-      .chain((totalMinusOne) => {
-        const total = totalMinusOne + 2; // at least 2 details (one verified, one not)
-        return fc.tuple(
-          fc.constant(total),
-          fc.nat({ max: total - 1 }), // position of the non-verified detail
-        );
-      });
+    const positionAndCountArb = fc.nat({ max: 49 }).chain((totalMinusOne) => {
+      const total = totalMinusOne + 2; // at least 2 details (one verified, one not)
+      return fc.tuple(
+        fc.constant(total),
+        fc.nat({ max: total - 1 }), // position of the non-verified detail
+      );
+    });
 
     await fc.assert(
       fc.asyncProperty(

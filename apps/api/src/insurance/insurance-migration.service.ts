@@ -227,7 +227,10 @@ export class InsuranceMigrationService {
       ordersSkipped: [], // Historical skip info not available post-migration
       priorityConflictsResolved: 0, // Historical conflict info not available post-migration
       batchId,
-      executedAt: patientRecords[0]?.createdAt ?? orderRecords[0]?.createdAt ?? new Date(),
+      executedAt:
+        patientRecords[0]?.createdAt ??
+        orderRecords[0]?.createdAt ??
+        new Date(),
     };
   }
 }

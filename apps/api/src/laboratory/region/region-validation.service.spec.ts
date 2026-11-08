@@ -48,8 +48,7 @@ describe('RegionValidationService', () => {
       ).rejects.toMatchObject({
         response: {
           errorCode: 'ERR_VALIDATION',
-          message:
-            'All region levels are required when any region is selected',
+          message: 'All region levels are required when any region is selected',
         },
       });
     });

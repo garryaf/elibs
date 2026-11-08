@@ -36,21 +36,10 @@ const CRITICAL_PATTERNS = [
 ];
 
 /** Substring patterns for HIGH severity (case-insensitive) */
-const HIGH_PATTERNS = [
-  'pricing',
-  'billing',
-  'payment',
-  'payer',
-  'insurance',
-];
+const HIGH_PATTERNS = ['pricing', 'billing', 'payment', 'payer', 'insurance'];
 
 /** Substring patterns for MEDIUM severity (case-insensitive) */
-const MEDIUM_PATTERNS = [
-  'gap report',
-  'audit trail',
-  'ui/ux',
-  'ui ux',
-];
+const MEDIUM_PATTERNS = ['gap report', 'audit trail', 'ui/ux', 'ui ux'];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -87,7 +76,9 @@ function assignSeverity(processName: string): Severity {
 /**
  * Derive affected layers from layer traces where status is not PRESENT.
  */
-function deriveAffectedLayers(classification: ProcessClassification): StackLayer[] {
+function deriveAffectedLayers(
+  classification: ProcessClassification,
+): StackLayer[] {
   return classification.layerTraces
     .filter((t) => t.status !== 'PRESENT')
     .map((t) => t.layer);

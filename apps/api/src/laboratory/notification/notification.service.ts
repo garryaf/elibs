@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { NotificationType, NotificationStatus, OrderStatus } from '@prisma/client';
+import {
+  NotificationType,
+  NotificationStatus,
+  OrderStatus,
+} from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { PdfGeneratorService, OrderWithDetails } from './pdf-generator.service';
 import { WhatsAppService } from './whatsapp.service';
@@ -120,9 +124,7 @@ export class NotificationService {
     }
 
     // Generate PDF report (needed for both patient and doctor notifications)
-    const pdfBuffer = await this.pdfGeneratorService.generateReport(
-      order as unknown as OrderWithDetails,
-    );
+    const pdfBuffer = await this.pdfGeneratorService.generateReport(order);
 
     // --- Patient notifications (subject to consent and contact info) ---
     const patientConsented = !!order.patient.consentDigitalNotification;
@@ -132,7 +134,9 @@ export class NotificationService {
       );
     } else {
       const hasEmail = !!order.patient.email;
-      const hasValidPhone = this.whatsAppService.isValidPhone(order.patient.phone);
+      const hasValidPhone = this.whatsAppService.isValidPhone(
+        order.patient.phone,
+      );
 
       if (!hasEmail && !hasValidPhone) {
         this.logger.log(
@@ -336,10 +340,14 @@ export class NotificationService {
           where: { id: visitId },
           data: { status: 'COMPLETED' },
         });
-        this.logger.log(`Visit ${visitId} auto-transitioned to COMPLETED (all orders terminal)`);
+        this.logger.log(
+          `Visit ${visitId} auto-transitioned to COMPLETED (all orders terminal)`,
+        );
       }
     } catch (error) {
-      this.logger.warn(`Failed to evaluate visit completion for ${visitId}: ${error}`);
+      this.logger.warn(
+        `Failed to evaluate visit completion for ${visitId}: ${error}`,
+      );
     }
   }
 
@@ -387,9 +395,7 @@ export class NotificationService {
     });
 
     // Generate PDF report dynamically
-    const pdfBuffer = await this.pdfGeneratorService.generateReport(
-      log.order as unknown as OrderWithDetails,
-    );
+    const pdfBuffer = await this.pdfGeneratorService.generateReport(log.order);
 
     if (log.type === NotificationType.EMAIL) {
       await this.emailQueue.add(
@@ -429,6 +435,8 @@ export class NotificationService {
       );
     }
 
-    this.logger.log(`Retried ${log.type} notification for order ${log.order.orderNumber}`);
+    this.logger.log(
+      `Retried ${log.type} notification for order ${log.order.orderNumber}`,
+    );
   }
 }

@@ -1,4 +1,11 @@
-import { IsUUID, IsOptional, IsString, IsNumber, Min, MaxLength } from 'class-validator';
+import {
+  IsUUID,
+  IsOptional,
+  IsString,
+  IsNumber,
+  Min,
+  MaxLength,
+} from 'class-validator';
 
 export class SubmitClaimDto {
   @IsUUID()

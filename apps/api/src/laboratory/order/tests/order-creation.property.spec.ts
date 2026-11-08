@@ -60,8 +60,14 @@ describe('Order Creation Property Tests', () => {
       mockVisitService,
       mockOrderValidationGuard,
       { validateVisitInsurance: jest.fn() } as any,
-      { transition: jest.fn(), canTransition: jest.fn(), getValidTransitions: jest.fn().mockReturnValue([]) } as any,
-      { generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001') } as any,
+      {
+        transition: jest.fn(),
+        canTransition: jest.fn(),
+        getValidTransitions: jest.fn().mockReturnValue([]),
+      } as any,
+      {
+        generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001'),
+      } as any,
     );
   });
 
@@ -137,26 +143,32 @@ describe('Order Creation Property Tests', () => {
             });
 
             // Mock: $transaction executes the callback and captures order.create args
-            mockPrisma.$transaction.mockImplementation(async (callback: any) => {
-              const txProxy = {
-                order: {
-                  create: jest.fn().mockImplementation((args: any) => {
-                    capturedOrderData = args.data;
-                    return {
-                      id: 'created-order-id',
-                      ...args.data,
-                    };
-                  }),
-                },
-                orderDetail: {
-                  createMany: jest.fn().mockResolvedValue({ count: uniqueTestIds.length }),
-                },
-              };
-              return callback(txProxy);
-            });
+            mockPrisma.$transaction.mockImplementation(
+              async (callback: any) => {
+                const txProxy = {
+                  order: {
+                    create: jest.fn().mockImplementation((args: any) => {
+                      capturedOrderData = args.data;
+                      return {
+                        id: 'created-order-id',
+                        ...args.data,
+                      };
+                    }),
+                  },
+                  orderDetail: {
+                    createMany: jest
+                      .fn()
+                      .mockResolvedValue({ count: uniqueTestIds.length }),
+                  },
+                };
+                return callback(txProxy);
+              },
+            );
 
             // Mock: visitService.transitionToInProgress resolves
-            mockVisitService.transitionToInProgress.mockResolvedValue(undefined);
+            mockVisitService.transitionToInProgress.mockResolvedValue(
+              undefined,
+            );
 
             // Mock: final findUnique returns the created order
             mockPrisma.order.findUnique.mockResolvedValue({
@@ -264,25 +276,31 @@ describe('Order Creation Property Tests', () => {
             });
 
             // Mock: transaction
-            mockPrisma.$transaction.mockImplementation(async (callback: any) => {
-              const txProxy = {
-                order: {
-                  create: jest.fn().mockResolvedValue({
-                    id: 'order-id',
-                    visitId,
-                    patientId,
-                    status: OrderStatus.PENDING_PAYMENT,
-                  }),
-                },
-                orderDetail: {
-                  createMany: jest.fn().mockResolvedValue({ count: uniqueTestIds.length }),
-                },
-              };
-              return callback(txProxy);
-            });
+            mockPrisma.$transaction.mockImplementation(
+              async (callback: any) => {
+                const txProxy = {
+                  order: {
+                    create: jest.fn().mockResolvedValue({
+                      id: 'order-id',
+                      visitId,
+                      patientId,
+                      status: OrderStatus.PENDING_PAYMENT,
+                    }),
+                  },
+                  orderDetail: {
+                    createMany: jest
+                      .fn()
+                      .mockResolvedValue({ count: uniqueTestIds.length }),
+                  },
+                };
+                return callback(txProxy);
+              },
+            );
 
             // Mock: transitionToInProgress resolves (idempotent behavior)
-            mockVisitService.transitionToInProgress.mockResolvedValue(undefined);
+            mockVisitService.transitionToInProgress.mockResolvedValue(
+              undefined,
+            );
 
             // Mock: final findUnique
             mockPrisma.order.findUnique.mockResolvedValue({
@@ -292,7 +310,10 @@ describe('Order Creation Property Tests', () => {
               status: OrderStatus.PENDING_PAYMENT,
               orderDetails: [],
               patient: { id: patientId, name: 'Test Patient' },
-              visit: { visitNumber: 'VST-202601-0001', status: VisitStatus.IN_PROGRESS },
+              visit: {
+                visitNumber: 'VST-202601-0001',
+                status: VisitStatus.IN_PROGRESS,
+              },
             });
 
             const dto = {
@@ -305,8 +326,12 @@ describe('Order Creation Property Tests', () => {
 
             // ASSERT: transitionToInProgress was called with the visitId
             // regardless of whether visit was REGISTERED or IN_PROGRESS
-            expect(mockVisitService.transitionToInProgress).toHaveBeenCalledTimes(1);
-            expect(mockVisitService.transitionToInProgress).toHaveBeenCalledWith(visitId);
+            expect(
+              mockVisitService.transitionToInProgress,
+            ).toHaveBeenCalledTimes(1);
+            expect(
+              mockVisitService.transitionToInProgress,
+            ).toHaveBeenCalledWith(visitId);
 
             // Reset mocks for next iteration
             jest.clearAllMocks();

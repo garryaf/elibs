@@ -47,7 +47,9 @@ describe('AuditArchivalProcessor', () => {
     );
 
     const job = { id: 'test-job-2' } as any;
-    await expect(processor.process(job)).rejects.toThrow('DB connection failed');
+    await expect(processor.process(job)).rejects.toThrow(
+      'DB connection failed',
+    );
   });
 
   it('should return 0 when no logs are archived', async () => {
@@ -217,14 +219,14 @@ describe('AuditArchivalService', () => {
     });
 
     it('should remove existing repeatable jobs before registering new one', async () => {
-      mockQueue.getRepeatableJobs.mockResolvedValue([
-        { key: 'old-job-key' },
-      ]);
+      mockQueue.getRepeatableJobs.mockResolvedValue([{ key: 'old-job-key' }]);
       mockPrisma.systemSetting.findUnique.mockResolvedValue(null);
 
       await service.onModuleInit();
 
-      expect(mockQueue.removeRepeatableByKey).toHaveBeenCalledWith('old-job-key');
+      expect(mockQueue.removeRepeatableByKey).toHaveBeenCalledWith(
+        'old-job-key',
+      );
       expect(mockQueue.add).toHaveBeenCalled();
     });
   });

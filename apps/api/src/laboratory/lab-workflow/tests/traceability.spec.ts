@@ -145,9 +145,7 @@ describe('LabWorkflowService - Traceability Chain Enforcement', () => {
         service.enterResults(
           orderId,
           {
-            results: [
-              { orderDetailId: 'detail-uuid-1', resultValue: '5.5' },
-            ],
+            results: [{ orderDetailId: 'detail-uuid-1', resultValue: '5.5' }],
           },
           userId,
         ),
@@ -157,9 +155,7 @@ describe('LabWorkflowService - Traceability Chain Enforcement', () => {
         await service.enterResults(
           orderId,
           {
-            results: [
-              { orderDetailId: 'detail-uuid-1', resultValue: '5.5' },
-            ],
+            results: [{ orderDetailId: 'detail-uuid-1', resultValue: '5.5' }],
           },
           userId,
         );

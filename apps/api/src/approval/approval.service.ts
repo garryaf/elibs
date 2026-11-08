@@ -13,9 +13,7 @@ import { CreateApprovalDto } from './dto/create-approval.dto';
 import { ApproveApprovalDto } from './dto/approve-approval.dto';
 import { RejectApprovalDto } from './dto/reject-approval.dto';
 import { IApprovalService } from './interfaces/approval.interface';
-import {
-  resolveDiscountRoutingRule,
-} from './discount-routing.config';
+import { resolveDiscountRoutingRule } from './discount-routing.config';
 import { DiscountApprovalPayload } from './discount-approval.service';
 
 @Injectable()
@@ -55,7 +53,11 @@ export class ApprovalService implements IApprovalService {
     }
 
     // Validate the approver is authorized for the current level
-    await this.validateApproverAuthorized(dto.approverId, request.currentLevel, request);
+    await this.validateApproverAuthorized(
+      dto.approverId,
+      request.currentLevel,
+      request,
+    );
 
     // Record the approval step
     await this.prisma.approvalStep.create({
@@ -84,7 +86,9 @@ export class ApprovalService implements IApprovalService {
 
       // For DISCOUNT requests, apply discount to order on final approval (Requirement 9.3)
       if (request.requestType === ApprovalType.DISCOUNT) {
-        await this.applyDiscountFromApproval(request.payload as unknown as DiscountApprovalPayload);
+        await this.applyDiscountFromApproval(
+          request.payload as unknown as DiscountApprovalPayload,
+        );
       }
 
       // Requirement 15.5: Explicit audit log for approval action
@@ -94,7 +98,11 @@ export class ApprovalService implements IApprovalService {
         'ApprovalRequest',
         id,
         { status: ApprovalStatus.PENDING, currentLevel: request.currentLevel },
-        { status: ApprovalStatus.APPROVED, currentLevel: newLevel, requestType: request.requestType },
+        {
+          status: ApprovalStatus.APPROVED,
+          currentLevel: newLevel,
+          requestType: request.requestType,
+        },
       );
 
       return updatedRequest;
@@ -123,7 +131,11 @@ export class ApprovalService implements IApprovalService {
     }
 
     // Validate the approver is authorized for the current level
-    await this.validateApproverAuthorized(dto.approverId, request.currentLevel, request);
+    await this.validateApproverAuthorized(
+      dto.approverId,
+      request.currentLevel,
+      request,
+    );
 
     // Record the rejection step
     await this.prisma.approvalStep.create({
@@ -154,7 +166,11 @@ export class ApprovalService implements IApprovalService {
       'ApprovalRequest',
       id,
       { status: ApprovalStatus.PENDING, currentLevel: request.currentLevel },
-      { status: ApprovalStatus.REJECTED, reason: dto.reason, requestType: request.requestType },
+      {
+        status: ApprovalStatus.REJECTED,
+        reason: dto.reason,
+        requestType: request.requestType,
+      },
     );
 
     return updatedRequest;
@@ -236,7 +252,7 @@ export class ApprovalService implements IApprovalService {
       if (routingRule && !routingRule.allowedRoles.includes(user.role)) {
         throw new ForbiddenException(
           `User role '${user.role}' is not authorized to approve discounts of ${payload.discountPercent}%. ` +
-          `Allowed roles: ${routingRule.allowedRoles.join(', ')}.`,
+            `Allowed roles: ${routingRule.allowedRoles.join(', ')}.`,
         );
       }
     }
@@ -249,7 +265,9 @@ export class ApprovalService implements IApprovalService {
    * Requirement 9.3: Populate Order.discountAmount and Order.discountReason
    * from approved request.
    */
-  private async applyDiscountFromApproval(payload: DiscountApprovalPayload): Promise<void> {
+  private async applyDiscountFromApproval(
+    payload: DiscountApprovalPayload,
+  ): Promise<void> {
     await this.prisma.order.update({
       where: { id: payload.orderId },
       data: {
@@ -266,7 +284,9 @@ export class ApprovalService implements IApprovalService {
     });
 
     if (!request) {
-      throw new NotFoundException(`Approval request with ID '${id}' not found.`);
+      throw new NotFoundException(
+        `Approval request with ID '${id}' not found.`,
+      );
     }
 
     return request;

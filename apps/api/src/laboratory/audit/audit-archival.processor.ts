@@ -12,9 +12,7 @@ import { AuditArchivalService } from './audit-archival.service';
 export class AuditArchivalProcessor extends WorkerHost {
   private readonly logger = new Logger(AuditArchivalProcessor.name);
 
-  constructor(
-    private readonly auditArchivalService: AuditArchivalService,
-  ) {
+  constructor(private readonly auditArchivalService: AuditArchivalService) {
     super();
   }
 

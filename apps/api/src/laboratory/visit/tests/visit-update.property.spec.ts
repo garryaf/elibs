@@ -65,7 +65,14 @@ describe('Feature: visit-management, Property 8: Immutable Fields on Update', ()
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+            getDefaultInsurance: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -89,7 +96,10 @@ describe('Feature: visit-management, Property 8: Immutable Fields on Update', ()
           insuranceId: fc.option(fc.uuid(), { nil: undefined }),
           bpjsNumber: fc.option(
             fc.string({ minLength: 13, maxLength: 13 }).map((s) =>
-              s.replace(/[^0-9]/g, '0').padEnd(13, '0').slice(0, 13),
+              s
+                .replace(/[^0-9]/g, '0')
+                .padEnd(13, '0')
+                .slice(0, 13),
             ),
             { nil: undefined },
           ),
@@ -157,7 +167,7 @@ describe('Feature: visit-management, Property 8: Immutable Fields on Update', ()
           // Build DTO — only pass fields the UpdateVisitDto actually accepts
           const dto: UpdateVisitDto = {};
           if (dtoFields.paymentMethod !== undefined) {
-            dto.paymentMethod = dtoFields.paymentMethod as any;
+            dto.paymentMethod = dtoFields.paymentMethod;
           }
           if (dtoFields.doctorId !== undefined) {
             dto.doctorId = dtoFields.doctorId;
@@ -246,7 +256,14 @@ describe('Feature: visit-management, Property 9: Updates Only Allowed on Non-Ter
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+            getDefaultInsurance: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -319,7 +336,8 @@ describe('Feature: visit-management, Property 9: Updates Only Allowed on Non-Ter
             dto.clinicId = dtoFields.clinicId;
           }
 
-          const isTerminal = visitStatus === 'COMPLETED' || visitStatus === 'CANCELLED';
+          const isTerminal =
+            visitStatus === 'COMPLETED' || visitStatus === 'CANCELLED';
 
           if (isTerminal) {
             // Should throw BadRequestException with ERR_INVALID_STATE

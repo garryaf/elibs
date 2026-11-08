@@ -40,7 +40,9 @@ export class CriticalValueService {
     });
 
     if (!order) {
-      this.logger.warn(`Order ${orderId} not found for critical value detection`);
+      this.logger.warn(
+        `Order ${orderId} not found for critical value detection`,
+      );
       return null;
     }
 
@@ -140,14 +142,10 @@ export class CriticalValueService {
         this.logger.log(`Cancelled escalation job for critical value ${logId}`);
       }
     } catch (error) {
-      this.logger.warn(
-        `Failed to cancel escalation job ${jobId}: ${error}`,
-      );
+      this.logger.warn(`Failed to cancel escalation job ${jobId}: ${error}`);
     }
 
-    this.logger.log(
-      `Critical value ${logId} acknowledged by user ${userId}`,
-    );
+    this.logger.log(`Critical value ${logId} acknowledged by user ${userId}`);
 
     return updatedLog;
   }

@@ -20,14 +20,7 @@ export const labKeys = {
 export function useLabQueue(params?: { page?: number; limit?: number; status?: string; search?: string }) {
   return useQuery({
     queryKey: labKeys.queue(params),
-    queryFn: () => {
-      const qs = new URLSearchParams();
-      if (params?.page) qs.set("page", String(params.page));
-      if (params?.limit) qs.set("limit", String(params.limit));
-      if (params?.status) qs.set("status", params.status);
-      if (params?.search) qs.set("search", params.search);
-      return apiClient.get(`/api/v1/lab/queue?${qs.toString()}`);
-    },
+    queryFn: () => apiClient.getLabQueue(params),
   });
 }
 
@@ -98,7 +91,7 @@ export function useConfirmSample() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ orderId, data }: { orderId: string; data: ConfirmSamplePayload }) =>
-      apiClient.post(`/api/v1/lab/${orderId}/sample`, data),
+      apiClient.collectSample(orderId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: labKeys.queue() });
       queryClient.invalidateQueries({ queryKey: labKeys.queueStats() });
@@ -110,7 +103,7 @@ export function useEnterResults() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ orderId, data }: { orderId: string; data: EnterResultsPayload }) =>
-      apiClient.put(`/api/v1/lab/${orderId}/results`, data),
+      apiClient.enterResults(orderId, data.results),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: labKeys.queue() });
     },
@@ -120,8 +113,8 @@ export function useEnterResults() {
 export function useVerifyResults() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, verificationNotes }: { orderId: string; verificationNotes?: string }) =>
-      apiClient.post(`/api/v1/lab/${orderId}/verify`, { verificationNotes }),
+    mutationFn: ({ orderId }: { orderId: string; verificationNotes?: string }) =>
+      apiClient.verifyResults(orderId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: labKeys.queue() });
       queryClient.invalidateQueries({ queryKey: labKeys.queueStats() });
@@ -142,7 +135,7 @@ export function useApproveOrder() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ orderId, data }: { orderId: string; data: ApproveOrderPayload }) =>
-      apiClient.post(`/api/v1/lab/${orderId}/approve`, data),
+      apiClient.approveOrder(orderId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: labKeys.approvalQueue() });
       queryClient.invalidateQueries({ queryKey: labKeys.queue() });

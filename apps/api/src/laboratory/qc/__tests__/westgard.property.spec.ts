@@ -52,14 +52,19 @@ describe('evaluateWestgardRules — Property 7: Determinism & Correctness', () =
   );
 
   /** Generate values constrained within ±1SD of the mean */
-  function arbWithin1SD(mean: number, sd: number): fc.Arbitrary<QCResultData[]> {
+  function arbWithin1SD(
+    mean: number,
+    sd: number,
+  ): fc.Arbitrary<QCResultData[]> {
     return fc.array(
-      fc.double({
-        min: mean - sd,
-        max: mean + sd,
-        noNaN: true,
-        noDefaultInfinity: true,
-      }).map((value) => ({ value })),
+      fc
+        .double({
+          min: mean - sd,
+          max: mean + sd,
+          noNaN: true,
+          noDefaultInfinity: true,
+        })
+        .map((value) => ({ value })),
       { minLength: 1, maxLength: 20 },
     );
   }
@@ -74,29 +79,24 @@ describe('evaluateWestgardRules — Property 7: Determinism & Correctness', () =
   // ---------------------------------------------------------------------------
   it('should be deterministic: same inputs always produce the same output', () => {
     fc.assert(
-      fc.property(
-        arbResults,
-        arbMean,
-        arbPositiveSD,
-        (results, mean, sd) => {
-          const result1 = evaluateWestgardRules(results, mean, sd);
-          const result2 = evaluateWestgardRules(results, mean, sd);
+      fc.property(arbResults, arbMean, arbPositiveSD, (results, mean, sd) => {
+        const result1 = evaluateWestgardRules(results, mean, sd);
+        const result2 = evaluateWestgardRules(results, mean, sd);
 
-          // Structural equality: same pass/fail status
-          expect(result1.passed).toBe(result2.passed);
+        // Structural equality: same pass/fail status
+        expect(result1.passed).toBe(result2.passed);
 
-          // Same number of violations
-          expect(result1.violations.length).toBe(result2.violations.length);
+        // Same number of violations
+        expect(result1.violations.length).toBe(result2.violations.length);
 
-          // Same violations in order
-          for (let i = 0; i < result1.violations.length; i++) {
-            expect(result1.violations[i].rule).toBe(result2.violations[i].rule);
-            expect(result1.violations[i].dataPoints).toEqual(
-              result2.violations[i].dataPoints,
-            );
-          }
-        },
-      ),
+        // Same violations in order
+        for (let i = 0; i < result1.violations.length; i++) {
+          expect(result1.violations[i].rule).toBe(result2.violations[i].rule);
+          expect(result1.violations[i].dataPoints).toEqual(
+            result2.violations[i].dataPoints,
+          );
+        }
+      }),
       { numRuns: 200 },
     );
   });
@@ -106,21 +106,16 @@ describe('evaluateWestgardRules — Property 7: Determinism & Correctness', () =
   // ---------------------------------------------------------------------------
   it('should have zero rejection-rule violations when result.passed === true', () => {
     fc.assert(
-      fc.property(
-        arbResults,
-        arbMean,
-        arbPositiveSD,
-        (results, mean, sd) => {
-          const result = evaluateWestgardRules(results, mean, sd);
+      fc.property(arbResults, arbMean, arbPositiveSD, (results, mean, sd) => {
+        const result = evaluateWestgardRules(results, mean, sd);
 
-          if (result.passed) {
-            const rejectionViolations = result.violations.filter((v) =>
-              REJECTION_RULES.includes(v.rule as any),
-            );
-            expect(rejectionViolations).toHaveLength(0);
-          }
-        },
-      ),
+        if (result.passed) {
+          const rejectionViolations = result.violations.filter((v) =>
+            REJECTION_RULES.includes(v.rule as any),
+          );
+          expect(rejectionViolations).toHaveLength(0);
+        }
+      }),
       { numRuns: 200 },
     );
   });
@@ -130,32 +125,24 @@ describe('evaluateWestgardRules — Property 7: Determinism & Correctness', () =
   // ---------------------------------------------------------------------------
   it('should return passed: true with no violations when sd === 0', () => {
     fc.assert(
-      fc.property(
-        arbResults,
-        arbMean,
-        (results, mean) => {
-          const result = evaluateWestgardRules(results, mean, 0);
+      fc.property(arbResults, arbMean, (results, mean) => {
+        const result = evaluateWestgardRules(results, mean, 0);
 
-          expect(result.passed).toBe(true);
-          expect(result.violations).toHaveLength(0);
-        },
-      ),
+        expect(result.passed).toBe(true);
+        expect(result.violations).toHaveLength(0);
+      }),
       { numRuns: 100 },
     );
   });
 
   it('should return passed: true with no violations when results are empty', () => {
     fc.assert(
-      fc.property(
-        arbMean,
-        arbPositiveSD,
-        (mean, sd) => {
-          const result = evaluateWestgardRules([], mean, sd);
+      fc.property(arbMean, arbPositiveSD, (mean, sd) => {
+        const result = evaluateWestgardRules([], mean, sd);
 
-          expect(result.passed).toBe(true);
-          expect(result.violations).toHaveLength(0);
-        },
-      ),
+        expect(result.passed).toBe(true);
+        expect(result.violations).toHaveLength(0);
+      }),
       { numRuns: 100 },
     );
   });
@@ -173,10 +160,13 @@ describe('evaluateWestgardRules — Property 7: Determinism & Correctness', () =
       fc.property(
         arbMean.filter((m) => Math.abs(m) < 5000),
         arbPositiveSD.filter((s) => s > 0.1 && s < 500),
-        fc.array(fc.double({ min: 0, max: 1, noNaN: true, noDefaultInfinity: true }), {
-          minLength: 1,
-          maxLength: 9,
-        }),
+        fc.array(
+          fc.double({ min: 0, max: 1, noNaN: true, noDefaultInfinity: true }),
+          {
+            minLength: 1,
+            maxLength: 9,
+          },
+        ),
         (mean, sd, fractions) => {
           // Map fractions [0,1] → values strictly within (mean - sd, mean + sd)
           const epsilon = sd * 0.001;
@@ -201,10 +191,13 @@ describe('evaluateWestgardRules — Property 7: Determinism & Correctness', () =
       fc.property(
         arbMean.filter((m) => Math.abs(m) < 5000),
         arbPositiveSD.filter((s) => s > 0.1 && s < 500),
-        fc.array(fc.double({ min: 0, max: 1, noNaN: true, noDefaultInfinity: true }), {
-          minLength: 1,
-          maxLength: 20,
-        }),
+        fc.array(
+          fc.double({ min: 0, max: 1, noNaN: true, noDefaultInfinity: true }),
+          {
+            minLength: 1,
+            maxLength: 20,
+          },
+        ),
         (mean, sd, fractions) => {
           const epsilon = sd * 0.001;
           const low = mean - sd + epsilon;
@@ -231,21 +224,16 @@ describe('evaluateWestgardRules — Property 7: Determinism & Correctness', () =
   // ---------------------------------------------------------------------------
   it('should have at least one rejection-rule violation when result.passed === false', () => {
     fc.assert(
-      fc.property(
-        arbResults,
-        arbMean,
-        arbPositiveSD,
-        (results, mean, sd) => {
-          const result = evaluateWestgardRules(results, mean, sd);
+      fc.property(arbResults, arbMean, arbPositiveSD, (results, mean, sd) => {
+        const result = evaluateWestgardRules(results, mean, sd);
 
-          if (!result.passed) {
-            const rejectionViolations = result.violations.filter((v) =>
-              REJECTION_RULES.includes(v.rule as any),
-            );
-            expect(rejectionViolations.length).toBeGreaterThanOrEqual(1);
-          }
-        },
-      ),
+        if (!result.passed) {
+          const rejectionViolations = result.violations.filter((v) =>
+            REJECTION_RULES.includes(v.rule as any),
+          );
+          expect(rejectionViolations.length).toBeGreaterThanOrEqual(1);
+        }
+      }),
       { numRuns: 200 },
     );
   });

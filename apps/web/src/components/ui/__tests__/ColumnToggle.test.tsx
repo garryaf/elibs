@@ -1,9 +1,9 @@
 import React from "react";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@/test-utils";
 import "@testing-library/jest-dom";
 import { ColumnToggle, useColumnVisibility } from "../ColumnToggle";
 import type { ColumnDef, ColumnVisibility } from "../ColumnToggle";
-import { renderHook } from "@testing-library/react";
+import { renderHook } from "@/test-utils";
 
 // ─── Mock localStorage ────────────────────────────────────────────────────────
 

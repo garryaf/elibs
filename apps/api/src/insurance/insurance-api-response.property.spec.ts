@@ -26,8 +26,12 @@ describe('API Response Insurance Derivation Property Tests', () => {
       id: uuidArb,
       patientId: fc.constant(patientId),
       insuranceId: uuidArb,
-      memberNumber: fc.option(fc.string({ minLength: 5, maxLength: 20 }), { nil: null }),
-      policyNumber: fc.option(fc.string({ minLength: 5, maxLength: 20 }), { nil: null }),
+      memberNumber: fc.option(fc.string({ minLength: 5, maxLength: 20 }), {
+        nil: null,
+      }),
+      policyNumber: fc.option(fc.string({ minLength: 5, maxLength: 20 }), {
+        nil: null,
+      }),
       priority: fc.integer({ min: 1, max: 5 }),
       type: fc.constantFrom('BPJS', 'SWASTA', 'CORPORATE', null),
       bpjsClassLevel: fc.option(fc.integer({ min: 1, max: 3 }), { nil: null }),
@@ -50,9 +54,18 @@ describe('API Response Insurance Derivation Property Tests', () => {
       orderId: fc.constant(orderId),
       insuranceId: uuidArb,
       coverageType: fc.constantFrom('PRIMARY', 'SECONDARY'),
-      claimStatus: fc.constantFrom('PENDING', 'SUBMITTED', 'APPROVED', 'REJECTED'),
-      claimAmount: fc.option(fc.integer({ min: 0, max: 10000000 }), { nil: null }),
-      approvedAmount: fc.option(fc.integer({ min: 0, max: 10000000 }), { nil: null }),
+      claimStatus: fc.constantFrom(
+        'PENDING',
+        'SUBMITTED',
+        'APPROVED',
+        'REJECTED',
+      ),
+      claimAmount: fc.option(fc.integer({ min: 0, max: 10000000 }), {
+        nil: null,
+      }),
+      approvedAmount: fc.option(fc.integer({ min: 0, max: 10000000 }), {
+        nil: null,
+      }),
       notes: fc.option(fc.string({ maxLength: 50 }), { nil: null }),
       migrationBatchId: fc.constant(null),
       createdAt: fc.constant(new Date()),
@@ -94,9 +107,15 @@ describe('API Response Insurance Derivation Property Tests', () => {
             PatientService,
             { provide: PrismaService, useValue: mockPrisma },
             { provide: MrnGeneratorService, useValue: { generate: jest.fn() } },
-            { provide: RegionValidationService, useValue: { validateHierarchy: jest.fn() } },
+            {
+              provide: RegionValidationService,
+              useValue: { validateHierarchy: jest.fn() },
+            },
             { provide: AuditService, useValue: { log: jest.fn() } },
-            { provide: InsuranceConsolidationService, useValue: mockConsolidationService },
+            {
+              provide: InsuranceConsolidationService,
+              useValue: mockConsolidationService,
+            },
           ],
         }).compile();
 
@@ -131,7 +150,9 @@ describe('API Response Insurance Derivation Property Tests', () => {
               );
 
               // Mock: getActiveInsurances returns some records
-              mockConsolidationService.getActiveInsurances.mockResolvedValue([]);
+              mockConsolidationService.getActiveInsurances.mockResolvedValue(
+                [],
+              );
 
               const result = await patientService.findById(patientId);
 
@@ -172,7 +193,9 @@ describe('API Response Insurance Derivation Property Tests', () => {
               );
 
               // Mock: no active insurances (no junction records)
-              mockConsolidationService.getActiveInsurances.mockResolvedValue([]);
+              mockConsolidationService.getActiveInsurances.mockResolvedValue(
+                [],
+              );
 
               const result = await patientService.findById(patientId);
 
@@ -204,7 +227,9 @@ describe('API Response Insurance Derivation Property Tests', () => {
             });
 
             // Mock: resolvePatientInsuranceId returns null (no source)
-            mockConsolidationService.resolvePatientInsuranceId.mockResolvedValue(null);
+            mockConsolidationService.resolvePatientInsuranceId.mockResolvedValue(
+              null,
+            );
             mockConsolidationService.getActiveInsurances.mockResolvedValue([]);
 
             const result = await patientService.findById(patientId);
@@ -263,7 +288,9 @@ describe('API Response Insurance Derivation Property Tests', () => {
           mockOrderValidationGuard as any,
           mockConsolidationService as any,
           mockOrderStateMachine as any,
-          { generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001') } as any,
+          {
+            generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001'),
+          } as any,
         );
       });
 
@@ -416,9 +443,15 @@ describe('API Response Insurance Derivation Property Tests', () => {
             PatientService,
             { provide: PrismaService, useValue: mockPrisma },
             { provide: MrnGeneratorService, useValue: { generate: jest.fn() } },
-            { provide: RegionValidationService, useValue: { validateHierarchy: jest.fn() } },
+            {
+              provide: RegionValidationService,
+              useValue: { validateHierarchy: jest.fn() },
+            },
             { provide: AuditService, useValue: { log: jest.fn() } },
-            { provide: InsuranceConsolidationService, useValue: mockConsolidationService },
+            {
+              provide: InsuranceConsolidationService,
+              useValue: mockConsolidationService,
+            },
           ],
         }).compile();
 
@@ -435,7 +468,10 @@ describe('API Response Insurance Derivation Property Tests', () => {
         await fc.assert(
           fc.asyncProperty(
             uuidArb,
-            fc.array(patientInsuranceRecordArb('patient-fixed'), { minLength: 0, maxLength: 5 }),
+            fc.array(patientInsuranceRecordArb('patient-fixed'), {
+              minLength: 0,
+              maxLength: 5,
+            }),
             async (patientId, activeInsurances) => {
               jest.clearAllMocks();
 
@@ -446,8 +482,12 @@ describe('API Response Insurance Derivation Property Tests', () => {
                 deletedAt: null,
               });
 
-              mockConsolidationService.resolvePatientInsuranceId.mockResolvedValue(null);
-              mockConsolidationService.getActiveInsurances.mockResolvedValue(activeInsurances);
+              mockConsolidationService.resolvePatientInsuranceId.mockResolvedValue(
+                null,
+              );
+              mockConsolidationService.getActiveInsurances.mockResolvedValue(
+                activeInsurances,
+              );
 
               const result = await patientService.findById(patientId);
 
@@ -487,7 +527,9 @@ describe('API Response Insurance Derivation Property Tests', () => {
               deletedAt: null,
             });
 
-            mockConsolidationService.resolvePatientInsuranceId.mockResolvedValue(null);
+            mockConsolidationService.resolvePatientInsuranceId.mockResolvedValue(
+              null,
+            );
             mockConsolidationService.getActiveInsurances.mockResolvedValue([]);
 
             const result = await patientService.findById(patientId);
@@ -545,7 +587,9 @@ describe('API Response Insurance Derivation Property Tests', () => {
           mockOrderValidationGuard as any,
           mockConsolidationService as any,
           mockOrderStateMachine as any,
-          { generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001') } as any,
+          {
+            generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001'),
+          } as any,
         );
       });
 
@@ -559,7 +603,10 @@ describe('API Response Insurance Derivation Property Tests', () => {
         await fc.assert(
           fc.asyncProperty(
             uuidArb, // orderId
-            fc.array(orderInsuranceRecordArb('order-fixed'), { minLength: 1, maxLength: 4 }),
+            fc.array(orderInsuranceRecordArb('order-fixed'), {
+              minLength: 1,
+              maxLength: 4,
+            }),
             async (orderId, orderInsurances) => {
               jest.clearAllMocks();
 

@@ -157,7 +157,9 @@ model Tariff {
     it('should return ABSENT status', async () => {
       const target: InspectionTarget = {
         layer: 'DATABASE',
-        patterns: [{ glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' }],
+        patterns: [
+          { glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' },
+        ],
         requiredArtifacts: [],
       };
 
@@ -175,7 +177,9 @@ model Tariff {
 
       const target: InspectionTarget = {
         layer: 'DATABASE',
-        patterns: [{ glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' }],
+        patterns: [
+          { glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' },
+        ],
         requiredArtifacts: [],
       };
 
@@ -195,11 +199,25 @@ model Tariff {
 
       const target: InspectionTarget = {
         layer: 'DATABASE',
-        patterns: [{ glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' }],
+        patterns: [
+          { glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' },
+        ],
         requiredArtifacts: [
-          { description: 'Patient model exists', searchPattern: 'model Patient', layer: 'DATABASE' },
-          { description: 'Patient has mrn field', searchPattern: 'mrn\\s+String\\s+@unique', layer: 'DATABASE' },
-          { description: 'Patient has nik field', searchPattern: 'nik\\s+String\\s+@unique', layer: 'DATABASE' },
+          {
+            description: 'Patient model exists',
+            searchPattern: 'model Patient',
+            layer: 'DATABASE',
+          },
+          {
+            description: 'Patient has mrn field',
+            searchPattern: 'mrn\\s+String\\s+@unique',
+            layer: 'DATABASE',
+          },
+          {
+            description: 'Patient has nik field',
+            searchPattern: 'nik\\s+String\\s+@unique',
+            layer: 'DATABASE',
+          },
         ],
       };
 
@@ -217,11 +235,25 @@ model Tariff {
 
       const target: InspectionTarget = {
         layer: 'DATABASE',
-        patterns: [{ glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' }],
+        patterns: [
+          { glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' },
+        ],
         requiredArtifacts: [
-          { description: 'Patient model exists', searchPattern: 'model Patient', layer: 'DATABASE' },
-          { description: 'Patient has bloodType', searchPattern: 'bloodType\\s+String', layer: 'DATABASE' },
-          { description: 'NonExistentModel', searchPattern: 'model NonExistent', layer: 'DATABASE' },
+          {
+            description: 'Patient model exists',
+            searchPattern: 'model Patient',
+            layer: 'DATABASE',
+          },
+          {
+            description: 'Patient has bloodType',
+            searchPattern: 'bloodType\\s+String',
+            layer: 'DATABASE',
+          },
+          {
+            description: 'NonExistentModel',
+            searchPattern: 'model NonExistent',
+            layer: 'DATABASE',
+          },
         ],
       };
 
@@ -239,10 +271,20 @@ model Tariff {
 
       const target: InspectionTarget = {
         layer: 'DATABASE',
-        patterns: [{ glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' }],
+        patterns: [
+          { glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' },
+        ],
         requiredArtifacts: [
-          { description: 'Missing model', searchPattern: 'model Specimen', layer: 'DATABASE' },
-          { description: 'Missing table', searchPattern: '@@map\\("specimens"\\)', layer: 'DATABASE' },
+          {
+            description: 'Missing model',
+            searchPattern: 'model Specimen',
+            layer: 'DATABASE',
+          },
+          {
+            description: 'Missing table',
+            searchPattern: '@@map\\("specimens"\\)',
+            layer: 'DATABASE',
+          },
         ],
       };
 
@@ -260,10 +302,20 @@ model Tariff {
 
       const target: InspectionTarget = {
         layer: 'DATABASE',
-        patterns: [{ glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' }],
+        patterns: [
+          { glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' },
+        ],
         requiredArtifacts: [
-          { description: 'Order-Patient relation', searchPattern: 'patient\\s+Patient\\s+@relation', layer: 'DATABASE' },
-          { description: 'Order-Visit relation', searchPattern: 'visit\\s+Visit\\s+@relation', layer: 'DATABASE' },
+          {
+            description: 'Order-Patient relation',
+            searchPattern: 'patient\\s+Patient\\s+@relation',
+            layer: 'DATABASE',
+          },
+          {
+            description: 'Order-Visit relation',
+            searchPattern: 'visit\\s+Visit\\s+@relation',
+            layer: 'DATABASE',
+          },
         ],
       };
 
@@ -279,10 +331,21 @@ model Tariff {
 
       const target: InspectionTarget = {
         layer: 'DATABASE',
-        patterns: [{ glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' }],
+        patterns: [
+          { glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' },
+        ],
         requiredArtifacts: [
-          { description: 'PatientInsurance unique constraint', searchPattern: '@@unique\\(\\[patientId, priority\\]\\)', layer: 'DATABASE' },
-          { description: 'Tariff unique constraint', searchPattern: '@@unique\\(\\[testId, clinicId, insuranceId, effectiveFrom\\]\\)', layer: 'DATABASE' },
+          {
+            description: 'PatientInsurance unique constraint',
+            searchPattern: '@@unique\\(\\[patientId, priority\\]\\)',
+            layer: 'DATABASE',
+          },
+          {
+            description: 'Tariff unique constraint',
+            searchPattern:
+              '@@unique\\(\\[testId, clinicId, insuranceId, effectiveFrom\\]\\)',
+            layer: 'DATABASE',
+          },
         ],
       };
 
@@ -298,10 +361,20 @@ model Tariff {
 
       const target: InspectionTarget = {
         layer: 'DATABASE',
-        patterns: [{ glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' }],
+        patterns: [
+          { glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' },
+        ],
         requiredArtifacts: [
-          { description: 'Gender enum', searchPattern: 'enum Gender', layer: 'DATABASE' },
-          { description: 'OrderStatus enum', searchPattern: 'enum OrderStatus', layer: 'DATABASE' },
+          {
+            description: 'Gender enum',
+            searchPattern: 'enum Gender',
+            layer: 'DATABASE',
+          },
+          {
+            description: 'OrderStatus enum',
+            searchPattern: 'enum OrderStatus',
+            layer: 'DATABASE',
+          },
         ],
       };
 
@@ -317,10 +390,20 @@ model Tariff {
 
       const target: InspectionTarget = {
         layer: 'DATABASE',
-        patterns: [{ glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' }],
+        patterns: [
+          { glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' },
+        ],
         requiredArtifacts: [
-          { description: 'Order has visitId FK', searchPattern: 'visitId\\s+String\\s+@db\\.Uuid', layer: 'DATABASE' },
-          { description: 'Order has patientId FK', searchPattern: 'patientId\\s+String\\s+@db\\.Uuid', layer: 'DATABASE' },
+          {
+            description: 'Order has visitId FK',
+            searchPattern: 'visitId\\s+String\\s+@db\\.Uuid',
+            layer: 'DATABASE',
+          },
+          {
+            description: 'Order has patientId FK',
+            searchPattern: 'patientId\\s+String\\s+@db\\.Uuid',
+            layer: 'DATABASE',
+          },
         ],
       };
 
@@ -338,7 +421,9 @@ model Tariff {
       const patientModel = schema.models.find((m) => m.name === 'Patient');
       expect(patientModel).toBeDefined();
       expect(patientModel!.fields.find((f) => f.name === 'mrn')).toBeDefined();
-      expect(patientModel!.fields.find((f) => f.name === 'mrn')!.hasUnique).toBe(true);
+      expect(
+        patientModel!.fields.find((f) => f.name === 'mrn')!.hasUnique,
+      ).toBe(true);
       expect(patientModel!.tableName).toBe('patients');
     });
 
@@ -358,8 +443,14 @@ model Tariff {
       const piModel = schema.models.find((m) => m.name === 'PatientInsurance');
       expect(piModel).toBeDefined();
       expect(piModel!.uniqueConstraints.length).toBe(2);
-      expect(piModel!.uniqueConstraints).toContainEqual(['patientId', 'insuranceId']);
-      expect(piModel!.uniqueConstraints).toContainEqual(['patientId', 'priority']);
+      expect(piModel!.uniqueConstraints).toContainEqual([
+        'patientId',
+        'insuranceId',
+      ]);
+      expect(piModel!.uniqueConstraints).toContainEqual([
+        'patientId',
+        'priority',
+      ]);
     });
 
     it('should parse indexes', () => {
@@ -404,9 +495,15 @@ model Tariff {
 
       const target: InspectionTarget = {
         layer: 'DATABASE',
-        patterns: [{ glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' }],
+        patterns: [
+          { glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' },
+        ],
         requiredArtifacts: [
-          { description: 'Bad pattern', searchPattern: '[invalid(regex', layer: 'DATABASE' },
+          {
+            description: 'Bad pattern',
+            searchPattern: '[invalid(regex',
+            layer: 'DATABASE',
+          },
         ],
       };
 
@@ -425,7 +522,9 @@ model Tariff {
 
       const target: InspectionTarget = {
         layer: 'DATABASE',
-        patterns: [{ glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' }],
+        patterns: [
+          { glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' },
+        ],
         requiredArtifacts: [],
       };
 
@@ -450,9 +549,18 @@ model Tariff {
 
       const target: InspectionTarget = {
         layer: 'DATABASE',
-        patterns: [{ glob: 'custom/path/schema.prisma', purpose: 'Custom Prisma schema location' }],
+        patterns: [
+          {
+            glob: 'custom/path/schema.prisma',
+            purpose: 'Custom Prisma schema location',
+          },
+        ],
         requiredArtifacts: [
-          { description: 'Test model', searchPattern: 'model Test', layer: 'DATABASE' },
+          {
+            description: 'Test model',
+            searchPattern: 'model Test',
+            layer: 'DATABASE',
+          },
         ],
       };
 
@@ -468,7 +576,11 @@ model Tariff {
         layer: 'DATABASE',
         patterns: [{ glob: 'some/other/path/**/*.ts', purpose: 'Some files' }],
         requiredArtifacts: [
-          { description: 'Patient model', searchPattern: 'model Patient', layer: 'DATABASE' },
+          {
+            description: 'Patient model',
+            searchPattern: 'model Patient',
+            layer: 'DATABASE',
+          },
         ],
       };
 
@@ -484,9 +596,15 @@ model Tariff {
 
       const target: InspectionTarget = {
         layer: 'DATABASE',
-        patterns: [{ glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' }],
+        patterns: [
+          { glob: 'apps/api/prisma/schema.prisma', purpose: 'Prisma schema' },
+        ],
         requiredArtifacts: [
-          { description: 'Patient model', searchPattern: 'model Patient', layer: 'DATABASE' },
+          {
+            description: 'Patient model',
+            searchPattern: 'model Patient',
+            layer: 'DATABASE',
+          },
         ],
       };
 

@@ -49,7 +49,8 @@ describe('AllExceptionsFilter', () => {
 
   it('should never include stack traces in response body', () => {
     const error = new Error('Secret error');
-    error.stack = 'Error: Secret error\n    at Object.<anonymous> (/app/src/main.ts:10:5)';
+    error.stack =
+      'Error: Secret error\n    at Object.<anonymous> (/app/src/main.ts:10:5)';
 
     filter.catch(error, mockHost);
 

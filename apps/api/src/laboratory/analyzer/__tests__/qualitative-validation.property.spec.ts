@@ -109,21 +109,18 @@ describe('Qualitative Result Validation Property Tests', () => {
      */
     it('accepts any value when qualitativeOptions is empty', () => {
       fc.assert(
-        fc.property(
-          fc.string({ minLength: 1, maxLength: 50 }),
-          (anyValue) => {
-            const row = csvRowArb(anyValue);
-            const testConfig = {
-              resultType: ResultType.QUALITATIVE,
-              qualitativeOptions: [],
-              code: 'TEST-001',
-              isActive: true,
-            };
+        fc.property(fc.string({ minLength: 1, maxLength: 50 }), (anyValue) => {
+          const row = csvRowArb(anyValue);
+          const testConfig = {
+            resultType: ResultType.QUALITATIVE,
+            qualitativeOptions: [],
+            code: 'TEST-001',
+            isActive: true,
+          };
 
-            const result = service.validateRow(row, testConfig);
-            expect(result).toBeNull();
-          },
-        ),
+          const result = service.validateRow(row, testConfig);
+          expect(result).toBeNull();
+        }),
         { numRuns: 100 },
       );
     });
@@ -166,7 +163,12 @@ describe('Qualitative Result Validation Property Tests', () => {
     it('accepts valid numeric strings for NUMERIC resultType', () => {
       fc.assert(
         fc.property(
-          fc.double({ noNaN: true, noDefaultInfinity: true, min: -100000, max: 100000 }),
+          fc.double({
+            noNaN: true,
+            noDefaultInfinity: true,
+            min: -100000,
+            max: 100000,
+          }),
           (numValue) => {
             const row = csvRowArb(String(numValue));
             const testConfig = {
@@ -192,16 +194,13 @@ describe('Qualitative Result Validation Property Tests', () => {
      */
     it('returns error when test config is null (test not found)', () => {
       fc.assert(
-        fc.property(
-          fc.string({ minLength: 1, maxLength: 30 }),
-          (anyValue) => {
-            const row = csvRowArb(anyValue);
-            const result = service.validateRow(row, null);
-            expect(result).not.toBeNull();
-            expect(result!.field).toBe('testCode');
-            expect(result!.message).toContain('not found');
-          },
-        ),
+        fc.property(fc.string({ minLength: 1, maxLength: 30 }), (anyValue) => {
+          const row = csvRowArb(anyValue);
+          const result = service.validateRow(row, null);
+          expect(result).not.toBeNull();
+          expect(result!.field).toBe('testCode');
+          expect(result!.message).toContain('not found');
+        }),
         { numRuns: 50 },
       );
     });

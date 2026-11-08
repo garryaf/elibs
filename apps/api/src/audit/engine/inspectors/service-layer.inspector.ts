@@ -21,7 +21,10 @@ export class ServiceLayerInspector {
    * @param projectRoot - Absolute path to the project workspace root
    * @returns LayerTrace for the SERVICE layer
    */
-  async inspect(target: InspectionTarget, projectRoot: string): Promise<LayerTrace> {
+  async inspect(
+    target: InspectionTarget,
+    projectRoot: string,
+  ): Promise<LayerTrace> {
     const matchedFiles: string[] = [];
     const issues: string[] = [];
 
@@ -36,7 +39,9 @@ export class ServiceLayerInspector {
         });
         matchedFiles.push(...files);
       } catch (err) {
-        issues.push(`Glob error for "${pattern.glob}": ${(err as Error).message}`);
+        issues.push(
+          `Glob error for "${pattern.glob}": ${(err as Error).message}`,
+        );
       }
     }
 
@@ -82,7 +87,9 @@ export class ServiceLayerInspector {
           if (!firstMatchedFile) {
             firstMatchedFile = normalizedPath;
           }
-          const lineNumber = content.substring(0, injectableMatch.index).split('\n').length;
+          const lineNumber = content
+            .substring(0, injectableMatch.index)
+            .split('\n').length;
           lineReferences.push(lineNumber);
         }
 
@@ -99,7 +106,9 @@ export class ServiceLayerInspector {
           dependencyInjectionFound = true;
         }
       } catch (err) {
-        issues.push(`Error reading "${normalizedPath}": ${(err as Error).message}`);
+        issues.push(
+          `Error reading "${normalizedPath}": ${(err as Error).message}`,
+        );
       }
     }
 
@@ -112,7 +121,9 @@ export class ServiceLayerInspector {
       try {
         regex = new RegExp(artifact.searchPattern, 'm');
       } catch (err) {
-        issues.push(`Invalid regex "${artifact.searchPattern}": ${(err as Error).message}`);
+        issues.push(
+          `Invalid regex "${artifact.searchPattern}": ${(err as Error).message}`,
+        );
         continue;
       }
 
@@ -140,10 +151,14 @@ export class ServiceLayerInspector {
 
     const evidenceParts: string[] = [];
     if (injectableFound) evidenceParts.push('@Injectable() decorator found');
-    if (businessLogicFound) evidenceParts.push('business logic patterns detected');
-    if (dependencyInjectionFound) evidenceParts.push('DI constructor injection found');
+    if (businessLogicFound)
+      evidenceParts.push('business logic patterns detected');
+    if (dependencyInjectionFound)
+      evidenceParts.push('DI constructor injection found');
     if (totalArtifacts > 0) {
-      evidenceParts.push(`${artifactsFound}/${totalArtifacts} required artifacts matched`);
+      evidenceParts.push(
+        `${artifactsFound}/${totalArtifacts} required artifacts matched`,
+      );
     }
 
     return {
@@ -151,9 +166,10 @@ export class ServiceLayerInspector {
       status,
       filePath: firstMatchedFile,
       lineReferences: lineReferences.length > 0 ? lineReferences : undefined,
-      evidence: evidenceParts.length > 0
-        ? evidenceParts.join('; ')
-        : `Scanned ${matchedFiles.length} file(s), no service indicators found`,
+      evidence:
+        evidenceParts.length > 0
+          ? evidenceParts.join('; ')
+          : `Scanned ${matchedFiles.length} file(s), no service indicators found`,
       issues: issues.length > 0 ? issues : undefined,
     };
   }
@@ -172,12 +188,14 @@ export class ServiceLayerInspector {
     artifactsFound: number,
     totalArtifacts: number,
   ): 'PRESENT' | 'PARTIAL' | 'ABSENT' {
-    const hasServiceIndicators = injectableFound && (businessLogicFound || dependencyInjectionFound);
+    const hasServiceIndicators =
+      injectableFound && (businessLogicFound || dependencyInjectionFound);
 
     // If no required artifacts are specified, determine by indicators alone
     if (totalArtifacts === 0) {
       if (hasServiceIndicators) return 'PRESENT';
-      if (injectableFound || businessLogicFound || dependencyInjectionFound) return 'PARTIAL';
+      if (injectableFound || businessLogicFound || dependencyInjectionFound)
+        return 'PARTIAL';
       return 'ABSENT';
     }
 
@@ -185,7 +203,12 @@ export class ServiceLayerInspector {
     const allArtifactsFound = artifactsFound >= totalArtifacts;
 
     if (hasServiceIndicators && allArtifactsFound) return 'PRESENT';
-    if (injectableFound || businessLogicFound || dependencyInjectionFound || artifactsFound > 0) {
+    if (
+      injectableFound ||
+      businessLogicFound ||
+      dependencyInjectionFound ||
+      artifactsFound > 0
+    ) {
       return 'PARTIAL';
     }
     return 'ABSENT';

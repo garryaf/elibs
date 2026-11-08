@@ -128,7 +128,8 @@ export class BulkImportService {
           await this.upsertRow(entityType, row, schema);
           successCount++;
         } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
+          const message =
+            error instanceof Error ? error.message : String(error);
           // Extract useful info from Prisma errors
           let friendlyMessage = message;
           if (message.includes('Foreign key constraint')) {
@@ -204,9 +205,7 @@ export class BulkImportService {
         })
         .on('end', () => resolve(rows))
         .on('error', (err) =>
-          reject(
-            new BadRequestException(`CSV parse error: ${err.message}`),
-          ),
+          reject(new BadRequestException(`CSV parse error: ${err.message}`)),
         );
     });
   }
@@ -362,7 +361,8 @@ export class BulkImportService {
   private async upsertTest(row: Record<string, string>): Promise<void> {
     // Resolve categoryId — support both UUID and category name
     let categoryId = row.categoryId;
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     if (categoryId && !uuidRegex.test(categoryId)) {
       // Not a UUID — treat as category name and look up
@@ -373,7 +373,9 @@ export class BulkImportService {
       if (category) {
         categoryId = category.id;
       } else {
-        throw new Error(`Kategori "${categoryId}" tidak ditemukan. Buat kategori terlebih dahulu.`);
+        throw new Error(
+          `Kategori "${categoryId}" tidak ditemukan. Buat kategori terlebih dahulu.`,
+        );
       }
     } else if (categoryId && uuidRegex.test(categoryId)) {
       // UUID provided — verify it exists
@@ -391,7 +393,9 @@ export class BulkImportService {
         if (existingTest) {
           categoryId = existingTest.categoryId; // Keep existing category
         } else {
-          throw new Error(`categoryId "${categoryId}" tidak ditemukan di database. Gunakan nama kategori (misal: "Hematologi") atau UUID yang valid.`);
+          throw new Error(
+            `categoryId "${categoryId}" tidak ditemukan di database. Gunakan nama kategori (misal: "Hematologi") atau UUID yang valid.`,
+          );
         }
       }
     }

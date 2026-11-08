@@ -1,4 +1,13 @@
-import { IsOptional, IsString, IsInt, IsEnum, Min, Max, MaxLength, IsUUID } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsInt,
+  IsEnum,
+  Min,
+  Max,
+  MaxLength,
+  IsUUID,
+} from 'class-validator';
 import { BpjsVerificationStatus } from '@prisma/client';
 
 export class CreateBpjsOrderDetailDto {

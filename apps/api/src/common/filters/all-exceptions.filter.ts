@@ -26,8 +26,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
     const response = ctx.getResponse<Response>();
 
-    const traceId =
-      (request.headers['x-request-id'] as string) || randomUUID();
+    const traceId = (request.headers['x-request-id'] as string) || randomUUID();
 
     let status: number;
     let message: string;
@@ -40,9 +39,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
-      } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+      } else if (
+        typeof exceptionResponse === 'object' &&
+        exceptionResponse !== null
+      ) {
         const resp = exceptionResponse as Record<string, unknown>;
-        message = typeof resp.message === 'string' ? resp.message : exception.message;
+        message =
+          typeof resp.message === 'string' ? resp.message : exception.message;
 
         // Preserve validation error arrays from HttpExceptions (e.g., from ValidationPipe)
         if (Array.isArray(resp.message)) {
@@ -60,7 +63,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
             }
             return { constraint: String(msg) };
           });
-          message = typeof resp.error === 'string' ? resp.error : exception.message;
+          message =
+            typeof resp.error === 'string' ? resp.error : exception.message;
         }
 
         // If the response already has a structured errors array

@@ -45,7 +45,9 @@ export class InsuranceRejectionService {
       include: {
         order: {
           include: {
-            patient: { select: { id: true, name: true, phone: true, email: true } },
+            patient: {
+              select: { id: true, name: true, phone: true, email: true },
+            },
           },
         },
       },
@@ -65,7 +67,9 @@ export class InsuranceRejectionService {
       throw new BadRequestException('Claim rejection timestamp is missing');
     }
 
-    const fallbackDeadline = this.computeFallbackDeadline(orderInsurance.rejectedAt);
+    const fallbackDeadline = this.computeFallbackDeadline(
+      orderInsurance.rejectedAt,
+    );
     const patient = orderInsurance.order.patient;
 
     // Create notification log entry for the patient
@@ -80,7 +84,7 @@ export class InsuranceRejectionService {
 
     this.logger.log(
       `Fallback workflow initiated for order ${orderInsurance.orderId}. ` +
-      `Deadline: ${fallbackDeadline.toISOString()}. Notification: ${notification.id}`,
+        `Deadline: ${fallbackDeadline.toISOString()}. Notification: ${notification.id}`,
     );
 
     return {
@@ -98,8 +102,13 @@ export class InsuranceRejectionService {
    * Check for orders that have exceeded the 72-hour fallback payment window.
    * Transitions them from PENDING_PAYMENT to PAYMENT_OVERDUE.
    */
-  async checkOverduePayments(): Promise<{ overdueCount: number; updatedOrders: string[] }> {
-    const cutoffTime = new Date(Date.now() - FALLBACK_WINDOW_HOURS * 60 * 60 * 1000);
+  async checkOverduePayments(): Promise<{
+    overdueCount: number;
+    updatedOrders: string[];
+  }> {
+    const cutoffTime = new Date(
+      Date.now() - FALLBACK_WINDOW_HOURS * 60 * 60 * 1000,
+    );
 
     // Find orders where claim is rejected, rejection is older than 72h, and still pending payment
     const overdueOrders = await this.prisma.order.findMany({
@@ -234,8 +243,12 @@ export class InsuranceRejectionService {
           paymentMethod: PaymentMethod.INSURANCE_CASH_FALLBACK,
           amount,
           insuranceId: rejectedClaim.insuranceId,
-          reference: reference || `FALLBACK-${rejectedClaim.claimReference || rejectedClaim.id}`,
-          notes: notes || `Cash fallback payment after claim rejection (${rejectedClaim.rejectionReason || 'no reason'})`,
+          reference:
+            reference ||
+            `FALLBACK-${rejectedClaim.claimReference || rejectedClaim.id}`,
+          notes:
+            notes ||
+            `Cash fallback payment after claim rejection (${rejectedClaim.rejectionReason || 'no reason'})`,
         },
       });
 
@@ -264,7 +277,7 @@ export class InsuranceRejectionService {
 
     this.logger.log(
       `Fallback payment processed for order ${orderId}. Amount: ${amount}. ` +
-      `Linked to rejected claim: ${rejectedClaim.id}`,
+        `Linked to rejected claim: ${rejectedClaim.id}`,
     );
 
     return result;
@@ -276,6 +289,8 @@ export class InsuranceRejectionService {
    * Compute the fallback payment deadline: rejectedAt + 72 hours.
    */
   private computeFallbackDeadline(rejectedAt: Date): Date {
-    return new Date(rejectedAt.getTime() + FALLBACK_WINDOW_HOURS * 60 * 60 * 1000);
+    return new Date(
+      rejectedAt.getTime() + FALLBACK_WINDOW_HOURS * 60 * 60 * 1000,
+    );
   }
 }

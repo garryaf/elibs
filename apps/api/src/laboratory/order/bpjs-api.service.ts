@@ -132,7 +132,9 @@ export class BpjsApiService {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          const errorBody = await response.text().catch(() => 'No response body');
+          const errorBody = await response
+            .text()
+            .catch(() => 'No response body');
           throw new Error(
             `BPJS API returned HTTP ${response.status}: ${errorBody}`,
           );

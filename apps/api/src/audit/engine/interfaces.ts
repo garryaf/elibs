@@ -22,12 +22,7 @@ export type GapStatus =
 
 /** Architectural stack layers inspected during audit */
 export type StackLayer =
-  | 'UI'
-  | 'API'
-  | 'CONTROLLER'
-  | 'SERVICE'
-  | 'REPOSITORY'
-  | 'DATABASE';
+  'UI' | 'API' | 'CONTROLLER' | 'SERVICE' | 'REPOSITORY' | 'DATABASE';
 
 /** Severity levels for remediation tasks */
 export type Severity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';

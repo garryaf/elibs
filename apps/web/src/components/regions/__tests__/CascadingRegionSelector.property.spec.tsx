@@ -12,7 +12,7 @@
 
 import * as fc from "fast-check";
 import React from "react";
-import { render, act } from "@testing-library/react";
+import { render, act } from "@/test-utils";
 import {
   CascadingRegionSelector,
   type RegionValue,

@@ -18,14 +18,15 @@ export class AuthService {
     private tokenBlocklist: TokenBlocklistService,
     private auditService: AuditService,
   ) {
-    this.refreshSecret = this.configService.get<string>('JWT_SECRET') + '-refresh';
+    this.refreshSecret =
+      this.configService.get<string>('JWT_SECRET') + '-refresh';
     this.refreshExpiration = '7d';
   }
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
-    
-    if (user && await bcrypt.compare(pass, user.passwordHash)) {
+
+    if (user && (await bcrypt.compare(pass, user.passwordHash))) {
       const { passwordHash, ...result } = user;
       return result;
     }
@@ -33,7 +34,12 @@ export class AuthService {
   }
 
   async login(user: any, ipAddress?: string) {
-    const payload = { email: user.email, sub: user.id, role: user.role, clinicId: user.clinicId ?? null };
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      role: user.role,
+      clinicId: user.clinicId ?? null,
+    };
     const result = {
       accessToken: this.jwtService.sign(payload),
       refreshToken: this.jwtService.sign(payload, {
@@ -44,7 +50,17 @@ export class AuthService {
     };
 
     // Audit log login (non-blocking — don't fail login if audit write fails)
-    this.auditService.log(user.id, 'LOGIN', 'User', user.id, null, { email: user.email, role: user.role }, ipAddress ?? null).catch(() => {});
+    this.auditService
+      .log(
+        user.id,
+        'LOGIN',
+        'User',
+        user.id,
+        null,
+        { email: user.email, role: user.role },
+        ipAddress ?? null,
+      )
+      .catch(() => {});
 
     return result;
   }
@@ -61,7 +77,12 @@ export class AuthService {
         throw new UnauthorizedException('User no longer active');
       }
 
-      const newPayload = { email: user.email, sub: user.id, role: user.role, clinicId: user.clinicId ?? null };
+      const newPayload = {
+        email: user.email,
+        sub: user.id,
+        role: user.role,
+        clinicId: user.clinicId ?? null,
+      };
       const result = {
         accessToken: this.jwtService.sign(newPayload),
         refreshToken: this.jwtService.sign(newPayload, {
@@ -72,7 +93,17 @@ export class AuthService {
       };
 
       // Audit log token refresh (non-blocking)
-      this.auditService.log(user.id, 'TOKEN_REFRESH', 'User', user.id, null, { email: user.email, role: user.role }, null).catch(() => {});
+      this.auditService
+        .log(
+          user.id,
+          'TOKEN_REFRESH',
+          'User',
+          user.id,
+          null,
+          { email: user.email, role: user.role },
+          null,
+        )
+        .catch(() => {});
 
       return result;
     } catch {
@@ -84,11 +115,18 @@ export class AuthService {
    * Logout: add the current access token to the blocklist.
    * The token will be rejected on subsequent requests until it expires naturally.
    */
-  async logout(sub: string, iat: number, exp: number, ipAddress?: string): Promise<void> {
+  async logout(
+    sub: string,
+    iat: number,
+    exp: number,
+    ipAddress?: string,
+  ): Promise<void> {
     this.tokenBlocklist.block(sub, iat, exp);
 
     // Audit log logout (non-blocking)
-    this.auditService.log(sub, 'LOGOUT', 'User', sub, null, null, ipAddress ?? null).catch(() => {});
+    this.auditService
+      .log(sub, 'LOGOUT', 'User', sub, null, null, ipAddress ?? null)
+      .catch(() => {});
   }
 
   /**
@@ -104,14 +142,16 @@ export class AuthService {
    */
   logFailedLogin(email: string, ipAddress?: string): void {
     const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
-    this.auditService.log(
-      SYSTEM_USER_ID,
-      'LOGIN_FAILED',
-      'User',
-      SYSTEM_USER_ID,
-      null,
-      { email, reason: 'invalid_credentials' },
-      ipAddress ?? null,
-    ).catch(() => {});
+    this.auditService
+      .log(
+        SYSTEM_USER_ID,
+        'LOGIN_FAILED',
+        'User',
+        SYSTEM_USER_ID,
+        null,
+        { email, reason: 'invalid_credentials' },
+        ipAddress ?? null,
+      )
+      .catch(() => {});
   }
 }

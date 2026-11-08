@@ -62,7 +62,9 @@ export class MasterDataService implements IMasterDataQueryService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Record with this name/code already exists');
+        throw new ConflictException(
+          'Record with this name/code already exists',
+        );
       }
       throw error;
     }
@@ -106,7 +108,12 @@ export class MasterDataService implements IMasterDataQueryService {
 
   // ─── Test Master ──────────────────────────────────────────────────────────────
 
-  async findAllTests(page = 1, limit = 20, categoryId?: string, search?: string) {
+  async findAllTests(
+    page = 1,
+    limit = 20,
+    categoryId?: string,
+    search?: string,
+  ) {
     const skip = (page - 1) * limit;
     const where: any = { deletedAt: null };
     if (categoryId) {
@@ -189,7 +196,7 @@ export class MasterDataService implements IMasterDataQueryService {
           price: dto.price,
           requiresDoctorApproval: dto.requiresDoctorApproval ?? true,
           requiresInsurancePreAuth: dto.requiresInsurancePreAuth ?? false,
-          resultType: dto.resultType as any ?? 'NUMERIC',
+          resultType: (dto.resultType as any) ?? 'NUMERIC',
           qualitativeOptions: dto.qualitativeOptions ?? [],
           deltaAlertThreshold: dto.deltaAlertThreshold ?? null,
           fastingRequired: dto.fastingRequired ?? false,
@@ -204,7 +211,9 @@ export class MasterDataService implements IMasterDataQueryService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Record with this name/code already exists');
+        throw new ConflictException(
+          'Record with this name/code already exists',
+        );
       }
       throw error;
     }
@@ -396,7 +405,11 @@ export class MasterDataService implements IMasterDataQueryService {
       where.OR = [
         { test: { name: { contains: filters.search, mode: 'insensitive' } } },
         { clinic: { name: { contains: filters.search, mode: 'insensitive' } } },
-        { insurance: { name: { contains: filters.search, mode: 'insensitive' } } },
+        {
+          insurance: {
+            name: { contains: filters.search, mode: 'insensitive' },
+          },
+        },
       ];
     }
 
@@ -438,7 +451,8 @@ export class MasterDataService implements IMasterDataQueryService {
 
     // If changing the unique combination, validate uniqueness
     const newTestId = dto.testId ?? tariff.testId;
-    const newClinicId = dto.clinicId !== undefined ? dto.clinicId : tariff.clinicId;
+    const newClinicId =
+      dto.clinicId !== undefined ? dto.clinicId : tariff.clinicId;
     const newInsuranceId =
       dto.insuranceId !== undefined ? dto.insuranceId : tariff.insuranceId;
     const newEffectiveFrom = dto.effectiveFrom
@@ -555,7 +569,11 @@ export class MasterDataService implements IMasterDataQueryService {
     }
   }
 
-  async updateReferenceValue(id: string, testId: string, dto: UpdateReferenceValueDto) {
+  async updateReferenceValue(
+    id: string,
+    testId: string,
+    dto: UpdateReferenceValueDto,
+  ) {
     const referenceValue = await this.prisma.referenceValue.findFirst({
       where: { id, testId },
     });

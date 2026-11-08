@@ -35,7 +35,10 @@ export class AutoFlaggingService {
     }
 
     // Numeric flagging
-    const numericValue = typeof resultValue === 'number' ? resultValue : parseFloat(String(resultValue));
+    const numericValue =
+      typeof resultValue === 'number'
+        ? resultValue
+        : parseFloat(String(resultValue));
     if (isNaN(numericValue)) {
       return null;
     }

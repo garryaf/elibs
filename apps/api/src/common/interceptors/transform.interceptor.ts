@@ -34,9 +34,10 @@ function serializeDecimals(obj: unknown): unknown {
 }
 
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, SuccessEnvelope<T>>
-{
+export class TransformInterceptor<T> implements NestInterceptor<
+  T,
+  SuccessEnvelope<T>
+> {
   intercept(
     context: ExecutionContext,
     next: CallHandler<T>,

@@ -37,17 +37,40 @@ const ORDER_ENDPOINTS: OrderEndpoint[] = [
   {
     method: 'POST',
     path: '/api/v1/orders',
-    allowedRoles: [Role.KASIR, Role.ADMIN, Role.KLINIK_PARTNER, Role.SUPER_ADMIN, Role.CS],
+    allowedRoles: [
+      Role.KASIR,
+      Role.ADMIN,
+      Role.KLINIK_PARTNER,
+      Role.SUPER_ADMIN,
+      Role.CS,
+    ],
   },
   {
     method: 'GET',
     path: '/api/v1/orders',
-    allowedRoles: [Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER],
+    allowedRoles: [
+      Role.KASIR,
+      Role.CS,
+      Role.ADMIN,
+      Role.SUPER_ADMIN,
+      Role.OWNER,
+      Role.MANAGER,
+      Role.SAMPLING,
+      Role.ANALIS,
+      Role.DOKTER,
+      Role.KLINIK_PARTNER,
+    ],
   },
   {
     method: 'GET',
     path: '/api/v1/orders/overdue',
-    allowedRoles: [Role.KASIR, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER],
+    allowedRoles: [
+      Role.KASIR,
+      Role.ADMIN,
+      Role.SUPER_ADMIN,
+      Role.OWNER,
+      Role.MANAGER,
+    ],
   },
   {
     method: 'POST',
@@ -57,7 +80,18 @@ const ORDER_ENDPOINTS: OrderEndpoint[] = [
   {
     method: 'GET',
     path: '/api/v1/orders/:id',
-    allowedRoles: [Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER],
+    allowedRoles: [
+      Role.KASIR,
+      Role.CS,
+      Role.ADMIN,
+      Role.SUPER_ADMIN,
+      Role.OWNER,
+      Role.MANAGER,
+      Role.SAMPLING,
+      Role.ANALIS,
+      Role.DOKTER,
+      Role.KLINIK_PARTNER,
+    ],
   },
   {
     method: 'POST',
@@ -67,7 +101,14 @@ const ORDER_ENDPOINTS: OrderEndpoint[] = [
   {
     method: 'GET',
     path: '/api/v1/orders/:id/insurances',
-    allowedRoles: [Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER],
+    allowedRoles: [
+      Role.KASIR,
+      Role.CS,
+      Role.ADMIN,
+      Role.SUPER_ADMIN,
+      Role.OWNER,
+      Role.MANAGER,
+    ],
   },
   {
     method: 'POST',
@@ -87,7 +128,17 @@ const ORDER_ENDPOINTS: OrderEndpoint[] = [
   {
     method: 'GET',
     path: '/api/v1/orders/:id/bpjs',
-    allowedRoles: [Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER],
+    allowedRoles: [
+      Role.KASIR,
+      Role.CS,
+      Role.ADMIN,
+      Role.SUPER_ADMIN,
+      Role.OWNER,
+      Role.MANAGER,
+      Role.SAMPLING,
+      Role.ANALIS,
+      Role.DOKTER,
+    ],
   },
   {
     method: 'POST',
@@ -107,7 +158,14 @@ const ORDER_ENDPOINTS: OrderEndpoint[] = [
   {
     method: 'GET',
     path: '/api/v1/orders/:id/claims',
-    allowedRoles: [Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER],
+    allowedRoles: [
+      Role.KASIR,
+      Role.CS,
+      Role.ADMIN,
+      Role.SUPER_ADMIN,
+      Role.OWNER,
+      Role.MANAGER,
+    ],
   },
   {
     method: 'POST',
@@ -147,7 +205,11 @@ const ORDER_ENDPOINTS: OrderEndpoint[] = [
 ];
 
 /** The three roles that MUST continue to have access after fix (preservation target) */
-const PRESERVATION_ROLES = [Role.KASIR, Role.ADMIN, Role.KLINIK_PARTNER] as const;
+const PRESERVATION_ROLES = [
+  Role.KASIR,
+  Role.ADMIN,
+  Role.KLINIK_PARTNER,
+] as const;
 
 /**
  * Get all endpoints that a given role can currently access.
@@ -159,7 +221,10 @@ function getEndpointsForRole(role: Role): OrderEndpoint[] {
 /**
  * Create a mock ExecutionContext with the given user and required roles metadata.
  */
-function createMockContext(user: { role: Role } | undefined, requiredRoles: Role[]): ExecutionContext {
+function createMockContext(
+  user: { role: Role } | undefined,
+  requiredRoles: Role[],
+): ExecutionContext {
   const mockRequest = { user };
   return {
     switchToHttp: () => ({
@@ -200,7 +265,10 @@ describe('Preservation: Order Controller RBAC - Previously-Allowed Roles', () =>
   describe('Property 2a: KASIR, ADMIN, KLINIK_PARTNER access is preserved', () => {
     it('for all preservation roles × their allowed endpoints, RolesGuard allows access', () => {
       // Build the space of (role, endpoint) pairs where the role IS in the allowed list
-      const preservationRoleEndpointPairs: Array<{ role: Role; endpoint: OrderEndpoint }> = [];
+      const preservationRoleEndpointPairs: Array<{
+        role: Role;
+        endpoint: OrderEndpoint;
+      }> = [];
       for (const role of PRESERVATION_ROLES) {
         for (const endpoint of getEndpointsForRole(role)) {
           preservationRoleEndpointPairs.push({ role, endpoint });
@@ -240,7 +308,10 @@ describe('Preservation: Order Controller RBAC - Previously-Allowed Roles', () =>
       )!;
       const reflector = createMockReflector(createEndpoint.allowedRoles);
       const guard = new RolesGuard(reflector);
-      const context = createMockContext({ role: Role.KASIR }, createEndpoint.allowedRoles);
+      const context = createMockContext(
+        { role: Role.KASIR },
+        createEndpoint.allowedRoles,
+      );
 
       expect(guard.canActivate(context)).toBe(true);
     });
@@ -251,7 +322,10 @@ describe('Preservation: Order Controller RBAC - Previously-Allowed Roles', () =>
       )!;
       const reflector = createMockReflector(createEndpoint.allowedRoles);
       const guard = new RolesGuard(reflector);
-      const context = createMockContext({ role: Role.ADMIN }, createEndpoint.allowedRoles);
+      const context = createMockContext(
+        { role: Role.ADMIN },
+        createEndpoint.allowedRoles,
+      );
 
       expect(guard.canActivate(context)).toBe(true);
     });
@@ -262,7 +336,10 @@ describe('Preservation: Order Controller RBAC - Previously-Allowed Roles', () =>
       )!;
       const reflector = createMockReflector(createEndpoint.allowedRoles);
       const guard = new RolesGuard(reflector);
-      const context = createMockContext({ role: Role.KLINIK_PARTNER }, createEndpoint.allowedRoles);
+      const context = createMockContext(
+        { role: Role.KLINIK_PARTNER },
+        createEndpoint.allowedRoles,
+      );
 
       expect(guard.canActivate(context)).toBe(true);
     });

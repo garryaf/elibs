@@ -89,14 +89,9 @@ export class SpecimenService {
     });
 
     // Audit log the creation
-    await this.auditService.log(
-      userId,
-      'CREATE',
-      'Specimen',
-      orderId,
-      null,
-      { specimens: specimens.map((s) => ({ id: s.id, barcode: s.barcode })) },
-    );
+    await this.auditService.log(userId, 'CREATE', 'Specimen', orderId, null, {
+      specimens: specimens.map((s) => ({ id: s.id, barcode: s.barcode })),
+    });
 
     return specimens;
   }
@@ -122,7 +117,8 @@ export class SpecimenService {
     });
 
     const currentIndex = orderSpecimens.findIndex((s) => s.id === specimenId);
-    const sequence = currentIndex >= 0 ? currentIndex + 1 : orderSpecimens.length + 1;
+    const sequence =
+      currentIndex >= 0 ? currentIndex + 1 : orderSpecimens.length + 1;
 
     // Generate new barcode with a timestamp suffix to ensure uniqueness
     const timestamp = Date.now().toString(36);
@@ -205,7 +201,7 @@ export class SpecimenService {
           sampleCondition: dto.condition,
           rejectionReason:
             dto.condition !== SampleCondition.ACCEPTABLE
-              ? dto.rejectionReason ?? null
+              ? (dto.rejectionReason ?? null)
               : null,
           collectedBy: userId,
         },

@@ -25,8 +25,16 @@ describe('Feature: laboratory-workflow-refactor, Property 11: API Response Inclu
       fc.asyncProperty(
         validUuidV4Arb,
         validUuidV4Arb,
-        fc.constantFrom('VST-202601-0001', 'VST-202506-0042', 'VST-202412-1234'),
-        fc.constantFrom(VisitStatus.REGISTERED, VisitStatus.IN_PROGRESS, VisitStatus.COMPLETED),
+        fc.constantFrom(
+          'VST-202601-0001',
+          'VST-202506-0042',
+          'VST-202412-1234',
+        ),
+        fc.constantFrom(
+          VisitStatus.REGISTERED,
+          VisitStatus.IN_PROGRESS,
+          VisitStatus.COMPLETED,
+        ),
         async (orderId, visitId, visitNumber, visitStatus) => {
           const mockPrisma = {
             order: {
@@ -73,8 +81,16 @@ describe('Feature: laboratory-workflow-refactor, Property 11: API Response Inclu
           fc.record({
             orderId: validUuidV4Arb,
             visitId: validUuidV4Arb,
-            visitNumber: fc.constantFrom('VST-202601-0001', 'VST-202506-0042', 'VST-202412-1234'),
-            visitStatus: fc.constantFrom(VisitStatus.REGISTERED, VisitStatus.IN_PROGRESS, VisitStatus.COMPLETED),
+            visitNumber: fc.constantFrom(
+              'VST-202601-0001',
+              'VST-202506-0042',
+              'VST-202412-1234',
+            ),
+            visitStatus: fc.constantFrom(
+              VisitStatus.REGISTERED,
+              VisitStatus.IN_PROGRESS,
+              VisitStatus.COMPLETED,
+            ),
           }),
           { minLength: 1, maxLength: 10 },
         ),
@@ -108,13 +124,19 @@ describe('Feature: laboratory-workflow-refactor, Property 11: API Response Inclu
             {} as any,
           );
 
-          const result = await service.findAll({ page: '1', limit: '20' } as any);
+          const result = await service.findAll({
+            page: '1',
+            limit: '20',
+          });
 
           // Each order in response SHALL have visit information
           for (let i = 0; i < result.data.length; i++) {
             const order = result.data[i];
             expect(order).toHaveProperty('visit');
-            expect(order.visit).toHaveProperty('visitNumber', orders[i].visitNumber);
+            expect(order.visit).toHaveProperty(
+              'visitNumber',
+              orders[i].visitNumber,
+            );
             expect(order.visit).toHaveProperty('status', orders[i].visitStatus);
           }
         },
@@ -152,16 +174,23 @@ describe('Feature: laboratory-workflow-refactor, Property 13: Visit-Based Order 
           const expectedDataLength = Math.min(limit, totalOrders - skip);
 
           // Generate mock orders for this page
-          const pageOrders = Array.from({ length: expectedDataLength }, (_, i) => ({
-            id: `order-${skip + i}`,
-            orderNumber: `LAB-20250101-${String(skip + i + 1).padStart(4, '0')}`,
-            visitId,
-            patientId: 'patient-1',
-            status: OrderStatus.PENDING_PAYMENT,
-            totalAmount: 100,
-            orderDetails: [],
-            patient: { id: 'patient-1', name: 'Test Patient', mrn: 'MRN-001' },
-          }));
+          const pageOrders = Array.from(
+            { length: expectedDataLength },
+            (_, i) => ({
+              id: `order-${skip + i}`,
+              orderNumber: `LAB-20250101-${String(skip + i + 1).padStart(4, '0')}`,
+              visitId,
+              patientId: 'patient-1',
+              status: OrderStatus.PENDING_PAYMENT,
+              totalAmount: 100,
+              orderDetails: [],
+              patient: {
+                id: 'patient-1',
+                name: 'Test Patient',
+                mrn: 'MRN-001',
+              },
+            }),
+          );
 
           const mockPrisma = {
             visit: {
@@ -186,7 +215,7 @@ describe('Feature: laboratory-workflow-refactor, Property 13: Visit-Based Order 
           const result = await service.findOrdersByVisit(visitId, {
             page: String(page),
             limit: String(limit),
-          } as any);
+          });
 
           // Invariant 1: data.length <= limit
           expect(result.data.length).toBeLessThanOrEqual(limit);
@@ -259,7 +288,7 @@ describe('Feature: laboratory-workflow-refactor, Property 13: Visit-Based Order 
           const result = await service.findOrdersByVisit(visitId, {
             page: '1',
             limit: String(oversizedLimit),
-          } as any);
+          });
 
           // Limit should be capped to 100
           expect(result.meta.limit).toBe(100);

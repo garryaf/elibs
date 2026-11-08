@@ -13,7 +13,10 @@ import { AuditService } from '../audit/audit.service';
 import { InsuranceConsolidationService } from '../../insurance/insurance-consolidation.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
-import { AddPatientInsuranceDto, UpdatePatientInsuranceDto } from './dto/manage-patient-insurance.dto';
+import {
+  AddPatientInsuranceDto,
+  UpdatePatientInsuranceDto,
+} from './dto/manage-patient-insurance.dto';
 import { LabHistoryQueryDto } from './dto/lab-history-query.dto';
 
 const REGION_INCLUDE = {
@@ -35,7 +38,14 @@ export class PatientService {
 
   private transformRegionResponse(patient: any) {
     if (!patient) return patient;
-    const { provinsiRef, kabupatenKotaRef, kecamatanRef, kelurahanDesaRef, visits, ...rest } = patient;
+    const {
+      provinsiRef,
+      kabupatenKotaRef,
+      kecamatanRef,
+      kelurahanDesaRef,
+      visits,
+      ...rest
+    } = patient;
     const lastVisitDate = visits?.[0]?.registrationDate
       ? new Date(visits[0].registrationDate).toISOString()
       : null;
@@ -50,8 +60,18 @@ export class PatientService {
     };
   }
 
-  private hasAnyRegionId(dto: { provinsiId?: string; kabupatenKotaId?: string; kecamatanId?: string; kelurahanDesaId?: string }) {
-    return !!(dto.provinsiId || dto.kabupatenKotaId || dto.kecamatanId || dto.kelurahanDesaId);
+  private hasAnyRegionId(dto: {
+    provinsiId?: string;
+    kabupatenKotaId?: string;
+    kecamatanId?: string;
+    kelurahanDesaId?: string;
+  }) {
+    return !!(
+      dto.provinsiId ||
+      dto.kabupatenKotaId ||
+      dto.kecamatanId ||
+      dto.kelurahanDesaId
+    );
   }
 
   private validateNikFormat(nik: string): void {
@@ -136,7 +156,15 @@ export class PatientService {
 
       // Audit log patient creation
       if (userId) {
-        await this.auditService.log(userId, 'CREATE', 'Patient', patient.id, null, { mrn, name: dto.name }, null);
+        await this.auditService.log(
+          userId,
+          'CREATE',
+          'Patient',
+          patient.id,
+          null,
+          { mrn, name: dto.name },
+          null,
+        );
       }
 
       return this.transformRegionResponse(patient);
@@ -192,7 +220,10 @@ export class PatientService {
     }
 
     // Gender filter
-    if (query.gender && (query.gender === 'MALE' || query.gender === 'FEMALE')) {
+    if (
+      query.gender &&
+      (query.gender === 'MALE' || query.gender === 'FEMALE')
+    ) {
       where.gender = query.gender;
     }
 
@@ -202,12 +233,20 @@ export class PatientService {
       const dobCondition: any = {};
       if (query.ageMin !== undefined) {
         // ageMin years old → born on or before today minus ageMin years
-        const maxDob = new Date(today.getFullYear() - query.ageMin, today.getMonth(), today.getDate());
+        const maxDob = new Date(
+          today.getFullYear() - query.ageMin,
+          today.getMonth(),
+          today.getDate(),
+        );
         dobCondition.lte = maxDob;
       }
       if (query.ageMax !== undefined) {
         // ageMax years old → born on or after today minus (ageMax + 1) years
-        const minDob = new Date(today.getFullYear() - query.ageMax - 1, today.getMonth(), today.getDate() + 1);
+        const minDob = new Date(
+          today.getFullYear() - query.ageMax - 1,
+          today.getMonth(),
+          today.getDate() + 1,
+        );
         dobCondition.gte = minDob;
       }
       if (Object.keys(dobCondition).length > 0) {
@@ -218,7 +257,8 @@ export class PatientService {
     // Registration date filter
     if (query.registeredFrom || query.registeredTo) {
       const createdAtCondition: any = {};
-      if (query.registeredFrom) createdAtCondition.gte = new Date(query.registeredFrom);
+      if (query.registeredFrom)
+        createdAtCondition.gte = new Date(query.registeredFrom);
       if (query.registeredTo) {
         const endDate = new Date(query.registeredTo);
         endDate.setHours(23, 59, 59, 999);
@@ -230,11 +270,18 @@ export class PatientService {
     // Last visit filter — requires subquery on visits relation
     if (query.lastVisitFrom || query.lastVisitTo) {
       const visitCondition: any = { cancelledAt: null };
-      if (query.lastVisitFrom) visitCondition.registrationDate = { ...visitCondition.registrationDate, gte: new Date(query.lastVisitFrom) };
+      if (query.lastVisitFrom)
+        visitCondition.registrationDate = {
+          ...visitCondition.registrationDate,
+          gte: new Date(query.lastVisitFrom),
+        };
       if (query.lastVisitTo) {
         const endDate = new Date(query.lastVisitTo);
         endDate.setHours(23, 59, 59, 999);
-        visitCondition.registrationDate = { ...visitCondition.registrationDate, lte: endDate };
+        visitCondition.registrationDate = {
+          ...visitCondition.registrationDate,
+          lte: endDate,
+        };
       }
       where.visits = { some: visitCondition };
     }
@@ -281,16 +328,24 @@ export class PatientService {
         },
       }),
       this.prisma.patient.count({ where }),
-      this.prisma.patient.count({ where: { ...countWhereBase, deletedAt: null } }),
-      this.prisma.patient.count({ where: { ...countWhereBase, deletedAt: { not: null } } }),
+      this.prisma.patient.count({
+        where: { ...countWhereBase, deletedAt: null },
+      }),
+      this.prisma.patient.count({
+        where: { ...countWhereBase, deletedAt: { not: null } },
+      }),
     ]);
 
     // Enrich each patient with derived insuranceId and active insurances
     const enrichedData = await Promise.all(
       data.map(async (p) => {
         const transformed = this.transformRegionResponse(p);
-        const resolvedInsuranceId = await this.insuranceConsolidationService.resolvePatientInsuranceId(p.id);
-        const insurances = await this.insuranceConsolidationService.getActiveInsurances(p.id);
+        const resolvedInsuranceId =
+          await this.insuranceConsolidationService.resolvePatientInsuranceId(
+            p.id,
+          );
+        const insurances =
+          await this.insuranceConsolidationService.getActiveInsurances(p.id);
 
         // Derive visit/order state for table display
         const latestVisit = (p as any).visits?.[0] ?? null;
@@ -340,10 +395,12 @@ export class PatientService {
     }
 
     // Derive insuranceId from junction (priority=1) with legacy fallback
-    const resolvedInsuranceId = await this.insuranceConsolidationService.resolvePatientInsuranceId(id);
+    const resolvedInsuranceId =
+      await this.insuranceConsolidationService.resolvePatientInsuranceId(id);
 
     // Get active PatientInsurance records
-    const insurances = await this.insuranceConsolidationService.getActiveInsurances(id);
+    const insurances =
+      await this.insuranceConsolidationService.getActiveInsurances(id);
 
     const transformed = this.transformRegionResponse(patient);
     return {
@@ -392,7 +449,15 @@ export class PatientService {
 
     // Audit log patient update
     if (userId) {
-      await this.auditService.log(userId, 'UPDATE', 'Patient', id, null, dto as unknown as Record<string, unknown>, null);
+      await this.auditService.log(
+        userId,
+        'UPDATE',
+        'Patient',
+        id,
+        null,
+        dto as unknown as Record<string, unknown>,
+        null,
+      );
     }
 
     return this.transformRegionResponse(updated);
@@ -428,7 +493,10 @@ export class PatientService {
           data: updateData,
         });
       } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
           throw new ConflictException({
             errorCode: 'ERR_PRIORITY_CONFLICT',
             message: 'Priority 1 already exists for this patient',
@@ -449,9 +517,15 @@ export class PatientService {
           },
         });
       } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
           const target = (error.meta?.target as string[]) ?? [];
-          if (target.includes('priority') || target.some((t) => t.includes('priority'))) {
+          if (
+            target.includes('priority') ||
+            target.some((t) => t.includes('priority'))
+          ) {
             throw new ConflictException({
               errorCode: 'ERR_PRIORITY_CONFLICT',
               message: 'Priority 1 already exists for this patient',
@@ -478,7 +552,8 @@ export class PatientService {
       throw new NotFoundException('Patient not found');
     }
 
-    const insurances = await this.insuranceConsolidationService.getActiveInsurances(patientId);
+    const insurances =
+      await this.insuranceConsolidationService.getActiveInsurances(patientId);
     return { data: insurances };
   }
 
@@ -495,7 +570,15 @@ export class PatientService {
     const insurances = await this.prisma.patientInsurance.findMany({
       where: { patientId },
       include: {
-        insurance: { select: { id: true, code: true, name: true, type: true, isActive: true } },
+        insurance: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            type: true,
+            isActive: true,
+          },
+        },
       },
       orderBy: { priority: 'asc' },
     });
@@ -537,10 +620,14 @@ export class PatientService {
 
     // Check if this patient-insurance combination already exists
     const existing = await this.prisma.patientInsurance.findUnique({
-      where: { patientId_insuranceId: { patientId, insuranceId: dto.insuranceId } },
+      where: {
+        patientId_insuranceId: { patientId, insuranceId: dto.insuranceId },
+      },
     });
     if (existing) {
-      throw new ConflictException('Patient already has this insurance assigned');
+      throw new ConflictException(
+        'Patient already has this insurance assigned',
+      );
     }
 
     const patientInsurance = await this.prisma.patientInsurance.create({
@@ -564,7 +651,10 @@ export class PatientService {
     return patientInsurance;
   }
 
-  async updatePatientInsurance(patientInsuranceId: string, dto: UpdatePatientInsuranceDto) {
+  async updatePatientInsurance(
+    patientInsuranceId: string,
+    dto: UpdatePatientInsuranceDto,
+  ) {
     const existing = await this.prisma.patientInsurance.findUnique({
       where: { id: patientInsuranceId },
     });
@@ -575,7 +665,12 @@ export class PatientService {
     // Validate priority uniqueness if priority is being changed (only active records)
     if (dto.priority !== undefined && dto.priority !== existing.priority) {
       const conflicting = await this.prisma.patientInsurance.findFirst({
-        where: { patientId: existing.patientId, priority: dto.priority, isActive: true, id: { not: patientInsuranceId } },
+        where: {
+          patientId: existing.patientId,
+          priority: dto.priority,
+          isActive: true,
+          id: { not: patientInsuranceId },
+        },
       });
       if (conflicting) {
         throw new ConflictException({
@@ -691,7 +786,9 @@ export class PatientService {
       where: { patientId: id, status: { in: ['REGISTERED', 'IN_PROGRESS'] } },
     });
     if (activeVisits > 0) {
-      throw new ConflictException('Cannot deactivate patient with active visits');
+      throw new ConflictException(
+        'Cannot deactivate patient with active visits',
+      );
     }
 
     // 3. Check for active orders (not CANCELLED, not NOTIFIED)
@@ -702,7 +799,9 @@ export class PatientService {
       },
     });
     if (activeOrders > 0) {
-      throw new ConflictException('Cannot deactivate patient with active orders');
+      throw new ConflictException(
+        'Cannot deactivate patient with active orders',
+      );
     }
 
     // 4. Soft-delete
@@ -811,8 +910,12 @@ export class PatientService {
 
     // Verify both patients exist
     const [primary, secondary] = await Promise.all([
-      this.prisma.patient.findFirst({ where: { id: primaryId, deletedAt: null } }),
-      this.prisma.patient.findFirst({ where: { id: secondaryId, deletedAt: null } }),
+      this.prisma.patient.findFirst({
+        where: { id: primaryId, deletedAt: null },
+      }),
+      this.prisma.patient.findFirst({
+        where: { id: secondaryId, deletedAt: null },
+      }),
     ]);
 
     if (!primary) throw new NotFoundException('Primary patient not found');
@@ -837,7 +940,9 @@ export class PatientService {
         where: { patientId: primaryId },
         select: { insuranceId: true },
       });
-      const primaryInsuranceIds = new Set(primaryInsurances.map((i) => i.insuranceId));
+      const primaryInsuranceIds = new Set(
+        primaryInsurances.map((i) => i.insuranceId),
+      );
 
       const secondaryInsurances = await tx.patientInsurance.findMany({
         where: { patientId: secondaryId },
@@ -857,7 +962,10 @@ export class PatientService {
           });
           await tx.patientInsurance.update({
             where: { id: si.id },
-            data: { patientId: primaryId, priority: (maxPriority?.priority || 0) + 1 },
+            data: {
+              patientId: primaryId,
+              priority: (maxPriority?.priority || 0) + 1,
+            },
           });
           insuranceMerged++;
         }
@@ -882,14 +990,22 @@ export class PatientService {
       'MERGE_PATIENT',
       'Patient',
       primaryId,
-      { secondaryPatientId: secondaryId, secondaryMrn: secondary.mrn, secondaryName: secondary.name },
+      {
+        secondaryPatientId: secondaryId,
+        secondaryMrn: secondary.mrn,
+        secondaryName: secondary.name,
+      },
       { ...result, mergedInto: primaryId },
       ipAddress,
     );
 
     return {
       primaryPatient: { id: primary.id, mrn: primary.mrn, name: primary.name },
-      mergedFrom: { id: secondary.id, mrn: secondary.mrn, name: secondary.name },
+      mergedFrom: {
+        id: secondary.id,
+        mrn: secondary.mrn,
+        name: secondary.name,
+      },
       ...result,
     };
   }

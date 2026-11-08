@@ -92,7 +92,9 @@ describe('Sample Collection Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.constantFrom(...NON_ACCEPTABLE_CONDITIONS),
-          fc.option(fc.string({ minLength: 1, maxLength: 200 }), { nil: undefined }),
+          fc.option(fc.string({ minLength: 1, maxLength: 200 }), {
+            nil: undefined,
+          }),
           async (condition, rejectionReason) => {
             // Reset mocks between runs
             (prismaService.order.findUnique as jest.Mock).mockReset();

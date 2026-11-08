@@ -84,7 +84,9 @@ describe('Receipt Number Sequential Guarantee Property Tests', () => {
             // Simulate N sequential receipt number generations
             const receipts: string[] = [];
             for (let i = 0; i < count; i++) {
-              receipts.push(ReceiptSequenceService.format(dateKey, startSeq + i));
+              receipts.push(
+                ReceiptSequenceService.format(dateKey, startSeq + i),
+              );
             }
 
             // All must match the format
@@ -93,13 +95,17 @@ describe('Receipt Number Sequential Guarantee Property Tests', () => {
             }
 
             // Parse all and verify monotonically increasing and consecutive
-            const parsed = receipts.map((r) => ReceiptSequenceService.parse(r)!);
+            const parsed = receipts.map((r) =>
+              ReceiptSequenceService.parse(r)!,
+            );
 
             for (let i = 1; i < parsed.length; i++) {
               // Same date partition
               expect(parsed[i].dateKey).toBe(parsed[0].dateKey);
               // Strictly increasing
-              expect(parsed[i].sequence).toBeGreaterThan(parsed[i - 1].sequence);
+              expect(parsed[i].sequence).toBeGreaterThan(
+                parsed[i - 1].sequence,
+              );
               // Consecutive (no gaps)
               expect(parsed[i].sequence).toBe(parsed[i - 1].sequence + 1);
             }
@@ -121,17 +127,17 @@ describe('Receipt Number Sequential Guarantee Property Tests', () => {
             // Random strings
             fc.string({ minLength: 0, maxLength: 30 }),
             // Almost-valid formats with wrong prefix
-            fc.integer({ min: 1, max: 9999 }).map(
-              (seq) => `INV-20260101-${seq.toString().padStart(4, '0')}`,
-            ),
+            fc
+              .integer({ min: 1, max: 9999 })
+              .map((seq) => `INV-20260101-${seq.toString().padStart(4, '0')}`),
             // Missing components
             fc.constant('RCP-'),
             fc.constant('RCP-20260101'),
             fc.constant('RCP-20260101-'),
             // Wrong digit counts
-            fc.integer({ min: 1, max: 999 }).map(
-              (seq) => `RCP-20260101-${seq}`,
-            ),
+            fc
+              .integer({ min: 1, max: 999 })
+              .map((seq) => `RCP-20260101-${seq}`),
             fc.constant('RCP-2026010-0001'),
           ),
           (invalidInput) => {
@@ -166,7 +172,10 @@ describe('Receipt Number Sequential Guarantee Property Tests', () => {
               }),
             ),
           ),
-          fc.uniqueArray(fc.integer({ min: 1, max: 9999 }), { minLength: 2, maxLength: 100 }),
+          fc.uniqueArray(fc.integer({ min: 1, max: 9999 }), {
+            minLength: 2,
+            maxLength: 100,
+          }),
           (dateKey, sequences) => {
             const receipts = sequences.map((seq) =>
               ReceiptSequenceService.format(dateKey, seq),

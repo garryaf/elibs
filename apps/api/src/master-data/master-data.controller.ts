@@ -33,7 +33,18 @@ export class MasterDataController {
   // ─── Test Categories ─────────────────────────────────────────────────────────
 
   @Get('test-categories')
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
+  @Roles(
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+    Role.SAMPLING,
+    Role.ANALIS,
+    Role.DOKTER,
+    Role.KLINIK_PARTNER,
+  )
   @ApiOperation({ summary: 'List all test categories' })
   async findAllCategories(
     @Query('page') page?: string,
@@ -72,7 +83,18 @@ export class MasterDataController {
   // ─── Tests ────────────────────────────────────────────────────────────────────
 
   @Get('tests')
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
+  @Roles(
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+    Role.SAMPLING,
+    Role.ANALIS,
+    Role.DOKTER,
+    Role.KLINIK_PARTNER,
+  )
   @ApiOperation({ summary: 'List all tests' })
   async findAllTests(
     @Query('page') page?: string,
@@ -89,8 +111,21 @@ export class MasterDataController {
   }
 
   @Get('tests/:id')
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
-  @ApiOperation({ summary: 'Get a single test with category and reference values' })
+  @Roles(
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+    Role.SAMPLING,
+    Role.ANALIS,
+    Role.DOKTER,
+    Role.KLINIK_PARTNER,
+  )
+  @ApiOperation({
+    summary: 'Get a single test with category and reference values',
+  })
   async findOneTest(@Param('id', ParseUUIDPipe) id: string) {
     return this.masterDataService.findOneTest(id);
   }
@@ -122,7 +157,18 @@ export class MasterDataController {
   // ─── Panels ───────────────────────────────────────────────────────────────────
 
   @Get('panels')
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER)
+  @Roles(
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+    Role.SAMPLING,
+    Role.ANALIS,
+    Role.DOKTER,
+    Role.KLINIK_PARTNER,
+  )
   @ApiOperation({ summary: 'List all test panels' })
   async findAllPanels(
     @Query('page') page?: string,

@@ -100,7 +100,11 @@ describe('NCR-02-05: Missing User CRUD Audit Logs Bug Condition', () => {
   describe('Bug Condition: User UPDATE must produce audit log', () => {
     it('should call AuditService.log() with action "UPDATE" and old/new values after successful user update', async () => {
       const oldUser = { ...mockUser };
-      const updatedUser = { ...mockUser, email: 'updated@example.com', updatedAt: new Date('2026-01-02') };
+      const updatedUser = {
+        ...mockUser,
+        email: 'updated@example.com',
+        updatedAt: new Date('2026-01-02'),
+      };
 
       // Setup: findById returns existing user (for validation and old values)
       prismaService.user.findUnique.mockResolvedValue(oldUser);
@@ -139,7 +143,11 @@ describe('NCR-02-05: Missing User CRUD Audit Logs Bug Condition', () => {
       // Setup: update (soft-delete) returns deleted user
       prismaService.user.update.mockResolvedValue(deletedUser);
 
-      await usersService.softDelete(mockUser.id, 'another-admin-uuid', '172.16.0.1');
+      await usersService.softDelete(
+        mockUser.id,
+        'another-admin-uuid',
+        '172.16.0.1',
+      );
 
       // Assert: AuditService.log() MUST be called with correct parameters
       expect(auditService.log).toHaveBeenCalledTimes(1);

@@ -24,17 +24,9 @@ const CRITICAL_PROCESSES = [
   'Report Release',
 ];
 
-const HIGH_PROCESSES = [
-  'Pricing',
-  'Billing/Payment',
-  'Payer/Insurance',
-];
+const HIGH_PROCESSES = ['Pricing', 'Billing/Payment', 'Payer/Insurance'];
 
-const MEDIUM_PROCESSES = [
-  'Gap Report',
-  'Audit Trail',
-  'UI/UX Consistency',
-];
+const MEDIUM_PROCESSES = ['Gap Report', 'Audit Trail', 'UI/UX Consistency'];
 
 const LOW_PROCESSES = [
   'Patient Registration',
@@ -59,7 +51,14 @@ const NON_IMPLEMENTED_STATUSES: GapStatus[] = [
   'MOCK_STATIC',
 ];
 
-const STACK_LAYERS: StackLayer[] = ['UI', 'API', 'CONTROLLER', 'SERVICE', 'REPOSITORY', 'DATABASE'];
+const STACK_LAYERS: StackLayer[] = [
+  'UI',
+  'API',
+  'CONTROLLER',
+  'SERVICE',
+  'REPOSITORY',
+  'DATABASE',
+];
 
 // ---------------------------------------------------------------------------
 // Arbitraries
@@ -67,10 +66,17 @@ const STACK_LAYERS: StackLayer[] = ['UI', 'API', 'CONTROLLER', 'SERVICE', 'REPOS
 
 const layerTraceArb: fc.Arbitrary<LayerTrace> = fc.record({
   layer: fc.constantFrom(...STACK_LAYERS),
-  status: fc.constantFrom('PRESENT' as const, 'PARTIAL' as const, 'ABSENT' as const),
+  status: fc.constantFrom(
+    'PRESENT' as const,
+    'PARTIAL' as const,
+    'ABSENT' as const,
+  ),
   filePath: fc.option(fc.constant('src/module.ts'), { nil: undefined }),
   evidence: fc.option(fc.constant('Some evidence'), { nil: undefined }),
-  issues: fc.option(fc.array(fc.constant('issue'), { minLength: 1, maxLength: 2 }), { nil: undefined }),
+  issues: fc.option(
+    fc.array(fc.constant('issue'), { minLength: 1, maxLength: 2 }),
+    { nil: undefined },
+  ),
 });
 
 const criterionResultArb: fc.Arbitrary<CriterionResult> = fc.record({
@@ -84,17 +90,24 @@ const criterionResultArb: fc.Arbitrary<CriterionResult> = fc.record({
 /**
  * Build a non-IMPLEMENTED ProcessClassification for a given process name.
  */
-function classificationArb(processName: string): fc.Arbitrary<ProcessClassification> {
+function classificationArb(
+  processName: string,
+): fc.Arbitrary<ProcessClassification> {
   return fc.record({
     processName: fc.constant(processName),
     status: fc.constantFrom(...NON_IMPLEMENTED_STATUSES),
     layerTraces: fc.array(layerTraceArb, { minLength: 1, maxLength: 6 }),
-    criterionResults: fc.array(criterionResultArb, { minLength: 0, maxLength: 4 }),
-    evidence: fc.array(fc.constant('src/file.ts:10'), { minLength: 0, maxLength: 3 }),
-    gapDescription: fc.option(
-      fc.string({ minLength: 10, maxLength: 100 }),
-      { nil: undefined },
-    ),
+    criterionResults: fc.array(criterionResultArb, {
+      minLength: 0,
+      maxLength: 4,
+    }),
+    evidence: fc.array(fc.constant('src/file.ts:10'), {
+      minLength: 0,
+      maxLength: 3,
+    }),
+    gapDescription: fc.option(fc.string({ minLength: 10, maxLength: 100 }), {
+      nil: undefined,
+    }),
   });
 }
 
@@ -108,7 +121,9 @@ describe('RemediationGenerator - Property 4: Severity Assignment by Business Imp
   it('core lab workflow processes are assigned CRITICAL severity', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom(...CRITICAL_PROCESSES).chain((name) => classificationArb(name)),
+        fc
+          .constantFrom(...CRITICAL_PROCESSES)
+          .chain((name) => classificationArb(name)),
         (classification) => {
           const tasks = generator.generate([classification]);
 
@@ -123,7 +138,9 @@ describe('RemediationGenerator - Property 4: Severity Assignment by Business Imp
   it('pricing/billing/payment processes are assigned HIGH severity', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom(...HIGH_PROCESSES).chain((name) => classificationArb(name)),
+        fc
+          .constantFrom(...HIGH_PROCESSES)
+          .chain((name) => classificationArb(name)),
         (classification) => {
           const tasks = generator.generate([classification]);
 
@@ -138,7 +155,9 @@ describe('RemediationGenerator - Property 4: Severity Assignment by Business Imp
   it('reporting/analytics processes are assigned MEDIUM severity', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom(...MEDIUM_PROCESSES).chain((name) => classificationArb(name)),
+        fc
+          .constantFrom(...MEDIUM_PROCESSES)
+          .chain((name) => classificationArb(name)),
         (classification) => {
           const tasks = generator.generate([classification]);
 
@@ -153,7 +172,9 @@ describe('RemediationGenerator - Property 4: Severity Assignment by Business Imp
   it('all other processes are assigned LOW severity', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom(...LOW_PROCESSES).chain((name) => classificationArb(name)),
+        fc
+          .constantFrom(...LOW_PROCESSES)
+          .chain((name) => classificationArb(name)),
         (classification) => {
           const tasks = generator.generate([classification]);
 
@@ -175,7 +196,10 @@ describe('RemediationGenerator - Property 4: Severity Assignment by Business Imp
     fc.assert(
       fc.property(
         fc.constantFrom(...ALL_PROCESSES).chain((name) =>
-          classificationArb(name).map((c) => ({ classification: c, expectedPriority: expectedSeverity[name] })),
+          classificationArb(name).map((c) => ({
+            classification: c,
+            expectedPriority: expectedSeverity[name],
+          })),
         ),
         ({ classification, expectedPriority }) => {
           const tasks = generator.generate([classification]);

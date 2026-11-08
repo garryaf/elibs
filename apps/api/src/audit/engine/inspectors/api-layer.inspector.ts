@@ -21,7 +21,10 @@ export class APILayerInspector {
    * @param projectRoot - The absolute path to the project root directory
    * @returns A LayerTrace indicating PRESENT, PARTIAL, or ABSENT status
    */
-  async inspect(target: InspectionTarget, projectRoot: string): Promise<LayerTrace> {
+  async inspect(
+    target: InspectionTarget,
+    projectRoot: string,
+  ): Promise<LayerTrace> {
     const matchedFiles: string[] = [];
     const issues: string[] = [];
 
@@ -36,7 +39,9 @@ export class APILayerInspector {
         });
         matchedFiles.push(...files);
       } catch (err) {
-        issues.push(`Glob error for "${pattern.glob}": ${(err as Error).message}`);
+        issues.push(
+          `Glob error for "${pattern.glob}": ${(err as Error).message}`,
+        );
       }
     }
 
@@ -86,7 +91,9 @@ export class APILayerInspector {
           }
         }
       } catch (err) {
-        issues.push(`Error reading "${normalizedPath}": ${(err as Error).message}`);
+        issues.push(
+          `Error reading "${normalizedPath}": ${(err as Error).message}`,
+        );
       }
     }
 
@@ -96,7 +103,9 @@ export class APILayerInspector {
       try {
         regex = new RegExp(artifact.searchPattern, 'm');
       } catch (err) {
-        issues.push(`Invalid regex "${artifact.searchPattern}": ${(err as Error).message}`);
+        issues.push(
+          `Invalid regex "${artifact.searchPattern}": ${(err as Error).message}`,
+        );
         continue;
       }
 
@@ -124,7 +133,10 @@ export class APILayerInspector {
     const hasArtifacts = totalRequired === 0 || foundArtifacts > 0;
 
     let status: 'PRESENT' | 'PARTIAL' | 'ABSENT';
-    if (hasDecorators && (totalRequired === 0 || foundArtifacts >= totalRequired)) {
+    if (
+      hasDecorators &&
+      (totalRequired === 0 || foundArtifacts >= totalRequired)
+    ) {
       status = 'PRESENT';
     } else if (hasDecorators || foundArtifacts > 0) {
       status = 'PARTIAL';
@@ -136,7 +148,8 @@ export class APILayerInspector {
       layer: 'API',
       status,
       filePath: firstMatchedFile,
-      lineReferences: lineReferences.length > 0 ? lineReferences.slice(0, 20) : undefined,
+      lineReferences:
+        lineReferences.length > 0 ? lineReferences.slice(0, 20) : undefined,
       evidence: `Found ${foundDecorators} HTTP decorators, ${foundRoutes} route paths, ${foundArtifacts}/${totalRequired} required artifacts in ${matchedFiles.length} file(s)`,
       issues: issues.length > 0 ? issues : undefined,
     };

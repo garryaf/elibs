@@ -41,10 +41,12 @@ import { WsModule } from './common/ws/ws.module';
         }),
       }),
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,  // 1 minute window
-      limit: 10,   // max 10 requests per minute (applied per-route via decorator)
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 1 minute window
+        limit: 10, // max 10 requests per minute (applied per-route via decorator)
+      },
+    ]),
     BullModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST || 'localhost',

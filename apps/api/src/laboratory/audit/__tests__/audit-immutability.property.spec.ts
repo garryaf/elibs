@@ -34,12 +34,16 @@ describe('Property 15: Audit log immutability', () => {
 
   it('defines a PostgreSQL RULE preventing UPDATE on audit_logs', () => {
     // The migration must contain a CREATE RULE for UPDATE on audit_logs
-    expect(migrationSql).toMatch(/CREATE\s+RULE\s+\w+\s+AS\s+ON\s+UPDATE\s+TO\s+audit_logs/i);
+    expect(migrationSql).toMatch(
+      /CREATE\s+RULE\s+\w+\s+AS\s+ON\s+UPDATE\s+TO\s+audit_logs/i,
+    );
   });
 
   it('defines a PostgreSQL RULE preventing DELETE on audit_logs', () => {
     // The migration must contain a CREATE RULE for DELETE on audit_logs
-    expect(migrationSql).toMatch(/CREATE\s+RULE\s+\w+\s+AS\s+ON\s+DELETE\s+TO\s+audit_logs/i);
+    expect(migrationSql).toMatch(
+      /CREATE\s+RULE\s+\w+\s+AS\s+ON\s+DELETE\s+TO\s+audit_logs/i,
+    );
   });
 
   it('uses DO INSTEAD to block operations (not silently discard)', () => {
@@ -83,17 +87,14 @@ describe('Property 15: Audit log immutability', () => {
 
     it('INSERT is still allowed (no rule blocks INSERT)', () => {
       fc.assert(
-        fc.property(
-          fc.constant('INSERT'),
-          (operation: string) => {
-            // There must NOT be a rule preventing INSERT on audit_logs
-            const insertRulePattern = new RegExp(
-              `CREATE\\s+RULE\\s+\\w+\\s+AS\\s+ON\\s+${operation}\\s+TO\\s+audit_logs`,
-              'i',
-            );
-            expect(migrationSql).not.toMatch(insertRulePattern);
-          },
-        ),
+        fc.property(fc.constant('INSERT'), (operation: string) => {
+          // There must NOT be a rule preventing INSERT on audit_logs
+          const insertRulePattern = new RegExp(
+            `CREATE\\s+RULE\\s+\\w+\\s+AS\\s+ON\\s+${operation}\\s+TO\\s+audit_logs`,
+            'i',
+          );
+          expect(migrationSql).not.toMatch(insertRulePattern);
+        }),
         { numRuns: 10 },
       );
     });

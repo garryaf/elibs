@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ApprovalType, ApprovalStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../laboratory/audit/audit.service';
@@ -88,7 +84,10 @@ export class BulkPricingService {
         currentPrice,
         newPrice,
         difference: newPrice - currentPrice,
-        percentChange: currentPrice > 0 ? Math.round(((newPrice - currentPrice) / currentPrice) * 100) : 0,
+        percentChange:
+          currentPrice > 0
+            ? Math.round(((newPrice - currentPrice) / currentPrice) * 100)
+            : 0,
       };
     });
   }
@@ -160,13 +159,18 @@ export class BulkPricingService {
   /**
    * Apply an approved bulk adjustment (called after approval).
    */
-  async applyApprovedBulkAdjust(approvalId: string, approverId: string): Promise<void> {
+  async applyApprovedBulkAdjust(
+    approvalId: string,
+    approverId: string,
+  ): Promise<void> {
     const approval = await this.prisma.approvalRequest.findUnique({
       where: { id: approvalId },
     });
 
     if (!approval || approval.status !== ApprovalStatus.APPROVED) {
-      throw new BadRequestException('Approval not found or not in APPROVED status');
+      throw new BadRequestException(
+        'Approval not found or not in APPROVED status',
+      );
     }
 
     const payload = approval.payload as unknown as {
@@ -184,7 +188,11 @@ export class BulkPricingService {
 
     await this.applyBulkAdjust(
       payload.preview,
-      { adjustmentType: payload.adjustmentType, adjustmentValue: payload.adjustmentValue, reason: payload.reason },
+      {
+        adjustmentType: payload.adjustmentType,
+        adjustmentValue: payload.adjustmentValue,
+        reason: payload.reason,
+      },
       approval.requesterId,
       requester?.name ?? undefined,
       approvalId,
@@ -233,7 +241,10 @@ export class BulkPricingService {
   /**
    * Get price change history for a specific test.
    */
-  async getPriceHistory(testId: string, limit = 20): Promise<PriceHistoryEntry[]> {
+  async getPriceHistory(
+    testId: string,
+    limit = 20,
+  ): Promise<PriceHistoryEntry[]> {
     const logs = await this.prisma.priceChangeLog.findMany({
       where: { testId },
       orderBy: { createdAt: 'desc' },
@@ -245,7 +256,9 @@ export class BulkPricingService {
       entityType: log.entityType,
       previousPrice: Number(log.previousPrice),
       newPrice: Number(log.newPrice),
-      previousDiscount: log.previousDiscount ? Number(log.previousDiscount) : null,
+      previousDiscount: log.previousDiscount
+        ? Number(log.previousDiscount)
+        : null,
       newDiscount: log.newDiscount ? Number(log.newDiscount) : null,
       changeType: log.changeType,
       changeReason: log.changeReason,
@@ -257,7 +270,13 @@ export class BulkPricingService {
   /**
    * Get all price change history (for admin overview).
    */
-  async getAllPriceHistory(page = 1, limit = 20): Promise<{ data: PriceHistoryEntry[]; meta: { total: number; page: number; limit: number } }> {
+  async getAllPriceHistory(
+    page = 1,
+    limit = 20,
+  ): Promise<{
+    data: PriceHistoryEntry[];
+    meta: { total: number; page: number; limit: number };
+  }> {
     const skip = (page - 1) * limit;
     const [logs, total] = await Promise.all([
       this.prisma.priceChangeLog.findMany({
@@ -274,7 +293,9 @@ export class BulkPricingService {
         entityType: log.entityType,
         previousPrice: Number(log.previousPrice),
         newPrice: Number(log.newPrice),
-        previousDiscount: log.previousDiscount ? Number(log.previousDiscount) : null,
+        previousDiscount: log.previousDiscount
+          ? Number(log.previousDiscount)
+          : null,
         newDiscount: log.newDiscount ? Number(log.newDiscount) : null,
         changeType: log.changeType,
         changeReason: log.changeReason,
@@ -288,7 +309,10 @@ export class BulkPricingService {
   // ─── Private Methods ──────────────────────────────────────────────────────────
 
   private async getAffectedTests(dto: BulkAdjustDto) {
-    const where: Prisma.TestMasterWhereInput = { deletedAt: null, isActive: true };
+    const where: Prisma.TestMasterWhereInput = {
+      deletedAt: null,
+      isActive: true,
+    };
 
     if (dto.categoryId) {
       where.categoryId = dto.categoryId;
@@ -304,7 +328,10 @@ export class BulkPricingService {
     });
   }
 
-  private calculateNewPrice(currentPrice: number, dto: Pick<BulkAdjustDto, 'adjustmentType' | 'adjustmentValue'>): number {
+  private calculateNewPrice(
+    currentPrice: number,
+    dto: Pick<BulkAdjustDto, 'adjustmentType' | 'adjustmentValue'>,
+  ): number {
     if (dto.adjustmentType === 'PERCENTAGE') {
       const factor = 1 + dto.adjustmentValue / 100;
       return Math.round(currentPrice * factor);
@@ -350,7 +377,11 @@ export class BulkPricingService {
       'BULK_PRICE_ADJUSTMENT',
       'TestMaster',
       preview[0]?.testId ?? userId, // Use first test ID as entity reference
-      { count: preview.length, adjustmentType: dto.adjustmentType, adjustmentValue: dto.adjustmentValue },
+      {
+        count: preview.length,
+        adjustmentType: dto.adjustmentType,
+        adjustmentValue: dto.adjustmentValue,
+      },
       { reason: dto.reason, approvalId },
     );
 

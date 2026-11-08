@@ -24,7 +24,11 @@ export class PaymentService {
     private readonly discountApprovalService: DiscountApprovalService,
   ) {}
 
-  async processPayment(orderId: string, dto: ProcessPaymentDto, userId: string) {
+  async processPayment(
+    orderId: string,
+    dto: ProcessPaymentDto,
+    userId: string,
+  ) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
     });
@@ -56,18 +60,24 @@ export class PaymentService {
     if (dto.discountAmount !== undefined && dto.discountAmount !== null) {
       const discount = new Decimal(dto.discountAmount);
       if (discount.lte(0)) {
-        throw new BadRequestException('Discount amount must be greater than zero');
+        throw new BadRequestException(
+          'Discount amount must be greater than zero',
+        );
       }
       if (discount.gt(order.totalAmount)) {
-        throw new BadRequestException('Discount amount cannot exceed total order amount');
+        throw new BadRequestException(
+          'Discount amount cannot exceed total order amount',
+        );
       }
 
       // Verify an approved DISCOUNT ApprovalRequest exists for this order
-      const hasApproval = await this.discountApprovalService.hasApprovedDiscountRequest(orderId);
+      const hasApproval =
+        await this.discountApprovalService.hasApprovedDiscountRequest(orderId);
       if (!hasApproval) {
         throw new BadRequestException({
           errorCode: 'ERR_DISCOUNT_NOT_APPROVED',
-          message: 'A discount cannot be applied without an approved DISCOUNT approval request. Please submit a discount approval request first.',
+          message:
+            'A discount cannot be applied without an approved DISCOUNT approval request. Please submit a discount approval request first.',
         });
       }
 
@@ -85,15 +95,23 @@ export class PaymentService {
 
     // Calculate change for cash overpayments
     let change: Decimal | null = null;
-    if (dto.paymentMethod === PaymentMethod.CASH && amountPaid.gt(finalPayable)) {
+    if (
+      dto.paymentMethod === PaymentMethod.CASH &&
+      amountPaid.gt(finalPayable)
+    ) {
       change = amountPaid.minus(finalPayable);
     }
 
     // Generate barcode
-    const barcode = await this.barcodeService.generate(orderId, order.orderNumber);
+    const barcode = await this.barcodeService.generate(
+      orderId,
+      order.orderNumber,
+    );
 
     // Transition via state machine (handles status + paidAt timestamp)
-    await this.orderStateMachine.transition(orderId, OrderStatus.PAID, { userId });
+    await this.orderStateMachine.transition(orderId, OrderStatus.PAID, {
+      userId,
+    });
 
     // Update payment-specific fields separately
     // Store barcodeText for on-demand regeneration (Requirement 18.1)
@@ -102,7 +120,9 @@ export class PaymentService {
       data: {
         paymentMethod: dto.paymentMethod,
         amountPaid: finalPayable,
-        discountAmount: dto.discountAmount ? new Decimal(dto.discountAmount) : null,
+        discountAmount: dto.discountAmount
+          ? new Decimal(dto.discountAmount)
+          : null,
         discountReason: dto.discountReason || null,
         barcode: barcode.barcodeData,
         barcodeImage: barcode.barcodeImage,
@@ -122,7 +142,10 @@ export class PaymentService {
         'Order',
         orderId,
         null,
-        { discountAmount: dto.discountAmount, discountReason: dto.discountReason },
+        {
+          discountAmount: dto.discountAmount,
+          discountReason: dto.discountReason,
+        },
         null,
       );
     }
@@ -133,7 +156,11 @@ export class PaymentService {
     };
   }
 
-  async processSplitPayment(orderId: string, dto: SplitPaymentDto, userId: string) {
+  async processSplitPayment(
+    orderId: string,
+    dto: SplitPaymentDto,
+    userId: string,
+  ) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
     });
@@ -142,7 +169,10 @@ export class PaymentService {
       throw new NotFoundException('Order not found');
     }
 
-    if (order.status !== OrderStatus.PENDING_PAYMENT && order.status !== OrderStatus.PAYMENT_OVERDUE) {
+    if (
+      order.status !== OrderStatus.PENDING_PAYMENT &&
+      order.status !== OrderStatus.PAYMENT_OVERDUE
+    ) {
       throw new BadRequestException({
         errorCode: 'ERR_INVALID_STATE',
         message: `Cannot transition from ${order.status} to PAID`,
@@ -169,10 +199,15 @@ export class PaymentService {
     }
 
     // Generate barcode
-    const barcode = await this.barcodeService.generate(orderId, order.orderNumber);
+    const barcode = await this.barcodeService.generate(
+      orderId,
+      order.orderNumber,
+    );
 
     // Transition via state machine (handles status + paidAt timestamp)
-    await this.orderStateMachine.transition(orderId, OrderStatus.PAID, { userId });
+    await this.orderStateMachine.transition(orderId, OrderStatus.PAID, {
+      userId,
+    });
 
     // Create payment components and update payment-specific fields in a transaction
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
@@ -221,7 +256,9 @@ export class PaymentService {
 
     const components = await this.prisma.paymentComponent.findMany({
       where: { orderId },
-      include: { insurance: { select: { id: true, name: true, code: true, type: true } } },
+      include: {
+        insurance: { select: { id: true, name: true, code: true, type: true } },
+      },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -231,7 +268,12 @@ export class PaymentService {
   async getBarcode(orderId: string) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      select: { id: true, orderNumber: true, barcodeImage: true, barcodeText: true },
+      select: {
+        id: true,
+        orderNumber: true,
+        barcodeImage: true,
+        barcodeText: true,
+      },
     });
 
     if (!order) {
@@ -241,12 +283,15 @@ export class PaymentService {
     // On-demand regeneration (Requirement 18.1): if barcodeText is available,
     // generate the image on-demand rather than requiring stored barcodeImage
     if (!order.barcodeImage && !order.barcodeText) {
-      throw new NotFoundException('Barcode not generated yet. Payment must be processed first.');
+      throw new NotFoundException(
+        'Barcode not generated yet. Payment must be processed first.',
+      );
     }
 
     // If barcodeImage is stored, return it; otherwise generate on-demand from barcodeText
-    const barcodeImage = order.barcodeImage
-      ?? await this.barcodeService.generateImage(order.barcodeText!);
+    const barcodeImage =
+      order.barcodeImage ??
+      (await this.barcodeService.generateImage(order.barcodeText!));
 
     return {
       orderId: order.id,
@@ -273,7 +318,11 @@ export class PaymentService {
     return order;
   }
 
-  async processDeposit(orderId: string, dto: DepositPaymentDto, userId: string) {
+  async processDeposit(
+    orderId: string,
+    dto: DepositPaymentDto,
+    userId: string,
+  ) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
     });
@@ -303,7 +352,11 @@ export class PaymentService {
     }
 
     // Transition to DEPOSIT_RECEIVED (does NOT trigger PAID)
-    await this.orderStateMachine.transition(orderId, OrderStatus.DEPOSIT_RECEIVED, { userId });
+    await this.orderStateMachine.transition(
+      orderId,
+      OrderStatus.DEPOSIT_RECEIVED,
+      { userId },
+    );
 
     // Update deposit-specific fields
     const updatedOrder = await this.prisma.order.update({

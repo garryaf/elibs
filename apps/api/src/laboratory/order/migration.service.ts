@@ -148,7 +148,7 @@ export class MigrationService {
                   visitNumber: syntheticVisit.visitNumber,
                   patientId: syntheticVisit.patientId,
                   migratedOrderIds: orderIds,
-                } as unknown as Prisma.InputJsonValue,
+                },
                 ipAddress: null,
               },
             });
@@ -181,7 +181,10 @@ export class MigrationService {
       return result;
     } catch (error) {
       // Transaction was automatically rolled back by Prisma
-      if (error instanceof Error && error.message.includes('Migration verification failed')) {
+      if (
+        error instanceof Error &&
+        error.message.includes('Migration verification failed')
+      ) {
         return {
           totalAffectedOrders: legacyOrders.length,
           distinctPatientDateGroups: groups.size,

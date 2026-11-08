@@ -1,4 +1,11 @@
-import { IsEnum, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { PaymentMethod } from '@prisma/client';
 
 export class DepositPaymentDto {

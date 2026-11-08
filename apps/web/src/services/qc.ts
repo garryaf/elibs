@@ -96,14 +96,6 @@ export function useLeveyJennings(sampleId: string) {
   });
 }
 
-export function useQCTestStatus(testId: string) {
-  return useQuery({
-    queryKey: qcKeys.testStatus(testId),
-    queryFn: () => apiClient.get<QCTestStatus>(`/api/v1/qc/status/${testId}`),
-    enabled: !!testId,
-  });
-}
-
 export function useCreateQCSample() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -22,7 +22,10 @@ export class ControllerLayerInspector {
    * @param projectRoot - The absolute path to the project root directory
    * @returns A LayerTrace indicating PRESENT, PARTIAL, or ABSENT status
    */
-  async inspect(target: InspectionTarget, projectRoot: string): Promise<LayerTrace> {
+  async inspect(
+    target: InspectionTarget,
+    projectRoot: string,
+  ): Promise<LayerTrace> {
     const matchedFiles: string[] = [];
     const issues: string[] = [];
 
@@ -37,7 +40,9 @@ export class ControllerLayerInspector {
         });
         matchedFiles.push(...files);
       } catch (err) {
-        issues.push(`Glob error for "${pattern.glob}": ${(err as Error).message}`);
+        issues.push(
+          `Glob error for "${pattern.glob}": ${(err as Error).message}`,
+        );
       }
     }
 
@@ -114,7 +119,9 @@ export class ControllerLayerInspector {
           }
         }
       } catch (err) {
-        issues.push(`Error reading "${normalizedPath}": ${(err as Error).message}`);
+        issues.push(
+          `Error reading "${normalizedPath}": ${(err as Error).message}`,
+        );
       }
     }
 
@@ -127,7 +134,9 @@ export class ControllerLayerInspector {
       try {
         regex = new RegExp(artifact.searchPattern, 'm');
       } catch (err) {
-        issues.push(`Invalid regex "${artifact.searchPattern}": ${(err as Error).message}`);
+        issues.push(
+          `Invalid regex "${artifact.searchPattern}": ${(err as Error).message}`,
+        );
         continue;
       }
 
@@ -147,13 +156,17 @@ export class ControllerLayerInspector {
     }
 
     // Step 4: Determine status based on what was found
-    const hasControllerClass = foundControllerDecorators > 0 && foundClasses > 0;
+    const hasControllerClass =
+      foundControllerDecorators > 0 && foundClasses > 0;
     const hasProperStructure = hasControllerClass && foundConstructors > 0;
     const hasSecurityDecorators = foundGuards > 0 || foundRoles > 0;
 
     let status: 'PRESENT' | 'PARTIAL' | 'ABSENT';
 
-    if (hasProperStructure && (totalRequired === 0 || foundArtifacts >= totalRequired)) {
+    if (
+      hasProperStructure &&
+      (totalRequired === 0 || foundArtifacts >= totalRequired)
+    ) {
       // Full controller structure found with all required artifacts
       status = 'PRESENT';
     } else if (hasControllerClass || foundArtifacts > 0) {
@@ -174,7 +187,8 @@ export class ControllerLayerInspector {
       layer: 'CONTROLLER',
       status,
       filePath: firstMatchedFile,
-      lineReferences: lineReferences.length > 0 ? lineReferences.slice(0, 20) : undefined,
+      lineReferences:
+        lineReferences.length > 0 ? lineReferences.slice(0, 20) : undefined,
       evidence: `Found ${foundControllerDecorators} @Controller decorators, ${foundClasses} controller classes, ${foundArtifacts}/${totalRequired} required artifacts${securityInfo} in ${matchedFiles.length} file(s)`,
       issues: issues.length > 0 ? issues : undefined,
     };

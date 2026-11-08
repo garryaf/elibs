@@ -49,14 +49,26 @@ describe('Lab History Pagination Property Tests', () => {
   function createMockPrisma(totalDataset: any[]) {
     const mockPrisma = {
       patient: {
-        findFirst: jest.fn().mockResolvedValue({ id: 'patient-uuid', name: 'Test Patient', deletedAt: null }),
-        findUnique: jest.fn().mockResolvedValue({ id: 'patient-uuid', name: 'Test Patient', deletedAt: null }),
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'patient-uuid',
+          name: 'Test Patient',
+          deletedAt: null,
+        }),
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'patient-uuid',
+          name: 'Test Patient',
+          deletedAt: null,
+        }),
       },
       order: {
-        findMany: jest.fn().mockImplementation(({ skip, take }: { skip: number; take: number }) => {
-          const sliced = totalDataset.slice(skip, skip + take);
-          return Promise.resolve(sliced);
-        }),
+        findMany: jest
+          .fn()
+          .mockImplementation(
+            ({ skip, take }: { skip: number; take: number }) => {
+              const sliced = totalDataset.slice(skip, skip + take);
+              return Promise.resolve(sliced);
+            },
+          ),
         count: jest.fn().mockResolvedValue(totalDataset.length),
       },
     } as unknown as PrismaService;
@@ -64,10 +76,19 @@ describe('Lab History Pagination Property Tests', () => {
   }
 
   function createService(mockPrisma: PrismaService): PatientService {
-    const mockMrnGenerator = { generate: jest.fn() } as unknown as MrnGeneratorService;
-    const mockRegionValidation = { validateHierarchy: jest.fn() } as unknown as RegionValidationService;
+    const mockMrnGenerator = {
+      generate: jest.fn(),
+    } as unknown as MrnGeneratorService;
+    const mockRegionValidation = {
+      validateHierarchy: jest.fn(),
+    } as unknown as RegionValidationService;
     const mockAuditService = { log: jest.fn() } as unknown as AuditService;
-    return new PatientService(mockPrisma, mockMrnGenerator, mockRegionValidation, mockAuditService);
+    return new PatientService(
+      mockPrisma,
+      mockMrnGenerator,
+      mockRegionValidation,
+      mockAuditService,
+    );
   }
 
   /**
@@ -80,14 +101,17 @@ describe('Lab History Pagination Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.integer({ min: 1, max: 100 }), // page
-          fc.integer({ min: 1, max: 50 }),   // limit
-          fc.integer({ min: 0, max: 200 }),  // dataset size
+          fc.integer({ min: 1, max: 50 }), // limit
+          fc.integer({ min: 0, max: 200 }), // dataset size
           async (page, limit, datasetSize) => {
             const dataset = generateOrderDataset(datasetSize);
             const mockPrisma = createMockPrisma(dataset);
             const service = createService(mockPrisma);
 
-            const result = await service.getLabHistory('patient-uuid', { page, limit });
+            const result = await service.getLabHistory('patient-uuid', {
+              page,
+              limit,
+            });
 
             expect(result.data.items.length).toBeLessThanOrEqual(limit);
           },
@@ -107,14 +131,17 @@ describe('Lab History Pagination Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.integer({ min: 1, max: 100 }), // page
-          fc.integer({ min: 1, max: 50 }),   // limit
-          fc.integer({ min: 0, max: 200 }),  // dataset size (= total)
+          fc.integer({ min: 1, max: 50 }), // limit
+          fc.integer({ min: 0, max: 200 }), // dataset size (= total)
           async (page, limit, datasetSize) => {
             const dataset = generateOrderDataset(datasetSize);
             const mockPrisma = createMockPrisma(dataset);
             const service = createService(mockPrisma);
 
-            const result = await service.getLabHistory('patient-uuid', { page, limit });
+            const result = await service.getLabHistory('patient-uuid', {
+              page,
+              limit,
+            });
 
             const expectedTotalPages = Math.ceil(datasetSize / limit);
             expect(result.data.meta.totalPages).toBe(expectedTotalPages);
@@ -134,15 +161,18 @@ describe('Lab History Pagination Property Tests', () => {
     it('each item createdAt is >= the next item createdAt', async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.integer({ min: 1, max: 20 }),  // page (keep small to have data on page)
-          fc.integer({ min: 2, max: 50 }),  // limit (at least 2 to check ordering)
+          fc.integer({ min: 1, max: 20 }), // page (keep small to have data on page)
+          fc.integer({ min: 2, max: 50 }), // limit (at least 2 to check ordering)
           fc.integer({ min: 2, max: 200 }), // dataset size (at least 2 items)
           async (page, limit, datasetSize) => {
             const dataset = generateOrderDataset(datasetSize);
             const mockPrisma = createMockPrisma(dataset);
             const service = createService(mockPrisma);
 
-            const result = await service.getLabHistory('patient-uuid', { page, limit });
+            const result = await service.getLabHistory('patient-uuid', {
+              page,
+              limit,
+            });
             const items = result.data.items;
 
             // Check ordering: each item's createdAt >= next item's createdAt

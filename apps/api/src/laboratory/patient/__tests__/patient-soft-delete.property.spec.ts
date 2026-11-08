@@ -26,7 +26,10 @@ import { InsuranceConsolidationService } from '../../../insurance/insurance-cons
 // Visit statuses that block patient soft-delete
 const ACTIVE_VISIT_STATUSES = ['REGISTERED', 'IN_PROGRESS'] as const;
 const INACTIVE_VISIT_STATUSES = ['COMPLETED', 'CANCELLED'] as const;
-const ALL_VISIT_STATUSES = [...ACTIVE_VISIT_STATUSES, ...INACTIVE_VISIT_STATUSES] as const;
+const ALL_VISIT_STATUSES = [
+  ...ACTIVE_VISIT_STATUSES,
+  ...INACTIVE_VISIT_STATUSES,
+] as const;
 
 // Order statuses from the Prisma schema
 const ALL_ORDER_STATUSES = [
@@ -49,10 +52,19 @@ const ACTIVE_ORDER_STATUSES = ALL_ORDER_STATUSES.filter(
 );
 
 function createService(mockPrisma: any): PatientService {
-  const mockMrnGenerator = { generate: jest.fn() } as unknown as MrnGeneratorService;
-  const mockRegionValidation = { validateHierarchy: jest.fn() } as unknown as RegionValidationService;
-  const mockAuditService = { log: jest.fn().mockResolvedValue(undefined) } as unknown as AuditService;
-  const mockInsuranceConsolidation = { resolvePatientInsuranceId: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } as unknown as InsuranceConsolidationService;
+  const mockMrnGenerator = {
+    generate: jest.fn(),
+  } as unknown as MrnGeneratorService;
+  const mockRegionValidation = {
+    validateHierarchy: jest.fn(),
+  } as unknown as RegionValidationService;
+  const mockAuditService = {
+    log: jest.fn().mockResolvedValue(undefined),
+  } as unknown as AuditService;
+  const mockInsuranceConsolidation = {
+    resolvePatientInsuranceId: jest.fn().mockResolvedValue(null),
+    getActiveInsurances: jest.fn().mockResolvedValue([]),
+  } as unknown as InsuranceConsolidationService;
   return new PatientService(
     mockPrisma as PrismaService,
     mockMrnGenerator,
@@ -99,9 +111,9 @@ describe('Patient Soft-Delete Property Tests', () => {
 
             const service = createService(mockPrisma);
 
-            await expect(
-              service.softDelete(patientId, userId),
-            ).rejects.toThrow(ConflictException);
+            await expect(service.softDelete(patientId, userId)).rejects.toThrow(
+              ConflictException,
+            );
 
             // Verify patient was NOT updated (deletedAt remains null)
             expect(mockPrisma.patient.update).not.toHaveBeenCalled();
@@ -145,9 +157,9 @@ describe('Patient Soft-Delete Property Tests', () => {
 
             const service = createService(mockPrisma);
 
-            await expect(
-              service.softDelete(patientId, userId),
-            ).rejects.toThrow(ConflictException);
+            await expect(service.softDelete(patientId, userId)).rejects.toThrow(
+              ConflictException,
+            );
 
             // Verify patient was NOT updated (deletedAt remains null)
             expect(mockPrisma.patient.update).not.toHaveBeenCalled();
@@ -190,9 +202,9 @@ describe('Patient Soft-Delete Property Tests', () => {
 
             const service = createService(mockPrisma);
 
-            await expect(
-              service.softDelete(patientId, userId),
-            ).rejects.toThrow(ConflictException);
+            await expect(service.softDelete(patientId, userId)).rejects.toThrow(
+              ConflictException,
+            );
 
             // Verify patient was NOT updated
             expect(mockPrisma.patient.update).not.toHaveBeenCalled();
@@ -272,7 +284,10 @@ describe('Patient Soft-Delete Property Tests', () => {
               mrn: fc.string({ minLength: 5, maxLength: 15 }),
               deletedAt: fc.oneof(
                 fc.constant(null),
-                fc.date({ min: new Date('2020-01-01'), max: new Date('2030-01-01') }),
+                fc.date({
+                  min: new Date('2020-01-01'),
+                  max: new Date('2030-01-01'),
+                }),
               ),
             }),
             { minLength: 1, maxLength: 20 },
@@ -337,7 +352,10 @@ describe('Patient Soft-Delete Property Tests', () => {
               id: fc.uuid(),
               name: fc.string({ minLength: 1, maxLength: 50 }),
               mrn: fc.string({ minLength: 5, maxLength: 15 }),
-              deletedAt: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-01-01') }),
+              deletedAt: fc.date({
+                min: new Date('2020-01-01'),
+                max: new Date('2030-01-01'),
+              }),
             }),
             { minLength: 1, maxLength: 10 },
           ),

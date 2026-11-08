@@ -88,8 +88,8 @@ describe('Order Number Sequential Guarantee Property Tests', () => {
             }
 
             // Parse all and verify monotonically increasing and consecutive
-            const parsed = orderNumbers.map(
-              (n) => OrderSequenceService.parse(n)!,
+            const parsed = orderNumbers.map((n) =>
+              OrderSequenceService.parse(n)!,
             );
 
             for (let i = 1; i < parsed.length; i++) {
@@ -120,17 +120,15 @@ describe('Order Number Sequential Guarantee Property Tests', () => {
             // Random strings
             fc.string({ minLength: 0, maxLength: 30 }),
             // Almost-valid formats with wrong prefix
-            fc.integer({ min: 1, max: 9999 }).map(
-              (seq) => `ORD-202601-${seq.toString().padStart(4, '0')}`,
-            ),
+            fc
+              .integer({ min: 1, max: 9999 })
+              .map((seq) => `ORD-202601-${seq.toString().padStart(4, '0')}`),
             // Missing components
             fc.constant('LAB-'),
             fc.constant('LAB-202601'),
             fc.constant('LAB-202601-'),
             // Wrong digit counts
-            fc.integer({ min: 1, max: 999 }).map(
-              (seq) => `LAB-202601-${seq}`,
-            ),
+            fc.integer({ min: 1, max: 999 }).map((seq) => `LAB-202601-${seq}`),
             fc.constant('LAB-20260-0001'), // 5 digits instead of 6
             fc.constant('LAB-2026011-0001'), // 7 digits instead of 6
           ),

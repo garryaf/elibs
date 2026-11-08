@@ -126,7 +126,9 @@ describe('Specimen Condition Validation Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.constantFrom(...NON_ACCEPTABLE_CONDITIONS),
-          fc.string({ minLength: 201, maxLength: 500 }).filter((s) => s.trim().length > 0),
+          fc
+            .string({ minLength: 201, maxLength: 500 })
+            .filter((s) => s.trim().length > 0),
           async (condition, rejectionReason) => {
             const dto = { condition, rejectionReason };
 
@@ -183,7 +185,9 @@ describe('Specimen Condition Validation Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.constantFrom(...NON_ACCEPTABLE_CONDITIONS),
-          fc.string({ minLength: 1, maxLength: 200 }).filter((s) => s.trim().length > 0),
+          fc
+            .string({ minLength: 1, maxLength: 200 })
+            .filter((s) => s.trim().length > 0),
           async (condition, rejectionReason) => {
             const dto = { condition, rejectionReason };
 

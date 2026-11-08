@@ -4,7 +4,12 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { CreateDepartmentDto, UpdateDepartmentDto, CreatePositionDto, UpdatePositionDto } from './dto';
+import {
+  CreateDepartmentDto,
+  UpdateDepartmentDto,
+  CreatePositionDto,
+  UpdatePositionDto,
+} from './dto';
 
 @Injectable()
 export class OrganizationService {
@@ -17,7 +22,9 @@ export class OrganizationService {
       where: { code: dto.code },
     });
     if (existing) {
-      throw new ConflictException(`Department with code "${dto.code}" already exists`);
+      throw new ConflictException(
+        `Department with code "${dto.code}" already exists`,
+      );
     }
 
     return this.prisma.department.create({
@@ -59,7 +66,9 @@ export class OrganizationService {
         where: { code: dto.code, id: { not: id } },
       });
       if (existing) {
-        throw new ConflictException(`Department with code "${dto.code}" already exists`);
+        throw new ConflictException(
+          `Department with code "${dto.code}" already exists`,
+        );
       }
     }
 
@@ -87,14 +96,18 @@ export class OrganizationService {
       where: { id: dto.departmentId },
     });
     if (!department) {
-      throw new NotFoundException(`Department with id "${dto.departmentId}" not found`);
+      throw new NotFoundException(
+        `Department with id "${dto.departmentId}" not found`,
+      );
     }
 
     const existing = await this.prisma.position.findUnique({
       where: { code: dto.code },
     });
     if (existing) {
-      throw new ConflictException(`Position with code "${dto.code}" already exists`);
+      throw new ConflictException(
+        `Position with code "${dto.code}" already exists`,
+      );
     }
 
     return this.prisma.position.create({
@@ -117,7 +130,11 @@ export class OrganizationService {
     return this.prisma.position.findMany({
       where,
       include: { department: true },
-      orderBy: [{ department: { name: 'asc' } }, { level: 'asc' }, { name: 'asc' }],
+      orderBy: [
+        { department: { name: 'asc' } },
+        { level: 'asc' },
+        { name: 'asc' },
+      ],
     });
   }
 
@@ -140,7 +157,9 @@ export class OrganizationService {
         where: { id: dto.departmentId },
       });
       if (!department) {
-        throw new NotFoundException(`Department with id "${dto.departmentId}" not found`);
+        throw new NotFoundException(
+          `Department with id "${dto.departmentId}" not found`,
+        );
       }
     }
 
@@ -149,7 +168,9 @@ export class OrganizationService {
         where: { code: dto.code, id: { not: id } },
       });
       if (existing) {
-        throw new ConflictException(`Position with code "${dto.code}" already exists`);
+        throw new ConflictException(
+          `Position with code "${dto.code}" already exists`,
+        );
       }
     }
 

@@ -25,9 +25,20 @@ const NON_IMPLEMENTED_STATUSES: GapStatus[] = [
 
 const ALL_STATUSES: GapStatus[] = ['IMPLEMENTED', ...NON_IMPLEMENTED_STATUSES];
 
-const STACK_LAYERS: StackLayer[] = ['UI', 'API', 'CONTROLLER', 'SERVICE', 'REPOSITORY', 'DATABASE'];
+const STACK_LAYERS: StackLayer[] = [
+  'UI',
+  'API',
+  'CONTROLLER',
+  'SERVICE',
+  'REPOSITORY',
+  'DATABASE',
+];
 
-const LAYER_STATUSES: Array<'PRESENT' | 'PARTIAL' | 'ABSENT'> = ['PRESENT', 'PARTIAL', 'ABSENT'];
+const LAYER_STATUSES: Array<'PRESENT' | 'PARTIAL' | 'ABSENT'> = [
+  'PRESENT',
+  'PARTIAL',
+  'ABSENT',
+];
 
 const SAMPLE_PROCESS_NAMES = [
   'Patient Registration',
@@ -55,27 +66,52 @@ const SAMPLE_PROCESS_NAMES = [
 const layerTraceArb: fc.Arbitrary<LayerTrace> = fc.record({
   layer: fc.constantFrom(...STACK_LAYERS),
   status: fc.constantFrom(...LAYER_STATUSES),
-  filePath: fc.option(fc.string({ minLength: 1, maxLength: 30 }).map((s) => `src/${s}.ts`), { nil: undefined }),
-  evidence: fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: undefined }),
-  issues: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 40 }), { minLength: 1, maxLength: 3 }), { nil: undefined }),
+  filePath: fc.option(
+    fc.string({ minLength: 1, maxLength: 30 }).map((s) => `src/${s}.ts`),
+    { nil: undefined },
+  ),
+  evidence: fc.option(fc.string({ minLength: 1, maxLength: 50 }), {
+    nil: undefined,
+  }),
+  issues: fc.option(
+    fc.array(fc.string({ minLength: 1, maxLength: 40 }), {
+      minLength: 1,
+      maxLength: 3,
+    }),
+    { nil: undefined },
+  ),
 });
 
 const criterionResultArb: fc.Arbitrary<CriterionResult> = fc.record({
   criterionId: fc.stringMatching(/^[0-9]{1,2}\.[0-9]{1,2}$/),
   description: fc.string({ minLength: 5, maxLength: 80 }),
   passed: fc.boolean(),
-  evidence: fc.string({ minLength: 1, maxLength: 40 }).map((s) => `src/${s}:10`),
-  gap: fc.option(fc.string({ minLength: 5, maxLength: 80 }), { nil: undefined }),
+  evidence: fc
+    .string({ minLength: 1, maxLength: 40 })
+    .map((s) => `src/${s}:10`),
+  gap: fc.option(fc.string({ minLength: 5, maxLength: 80 }), {
+    nil: undefined,
+  }),
 });
 
-const processClassificationArb: fc.Arbitrary<ProcessClassification> = fc.record({
-  processName: fc.constantFrom(...SAMPLE_PROCESS_NAMES),
-  status: fc.constantFrom(...ALL_STATUSES),
-  layerTraces: fc.array(layerTraceArb, { minLength: 0, maxLength: 6 }),
-  criterionResults: fc.array(criterionResultArb, { minLength: 0, maxLength: 5 }),
-  evidence: fc.array(fc.string({ minLength: 1, maxLength: 50 }).map((s) => `src/${s}:1`), { minLength: 0, maxLength: 3 }),
-  gapDescription: fc.option(fc.string({ minLength: 10, maxLength: 200 }), { nil: undefined }),
-});
+const processClassificationArb: fc.Arbitrary<ProcessClassification> = fc.record(
+  {
+    processName: fc.constantFrom(...SAMPLE_PROCESS_NAMES),
+    status: fc.constantFrom(...ALL_STATUSES),
+    layerTraces: fc.array(layerTraceArb, { minLength: 0, maxLength: 6 }),
+    criterionResults: fc.array(criterionResultArb, {
+      minLength: 0,
+      maxLength: 5,
+    }),
+    evidence: fc.array(
+      fc.string({ minLength: 1, maxLength: 50 }).map((s) => `src/${s}:1`),
+      { minLength: 0, maxLength: 3 },
+    ),
+    gapDescription: fc.option(fc.string({ minLength: 10, maxLength: 200 }), {
+      nil: undefined,
+    }),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -102,14 +138,24 @@ describe('RemediationGenerator - Property 2: Remediation Task Count Invariant', 
   });
 
   it('produces zero tasks when all classifications are IMPLEMENTED', () => {
-    const implementedClassificationArb: fc.Arbitrary<ProcessClassification> = fc.record({
-      processName: fc.constantFrom(...SAMPLE_PROCESS_NAMES),
-      status: fc.constant('IMPLEMENTED' as GapStatus),
-      layerTraces: fc.array(layerTraceArb, { minLength: 1, maxLength: 6 }),
-      criterionResults: fc.array(criterionResultArb, { minLength: 0, maxLength: 5 }),
-      evidence: fc.array(fc.string({ minLength: 1, maxLength: 50 }).map((s) => `src/${s}:1`), { minLength: 0, maxLength: 3 }),
-      gapDescription: fc.option(fc.string({ minLength: 10, maxLength: 200 }), { nil: undefined }),
-    });
+    const implementedClassificationArb: fc.Arbitrary<ProcessClassification> =
+      fc.record({
+        processName: fc.constantFrom(...SAMPLE_PROCESS_NAMES),
+        status: fc.constant('IMPLEMENTED'),
+        layerTraces: fc.array(layerTraceArb, { minLength: 1, maxLength: 6 }),
+        criterionResults: fc.array(criterionResultArb, {
+          minLength: 0,
+          maxLength: 5,
+        }),
+        evidence: fc.array(
+          fc.string({ minLength: 1, maxLength: 50 }).map((s) => `src/${s}:1`),
+          { minLength: 0, maxLength: 3 },
+        ),
+        gapDescription: fc.option(
+          fc.string({ minLength: 10, maxLength: 200 }),
+          { nil: undefined },
+        ),
+      });
 
     fc.assert(
       fc.property(
@@ -124,18 +170,31 @@ describe('RemediationGenerator - Property 2: Remediation Task Count Invariant', 
   });
 
   it('produces exactly N tasks when all N classifications are non-IMPLEMENTED', () => {
-    const nonImplementedClassificationArb: fc.Arbitrary<ProcessClassification> = fc.record({
-      processName: fc.constantFrom(...SAMPLE_PROCESS_NAMES),
-      status: fc.constantFrom(...NON_IMPLEMENTED_STATUSES),
-      layerTraces: fc.array(layerTraceArb, { minLength: 0, maxLength: 6 }),
-      criterionResults: fc.array(criterionResultArb, { minLength: 0, maxLength: 5 }),
-      evidence: fc.array(fc.string({ minLength: 1, maxLength: 50 }).map((s) => `src/${s}:1`), { minLength: 0, maxLength: 3 }),
-      gapDescription: fc.option(fc.string({ minLength: 10, maxLength: 200 }), { nil: undefined }),
-    });
+    const nonImplementedClassificationArb: fc.Arbitrary<ProcessClassification> =
+      fc.record({
+        processName: fc.constantFrom(...SAMPLE_PROCESS_NAMES),
+        status: fc.constantFrom(...NON_IMPLEMENTED_STATUSES),
+        layerTraces: fc.array(layerTraceArb, { minLength: 0, maxLength: 6 }),
+        criterionResults: fc.array(criterionResultArb, {
+          minLength: 0,
+          maxLength: 5,
+        }),
+        evidence: fc.array(
+          fc.string({ minLength: 1, maxLength: 50 }).map((s) => `src/${s}:1`),
+          { minLength: 0, maxLength: 3 },
+        ),
+        gapDescription: fc.option(
+          fc.string({ minLength: 10, maxLength: 200 }),
+          { nil: undefined },
+        ),
+      });
 
     fc.assert(
       fc.property(
-        fc.array(nonImplementedClassificationArb, { minLength: 1, maxLength: 16 }),
+        fc.array(nonImplementedClassificationArb, {
+          minLength: 1,
+          maxLength: 16,
+        }),
         (classifications) => {
           const tasks = generator.generate(classifications);
           expect(tasks.length).toBe(classifications.length);
@@ -151,7 +210,9 @@ describe('RemediationGenerator - Property 2: Remediation Task Count Invariant', 
         fc.array(processClassificationArb, { minLength: 1, maxLength: 16 }),
         (classifications) => {
           const tasks = generator.generate(classifications);
-          const nonImplemented = classifications.filter((c) => c.status !== 'IMPLEMENTED');
+          const nonImplemented = classifications.filter(
+            (c) => c.status !== 'IMPLEMENTED',
+          );
 
           // Every task businessProcess should correspond to a non-IMPLEMENTED classification
           for (const task of tasks) {

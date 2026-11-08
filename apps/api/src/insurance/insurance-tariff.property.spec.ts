@@ -25,8 +25,12 @@ describe('TariffResolverService Property Tests - Property 6', () => {
 
   // --- Arbitraries ---
   const arbUuid = fc.uuid().map((v) => v.toString());
-  const arbPrice = fc.integer({ min: 1000, max: 10000000 }).map((n) => new Decimal(n));
-  const arbDiscount = fc.integer({ min: 0, max: 100 }).map((n) => new Decimal(n));
+  const arbPrice = fc
+    .integer({ min: 1000, max: 10000000 })
+    .map((n) => new Decimal(n));
+  const arbDiscount = fc
+    .integer({ min: 0, max: 100 })
+    .map((n) => new Decimal(n));
 
   beforeEach(async () => {
     const mockPrisma = {
@@ -110,7 +114,9 @@ describe('TariffResolverService Property Tests - Property 6', () => {
             fc.pre(junctionInsuranceId !== legacyInsuranceId);
 
             // Mock: getOrderPrimaryInsurance returns junction source
-            (prismaService.orderInsurance.findFirst as jest.Mock).mockResolvedValue({
+            (
+              prismaService.orderInsurance.findFirst as jest.Mock
+            ).mockResolvedValue({
               id: 'oi-id',
               orderId,
               insuranceId: junctionInsuranceId,
@@ -149,12 +155,12 @@ describe('TariffResolverService Property Tests - Property 6', () => {
             );
 
             // Mock: testMaster fallback (in case tariff not found for some resolution levels)
-            (prismaService.testMaster.findFirst as jest.Mock).mockImplementation(
-              async ({ where }: { where: any }) => ({
-                id: where.id,
-                price: new Decimal(50000),
-              }),
-            );
+            (
+              prismaService.testMaster.findFirst as jest.Mock
+            ).mockImplementation(async ({ where }: { where: any }) => ({
+              id: where.id,
+              price: new Decimal(50000),
+            }));
 
             const result = await tariffResolver.resolveOrderTotalForOrder(
               orderId,
@@ -168,8 +174,7 @@ describe('TariffResolverService Property Tests - Property 6', () => {
             // Verify: no deprecation warning was logged (junction path used)
             const deprecationCalls = loggerWarnSpy.mock.calls.filter(
               (call) =>
-                typeof call[0] === 'string' &&
-                call[0].includes('[DEPRECATED]'),
+                typeof call[0] === 'string' && call[0].includes('[DEPRECATED]'),
             );
             expect(deprecationCalls).toHaveLength(0);
           },
@@ -193,9 +198,18 @@ describe('TariffResolverService Property Tests - Property 6', () => {
           fc.option(arbUuid, { nil: undefined }), // clinicId
           arbPrice, // price for junction insurance tariff
           arbDiscount, // discount for junction insurance tariff
-          async (orderId, junctionInsuranceId, testId, clinicId, price, discount) => {
+          async (
+            orderId,
+            junctionInsuranceId,
+            testId,
+            clinicId,
+            price,
+            discount,
+          ) => {
             // Mock: getOrderPrimaryInsurance returns junction source
-            (prismaService.orderInsurance.findFirst as jest.Mock).mockResolvedValue({
+            (
+              prismaService.orderInsurance.findFirst as jest.Mock
+            ).mockResolvedValue({
               id: 'oi-id',
               orderId,
               insuranceId: junctionInsuranceId,
@@ -244,7 +258,8 @@ describe('TariffResolverService Property Tests - Property 6', () => {
             expect(item.tariff.basePrice).toBe(Number(price));
             expect(item.tariff.discount).toBe(Number(discount));
 
-            const expectedFinalPrice = Number(price) * (1 - Number(discount) / 100);
+            const expectedFinalPrice =
+              Number(price) * (1 - Number(discount) / 100);
             expect(item.tariff.finalPrice).toBeCloseTo(expectedFinalPrice);
           },
         ),
@@ -270,7 +285,9 @@ describe('TariffResolverService Property Tests - Property 6', () => {
             loggerWarnSpy.mockClear();
 
             // Mock: no OrderInsurance PRIMARY record
-            (prismaService.orderInsurance.findFirst as jest.Mock).mockResolvedValue(null);
+            (
+              prismaService.orderInsurance.findFirst as jest.Mock
+            ).mockResolvedValue(null);
 
             // Mock: Order.insuranceId exists (legacy FK)
             (prismaService.order.findUnique as jest.Mock).mockResolvedValue({
@@ -278,15 +295,17 @@ describe('TariffResolverService Property Tests - Property 6', () => {
             });
 
             // Mock: tariff lookup (return null so it falls through to testMaster)
-            (prismaService.tariff.findFirst as jest.Mock).mockResolvedValue(null);
+            (prismaService.tariff.findFirst as jest.Mock).mockResolvedValue(
+              null,
+            );
 
             // Mock: testMaster fallback
-            (prismaService.testMaster.findFirst as jest.Mock).mockImplementation(
-              async ({ where }: { where: any }) => ({
-                id: where.id,
-                price: new Decimal(50000),
-              }),
-            );
+            (
+              prismaService.testMaster.findFirst as jest.Mock
+            ).mockImplementation(async ({ where }: { where: any }) => ({
+              id: where.id,
+              price: new Decimal(50000),
+            }));
 
             const result = await tariffResolver.resolveOrderTotalForOrder(
               orderId,
@@ -326,10 +345,15 @@ describe('TariffResolverService Property Tests - Property 6', () => {
           fc.option(arbUuid, { nil: undefined }), // clinicId
           async (orderId, junctionInsuranceId, testId, clinicId) => {
             // Spy on resolveOrderTotal to capture arguments
-            const resolveOrderTotalSpy = jest.spyOn(tariffResolver, 'resolveOrderTotal');
+            const resolveOrderTotalSpy = jest.spyOn(
+              tariffResolver,
+              'resolveOrderTotal',
+            );
 
             // Mock: getOrderPrimaryInsurance returns junction source
-            (prismaService.orderInsurance.findFirst as jest.Mock).mockResolvedValue({
+            (
+              prismaService.orderInsurance.findFirst as jest.Mock
+            ).mockResolvedValue({
               id: 'oi-id',
               orderId,
               insuranceId: junctionInsuranceId,
@@ -350,13 +374,21 @@ describe('TariffResolverService Property Tests - Property 6', () => {
             });
 
             // Mock: tariff returns null, fallback to testMaster
-            (prismaService.tariff.findFirst as jest.Mock).mockResolvedValue(null);
-            (prismaService.testMaster.findFirst as jest.Mock).mockResolvedValue({
-              id: testId,
-              price: new Decimal(75000),
-            });
+            (prismaService.tariff.findFirst as jest.Mock).mockResolvedValue(
+              null,
+            );
+            (prismaService.testMaster.findFirst as jest.Mock).mockResolvedValue(
+              {
+                id: testId,
+                price: new Decimal(75000),
+              },
+            );
 
-            await tariffResolver.resolveOrderTotalForOrder(orderId, [testId], clinicId);
+            await tariffResolver.resolveOrderTotalForOrder(
+              orderId,
+              [testId],
+              clinicId,
+            );
 
             // Verify: resolveOrderTotal was called with the junction insuranceId
             expect(resolveOrderTotalSpy).toHaveBeenCalledWith(

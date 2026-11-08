@@ -8,9 +8,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { registerAuditLogMiddleware } from './audit-log.middleware';
 
 @Module({
-  imports: [
-    BullModule.registerQueue({ name: 'audit-archival' }),
-  ],
+  imports: [BullModule.registerQueue({ name: 'audit-archival' })],
   controllers: [AuditController],
   providers: [AuditService, AuditArchivalService, AuditArchivalProcessor],
   exports: [AuditService, AuditArchivalService],

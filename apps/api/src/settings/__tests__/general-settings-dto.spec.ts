@@ -7,7 +7,9 @@ import { GeneralSettingsDto, FacilityType } from '../settings.controller';
  * Ensures class-validator decorators correctly validate input.
  */
 describe('GeneralSettingsDto validation', () => {
-  function createDto(overrides: Partial<GeneralSettingsDto> = {}): GeneralSettingsDto {
+  function createDto(
+    overrides: Partial<GeneralSettingsDto> = {},
+  ): GeneralSettingsDto {
     const base: Partial<GeneralSettingsDto> = {
       facilityName: 'RS Mitra Keluarga Depok',
       ...overrides,
@@ -75,17 +77,22 @@ describe('GeneralSettingsDto validation', () => {
   // ─── IsIn (dropdown) Fields ───────────────────────────────────────────────
 
   describe('dateFormat (IsIn)', () => {
-    const validFormats = ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD', 'DD-MM-YYYY'];
+    const validFormats = [
+      'DD/MM/YYYY',
+      'MM/DD/YYYY',
+      'YYYY-MM-DD',
+      'DD-MM-YYYY',
+    ];
 
     it.each(validFormats)('should pass with format "%s"', async (format) => {
-      const dto = createDto({ dateFormat: format as any });
+      const dto = createDto({ dateFormat: format });
       const errors = await validate(dto);
       const formatErrors = errors.filter((e) => e.property === 'dateFormat');
       expect(formatErrors).toHaveLength(0);
     });
 
     it('should fail with an invalid date format', async () => {
-      const dto = createDto({ dateFormat: 'YYYY/DD/MM' as any });
+      const dto = createDto({ dateFormat: 'YYYY/DD/MM' });
       const errors = await validate(dto);
       const formatErrors = errors.filter((e) => e.property === 'dateFormat');
       expect(formatErrors.length).toBeGreaterThan(0);
@@ -94,21 +101,21 @@ describe('GeneralSettingsDto validation', () => {
 
   describe('locale (IsIn)', () => {
     it('should pass with id-ID', async () => {
-      const dto = createDto({ locale: 'id-ID' as any });
+      const dto = createDto({ locale: 'id-ID' });
       const errors = await validate(dto);
       const localeErrors = errors.filter((e) => e.property === 'locale');
       expect(localeErrors).toHaveLength(0);
     });
 
     it('should pass with en-US', async () => {
-      const dto = createDto({ locale: 'en-US' as any });
+      const dto = createDto({ locale: 'en-US' });
       const errors = await validate(dto);
       const localeErrors = errors.filter((e) => e.property === 'locale');
       expect(localeErrors).toHaveLength(0);
     });
 
     it('should fail with an unsupported locale', async () => {
-      const dto = createDto({ locale: 'fr-FR' as any });
+      const dto = createDto({ locale: 'fr-FR' });
       const errors = await validate(dto);
       const localeErrors = errors.filter((e) => e.property === 'locale');
       expect(localeErrors.length).toBeGreaterThan(0);
@@ -119,16 +126,20 @@ describe('GeneralSettingsDto validation', () => {
     const validResets = ['DAILY', 'MONTHLY', 'YEARLY', 'NEVER'];
 
     it.each(validResets)('should pass with "%s"', async (value) => {
-      const dto = createDto({ orderNumberReset: value as any });
+      const dto = createDto({ orderNumberReset: value });
       const errors = await validate(dto);
-      const resetErrors = errors.filter((e) => e.property === 'orderNumberReset');
+      const resetErrors = errors.filter(
+        (e) => e.property === 'orderNumberReset',
+      );
       expect(resetErrors).toHaveLength(0);
     });
 
     it('should fail with an invalid reset value', async () => {
-      const dto = createDto({ orderNumberReset: 'WEEKLY' as any });
+      const dto = createDto({ orderNumberReset: 'WEEKLY' });
       const errors = await validate(dto);
-      const resetErrors = errors.filter((e) => e.property === 'orderNumberReset');
+      const resetErrors = errors.filter(
+        (e) => e.property === 'orderNumberReset',
+      );
       expect(resetErrors.length).toBeGreaterThan(0);
     });
   });
@@ -137,21 +148,27 @@ describe('GeneralSettingsDto validation', () => {
     it('should pass with ASC', async () => {
       const dto = createDto({ defaultSortOrder: 'ASC' });
       const errors = await validate(dto);
-      const sortErrors = errors.filter((e) => e.property === 'defaultSortOrder');
+      const sortErrors = errors.filter(
+        (e) => e.property === 'defaultSortOrder',
+      );
       expect(sortErrors).toHaveLength(0);
     });
 
     it('should pass with DESC', async () => {
       const dto = createDto({ defaultSortOrder: 'DESC' });
       const errors = await validate(dto);
-      const sortErrors = errors.filter((e) => e.property === 'defaultSortOrder');
+      const sortErrors = errors.filter(
+        (e) => e.property === 'defaultSortOrder',
+      );
       expect(sortErrors).toHaveLength(0);
     });
 
     it('should fail with an invalid sort order', async () => {
-      const dto = createDto({ defaultSortOrder: 'RANDOM' as any });
+      const dto = createDto({ defaultSortOrder: 'RANDOM' });
       const errors = await validate(dto);
-      const sortErrors = errors.filter((e) => e.property === 'defaultSortOrder');
+      const sortErrors = errors.filter(
+        (e) => e.property === 'defaultSortOrder',
+      );
       expect(sortErrors.length).toBeGreaterThan(0);
     });
   });
@@ -162,21 +179,27 @@ describe('GeneralSettingsDto validation', () => {
     it('should pass with 60', async () => {
       const dto = createDto({ sessionTimeoutMinutes: 60 });
       const errors = await validate(dto);
-      const timeoutErrors = errors.filter((e) => e.property === 'sessionTimeoutMinutes');
+      const timeoutErrors = errors.filter(
+        (e) => e.property === 'sessionTimeoutMinutes',
+      );
       expect(timeoutErrors).toHaveLength(0);
     });
 
     it('should fail when below minimum (4)', async () => {
       const dto = createDto({ sessionTimeoutMinutes: 4 });
       const errors = await validate(dto);
-      const timeoutErrors = errors.filter((e) => e.property === 'sessionTimeoutMinutes');
+      const timeoutErrors = errors.filter(
+        (e) => e.property === 'sessionTimeoutMinutes',
+      );
       expect(timeoutErrors.length).toBeGreaterThan(0);
     });
 
     it('should fail when above maximum (1441)', async () => {
       const dto = createDto({ sessionTimeoutMinutes: 1441 });
       const errors = await validate(dto);
-      const timeoutErrors = errors.filter((e) => e.property === 'sessionTimeoutMinutes');
+      const timeoutErrors = errors.filter(
+        (e) => e.property === 'sessionTimeoutMinutes',
+      );
       expect(timeoutErrors.length).toBeGreaterThan(0);
     });
   });
@@ -185,21 +208,27 @@ describe('GeneralSettingsDto validation', () => {
     it('should pass with 5', async () => {
       const dto = createDto({ maxLoginAttempts: 5 });
       const errors = await validate(dto);
-      const attemptErrors = errors.filter((e) => e.property === 'maxLoginAttempts');
+      const attemptErrors = errors.filter(
+        (e) => e.property === 'maxLoginAttempts',
+      );
       expect(attemptErrors).toHaveLength(0);
     });
 
     it('should fail with 0 (below min)', async () => {
       const dto = createDto({ maxLoginAttempts: 0 });
       const errors = await validate(dto);
-      const attemptErrors = errors.filter((e) => e.property === 'maxLoginAttempts');
+      const attemptErrors = errors.filter(
+        (e) => e.property === 'maxLoginAttempts',
+      );
       expect(attemptErrors.length).toBeGreaterThan(0);
     });
 
     it('should fail with 21 (above max)', async () => {
       const dto = createDto({ maxLoginAttempts: 21 });
       const errors = await validate(dto);
-      const attemptErrors = errors.filter((e) => e.property === 'maxLoginAttempts');
+      const attemptErrors = errors.filter(
+        (e) => e.property === 'maxLoginAttempts',
+      );
       expect(attemptErrors.length).toBeGreaterThan(0);
     });
   });
@@ -313,7 +342,9 @@ describe('GeneralSettingsDto validation', () => {
     it('should fail when maintenanceMessage exceeds 500 chars', async () => {
       const dto = createDto({ maintenanceMessage: 'M'.repeat(501) });
       const errors = await validate(dto);
-      const msgErrors = errors.filter((e) => e.property === 'maintenanceMessage');
+      const msgErrors = errors.filter(
+        (e) => e.property === 'maintenanceMessage',
+      );
       expect(msgErrors.length).toBeGreaterThan(0);
     });
 

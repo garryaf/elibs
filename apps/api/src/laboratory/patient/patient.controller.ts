@@ -22,7 +22,10 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PatientService } from './patient.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
-import { AddPatientInsuranceDto, UpdatePatientInsuranceDto } from './dto/manage-patient-insurance.dto';
+import {
+  AddPatientInsuranceDto,
+  UpdatePatientInsuranceDto,
+} from './dto/manage-patient-insurance.dto';
 import { LabHistoryQueryDto } from './dto/lab-history-query.dto';
 
 @ApiTags('Patients')
@@ -42,7 +45,19 @@ export class PatientController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER, Role.MARKETING)
+  @Roles(
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+    Role.SAMPLING,
+    Role.ANALIS,
+    Role.DOKTER,
+    Role.KLINIK_PARTNER,
+    Role.MARKETING,
+  )
   @ApiOperation({ summary: 'List patients with pagination and search' })
   async findAll(
     @Query('page') page?: string,
@@ -102,14 +117,31 @@ export class PatientController {
     @Req() req: express.Request,
   ) {
     const ipAddress = (req.headers['x-forwarded-for'] as string) || req.ip;
-    return this.patientService.mergePatients(dto.primaryId, dto.secondaryId, user.sub, ipAddress);
+    return this.patientService.mergePatients(
+      dto.primaryId,
+      dto.secondaryId,
+      user.sub,
+      ipAddress,
+    );
   }
 
   // ─── Patient by ID ──────────────────────────────────────────────────────────
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER, Role.MARKETING)
+  @Roles(
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+    Role.SAMPLING,
+    Role.ANALIS,
+    Role.DOKTER,
+    Role.KLINIK_PARTNER,
+    Role.MARKETING,
+  )
   @ApiOperation({ summary: 'Get patient by ID' })
   async findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.patientService.findById(id);
@@ -180,15 +212,36 @@ export class PatientController {
 
   @Get(':id/insurances/active')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.KLINIK_PARTNER, Role.MARKETING)
-  @ApiOperation({ summary: 'Get patient active insurance options for visit registration' })
+  @Roles(
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+    Role.SAMPLING,
+    Role.ANALIS,
+    Role.DOKTER,
+    Role.KLINIK_PARTNER,
+    Role.MARKETING,
+  )
+  @ApiOperation({
+    summary: 'Get patient active insurance options for visit registration',
+  })
   async getActiveInsuranceOptions(@Param('id', ParseUUIDPipe) id: string) {
     return this.patientService.getActiveInsuranceOptions(id);
   }
 
   @Get(':id/insurances')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  @Roles(
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+  )
   @ApiOperation({ summary: 'Get patient insurance records' })
   async getPatientInsurances(@Param('id', ParseUUIDPipe) id: string) {
     return this.patientService.getPatientInsurances(id);

@@ -35,7 +35,9 @@ async function bootstrap() {
   // Swagger API documentation
   const swaggerConfig = new DocumentBuilder()
     .setTitle('eLIS API')
-    .setDescription('Enterprise Laboratory Information System — REST API Documentation')
+    .setDescription(
+      'Enterprise Laboratory Information System — REST API Documentation',
+    )
     .setVersion('1.0.0')
     .addBearerAuth()
     .addTag('Auth', 'Authentication endpoints')
@@ -57,7 +59,10 @@ async function bootstrap() {
   // Global pipes, filters, and interceptors
   app.useGlobalPipes(globalValidationPipe);
   app.useGlobalFilters(new AllExceptionsFilter());
-  app.useGlobalInterceptors(new TransformInterceptor(), new LoggingInterceptor());
+  app.useGlobalInterceptors(
+    new TransformInterceptor(),
+    new LoggingInterceptor(),
+  );
 
   // Serve uploaded files (logos, branding) as static assets
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

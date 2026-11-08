@@ -1,4 +1,11 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  Res,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { PortalService } from './portal.service';
@@ -40,7 +47,8 @@ export class PortalController {
     @Res({ passthrough: true }) res?: Response,
   ) {
     if (format === 'pdf') {
-      const { buffer, orderNumber } = await this.portalService.getReportPdfByToken(token);
+      const { buffer, orderNumber } =
+        await this.portalService.getReportPdfByToken(token);
 
       res!.set({
         'Content-Type': 'application/pdf',

@@ -228,7 +228,9 @@ export class InsuranceAnalyticsService {
     return Array.from(groupMap.values());
   }
 
-  async getClaimAging(query: InsuranceReportQuery): Promise<ClaimAgingBucket[]> {
+  async getClaimAging(
+    query: InsuranceReportQuery,
+  ): Promise<ClaimAgingBucket[]> {
     const where = this.buildWhereClause(query);
 
     const pendingStatuses: ClaimStatus[] = [

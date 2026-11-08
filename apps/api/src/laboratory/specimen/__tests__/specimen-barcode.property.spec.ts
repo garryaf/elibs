@@ -172,8 +172,7 @@ describe('Specimen Barcode Generation Property Tests', () => {
             );
 
             // Property: Each barcode matches the expected format
-            const barcodeRegex =
-              /^.+-[A-Z]{2,6}-\d{2}$/;
+            const barcodeRegex = /^.+-[A-Z]{2,6}-\d{2}$/;
 
             for (const specimen of result) {
               // Verify general format compliance

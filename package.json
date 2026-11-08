@@ -4,6 +4,9 @@
   "workspaces": [
     "apps/*"
   ],
+  "scripts": {
+    "docs:check": "node scripts/check-markdown-links.mjs"
+  },
   "overrides": {
     "prisma": "5.22.0",
     "@prisma/client": "5.22.0",

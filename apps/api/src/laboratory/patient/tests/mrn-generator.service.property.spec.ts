@@ -99,56 +99,53 @@ describe('MrnGeneratorService Property Tests', () => {
   describe('Property 2: MRN Sequence Monotonicity', () => {
     it('should produce strictly increasing sequence numbers for N sequential calls in the same month', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          fc.integer({ min: 2, max: 20 }),
-          async (n) => {
-            // Fix date to a specific month
-            const mockDate = new Date(2025, 6, 15); // July 2025
-            jest.useFakeTimers();
-            jest.setSystemTime(mockDate);
+        fc.asyncProperty(fc.integer({ min: 2, max: 20 }), async (n) => {
+          // Fix date to a specific month
+          const mockDate = new Date(2025, 6, 15); // July 2025
+          jest.useFakeTimers();
+          jest.setSystemTime(mockDate);
 
-            // Track call count to simulate incrementing sequence
-            let callCount = 0;
+          // Track call count to simulate incrementing sequence
+          let callCount = 0;
 
-            prismaService.$transaction.mockImplementation(async (fn) => {
-              callCount++;
-              const currentValue = callCount;
-              const tx = {
-                $executeRaw: jest.fn().mockResolvedValue(undefined),
-                mrnSequence: {
-                  findUniqueOrThrow: jest
-                    .fn()
-                    .mockResolvedValue({ id: '202507', lastValue: currentValue }),
-                },
-              };
-              return fn(tx as any);
-            });
+          prismaService.$transaction.mockImplementation(async (fn) => {
+            callCount++;
+            const currentValue = callCount;
+            const tx = {
+              $executeRaw: jest.fn().mockResolvedValue(undefined),
+              mrnSequence: {
+                findUniqueOrThrow: jest
+                  .fn()
+                  .mockResolvedValue({ id: '202507', lastValue: currentValue }),
+              },
+            };
+            return fn(tx as any);
+          });
 
-            // Generate N MRNs sequentially
-            const mrns: string[] = [];
-            for (let i = 0; i < n; i++) {
-              const mrn = await service.generate();
-              mrns.push(mrn);
-            }
+          // Generate N MRNs sequentially
+          const mrns: string[] = [];
+          for (let i = 0; i < n; i++) {
+            const mrn = await service.generate();
+            mrns.push(mrn);
+          }
 
-            // Extract sequence numbers from the last 4 digits
-            const sequenceNumbers = mrns.map((mrn) => {
-              const parts = mrn.split('-');
-              return parseInt(parts[2], 10);
-            });
+          // Extract sequence numbers from the last 4 digits
+          const sequenceNumbers = mrns.map((mrn) => {
+            const parts = mrn.split('-');
+            return parseInt(parts[2], 10);
+          });
 
-            // Assert strict monotonic increase
-            for (let i = 1; i < sequenceNumbers.length; i++) {
-              expect(sequenceNumbers[i]).toBeGreaterThan(sequenceNumbers[i - 1]);
-            }
+          // Assert strict monotonic increase
+          for (let i = 1; i < sequenceNumbers.length; i++) {
+            expect(sequenceNumbers[i]).toBeGreaterThan(sequenceNumbers[i - 1]);
+          }
 
-            // Assert all MRN values are distinct
-            const uniqueMrns = new Set(mrns);
-            expect(uniqueMrns.size).toBe(mrns.length);
+          // Assert all MRN values are distinct
+          const uniqueMrns = new Set(mrns);
+          expect(uniqueMrns.size).toBe(mrns.length);
 
-            jest.useRealTimers();
-          },
-        ),
+          jest.useRealTimers();
+        }),
         { numRuns: 100 },
       );
     });

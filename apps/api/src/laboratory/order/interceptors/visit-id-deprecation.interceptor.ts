@@ -28,15 +28,20 @@ export class VisitIdDeprecationInterceptor implements NestInterceptor {
     const body = request.body;
 
     // Check if visitId is missing or null in the raw request body
-    if (!body || body.visitId === undefined || body.visitId === null || body.visitId === '') {
+    if (
+      !body ||
+      body.visitId === undefined ||
+      body.visitId === null ||
+      body.visitId === ''
+    ) {
       const userId = request.user?.id || 'unknown';
       const timestamp = new Date().toISOString();
 
       this.logger.warn(
         `Deprecation: POST /api/v1/orders request received without visitId. ` +
-        `visitId is now a required field. ` +
-        `userId=${userId}, timestamp=${timestamp}. ` +
-        `Caller must create a Visit first via POST /api/v1/visits.`,
+          `visitId is now a required field. ` +
+          `userId=${userId}, timestamp=${timestamp}. ` +
+          `Caller must create a Visit first via POST /api/v1/visits.`,
       );
     }
 

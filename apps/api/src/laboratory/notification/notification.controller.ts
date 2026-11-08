@@ -1,4 +1,16 @@
-import { Controller, Get, Query, UseGuards, Post, Param, ParseUUIDPipe, NotFoundException, BadRequestException, Logger, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+  Post,
+  Param,
+  ParseUUIDPipe,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+  Req,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Role, NotificationType, NotificationStatus } from '@prisma/client';
 import type { Request } from 'express';
@@ -39,10 +51,18 @@ export class NotificationController {
     const skip = (pageNum - 1) * limitNum;
 
     const where: any = {};
-    if (status && status !== 'undefined' && Object.values(NotificationStatus).includes(status as NotificationStatus)) {
+    if (
+      status &&
+      status !== 'undefined' &&
+      Object.values(NotificationStatus).includes(status as NotificationStatus)
+    ) {
       where.status = status;
     }
-    if (type && type !== 'undefined' && Object.values(NotificationType).includes(type as NotificationType)) {
+    if (
+      type &&
+      type !== 'undefined' &&
+      Object.values(NotificationType).includes(type as NotificationType)
+    ) {
       where.type = type;
     }
     if (orderId && orderId !== 'undefined') where.orderId = orderId;
@@ -169,14 +189,17 @@ export class WhatsAppDeliveryController {
 
     // Build the portal URL for the patient
     // BE-2: Prefer APP_BASE_URL for production. Log warning if falling back to localhost.
-    const baseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || '';
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || '';
     if (!process.env.APP_BASE_URL && !process.env.NEXT_PUBLIC_BASE_URL) {
       this.logger.warn(
         'APP_BASE_URL is not configured. Portal URL will use relative path. ' +
-        'Set APP_BASE_URL environment variable to the public domain (e.g., https://elis.example.com) for WhatsApp delivery.',
+          'Set APP_BASE_URL environment variable to the public domain (e.g., https://elis.example.com) for WhatsApp delivery.',
       );
     }
-    const portalUrl = baseUrl ? `${baseUrl}/portal/${portalToken}` : `/portal/${portalToken}`;
+    const portalUrl = baseUrl
+      ? `${baseUrl}/portal/${portalToken}`
+      : `/portal/${portalToken}`;
 
     // Check if FONNTE is configured
     const fonnteConfigured = !!process.env.FONNTE_TOKEN;
@@ -197,18 +220,28 @@ export class WhatsAppDeliveryController {
 
       // BP-2: Audit log — track report shared via WhatsApp
       const userId = user?.sub || user?.id || 'unknown';
-      const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip;
-      await this.auditService.log(
-        userId,
-        'REPORT_SHARED_WHATSAPP',
-        'Order',
-        orderId,
-        null,
-        { method: 'fonnte', recipient: phone, orderNumber: order.orderNumber },
-        ipAddress,
-      ).catch((err) => {
-        this.logger.warn(`Failed to log WhatsApp share audit: ${err.message}`);
-      });
+      const ipAddress =
+        (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+        req.ip;
+      await this.auditService
+        .log(
+          userId,
+          'REPORT_SHARED_WHATSAPP',
+          'Order',
+          orderId,
+          null,
+          {
+            method: 'fonnte',
+            recipient: phone,
+            orderNumber: order.orderNumber,
+          },
+          ipAddress,
+        )
+        .catch((err) => {
+          this.logger.warn(
+            `Failed to log WhatsApp share audit: ${err.message}`,
+          );
+        });
 
       return {
         success: true,
@@ -236,18 +269,26 @@ export class WhatsAppDeliveryController {
 
     // BP-2: Audit log — track report shared via WhatsApp link
     const userId = user?.sub || user?.id || 'unknown';
-    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip;
-    await this.auditService.log(
-      userId,
-      'REPORT_SHARED_WHATSAPP',
-      'Order',
-      orderId,
-      null,
-      { method: 'wa_link', recipient: waPhone || null, orderNumber: order.orderNumber },
-      ipAddress,
-    ).catch((err) => {
-      this.logger.warn(`Failed to log WhatsApp share audit: ${err.message}`);
-    });
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      req.ip;
+    await this.auditService
+      .log(
+        userId,
+        'REPORT_SHARED_WHATSAPP',
+        'Order',
+        orderId,
+        null,
+        {
+          method: 'wa_link',
+          recipient: waPhone || null,
+          orderNumber: order.orderNumber,
+        },
+        ipAddress,
+      )
+      .catch((err) => {
+        this.logger.warn(`Failed to log WhatsApp share audit: ${err.message}`);
+      });
 
     return {
       success: true,

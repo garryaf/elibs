@@ -4,6 +4,9 @@
  * Uses native fetch with NEXT_PUBLIC_API_URL from environment.
  */
 
+import type { Patient, PatientFormData } from "@/types/patient";
+import type { Order } from "@/types/order";
+
 /**
  * API base URL configuration:
  * - In all environments, the frontend uses relative paths (/api/v1/...).
@@ -13,6 +16,14 @@
  *   - Direct access: Set NEXT_PUBLIC_API_URL to override (e.g., http://localhost:3001)
  */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+export const STORAGE_KEYS = {
+  TOKEN: "elis_token",
+  REFRESH_TOKEN: "elis_refresh_token",
+  USER: "elis_user",
+} as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,7 +52,37 @@ export interface LoginResponse {
   };
 }
 
+// ─── Query String Utility ─────────────────────────────────────────────────────
+
+/**
+ * Builds a query string from a parameters record.
+ * Omits undefined, null, empty string, and "ALL" values.
+ */
+export function buildQueryString(params?: Record<string, unknown>): string {
+  if (!params) return "";
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "" && value !== "ALL") {
+      qs.set(key, String(value));
+    }
+  }
+  const query = qs.toString();
+  return query ? `?${query}` : "";
+}
+
 // ─── Defensive Unwrap Utility ─────────────────────────────────────────────────
+
+function isDoubleEnvelope(val: unknown): val is { success: boolean; message: string; data: unknown } {
+  if (val === null || val === undefined || typeof val !== "object" || Array.isArray(val)) {
+    return false;
+  }
+  const rec = val as Record<string, unknown>;
+  return (
+    typeof rec.success === "boolean" &&
+    typeof rec.message === "string" &&
+    "data" in rec
+  );
+}
 
 /**
  * Detects and unwraps double-envelope responses.
@@ -49,52 +90,35 @@ export interface LoginResponse {
  * Some controllers manually wrap their return value with `{ success, message, data }`,
  * and then `TransformInterceptor` wraps again. This utility detects the double-wrap
  * shape and extracts the inner payload.
- *
- * Strict check: `success` must be a boolean, `message` must be a string, and `data`
- * key must exist. This avoids false positives on legitimate data objects that
- * coincidentally have a `success` field.
  */
 export function unwrapResponse<T>(data: unknown): T {
-  if (
-    data !== null &&
-    data !== undefined &&
-    typeof data === "object" &&
-    !Array.isArray(data) &&
-    "success" in data &&
-    "message" in data &&
-    "data" in data &&
-    typeof (data as Record<string, unknown>).success === "boolean" &&
-    typeof (data as Record<string, unknown>).message === "string"
-  ) {
-    return (data as Record<string, unknown>).data as T;
+  if (isDoubleEnvelope(data)) {
+    return data.data as T;
   }
   return data as T;
 }
 
 export function parseApiErrors(err: unknown): { global?: string; fields: Record<string, string> } {
-  const result = { fields: {} as Record<string, string>, global: undefined as string | undefined };
-  if (err && typeof err === "object") {
-    const apiErr = err as { message?: string; errors?: Array<{ field?: string; constraint: string }> };
-    result.global = apiErr.message;
-    
-    if (Array.isArray(apiErr.errors)) {
-      for (const e of apiErr.errors) {
-        if (e.field) {
-          result.fields[e.field] = e.constraint;
-        } else if (typeof e.constraint === "string") {
-          // Fallback: guess field name from the first word of the constraint string
-          const parts = e.constraint.split(" ");
-          if (parts.length > 0) {
-            const possibleField = parts[0];
-            // Only map if it looks like a camelCase or snake_case field name
-            if (/^[a-zA-Z0-9_]+$/.test(possibleField)) {
-              result.fields[possibleField] = e.constraint;
-            }
-          }
-        }
-      }
+  const result: { global?: string; fields: Record<string, string> } = { fields: {} };
+  if (!err || typeof err !== "object") return result;
+
+  const apiErr = err as { message?: string; errors?: Array<{ field?: string; constraint: string }> };
+  result.global = apiErr.message;
+
+  if (!Array.isArray(apiErr.errors)) return result;
+
+  for (const e of apiErr.errors) {
+    if (e.field) {
+      result.fields[e.field] = e.constraint;
+      continue;
+    }
+    if (typeof e.constraint !== "string") continue;
+    const [possibleField] = e.constraint.split(" ");
+    if (possibleField && /^[a-zA-Z0-9_]+$/.test(possibleField)) {
+      result.fields[possibleField] = e.constraint;
     }
   }
+
   return result;
 }
 
@@ -109,7 +133,7 @@ class ApiClient {
 
   private getToken(): string | null {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("elis_token");
+    return localStorage.getItem(STORAGE_KEYS.TOKEN);
   }
 
   private isRefreshing = false;
@@ -117,7 +141,7 @@ class ApiClient {
 
   private getRefreshToken(): string | null {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("elis_refresh_token");
+    return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
   }
 
   private async attemptRefresh(): Promise<boolean> {
@@ -140,9 +164,9 @@ class ApiClient {
       const newRefreshToken = inner?.refreshToken;
 
       if (accessToken) {
-        localStorage.setItem("elis_token", accessToken);
+        localStorage.setItem(STORAGE_KEYS.TOKEN, accessToken);
         if (newRefreshToken) {
-          localStorage.setItem("elis_refresh_token", newRefreshToken);
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
         }
         // Update cookies for middleware
         document.cookie = `elis_token=${accessToken}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
@@ -207,8 +231,8 @@ class ApiClient {
 
       // Refresh failed — clear tokens and redirect to login
       if (typeof window !== "undefined") {
-        localStorage.removeItem("elis_token");
-        localStorage.removeItem("elis_refresh_token");
+        localStorage.removeItem(STORAGE_KEYS.TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
         window.location.href = "/";
       }
     }
@@ -273,34 +297,19 @@ class ApiClient {
     registeredTo?: string;
     lastVisitFrom?: string;
     lastVisitTo?: string;
-  }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
-    const qs = new URLSearchParams();
-    if (params?.page) qs.set("page", String(params.page));
-    if (params?.limit) qs.set("limit", String(params.limit));
-    if (params?.search) qs.set("search", params.search);
-    if (params?.status) qs.set("status", params.status);
-    if (params?.sortBy) qs.set("sortBy", params.sortBy);
-    if (params?.sortOrder) qs.set("sortOrder", params.sortOrder);
-    if (params?.gender) qs.set("gender", params.gender);
-    if (params?.ageMin !== undefined) qs.set("ageMin", String(params.ageMin));
-    if (params?.ageMax !== undefined) qs.set("ageMax", String(params.ageMax));
-    if (params?.registeredFrom) qs.set("registeredFrom", params.registeredFrom);
-    if (params?.registeredTo) qs.set("registeredTo", params.registeredTo);
-    if (params?.lastVisitFrom) qs.set("lastVisitFrom", params.lastVisitFrom);
-    if (params?.lastVisitTo) qs.set("lastVisitTo", params.lastVisitTo);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/patients${query}`);
+  }): Promise<ApiResponse<PaginatedResponse<Patient>>> {
+    return this.get(`/api/v1/patients${buildQueryString(params as Record<string, unknown>)}`);
   }
 
-  async getPatient(id: string): Promise<ApiResponse<unknown>> {
+  async getPatient(id: string): Promise<ApiResponse<Patient>> {
     return this.get(`/api/v1/patients/${id}`);
   }
 
-  async createPatient(data: unknown): Promise<ApiResponse<unknown>> {
+  async createPatient(data: PatientFormData | Record<string, unknown>): Promise<ApiResponse<Patient>> {
     return this.post("/api/v1/patients", data);
   }
 
-  async updatePatient(id: string, data: unknown): Promise<ApiResponse<unknown>> {
+  async updatePatient(id: string, data: Partial<PatientFormData> | Record<string, unknown>): Promise<ApiResponse<Patient>> {
     return this.put(`/api/v1/patients/${id}`, data);
   }
 
@@ -347,61 +356,41 @@ class ApiClient {
     page?: number;
     limit?: number;
   }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
-    const qs = new URLSearchParams();
-    if (params?.page) qs.set("page", String(params.page));
-    if (params?.limit) qs.set("limit", String(params.limit));
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/master/test-categories${query}`);
+    return this.get(`/api/v1/master/test-categories${buildQueryString(params as Record<string, unknown>)}`);
   }
 
   async getTests(params?: {
     page?: number;
     limit?: number;
   }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
-    const qs = new URLSearchParams();
-    if (params?.page) qs.set("page", String(params.page));
-    if (params?.limit) qs.set("limit", String(params.limit));
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/master/tests${query}`);
+    return this.get(`/api/v1/master/tests${buildQueryString(params as Record<string, unknown>)}`);
   }
 
   async getPanels(params?: {
     page?: number;
     limit?: number;
   }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
-    const qs = new URLSearchParams();
-    if (params?.page) qs.set("page", String(params.page));
-    if (params?.limit) qs.set("limit", String(params.limit));
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/master/panels${query}`);
+    return this.get(`/api/v1/master/panels${buildQueryString(params as Record<string, unknown>)}`);
   }
 
   // ─── Orders ───────────────────────────────────────────────────────────────
 
   async getOrders(params?: {
-    page?: number;
-    limit?: number;
+    page?: number | string;
+    limit?: number | string;
     status?: string;
     search?: string;
     startDate?: string;
     endDate?: string;
-  }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
-    const qs = new URLSearchParams();
-    if (params?.page) qs.set("page", String(params.page));
-    if (params?.limit) qs.set("limit", String(params.limit));
-    if (params?.status && params.status !== "ALL") qs.set("status", params.status);
-    if (params?.search) qs.set("search", params.search);
-    if (params?.startDate) qs.set("startDate", params.startDate);
-    if (params?.endDate) qs.set("endDate", params.endDate);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/orders${query}`);
+  }): Promise<ApiResponse<PaginatedResponse<Order>>> {
+    return this.get(`/api/v1/orders${buildQueryString(params as Record<string, unknown>)}`);
   }
 
   async getOrderStats(): Promise<ApiResponse<unknown>> {
     return this.get("/api/v1/orders/stats");
   }
 
-  async getOrder(id: string): Promise<ApiResponse<unknown>> {
+  async getOrder(id: string): Promise<ApiResponse<Order>> {
     return this.get(`/api/v1/orders/${id}`);
   }
 
@@ -459,6 +448,17 @@ class ApiClient {
     return this.get(`/api/v1/orders/${id}/payments`);
   }
 
+  async getOrderReportPdf(id: string): Promise<Blob> {
+    const token = this.getToken();
+    const response = await fetch(`${this.baseUrl}/api/v1/orders/${id}/report/pdf`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!response.ok) {
+      throw new Error(`Download gagal (HTTP ${response.status})`);
+    }
+    return response.blob();
+  }
+
   // ─── Discount Approvals ────────────────────────────────────────────────────
 
   async requestDiscountApproval(data: {
@@ -477,14 +477,12 @@ class ApiClient {
   // ─── Lab Workflow ─────────────────────────────────────────────────────────
 
   async getLabQueue(params?: {
+    page?: number;
+    limit?: number;
     status?: string;
     search?: string;
   }): Promise<ApiResponse<unknown>> {
-    const qs = new URLSearchParams();
-    if (params?.status && params.status !== "ALL") qs.set("status", params.status);
-    if (params?.search) qs.set("search", params.search);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/lab/queue${query}`);
+    return this.get(`/api/v1/lab/queue${buildQueryString(params as Record<string, unknown>)}`);
   }
 
   async collectSample(
@@ -554,12 +552,7 @@ class ApiClient {
     startDate?: string;
     endDate?: string;
   }): Promise<ApiResponse<unknown>> {
-    const qs = new URLSearchParams();
-    if (params?.days) qs.set("days", String(params.days));
-    if (params?.startDate) qs.set("startDate", params.startDate);
-    if (params?.endDate) qs.set("endDate", params.endDate);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/dashboard/lab-volume${query}`);
+    return this.get(`/api/v1/dashboard/lab-volume${buildQueryString(params as Record<string, unknown>)}`);
   }
 
   async getExecutiveSummary(): Promise<ApiResponse<unknown>> {
@@ -575,12 +568,7 @@ class ApiClient {
     kabupatenKotaId?: string;
     kecamatanId?: string;
   }): Promise<ApiResponse<unknown>> {
-    const qs = new URLSearchParams();
-    if (params?.provinsiId) qs.set("provinsiId", params.provinsiId);
-    if (params?.kabupatenKotaId) qs.set("kabupatenKotaId", params.kabupatenKotaId);
-    if (params?.kecamatanId) qs.set("kecamatanId", params.kecamatanId);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/dashboard/region-distribution${query}`);
+    return this.get(`/api/v1/dashboard/region-distribution${buildQueryString(params as Record<string, unknown>)}`);
   }
 
   async getComparisonMetrics(): Promise<ApiResponse<unknown>> {
@@ -606,25 +594,16 @@ class ApiClient {
     type: "revenue-summary" | "orders-by-status" | "orders-by-payment-method" | "top-tests" | "insurance-claims" | "turnaround-time" | "by-referring-doctor" | "by-referring-clinic" | "new-patients",
     params?: { startDate?: string; endDate?: string }
   ): Promise<ApiResponse<unknown>> {
-    const qs = new URLSearchParams();
-    if (params?.startDate) qs.set("startDate", params.startDate);
-    if (params?.endDate) qs.set("endDate", params.endDate);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/reports/${type}${query}`);
+    return this.get(`/api/v1/reports/${type}${buildQueryString(params as Record<string, unknown>)}`);
   }
 
   async getReportPdf(
     type: "revenue-summary" | "orders-by-status",
     params?: { startDate?: string; endDate?: string }
   ): Promise<Blob> {
-    const qs = new URLSearchParams();
-    if (params?.startDate) qs.set("startDate", params.startDate);
-    if (params?.endDate) qs.set("endDate", params.endDate);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    
     // Custom fetch for blob since apiClient usually expects JSON
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    const response = await fetch(`${this.baseUrl}/api/v1/reports/${type}/pdf${query}`, {
+    const token = this.getToken();
+    const response = await fetch(`${this.baseUrl}/api/v1/reports/${type}/pdf${buildQueryString(params as Record<string, unknown>)}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     
@@ -637,19 +616,13 @@ class ApiClient {
 
   // ─── Users ─────────────────────────────────────────────────────────────────
 
-  async getUsers(params?: {
+  async getUsers<T = unknown>(params?: {
     page?: number;
     limit?: number;
     search?: string;
     role?: string;
-  }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
-    const qs = new URLSearchParams();
-    if (params?.page) qs.set("page", String(params.page));
-    if (params?.limit) qs.set("limit", String(params.limit));
-    if (params?.search) qs.set("search", params.search);
-    if (params?.role) qs.set("role", params.role);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/users${query}`);
+  }): Promise<ApiResponse<PaginatedResponse<T>>> {
+    return this.get(`/api/v1/users${buildQueryString(params as Record<string, unknown>)}`);
   }
 
   async createUser(data: unknown): Promise<ApiResponse<unknown>> {
@@ -689,7 +662,7 @@ class ApiClient {
 
   // ─── Visits ─────────────────────────────────────────────────────────────
 
-  async getVisits(params?: {
+  async getVisits<T = unknown>(params?: {
     page?: number;
     limit?: number;
     search?: string;
@@ -700,31 +673,19 @@ class ApiClient {
     clinicId?: string;
     sortBy?: string;
     sortDir?: string;
-  }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
-    const qs = new URLSearchParams();
-    if (params?.page) qs.set("page", String(params.page));
-    if (params?.limit) qs.set("limit", String(params.limit));
-    if (params?.search) qs.set("search", params.search);
-    if (params?.status && params.status !== "ALL") qs.set("status", params.status);
-    if (params?.startDate) qs.set("startDate", params.startDate);
-    if (params?.endDate) qs.set("endDate", params.endDate);
-    if (params?.doctorId) qs.set("doctorId", params.doctorId);
-    if (params?.clinicId) qs.set("clinicId", params.clinicId);
-    if (params?.sortBy) qs.set("sortBy", params.sortBy);
-    if (params?.sortDir) qs.set("sortDir", params.sortDir);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/visits${query}`);
+  }): Promise<ApiResponse<PaginatedResponse<T>>> {
+    return this.get(`/api/v1/visits${buildQueryString(params as Record<string, unknown>)}`);
   }
 
-  async getVisit(id: string): Promise<ApiResponse<unknown>> {
+  async getVisit<T = unknown>(id: string): Promise<ApiResponse<T>> {
     return this.get(`/api/v1/visits/${id}`);
   }
 
-  async createVisit(data: unknown): Promise<ApiResponse<unknown>> {
+  async createVisit<T = unknown>(data: unknown): Promise<ApiResponse<T>> {
     return this.post("/api/v1/visits", data);
   }
 
-  async updateVisit(id: string, data: unknown): Promise<ApiResponse<unknown>> {
+  async updateVisit<T = unknown>(id: string, data: unknown): Promise<ApiResponse<T>> {
     return this.put(`/api/v1/visits/${id}`, data);
   }
 
@@ -734,37 +695,25 @@ class ApiClient {
 
   // ─── Master Data (Doctors, Clinics, Insurances) ───────────────────────────
 
-  async getDoctors(params?: {
+  async getDoctors<T = unknown>(params?: {
     search?: string;
     limit?: number;
-  }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
-    const qs = new URLSearchParams();
-    if (params?.search) qs.set("search", params.search);
-    if (params?.limit) qs.set("limit", String(params.limit));
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/master/doctors${query}`);
+  }): Promise<ApiResponse<PaginatedResponse<T>>> {
+    return this.get(`/api/v1/master/doctors${buildQueryString(params as Record<string, unknown>)}`);
   }
 
-  async getClinics(params?: {
+  async getClinics<T = unknown>(params?: {
     search?: string;
     limit?: number;
-  }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
-    const qs = new URLSearchParams();
-    if (params?.search) qs.set("search", params.search);
-    if (params?.limit) qs.set("limit", String(params.limit));
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/master/clinics${query}`);
+  }): Promise<ApiResponse<PaginatedResponse<T>>> {
+    return this.get(`/api/v1/master/clinics${buildQueryString(params as Record<string, unknown>)}`);
   }
 
-  async getInsurances(params?: {
+  async getInsurances<T = unknown>(params?: {
     search?: string;
     limit?: number;
-  }): Promise<ApiResponse<PaginatedResponse<unknown>>> {
-    const qs = new URLSearchParams();
-    if (params?.search) qs.set("search", params.search);
-    if (params?.limit) qs.set("limit", String(params.limit));
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/master/insurances${query}`);
+  }): Promise<ApiResponse<PaginatedResponse<T>>> {
+    return this.get(`/api/v1/master/insurances${buildQueryString(params as Record<string, unknown>)}`);
   }
 
   // ─── Audit ────────────────────────────────────────────────────────────────
@@ -781,19 +730,7 @@ class ApiClient {
     sortField?: string;
     sortDir?: string;
   }): Promise<ApiResponse<unknown>> {
-    const qs = new URLSearchParams();
-    if (params?.page) qs.set("page", String(params.page));
-    if (params?.limit) qs.set("limit", String(params.limit));
-    if (params?.entityName) qs.set("entityName", params.entityName);
-    if (params?.entityId) qs.set("entityId", params.entityId);
-    if (params?.action) qs.set("action", params.action);
-    if (params?.userId) qs.set("userId", params.userId);
-    if (params?.startDate) qs.set("startDate", params.startDate);
-    if (params?.endDate) qs.set("endDate", params.endDate);
-    if (params?.sortField) qs.set("sortField", params.sortField);
-    if (params?.sortDir) qs.set("sortDir", params.sortDir);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return this.get(`/api/v1/audit-logs${query}`);
+    return this.get(`/api/v1/audit-logs${buildQueryString(params as Record<string, unknown>)}`);
   }
 
   async getAuditStats(): Promise<ApiResponse<unknown>> {
@@ -818,18 +755,8 @@ class ApiClient {
     sortField?: string;
     sortDir?: string;
   }): Promise<Blob> {
-    const qs = new URLSearchParams();
-    if (params?.entityName) qs.set("entityName", params.entityName);
-    if (params?.entityId) qs.set("entityId", params.entityId);
-    if (params?.action) qs.set("action", params.action);
-    if (params?.userId) qs.set("userId", params.userId);
-    if (params?.startDate) qs.set("startDate", params.startDate);
-    if (params?.endDate) qs.set("endDate", params.endDate);
-    if (params?.sortField) qs.set("sortField", params.sortField);
-    if (params?.sortDir) qs.set("sortDir", params.sortDir);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    const res = await fetch(`${this.baseUrl}/api/v1/audit-logs/export${query}`, {
+    const token = this.getToken();
+    const res = await fetch(`${this.baseUrl}/api/v1/audit-logs/export${buildQueryString(params as Record<string, unknown>)}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     if (!res.ok) throw new Error("Export failed");

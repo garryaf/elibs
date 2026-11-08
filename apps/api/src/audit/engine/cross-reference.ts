@@ -19,8 +19,7 @@ export class AuditStatusCrossRef {
     try {
       content = fs.readFileSync(filePath, 'utf-8');
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Unknown read error';
+      const message = err instanceof Error ? err.message : 'Unknown read error';
       return {
         entries: [],
         warning: `AUDIT_STATUS.md could not be read: ${message}`,
@@ -118,7 +117,9 @@ export class AuditStatusCrossRef {
       entryText.includes(word),
     ).length;
 
-    return gapWords.length === 0 || matchCount >= Math.ceil(gapWords.length / 2);
+    return (
+      gapWords.length === 0 || matchCount >= Math.ceil(gapWords.length / 2)
+    );
   }
 
   /**
@@ -130,7 +131,17 @@ export class AuditStatusCrossRef {
       .filter((word) => word.length >= 3)
       .filter(
         (word) =>
-          !['the', 'and', 'for', 'not', 'but', 'are', 'was', 'has', 'with'].includes(word),
+          ![
+            'the',
+            'and',
+            'for',
+            'not',
+            'but',
+            'are',
+            'was',
+            'has',
+            'with',
+          ].includes(word),
       );
   }
 
@@ -156,7 +167,12 @@ export class AuditStatusCrossRef {
       const trimmed = line.trim();
 
       // Detect table header row
-      if (trimmed.startsWith('|') && trimmed.includes('ID') && trimmed.includes('Title') && trimmed.includes('Status')) {
+      if (
+        trimmed.startsWith('|') &&
+        trimmed.includes('ID') &&
+        trimmed.includes('Title') &&
+        trimmed.includes('Status')
+      ) {
         const columns = this.splitTableRow(trimmed);
         columnIndices = this.findColumnIndices(columns);
         inTable = true;
@@ -165,7 +181,12 @@ export class AuditStatusCrossRef {
       }
 
       // Skip separator row (e.g., |----|------|...)
-      if (inTable && !headerParsed && trimmed.startsWith('|') && trimmed.includes('---')) {
+      if (
+        inTable &&
+        !headerParsed &&
+        trimmed.startsWith('|') &&
+        trimmed.includes('---')
+      ) {
         headerParsed = true;
         continue;
       }
@@ -227,7 +248,10 @@ export class AuditStatusCrossRef {
       title: Math.max(find('Title'), 1),
       status: Math.max(find('Status'), 2),
       evidence: Math.max(find('Evidence'), 3),
-      remainingGap: Math.max(find('Remaining'), find('Gap') !== -1 ? find('Gap') : 4),
+      remainingGap: Math.max(
+        find('Remaining'),
+        find('Gap') !== -1 ? find('Gap') : 4,
+      ),
     };
   }
 
@@ -260,7 +284,9 @@ export class AuditStatusCrossRef {
     }
 
     const remainingGap =
-      remainingGapRaw === '—' || remainingGapRaw === '-' || remainingGapRaw === ''
+      remainingGapRaw === '—' ||
+      remainingGapRaw === '-' ||
+      remainingGapRaw === ''
         ? null
         : remainingGapRaw;
 
@@ -270,24 +296,37 @@ export class AuditStatusCrossRef {
   /**
    * Map emoji-prefixed status strings to the AuditStatusEntry status type.
    */
-  private parseStatus(
-    raw: string,
-  ): AuditStatusEntry['status'] | null {
+  private parseStatus(raw: string): AuditStatusEntry['status'] | null {
     const normalized = raw.trim().toLowerCase();
 
     if (normalized.includes('implemented') || normalized.startsWith('✅')) {
       return 'Implemented';
     }
-    if (normalized.includes('partial') || normalized.startsWith('🔶') || normalized.startsWith('🟡')) {
+    if (
+      normalized.includes('partial') ||
+      normalized.startsWith('🔶') ||
+      normalized.startsWith('🟡')
+    ) {
       return 'Partial';
     }
-    if (normalized.includes('open') || normalized.startsWith('❌') || normalized.startsWith('🔴')) {
+    if (
+      normalized.includes('open') ||
+      normalized.startsWith('❌') ||
+      normalized.startsWith('🔴')
+    ) {
       return 'Open';
     }
-    if (normalized.includes('blocked') || normalized.startsWith('🚫') || normalized.startsWith('⚫')) {
+    if (
+      normalized.includes('blocked') ||
+      normalized.startsWith('🚫') ||
+      normalized.startsWith('⚫')
+    ) {
       return 'Blocked';
     }
-    if (normalized.includes('false positive') || normalized.includes('falsepositive')) {
+    if (
+      normalized.includes('false positive') ||
+      normalized.includes('falsepositive')
+    ) {
       return 'FalsePositive';
     }
 

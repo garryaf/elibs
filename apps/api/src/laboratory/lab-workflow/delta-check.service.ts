@@ -133,7 +133,7 @@ export class DeltaCheckService {
         orderId,
         orderDetail.test.name,
         percentageChange,
-        deltaAlertThreshold!,
+        deltaAlertThreshold,
         orderDetail.order.doctorId,
       );
     }
@@ -145,7 +145,9 @@ export class DeltaCheckService {
    * Perform delta checks for all OrderDetails in an order.
    * Returns an array of DeltaCheckResult for each numeric test in the order.
    */
-  async performDeltaCheckForOrder(orderId: string): Promise<DeltaCheckResult[]> {
+  async performDeltaCheckForOrder(
+    orderId: string,
+  ): Promise<DeltaCheckResult[]> {
     const orderDetails = await this.prisma.orderDetail.findMany({
       where: {
         orderId,

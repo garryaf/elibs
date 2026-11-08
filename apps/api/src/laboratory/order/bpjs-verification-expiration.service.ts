@@ -57,7 +57,9 @@ export class BpjsVerificationExpirationService {
    *
    * If the verification has expired, the status is transitioned to EXPIRED.
    */
-  async checkVerificationValidity(orderId: string): Promise<BpjsVerificationCheckResult> {
+  async checkVerificationValidity(
+    orderId: string,
+  ): Promise<BpjsVerificationCheckResult> {
     const bpjsDetail = await this.prisma.bpjsOrderDetail.findUnique({
       where: { orderId },
     });
@@ -83,7 +85,8 @@ export class BpjsVerificationExpirationService {
         expiresAt: bpjsDetail.verifiedAt
           ? await this.calculateExpiresAt(bpjsDetail.verifiedAt)
           : null,
-        message: 'Verifikasi BPJS telah kedaluwarsa. Silakan lakukan verifikasi ulang.',
+        message:
+          'Verifikasi BPJS telah kedaluwarsa. Silakan lakukan verifikasi ulang.',
       };
     }
 
@@ -107,12 +110,15 @@ export class BpjsVerificationExpirationService {
         verificationStatus: bpjsDetail.verificationStatus,
         verifiedAt: null,
         expiresAt: null,
-        message: 'Verifikasi BPJS tidak memiliki timestamp. Silakan lakukan verifikasi ulang.',
+        message:
+          'Verifikasi BPJS tidak memiliki timestamp. Silakan lakukan verifikasi ulang.',
       };
     }
 
     const ttlHours = await this.getVerificationTtlHours();
-    const expiresAt = new Date(bpjsDetail.verifiedAt.getTime() + ttlHours * 60 * 60 * 1000);
+    const expiresAt = new Date(
+      bpjsDetail.verifiedAt.getTime() + ttlHours * 60 * 60 * 1000,
+    );
     const now = new Date();
 
     if (now > expiresAt) {
@@ -121,8 +127,8 @@ export class BpjsVerificationExpirationService {
 
       this.logger.log(
         `BPJS verification expired for order ${orderId}. ` +
-        `Verified at: ${bpjsDetail.verifiedAt.toISOString()}, ` +
-        `Expired at: ${expiresAt.toISOString()}, TTL: ${ttlHours}h`,
+          `Verified at: ${bpjsDetail.verifiedAt.toISOString()}, ` +
+          `Expired at: ${expiresAt.toISOString()}, TTL: ${ttlHours}h`,
       );
 
       return {

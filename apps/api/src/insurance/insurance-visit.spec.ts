@@ -84,8 +84,14 @@ describe('VisitService — Insurance Validation', () => {
       providers: [
         VisitService,
         { provide: PrismaService, useValue: prismaService },
-        { provide: InsuranceConsolidationService, useValue: consolidationService },
-        { provide: VisitNumberGeneratorService, useValue: visitNumberGenerator },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: consolidationService,
+        },
+        {
+          provide: VisitNumberGeneratorService,
+          useValue: visitNumberGenerator,
+        },
         { provide: AuditService, useValue: auditService },
       ],
     }).compile();
@@ -111,7 +117,12 @@ describe('VisitService — Insurance Validation', () => {
      * **Validates: Requirements 3.1**
      */
     it('should not call validateVisitInsurance or getDefaultInsurance for CASH payment', async () => {
-      const cashVisit = { ...mockVisit, paymentMethod: PaymentMethod.CASH, insuranceId: null, insurance: null };
+      const cashVisit = {
+        ...mockVisit,
+        paymentMethod: PaymentMethod.CASH,
+        insuranceId: null,
+        insurance: null,
+      };
       prismaService.visit.create.mockResolvedValue(cashVisit);
 
       await visitService.create(
@@ -122,7 +133,9 @@ describe('VisitService — Insurance Validation', () => {
         'user-uuid-001',
       );
 
-      expect(consolidationService.validateVisitInsurance).not.toHaveBeenCalled();
+      expect(
+        consolidationService.validateVisitInsurance,
+      ).not.toHaveBeenCalled();
       expect(consolidationService.getDefaultInsurance).not.toHaveBeenCalled();
     });
   });
@@ -209,7 +222,9 @@ describe('VisitService — Insurance Validation', () => {
         insurance: { id: 'insurance-uuid-002', name: 'Default Insurance' },
       };
 
-      consolidationService.getDefaultInsurance.mockResolvedValue(defaultInsurance);
+      consolidationService.getDefaultInsurance.mockResolvedValue(
+        defaultInsurance,
+      );
       const visitWithDefault = {
         ...mockVisit,
         insuranceId: 'insurance-uuid-002',
@@ -226,7 +241,9 @@ describe('VisitService — Insurance Validation', () => {
         'user-uuid-001',
       );
 
-      expect(consolidationService.getDefaultInsurance).toHaveBeenCalledWith('patient-uuid-001');
+      expect(consolidationService.getDefaultInsurance).toHaveBeenCalledWith(
+        'patient-uuid-001',
+      );
       expect(result.insuranceId).toBe('insurance-uuid-002');
     });
 
@@ -251,7 +268,9 @@ describe('VisitService — Insurance Validation', () => {
         ),
       ).rejects.toThrow(BadRequestException);
 
-      expect(consolidationService.getDefaultInsurance).toHaveBeenCalledWith('patient-uuid-001');
+      expect(consolidationService.getDefaultInsurance).toHaveBeenCalledWith(
+        'patient-uuid-001',
+      );
       // Visit should not be created
       expect(prismaService.visit.create).not.toHaveBeenCalled();
     });

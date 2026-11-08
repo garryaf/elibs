@@ -15,7 +15,13 @@ if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
   DEPLOY_EXIT=$?
 
   if echo "$DEPLOY_OUTPUT" | grep -q "P3009"; then
-    echo "Migration deploy failed (P3009). Attempting to resolve failed migrations..."
+    echo "Migration deploy failed (P3009)."
+    if [ "${AUTO_RESOLVE_P3009:-true}" != "true" ]; then
+      echo "AUTO_RESOLVE_P3009 is disabled. Manual intervention required to inspect failed migration."
+      echo "$DEPLOY_OUTPUT"
+      exit 1
+    fi
+    echo "Attempting to resolve failed migrations (AUTO_RESOLVE_P3009=true)..."
     # Extract migration name from error output
     FAILED=$(echo "$DEPLOY_OUTPUT" | grep -o '`[0-9_a-zA-Z]*`' | tr -d '`' | head -n 5)
     if [ -n "$FAILED" ]; then

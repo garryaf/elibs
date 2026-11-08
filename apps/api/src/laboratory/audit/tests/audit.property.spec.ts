@@ -31,12 +31,7 @@ describe('Audit Log Property Tests', () => {
           // Sensitive keys
           fc.constantFrom(...SENSITIVE_FIELDS),
         ),
-        fc.oneof(
-          fc.string(),
-          fc.integer(),
-          fc.boolean(),
-          fc.constant(null),
-        ),
+        fc.oneof(fc.string(), fc.integer(), fc.boolean(), fc.constant(null)),
       );
 
       fc.assert(
@@ -63,12 +58,7 @@ describe('Audit Log Property Tests', () => {
 
       const arbitraryNonSensitiveObject = fc.dictionary(
         nonSensitiveKey,
-        fc.oneof(
-          fc.string(),
-          fc.integer(),
-          fc.boolean(),
-          fc.constant(null),
-        ),
+        fc.oneof(fc.string(), fc.integer(), fc.boolean(), fc.constant(null)),
       );
 
       fc.assert(
@@ -81,9 +71,7 @@ describe('Audit Log Property Tests', () => {
           }
 
           // Output should have exactly the same keys as input (no fields removed)
-          expect(Object.keys(result!).sort()).toEqual(
-            Object.keys(data).sort(),
-          );
+          expect(Object.keys(result!).sort()).toEqual(Object.keys(data).sort());
         }),
         { numRuns: 200 },
       );
@@ -122,11 +110,7 @@ describe('Audit Log Property Tests', () => {
 
     it('should create exactly one audit record per log() call with correct fields', () => {
       const actionArb = fc.constantFrom('CREATE', 'UPDATE', 'DELETE');
-      const entityNameArb = fc.constantFrom(
-        'Order',
-        'OrderDetail',
-        'Patient',
-      );
+      const entityNameArb = fc.constantFrom('Order', 'OrderDetail', 'Patient');
       const uuidArb = fc.uuid();
 
       fc.assert(
@@ -143,7 +127,14 @@ describe('Audit Log Property Tests', () => {
             fc.stringMatching(/^[a-z][a-zA-Z0-9]{1,10}$/),
             fc.oneof(fc.string(), fc.integer(), fc.boolean()),
           ),
-          async (userId, action, entityName, entityId, oldValues, newValues) => {
+          async (
+            userId,
+            action,
+            entityName,
+            entityId,
+            oldValues,
+            newValues,
+          ) => {
             mockPrisma.auditLog.create.mockClear();
 
             await auditService.log(
@@ -182,10 +173,7 @@ describe('Audit Log Property Tests', () => {
         .tuple(
           sensitiveFieldArb,
           fc.string(),
-          fc.dictionary(
-            nonSensitiveKey,
-            fc.oneof(fc.string(), fc.integer()),
-          ),
+          fc.dictionary(nonSensitiveKey, fc.oneof(fc.string(), fc.integer())),
         )
         .map(([sensitiveKey, sensitiveValue, rest]) => ({
           ...rest,

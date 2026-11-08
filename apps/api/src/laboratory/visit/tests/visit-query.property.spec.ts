@@ -43,22 +43,24 @@ type VisitRecord = {
 /**
  * Helper: generate a random visit record for testing
  */
-function visitRecordArb(overrides?: Partial<{
-  status: string;
-  doctorId: string | null;
-  clinicId: string | null;
-  registrationDate: Date;
-  patientName: string;
-  patientMrn: string;
-  visitNumber: string;
-}>): fc.Arbitrary<VisitRecord> {
+function visitRecordArb(
+  overrides?: Partial<{
+    status: string;
+    doctorId: string | null;
+    clinicId: string | null;
+    registrationDate: Date;
+    patientName: string;
+    patientMrn: string;
+    visitNumber: string;
+  }>,
+): fc.Arbitrary<VisitRecord> {
   return fc.record({
     id: fc.uuid(),
     visitNumber: overrides?.visitNumber
       ? fc.constant(overrides.visitNumber)
-      : fc.integer({ min: 1, max: 9999 }).map(
-          (seq) => `VST-202507-${seq.toString().padStart(4, '0')}`,
-        ),
+      : fc
+          .integer({ min: 1, max: 9999 })
+          .map((seq) => `VST-202507-${seq.toString().padStart(4, '0')}`),
     status: overrides?.status
       ? fc.constant(overrides.status)
       : fc.constantFrom(
@@ -71,18 +73,21 @@ function visitRecordArb(overrides?: Partial<{
       ? fc.constant(overrides.registrationDate)
       : fc.date({ min: new Date('2024-01-01'), max: new Date('2026-12-31') }),
     patientId: fc.uuid(),
-    doctorId: overrides?.doctorId !== undefined
-      ? fc.constant(overrides.doctorId)
-      : fc.option(fc.uuid(), { nil: null }),
-    clinicId: overrides?.clinicId !== undefined
-      ? fc.constant(overrides.clinicId)
-      : fc.option(fc.uuid(), { nil: null }),
-    paymentMethod: fc.constantFrom(PaymentMethod.CASH, PaymentMethod.BPJS, PaymentMethod.INSURANCE),
-    insuranceId: fc.option(fc.uuid(), { nil: null }),
-    bpjsNumber: fc.option(
-      fc.stringMatching(/^\d{13}$/),
-      { nil: null },
+    doctorId:
+      overrides?.doctorId !== undefined
+        ? fc.constant(overrides.doctorId)
+        : fc.option(fc.uuid(), { nil: null }),
+    clinicId:
+      overrides?.clinicId !== undefined
+        ? fc.constant(overrides.clinicId)
+        : fc.option(fc.uuid(), { nil: null }),
+    paymentMethod: fc.constantFrom(
+      PaymentMethod.CASH,
+      PaymentMethod.BPJS,
+      PaymentMethod.INSURANCE,
     ),
+    insuranceId: fc.option(fc.uuid(), { nil: null }),
+    bpjsNumber: fc.option(fc.stringMatching(/^\d{13}$/), { nil: null }),
     createdAt: fc.constant(new Date()),
     updatedAt: fc.constant(new Date()),
     patient: fc.record({
@@ -95,15 +100,24 @@ function visitRecordArb(overrides?: Partial<{
         : fc.stringMatching(/^\d{6,10}$/),
     }),
     doctor: fc.option(
-      fc.record({ id: fc.uuid(), name: fc.string({ minLength: 2, maxLength: 20 }) }),
+      fc.record({
+        id: fc.uuid(),
+        name: fc.string({ minLength: 2, maxLength: 20 }),
+      }),
       { nil: null },
     ),
     clinic: fc.option(
-      fc.record({ id: fc.uuid(), name: fc.string({ minLength: 2, maxLength: 20 }) }),
+      fc.record({
+        id: fc.uuid(),
+        name: fc.string({ minLength: 2, maxLength: 20 }),
+      }),
       { nil: null },
     ),
     insurance: fc.option(
-      fc.record({ id: fc.uuid(), name: fc.string({ minLength: 2, maxLength: 20 }) }),
+      fc.record({
+        id: fc.uuid(),
+        name: fc.string({ minLength: 2, maxLength: 20 }),
+      }),
       { nil: null },
     ),
   });
@@ -146,9 +160,19 @@ describe('Feature: visit-management, Property 10: Query Filter Correctness', () 
       providers: [
         VisitService,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: VisitNumberGeneratorService, useValue: mockVisitNumberGenerator },
+        {
+          provide: VisitNumberGeneratorService,
+          useValue: mockVisitNumberGenerator,
+        },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+            getDefaultInsurance: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -223,7 +247,7 @@ describe('Feature: visit-management, Property 10: Query Filter Correctness', () 
           const query: VisitQueryDto = {
             page: 1,
             limit: 20,
-            status: filters.status as any,
+            status: filters.status,
             doctorId: filters.doctorId,
             clinicId: filters.clinicId,
             startDate: filters.startDate,
@@ -245,11 +269,15 @@ describe('Feature: visit-management, Property 10: Query Filter Correctness', () 
             }
             if (filters.startDate) {
               const startDate = new Date(filters.startDate);
-              expect(new Date(visit.registrationDate).getTime()).toBeGreaterThanOrEqual(startDate.getTime());
+              expect(
+                new Date(visit.registrationDate).getTime(),
+              ).toBeGreaterThanOrEqual(startDate.getTime());
             }
             if (filters.endDate) {
               const endDate = new Date(filters.endDate + 'T23:59:59.999Z');
-              expect(new Date(visit.registrationDate).getTime()).toBeLessThanOrEqual(endDate.getTime());
+              expect(
+                new Date(visit.registrationDate).getTime(),
+              ).toBeLessThanOrEqual(endDate.getTime());
             }
           }
 
@@ -268,10 +296,14 @@ describe('Feature: visit-management, Property 10: Query Filter Correctness', () 
             expect(where.clinicId).toBe(filters.clinicId);
           }
           if (filters.startDate) {
-            expect(where.registrationDate.gte).toEqual(new Date(filters.startDate + 'T00:00:00.000+07:00'));
+            expect(where.registrationDate.gte).toEqual(
+              new Date(filters.startDate + 'T00:00:00.000+07:00'),
+            );
           }
           if (filters.endDate) {
-            expect(where.registrationDate.lte).toEqual(new Date(filters.endDate + 'T23:59:59.999+07:00'));
+            expect(where.registrationDate.lte).toEqual(
+              new Date(filters.endDate + 'T23:59:59.999+07:00'),
+            );
           }
         },
       ),
@@ -317,9 +349,19 @@ describe('Feature: visit-management, Property 11: Pagination Invariants', () => 
       providers: [
         VisitService,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: VisitNumberGeneratorService, useValue: mockVisitNumberGenerator },
+        {
+          provide: VisitNumberGeneratorService,
+          useValue: mockVisitNumberGenerator,
+        },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+            getDefaultInsurance: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -361,7 +403,11 @@ describe('Feature: visit-management, Property 11: Pagination Invariants', () => 
               bpjsNumber: null,
               createdAt: new Date(),
               updatedAt: new Date(),
-              patient: { id: `patient-${i}`, name: `Patient ${i}`, mrn: `MRN${i}` },
+              patient: {
+                id: `patient-${i}`,
+                name: `Patient ${i}`,
+                mrn: `MRN${i}`,
+              },
               doctor: null,
               clinic: null,
               insurance: null,
@@ -438,9 +484,19 @@ describe('Feature: visit-management, Property 13: Search Results Relevance', () 
       providers: [
         VisitService,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: VisitNumberGeneratorService, useValue: mockVisitNumberGenerator },
+        {
+          provide: VisitNumberGeneratorService,
+          useValue: mockVisitNumberGenerator,
+        },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+            getDefaultInsurance: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -472,7 +528,11 @@ describe('Feature: visit-management, Property 13: Search Results Relevance', () 
               bpjsNumber: null,
               createdAt: new Date(),
               updatedAt: new Date(),
-              patient: { id: 'patient-1', name: `Patient ${searchTerm} Name`, mrn: 'MRN001' },
+              patient: {
+                id: 'patient-1',
+                name: `Patient ${searchTerm} Name`,
+                mrn: 'MRN001',
+              },
               doctor: null,
               clinic: null,
               insurance: null,
@@ -490,7 +550,11 @@ describe('Feature: visit-management, Property 13: Search Results Relevance', () 
               bpjsNumber: null,
               createdAt: new Date(),
               updatedAt: new Date(),
-              patient: { id: 'patient-2', name: 'Another Patient', mrn: `MRN${searchTerm}` },
+              patient: {
+                id: 'patient-2',
+                name: 'Another Patient',
+                mrn: `MRN${searchTerm}`,
+              },
               doctor: null,
               clinic: null,
               insurance: null,

@@ -87,17 +87,6 @@ export function useRefunds(params?: {
 }
 
 /**
- * Fetch refunds for a specific order
- */
-export function useRefundsByOrder(orderId: string) {
-  return useQuery({
-    queryKey: refundKeys.byOrder(orderId),
-    queryFn: () => apiClient.get(`/api/v1/orders/${orderId}/refunds`),
-    enabled: !!orderId,
-  });
-}
-
-/**
  * Create a refund for an order
  */
 export function useCreateRefund() {

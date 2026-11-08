@@ -34,44 +34,54 @@ describe('Auto-Flagging Property Tests', () => {
 
   // Generate a result value within a specific zone
   const criticalLowArb = (criticalMin: number) =>
-    fc.double({
-      min: -1000,
-      max: criticalMin - Number.EPSILON,
-      noNaN: true,
-      noDefaultInfinity: true,
-    }).filter((v) => v < criticalMin);
+    fc
+      .double({
+        min: -1000,
+        max: criticalMin - Number.EPSILON,
+        noNaN: true,
+        noDefaultInfinity: true,
+      })
+      .filter((v) => v < criticalMin);
 
   const lowArb = (criticalMin: number, minRef: number) =>
-    fc.double({
-      min: criticalMin,
-      max: minRef - Number.EPSILON,
-      noNaN: true,
-      noDefaultInfinity: true,
-    }).filter((v) => v >= criticalMin && v < minRef);
+    fc
+      .double({
+        min: criticalMin,
+        max: minRef - Number.EPSILON,
+        noNaN: true,
+        noDefaultInfinity: true,
+      })
+      .filter((v) => v >= criticalMin && v < minRef);
 
   const normalArb = (minRef: number, maxRef: number) =>
-    fc.double({
-      min: minRef,
-      max: maxRef,
-      noNaN: true,
-      noDefaultInfinity: true,
-    }).filter((v) => v >= minRef && v <= maxRef);
+    fc
+      .double({
+        min: minRef,
+        max: maxRef,
+        noNaN: true,
+        noDefaultInfinity: true,
+      })
+      .filter((v) => v >= minRef && v <= maxRef);
 
   const highArb = (maxRef: number, criticalMax: number) =>
-    fc.double({
-      min: maxRef + Number.EPSILON,
-      max: criticalMax,
-      noNaN: true,
-      noDefaultInfinity: true,
-    }).filter((v) => v > maxRef && v <= criticalMax);
+    fc
+      .double({
+        min: maxRef + Number.EPSILON,
+        max: criticalMax,
+        noNaN: true,
+        noDefaultInfinity: true,
+      })
+      .filter((v) => v > maxRef && v <= criticalMax);
 
   const criticalHighArb = (criticalMax: number) =>
-    fc.double({
-      min: criticalMax + Number.EPSILON,
-      max: 2000,
-      noNaN: true,
-      noDefaultInfinity: true,
-    }).filter((v) => v > criticalMax);
+    fc
+      .double({
+        min: criticalMax + Number.EPSILON,
+        max: 2000,
+        noNaN: true,
+        noDefaultInfinity: true,
+      })
+      .filter((v) => v > criticalMax);
 
   /**
    * Helper: create a mock PrismaService that returns a reference with the given ranges.
@@ -173,8 +183,7 @@ describe('Auto-Flagging Property Tests', () => {
           async (range) => {
             // Pick a value in the LOW zone: criticalMin ≤ value < minRef
             const resultValue =
-              range.criticalMin +
-              (range.minRef - range.criticalMin) * 0.5;
+              range.criticalMin + (range.minRef - range.criticalMin) * 0.5;
             const service = createServiceWithReference(range);
             const flag = await service.calculateFlag(
               resultValue,
@@ -215,22 +224,19 @@ describe('Auto-Flagging Property Tests', () => {
 
     it('values within minRef to maxRef (inclusive) produce NORMAL flag', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          sortedRangeArb,
-          async (range) => {
-            // Pick a value in the NORMAL zone: minRef ≤ value ≤ maxRef
-            const resultValue =
-              range.minRef + (range.maxRef - range.minRef) * 0.5;
-            const service = createServiceWithReference(range);
-            const flag = await service.calculateFlag(
-              resultValue,
-              'test-1',
-              30,
-              Gender.MALE,
-            );
-            expect(flag).toBe(Flag.NORMAL);
-          },
-        ),
+        fc.asyncProperty(sortedRangeArb, async (range) => {
+          // Pick a value in the NORMAL zone: minRef ≤ value ≤ maxRef
+          const resultValue =
+            range.minRef + (range.maxRef - range.minRef) * 0.5;
+          const service = createServiceWithReference(range);
+          const flag = await service.calculateFlag(
+            resultValue,
+            'test-1',
+            30,
+            Gender.MALE,
+          );
+          expect(flag).toBe(Flag.NORMAL);
+        }),
         { numRuns: 200 },
       );
     });
@@ -239,7 +245,12 @@ describe('Auto-Flagging Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           sortedRangeArb,
-          fc.double({ min: -1000, max: 2000, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: -1000,
+            max: 2000,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           async (range, resultValue) => {
             const service = createServiceWithReference(range);
             const flag = await service.calculateFlag(

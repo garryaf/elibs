@@ -14,23 +14,22 @@ import { AuditConfig } from './interfaces';
 export function loadAuditConfig(projectRoot: string): AuditConfig {
   // Validate projectRoot exists and is a directory
   if (!fs.existsSync(projectRoot)) {
-    throw new Error(
-      `Project root does not exist: ${projectRoot}`,
-    );
+    throw new Error(`Project root does not exist: ${projectRoot}`);
   }
 
   const stats = fs.statSync(projectRoot);
   if (!stats.isDirectory()) {
-    throw new Error(
-      `Project root is not a directory: ${projectRoot}`,
-    );
+    throw new Error(`Project root is not a directory: ${projectRoot}`);
   }
 
   return {
     projectRoot: path.resolve(projectRoot),
     apiSourcePath: path.resolve(projectRoot, 'apps/api/src'),
     webSourcePath: path.resolve(projectRoot, 'apps/web/src'),
-    prismaSchemaPath: path.resolve(projectRoot, 'apps/api/prisma/schema.prisma'),
+    prismaSchemaPath: path.resolve(
+      projectRoot,
+      'apps/api/prisma/schema.prisma',
+    ),
     auditStatusPath: path.resolve(projectRoot, 'docs/AUDIT_STATUS.md'),
     functionalSpecPath: path.resolve(
       projectRoot,

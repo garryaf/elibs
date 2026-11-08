@@ -39,10 +39,22 @@ describe('RegionController - POST /api/v1/regions/sync authorization', () => {
         {
           provide: RegionService,
           useValue: {
-            findAllProvinsi: jest.fn().mockResolvedValue({ data: [], meta: { total: 0, page: 1, limit: 50, totalPages: 0 } }),
-            findKabupatenKotaByProvinsi: jest.fn().mockResolvedValue({ data: [], meta: { total: 0, page: 1, limit: 50, totalPages: 0 } }),
-            findKecamatanByKabupatenKota: jest.fn().mockResolvedValue({ data: [], meta: { total: 0, page: 1, limit: 50, totalPages: 0 } }),
-            findKelurahanDesaByKecamatan: jest.fn().mockResolvedValue({ data: [], meta: { total: 0, page: 1, limit: 50, totalPages: 0 } }),
+            findAllProvinsi: jest.fn().mockResolvedValue({
+              data: [],
+              meta: { total: 0, page: 1, limit: 50, totalPages: 0 },
+            }),
+            findKabupatenKotaByProvinsi: jest.fn().mockResolvedValue({
+              data: [],
+              meta: { total: 0, page: 1, limit: 50, totalPages: 0 },
+            }),
+            findKecamatanByKabupatenKota: jest.fn().mockResolvedValue({
+              data: [],
+              meta: { total: 0, page: 1, limit: 50, totalPages: 0 },
+            }),
+            findKelurahanDesaByKecamatan: jest.fn().mockResolvedValue({
+              data: [],
+              meta: { total: 0, page: 1, limit: 50, totalPages: 0 },
+            }),
           },
         },
         {
@@ -82,7 +94,11 @@ describe('RegionController - POST /api/v1/regions/sync authorization', () => {
   });
 
   it('should return 201 for SUPER_ADMIN user (NestJS POST default)', async () => {
-    mockUser = { id: 'user-1', email: 'superadmin@test.com', role: Role.SUPER_ADMIN };
+    mockUser = {
+      id: 'user-1',
+      email: 'superadmin@test.com',
+      role: Role.SUPER_ADMIN,
+    };
 
     const response = await request(app.getHttpServer())
       .post('/api/v1/regions/sync')
@@ -112,16 +128,12 @@ describe('RegionController - POST /api/v1/regions/sync authorization', () => {
   it('should return 403 for KASIR user', async () => {
     mockUser = { id: 'user-3', email: 'kasir@test.com', role: Role.KASIR };
 
-    await request(app.getHttpServer())
-      .post('/api/v1/regions/sync')
-      .expect(403);
+    await request(app.getHttpServer()).post('/api/v1/regions/sync').expect(403);
   });
 
   it('should return 401 for unauthenticated request (no token)', async () => {
     mockUser = null;
 
-    await request(app.getHttpServer())
-      .post('/api/v1/regions/sync')
-      .expect(401);
+    await request(app.getHttpServer()).post('/api/v1/regions/sync').expect(401);
   });
 });

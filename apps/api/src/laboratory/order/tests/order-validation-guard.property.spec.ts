@@ -56,18 +56,22 @@ describe('OrderValidationGuard Property Tests', () => {
       );
 
       await fc.assert(
-        fc.asyncProperty(invalidVisitIdArb, validUuidV4Arb, async (invalidVisitId, patientId) => {
-          await expect(
-            guard.validate(invalidVisitId as any, patientId),
-          ).rejects.toMatchObject({
-            response: expect.objectContaining({
-              errorCode: 'ERR_VALIDATION',
-            }),
-          });
+        fc.asyncProperty(
+          invalidVisitIdArb,
+          validUuidV4Arb,
+          async (invalidVisitId, patientId) => {
+            await expect(
+              guard.validate(invalidVisitId, patientId),
+            ).rejects.toMatchObject({
+              response: expect.objectContaining({
+                errorCode: 'ERR_VALIDATION',
+              }),
+            });
 
-          // No DB call should have been made
-          expect(mockPrisma.visit.findUnique).not.toHaveBeenCalled();
-        }),
+            // No DB call should have been made
+            expect(mockPrisma.visit.findUnique).not.toHaveBeenCalled();
+          },
+        ),
         { numRuns: 100 },
       );
     });
@@ -85,27 +89,31 @@ describe('OrderValidationGuard Property Tests', () => {
   describe('Property 3: Non-Existent Visit Always Rejected', () => {
     it('should reject any valid UUID visitId that does not exist with ERR_NOT_FOUND', async () => {
       await fc.assert(
-        fc.asyncProperty(validUuidV4Arb, validUuidV4Arb, async (visitId, patientId) => {
-          // Mock: visit does not exist
-          mockPrisma.visit.findUnique.mockResolvedValue(null);
+        fc.asyncProperty(
+          validUuidV4Arb,
+          validUuidV4Arb,
+          async (visitId, patientId) => {
+            // Mock: visit does not exist
+            mockPrisma.visit.findUnique.mockResolvedValue(null);
 
-          await expect(
-            guard.validate(visitId, patientId),
-          ).rejects.toMatchObject({
-            response: expect.objectContaining({
-              errorCode: 'ERR_NOT_FOUND',
-              message: 'Visit not found',
-            }),
-          });
+            await expect(
+              guard.validate(visitId, patientId),
+            ).rejects.toMatchObject({
+              response: expect.objectContaining({
+                errorCode: 'ERR_NOT_FOUND',
+                message: 'Visit not found',
+              }),
+            });
 
-          // DB call should have been made (format passed)
-          expect(mockPrisma.visit.findUnique).toHaveBeenCalledWith(
-            expect.objectContaining({ where: { id: visitId } }),
-          );
+            // DB call should have been made (format passed)
+            expect(mockPrisma.visit.findUnique).toHaveBeenCalledWith(
+              expect.objectContaining({ where: { id: visitId } }),
+            );
 
-          // Reset mock for next iteration
-          mockPrisma.visit.findUnique.mockReset();
-        }),
+            // Reset mock for next iteration
+            mockPrisma.visit.findUnique.mockReset();
+          },
+        ),
         { numRuns: 100 },
       );
     });
@@ -220,43 +228,51 @@ describe('OrderValidationGuard Property Tests', () => {
   describe('Property 12: Validation Guard Ordering', () => {
     it('format errors take priority over existence errors', async () => {
       await fc.assert(
-        fc.asyncProperty(nonUuidStringArb, validUuidV4Arb, async (invalidVisitId, patientId) => {
-          // Even if visit lookup would fail, format error comes first
-          mockPrisma.visit.findUnique.mockResolvedValue(null);
+        fc.asyncProperty(
+          nonUuidStringArb,
+          validUuidV4Arb,
+          async (invalidVisitId, patientId) => {
+            // Even if visit lookup would fail, format error comes first
+            mockPrisma.visit.findUnique.mockResolvedValue(null);
 
-          await expect(
-            guard.validate(invalidVisitId as any, patientId),
-          ).rejects.toMatchObject({
-            response: expect.objectContaining({
-              errorCode: 'ERR_VALIDATION',
-            }),
-          });
+            await expect(
+              guard.validate(invalidVisitId as any, patientId),
+            ).rejects.toMatchObject({
+              response: expect.objectContaining({
+                errorCode: 'ERR_VALIDATION',
+              }),
+            });
 
-          // Format check should prevent DB call
-          expect(mockPrisma.visit.findUnique).not.toHaveBeenCalled();
+            // Format check should prevent DB call
+            expect(mockPrisma.visit.findUnique).not.toHaveBeenCalled();
 
-          mockPrisma.visit.findUnique.mockReset();
-        }),
+            mockPrisma.visit.findUnique.mockReset();
+          },
+        ),
         { numRuns: 100 },
       );
     });
 
     it('existence errors take priority over status errors', async () => {
       await fc.assert(
-        fc.asyncProperty(validUuidV4Arb, validUuidV4Arb, async (visitId, patientId) => {
-          // Visit doesn't exist — even though status would also fail
-          mockPrisma.visit.findUnique.mockResolvedValue(null);
+        fc.asyncProperty(
+          validUuidV4Arb,
+          validUuidV4Arb,
+          async (visitId, patientId) => {
+            // Visit doesn't exist — even though status would also fail
+            mockPrisma.visit.findUnique.mockResolvedValue(null);
 
-          await expect(
-            guard.validate(visitId, patientId),
-          ).rejects.toMatchObject({
-            response: expect.objectContaining({
-              errorCode: 'ERR_NOT_FOUND',
-            }),
-          });
+            await expect(
+              guard.validate(visitId, patientId),
+            ).rejects.toMatchObject({
+              response: expect.objectContaining({
+                errorCode: 'ERR_NOT_FOUND',
+              }),
+            });
 
-          mockPrisma.visit.findUnique.mockReset();
-        }),
+            mockPrisma.visit.findUnique.mockReset();
+          },
+        ),
         { numRuns: 100 },
       );
     });

@@ -21,7 +21,10 @@ export class CreateOrderDto {
    * @format uuid
    * @example "550e8400-e29b-41d4-a716-446655440000"
    */
-  @IsNotEmpty({ message: 'visitId is required. Create a Visit first via POST /api/v1/visits' })
+  @IsNotEmpty({
+    message:
+      'visitId is required. Create a Visit first via POST /api/v1/visits',
+  })
   @IsUUID('4', { message: 'visitId must be a valid UUID' })
   visitId: string;
 
@@ -46,7 +49,9 @@ export class CreateOrderDto {
    */
   @ValidateIf((o) => !o.panelIds || o.panelIds.length === 0)
   @IsArray()
-  @ArrayMinSize(1, { message: 'At least one of testIds or panelIds must be provided' })
+  @ArrayMinSize(1, {
+    message: 'At least one of testIds or panelIds must be provided',
+  })
   @IsUUID('4', { each: true })
   testIds: string[];
 

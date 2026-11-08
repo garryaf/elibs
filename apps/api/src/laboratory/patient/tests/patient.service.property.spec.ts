@@ -48,9 +48,18 @@ describe('PatientService Property Tests', () => {
         PatientService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: MrnGeneratorService, useValue: mockMrnGeneratorService },
-        { provide: RegionValidationService, useValue: mockRegionValidationService },
+        {
+          provide: RegionValidationService,
+          useValue: mockRegionValidationService,
+        },
         { provide: AuditService, useValue: { log: jest.fn() } },
-        { provide: InsuranceConsolidationService, useValue: { resolvePatientInsuranceId: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            resolvePatientInsuranceId: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -73,7 +82,7 @@ describe('PatientService Property Tests', () => {
       dto.nik = nik;
       dto.name = 'Test Patient';
       dto.dateOfBirth = '1990-01-01';
-      dto.gender = 'MALE' as any;
+      dto.gender = 'MALE';
       return dto;
     };
 
@@ -94,7 +103,9 @@ describe('PatientService Property Tests', () => {
             // If an error is thrown, it should NOT be the NIK format error
             if (error instanceof BadRequestException) {
               const response = error.getResponse() as any;
-              expect(response.message).not.toBe('NIK must be exactly 16 digits');
+              expect(response.message).not.toBe(
+                'NIK must be exactly 16 digits',
+              );
             }
           }
         }),
@@ -111,13 +122,17 @@ describe('PatientService Property Tests', () => {
           const dto = createDto(nik);
 
           // Should throw BadRequestException with NIK format error message
-          await expect(service.register(dto)).rejects.toThrow(BadRequestException);
+          await expect(service.register(dto)).rejects.toThrow(
+            BadRequestException,
+          );
 
           try {
             await service.register(dto);
           } catch (error) {
             expect(error).toBeInstanceOf(BadRequestException);
-            const response = (error as BadRequestException).getResponse() as any;
+            const response = (
+              error as BadRequestException
+            ).getResponse() as any;
             expect(response.message).toBe('NIK must be exactly 16 digits');
             expect(response.errorCode).toBe('ERR_VALIDATION');
           }
@@ -137,13 +152,17 @@ describe('PatientService Property Tests', () => {
         fc.asyncProperty(wrongLengthDigitsArb, async (nik) => {
           const dto = createDto(nik);
 
-          await expect(service.register(dto)).rejects.toThrow(BadRequestException);
+          await expect(service.register(dto)).rejects.toThrow(
+            BadRequestException,
+          );
 
           try {
             await service.register(dto);
           } catch (error) {
             expect(error).toBeInstanceOf(BadRequestException);
-            const response = (error as BadRequestException).getResponse() as any;
+            const response = (
+              error as BadRequestException
+            ).getResponse() as any;
             expect(response.message).toBe('NIK must be exactly 16 digits');
           }
         }),
@@ -170,7 +189,7 @@ describe('PatientService Property Tests', () => {
       dto.nik = nik;
       dto.name = 'Test Patient';
       dto.dateOfBirth = '1990-01-01';
-      dto.gender = 'MALE' as any;
+      dto.gender = 'MALE';
       return dto;
     };
 
@@ -187,13 +206,17 @@ describe('PatientService Property Tests', () => {
 
           const dto = createDto(nik);
 
-          await expect(service.register(dto)).rejects.toThrow(BadRequestException);
+          await expect(service.register(dto)).rejects.toThrow(
+            BadRequestException,
+          );
 
           try {
             await service.register(dto);
           } catch (error) {
             expect(error).toBeInstanceOf(BadRequestException);
-            const response = (error as BadRequestException).getResponse() as any;
+            const response = (
+              error as BadRequestException
+            ).getResponse() as any;
             expect(response.errorCode).toBe('ERR_VALIDATION');
             expect(response.message).toBe('NIK already registered');
           }
@@ -206,7 +229,9 @@ describe('PatientService Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(validNikArb, async (nik) => {
           // Mock findFirst to return null (no duplicate)
-          (prismaService.patient.findFirst as jest.Mock).mockResolvedValue(null);
+          (prismaService.patient.findFirst as jest.Mock).mockResolvedValue(
+            null,
+          );
 
           // Mock create to return a patient object
           (prismaService.patient.create as jest.Mock).mockResolvedValue({
@@ -237,54 +262,56 @@ describe('PatientService Property Tests', () => {
 
     it('should correctly branch based on database state for any valid NIK', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          validNikArb,
-          fc.boolean(),
-          async (nik, existsInDb) => {
-            if (existsInDb) {
-              // Simulate existing patient found
-              (prismaService.patient.findFirst as jest.Mock).mockResolvedValue({
-                id: 'existing-id',
-                nik,
-                name: 'Existing',
-                deletedAt: null,
-              });
-            } else {
-              // Simulate no existing patient
-              (prismaService.patient.findFirst as jest.Mock).mockResolvedValue(null);
-              (prismaService.patient.create as jest.Mock).mockResolvedValue({
-                id: 'new-id',
-                mrn: 'RM-202507-0001',
-                nik,
-                name: 'Test Patient',
-                dateOfBirth: new Date('1990-01-01'),
-                gender: 'MALE',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                deletedAt: null,
-              });
-            }
+        fc.asyncProperty(validNikArb, fc.boolean(), async (nik, existsInDb) => {
+          if (existsInDb) {
+            // Simulate existing patient found
+            (prismaService.patient.findFirst as jest.Mock).mockResolvedValue({
+              id: 'existing-id',
+              nik,
+              name: 'Existing',
+              deletedAt: null,
+            });
+          } else {
+            // Simulate no existing patient
+            (prismaService.patient.findFirst as jest.Mock).mockResolvedValue(
+              null,
+            );
+            (prismaService.patient.create as jest.Mock).mockResolvedValue({
+              id: 'new-id',
+              mrn: 'RM-202507-0001',
+              nik,
+              name: 'Test Patient',
+              dateOfBirth: new Date('1990-01-01'),
+              gender: 'MALE',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              deletedAt: null,
+            });
+          }
 
-            const dto = createDto(nik);
+          const dto = createDto(nik);
 
-            if (existsInDb) {
-              // Should reject with ERR_VALIDATION
-              await expect(service.register(dto)).rejects.toThrow(BadRequestException);
-              try {
-                await service.register(dto);
-              } catch (error) {
-                const response = (error as BadRequestException).getResponse() as any;
-                expect(response.errorCode).toBe('ERR_VALIDATION');
-                expect(response.message).toBe('NIK already registered');
-              }
-            } else {
-              // Should proceed to MRN generation and succeed
-              const result = await service.register(dto);
-              expect(result.mrn).toBe('RM-202507-0001');
-              expect(mrnGeneratorService.generate).toHaveBeenCalled();
+          if (existsInDb) {
+            // Should reject with ERR_VALIDATION
+            await expect(service.register(dto)).rejects.toThrow(
+              BadRequestException,
+            );
+            try {
+              await service.register(dto);
+            } catch (error) {
+              const response = (
+                error as BadRequestException
+              ).getResponse() as any;
+              expect(response.errorCode).toBe('ERR_VALIDATION');
+              expect(response.message).toBe('NIK already registered');
             }
-          },
-        ),
+          } else {
+            // Should proceed to MRN generation and succeed
+            const result = await service.register(dto);
+            expect(result.mrn).toBe('RM-202507-0001');
+            expect(mrnGeneratorService.generate).toHaveBeenCalled();
+          }
+        }),
         { numRuns: 100 },
       );
     });
@@ -303,14 +330,18 @@ describe('PatientService Property Tests', () => {
     // Arbitrary for generating a patient record
     const patientRecordArb = fc.record({
       id: fc.uuid(),
-      name: fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0),
+      name: fc
+        .string({ minLength: 1, maxLength: 50 })
+        .filter((s) => s.trim().length > 0),
       mrn: fc.stringMatching(/^RM-\d{6}-\d{4}$/),
       nik: fc.stringMatching(/^\d{16}$/),
       dateOfBirth: fc.constant(new Date('1990-01-01')),
       gender: fc.constantFrom('MALE', 'FEMALE'),
       phone: fc.stringMatching(/^08\d{8,11}$/),
       address: fc.constant(null),
-      email: fc.string({ minLength: 5, maxLength: 30 }).map((s) => `${s}@example.com`),
+      email: fc
+        .string({ minLength: 5, maxLength: 30 })
+        .map((s) => `${s}@example.com`),
       province: fc.constant(null),
       city: fc.constant(null),
       district: fc.constant(null),
@@ -334,14 +365,17 @@ describe('PatientService Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           patientRecordArb,
-          fc.constantFrom('name', 'mrn', 'phone', 'email') as fc.Arbitrary<'name' | 'mrn' | 'phone' | 'email'>,
+          fc.constantFrom('name', 'mrn', 'phone', 'email'),
           async (patient, field) => {
-            const fieldValue = patient[field] as string;
+            const fieldValue = patient[field];
             if (!fieldValue || fieldValue.length === 0) return;
 
             // Pick a substring of the field value as search query
             const startIdx = Math.floor(Math.random() * fieldValue.length);
-            const endIdx = startIdx + 1 + Math.floor(Math.random() * (fieldValue.length - startIdx));
+            const endIdx =
+              startIdx +
+              1 +
+              Math.floor(Math.random() * (fieldValue.length - startIdx));
             const searchQuery = fieldValue.slice(startIdx, endIdx);
 
             // Skip empty queries
@@ -357,8 +391,12 @@ describe('PatientService Property Tests', () => {
             };
 
             // Mock findMany to return the patient
-            (prismaService.patient as any).findMany = jest.fn().mockResolvedValue([patientWithRefs]);
-            (prismaService.patient as any).count = jest.fn().mockResolvedValue(1);
+            (prismaService.patient as any).findMany = jest
+              .fn()
+              .mockResolvedValue([patientWithRefs]);
+            (prismaService.patient as any).count = jest
+              .fn()
+              .mockResolvedValue(1);
 
             await service.findAll({ search: searchQuery });
 
@@ -375,7 +413,9 @@ describe('PatientService Property Tests', () => {
               expectedConditions.push({ nik: { startsWith: searchQuery } });
             }
 
-            expect((prismaService.patient as any).findMany).toHaveBeenCalledWith(
+            expect(
+              (prismaService.patient as any).findMany,
+            ).toHaveBeenCalledWith(
               expect.objectContaining({
                 where: expect.objectContaining({
                   OR: expectedConditions,
@@ -390,79 +430,78 @@ describe('PatientService Property Tests', () => {
 
     it('should include NIK prefix condition only when search query is all digits', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          patientRecordArb,
-          async (patient) => {
-            // Use a prefix of the NIK as search query (digits only)
-            const prefixLen = 1 + Math.floor(Math.random() * patient.nik.length);
-            const searchQuery = patient.nik.slice(0, prefixLen);
+        fc.asyncProperty(patientRecordArb, async (patient) => {
+          // Use a prefix of the NIK as search query (digits only)
+          const prefixLen = 1 + Math.floor(Math.random() * patient.nik.length);
+          const searchQuery = patient.nik.slice(0, prefixLen);
 
-            const patientWithRefs = {
-              ...patient,
-              provinsiRef: null,
-              kabupatenKotaRef: null,
-              kecamatanRef: null,
-              kelurahanDesaRef: null,
-            };
+          const patientWithRefs = {
+            ...patient,
+            provinsiRef: null,
+            kabupatenKotaRef: null,
+            kecamatanRef: null,
+            kelurahanDesaRef: null,
+          };
 
-            (prismaService.patient as any).findMany = jest.fn().mockResolvedValue([patientWithRefs]);
-            (prismaService.patient as any).count = jest.fn().mockResolvedValue(1);
+          (prismaService.patient as any).findMany = jest
+            .fn()
+            .mockResolvedValue([patientWithRefs]);
+          (prismaService.patient as any).count = jest.fn().mockResolvedValue(1);
 
-            await service.findAll({ search: searchQuery });
+          await service.findAll({ search: searchQuery });
 
-            // Since NIK is all digits, query is all digits, NIK condition should be present
-            const expectedConditions = [
-              { name: { contains: searchQuery, mode: 'insensitive' } },
-              { mrn: { contains: searchQuery, mode: 'insensitive' } },
-              { phone: { contains: searchQuery } },
-              { email: { contains: searchQuery, mode: 'insensitive' } },
-              { nik: { startsWith: searchQuery } },
-            ];
+          // Since NIK is all digits, query is all digits, NIK condition should be present
+          const expectedConditions = [
+            { name: { contains: searchQuery, mode: 'insensitive' } },
+            { mrn: { contains: searchQuery, mode: 'insensitive' } },
+            { phone: { contains: searchQuery } },
+            { email: { contains: searchQuery, mode: 'insensitive' } },
+            { nik: { startsWith: searchQuery } },
+          ];
 
-            expect((prismaService.patient as any).findMany).toHaveBeenCalledWith(
-              expect.objectContaining({
-                where: expect.objectContaining({
-                  OR: expectedConditions,
-                }),
+          expect((prismaService.patient as any).findMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+              where: expect.objectContaining({
+                OR: expectedConditions,
               }),
-            );
-          },
-        ),
+            }),
+          );
+        }),
         { numRuns: 100 },
       );
     });
 
     it('should NOT include NIK condition when search query contains non-digit characters', async () => {
       // Generate a search query that contains at least one non-digit character
-      const nonDigitQueryArb = fc.string({ minLength: 1, maxLength: 20 })
+      const nonDigitQueryArb = fc
+        .string({ minLength: 1, maxLength: 20 })
         .filter((s) => s.length > 0 && !/^\d+$/.test(s));
 
       await fc.assert(
-        fc.asyncProperty(
-          nonDigitQueryArb,
-          async (searchQuery) => {
-            (prismaService.patient as any).findMany = jest.fn().mockResolvedValue([]);
-            (prismaService.patient as any).count = jest.fn().mockResolvedValue(0);
+        fc.asyncProperty(nonDigitQueryArb, async (searchQuery) => {
+          (prismaService.patient as any).findMany = jest
+            .fn()
+            .mockResolvedValue([]);
+          (prismaService.patient as any).count = jest.fn().mockResolvedValue(0);
 
-            await service.findAll({ search: searchQuery });
+          await service.findAll({ search: searchQuery });
 
-            // NIK condition should NOT be present for non-digit queries
-            const expectedConditions = [
-              { name: { contains: searchQuery, mode: 'insensitive' } },
-              { mrn: { contains: searchQuery, mode: 'insensitive' } },
-              { phone: { contains: searchQuery } },
-              { email: { contains: searchQuery, mode: 'insensitive' } },
-            ];
+          // NIK condition should NOT be present for non-digit queries
+          const expectedConditions = [
+            { name: { contains: searchQuery, mode: 'insensitive' } },
+            { mrn: { contains: searchQuery, mode: 'insensitive' } },
+            { phone: { contains: searchQuery } },
+            { email: { contains: searchQuery, mode: 'insensitive' } },
+          ];
 
-            expect((prismaService.patient as any).findMany).toHaveBeenCalledWith(
-              expect.objectContaining({
-                where: expect.objectContaining({
-                  OR: expectedConditions,
-                }),
+          expect((prismaService.patient as any).findMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+              where: expect.objectContaining({
+                OR: expectedConditions,
               }),
-            );
-          },
-        ),
+            }),
+          );
+        }),
         { numRuns: 100 },
       );
     });
@@ -484,7 +523,9 @@ describe('PatientService Property Tests', () => {
     const validNikArb = fc.stringMatching(/^\d{16}$/);
 
     // Arbitrary for patient name (non-empty string)
-    const nameArb = fc.string({ minLength: 1, maxLength: 100 }).filter((s) => s.trim().length > 0);
+    const nameArb = fc
+      .string({ minLength: 1, maxLength: 100 })
+      .filter((s) => s.trim().length > 0);
 
     // Arbitrary for date of birth in ISO date format (YYYY-MM-DD)
     const dateOfBirthArb = fc
@@ -493,7 +534,10 @@ describe('PatientService Property Tests', () => {
         fc.integer({ min: 1, max: 12 }),
         fc.integer({ min: 1, max: 28 }),
       )
-      .map(([y, m, d]) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+      .map(
+        ([y, m, d]) =>
+          `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
+      );
 
     // Arbitrary for gender enum
     const genderArb = fc.constantFrom('MALE' as const, 'FEMALE' as const);
@@ -529,13 +573,19 @@ describe('PatientService Property Tests', () => {
 
             // Assert that the input DTO does NOT have an mrn field
             expect((dto as any).mrn).toBeUndefined();
-            expect(Object.prototype.hasOwnProperty.call(dto, 'mrn')).toBe(false);
+            expect(Object.prototype.hasOwnProperty.call(dto, 'mrn')).toBe(
+              false,
+            );
 
             // Mock MRN generator to return the arbitrary MRN
-            (mrnGeneratorService.generate as jest.Mock).mockResolvedValue(generatedMrn);
+            (mrnGeneratorService.generate as jest.Mock).mockResolvedValue(
+              generatedMrn,
+            );
 
             // Mock PrismaService findFirst to return null (no duplicate)
-            (prismaService.patient.findFirst as jest.Mock).mockResolvedValue(null);
+            (prismaService.patient.findFirst as jest.Mock).mockResolvedValue(
+              null,
+            );
 
             // Mock PrismaService patient.create to return data with MRN added
             (prismaService.patient.create as jest.Mock).mockResolvedValue({
@@ -602,7 +652,9 @@ describe('PatientService Property Tests', () => {
             dto.gender = gender;
 
             // The CreatePatientDto should never have an mrn property
-            expect(Object.prototype.hasOwnProperty.call(dto, 'mrn')).toBe(false);
+            expect(Object.prototype.hasOwnProperty.call(dto, 'mrn')).toBe(
+              false,
+            );
             expect('mrn' in dto).toBe(false);
           },
         ),

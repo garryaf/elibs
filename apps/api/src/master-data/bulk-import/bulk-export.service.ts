@@ -3,11 +3,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { stringify } from 'csv-stringify/sync';
 
 export type ExportEntityType =
-  | 'tests'
-  | 'tariffs'
-  | 'panels'
-  | 'doctors'
-  | 'clinics';
+  'tests' | 'tariffs' | 'panels' | 'doctors' | 'clinics';
 
 @Injectable()
 export class BulkExportService {
@@ -48,9 +44,7 @@ export class BulkExportService {
       case 'clinics':
         return this.fetchClinics();
       default:
-        throw new BadRequestException(
-          `Unsupported entity type: ${entityType}`,
-        );
+        throw new BadRequestException(`Unsupported entity type: ${entityType}`);
     }
   }
 

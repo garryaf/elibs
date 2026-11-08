@@ -13,9 +13,7 @@ import { ReconcilePaymentsDto } from './dto/reconcile-payment.dto';
 @Controller('api/v1/payments')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ReconciliationController {
-  constructor(
-    private readonly reconciliationService: ReconciliationService,
-  ) {}
+  constructor(private readonly reconciliationService: ReconciliationService) {}
 
   @Post('reconcile')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.KASIR)

@@ -79,7 +79,9 @@ export class BulkImportController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) {
-      throw new BadRequestException('No file uploaded. Please attach a CSV or Excel file.');
+      throw new BadRequestException(
+        'No file uploaded. Please attach a CSV or Excel file.',
+      );
     }
 
     if (!VALID_IMPORT_ENTITY_TYPES.includes(entityType as ImportEntityType)) {

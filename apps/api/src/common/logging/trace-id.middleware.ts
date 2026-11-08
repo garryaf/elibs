@@ -12,8 +12,7 @@ import { randomUUID } from 'crypto';
 @Injectable()
 export class TraceIdMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
-    const traceId =
-      (req.headers['x-request-id'] as string) || randomUUID();
+    const traceId = (req.headers['x-request-id'] as string) || randomUUID();
 
     // Store on request for pino-http (pino-http reads req.id)
     (req as any).id = traceId;

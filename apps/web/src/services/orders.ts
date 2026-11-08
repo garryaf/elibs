@@ -23,14 +23,14 @@ export const orderKeys = {
 export function useOrders(params?: { page?: string; limit?: string; status?: string; startDate?: string; endDate?: string }) {
   return useQuery({
     queryKey: orderKeys.list(params ?? {}),
-    queryFn: () => apiClient.get(`/api/v1/orders?${new URLSearchParams(params as any).toString()}`),
+    queryFn: () => apiClient.getOrders(params),
   });
 }
 
 export function useOrder(id: string) {
   return useQuery({
     queryKey: orderKeys.detail(id),
-    queryFn: () => apiClient.get(`/api/v1/orders/${id}`),
+    queryFn: () => apiClient.getOrder(id),
     enabled: !!id,
   });
 }
@@ -38,7 +38,7 @@ export function useOrder(id: string) {
 export function useCreateOrder() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: unknown) => apiClient.post("/api/v1/orders", data),
+    mutationFn: (data: unknown) => apiClient.createOrder(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
     },
@@ -49,7 +49,7 @@ export function useCancelOrder() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      apiClient.post(`/api/v1/orders/${id}/cancel`, { reason }),
+      apiClient.cancelOrder(id, reason),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
       queryClient.invalidateQueries({ queryKey: orderKeys.detail(variables.id) });

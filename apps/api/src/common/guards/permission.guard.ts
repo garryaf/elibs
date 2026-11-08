@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
 import { PERMISSION_KEY } from '../decorators/permission.decorator';
@@ -11,10 +16,10 @@ export class PermissionGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredPermission = this.reflector.getAllAndOverride<string>(PERMISSION_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredPermission = this.reflector.getAllAndOverride<string>(
+      PERMISSION_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     // If no @RequirePermission decorator, allow (backward compat with @Roles)
     if (!requiredPermission) {

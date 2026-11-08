@@ -19,14 +19,23 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
   let prismaService: any;
 
   // Arbitraries
-  const arbUuid = fc.uuid().map((v) => v.replace(/-/g, '').slice(0, 32)).chain((hex) =>
-    fc.constant(
-      `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`,
-    ),
-  );
+  const arbUuid = fc
+    .uuid()
+    .map((v) => v.replace(/-/g, '').slice(0, 32))
+    .chain((hex) =>
+      fc.constant(
+        `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`,
+      ),
+    );
 
   const arbCoverageType = fc.constantFrom('PRIMARY', 'SECONDARY');
-  const arbClaimStatus = fc.constantFrom('PENDING', 'SUBMITTED', 'APPROVED', 'REJECTED', 'PAID');
+  const arbClaimStatus = fc.constantFrom(
+    'PENDING',
+    'SUBMITTED',
+    'APPROVED',
+    'REJECTED',
+    'PAID',
+  );
 
   beforeEach(async () => {
     const mockPrisma = {
@@ -58,7 +67,9 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
       ],
     }).compile();
 
-    service = module.get<InsuranceConsolidationService>(InsuranceConsolidationService);
+    service = module.get<InsuranceConsolidationService>(
+      InsuranceConsolidationService,
+    );
     prismaService = module.get<PrismaService>(PrismaService);
   });
 
@@ -97,9 +108,9 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
               updatedAt: new Date(),
             };
 
-            (prismaService.orderInsurance.findFirst as jest.Mock).mockResolvedValue(
-              mockOrderInsurance,
-            );
+            (
+              prismaService.orderInsurance.findFirst as jest.Mock
+            ).mockResolvedValue(mockOrderInsurance);
 
             const result = await service.getOrderPrimaryInsurance(orderId);
 
@@ -120,21 +131,27 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
      */
     it('returns ORDER_LEGACY_FK source when only Order.insuranceId exists', async () => {
       await fc.assert(
-        fc.asyncProperty(arbUuid, arbUuid, async (orderId, legacyInsuranceId) => {
-          // No junction record
-          (prismaService.orderInsurance.findFirst as jest.Mock).mockResolvedValue(null);
+        fc.asyncProperty(
+          arbUuid,
+          arbUuid,
+          async (orderId, legacyInsuranceId) => {
+            // No junction record
+            (
+              prismaService.orderInsurance.findFirst as jest.Mock
+            ).mockResolvedValue(null);
 
-          // Legacy FK exists
-          (prismaService.order.findUnique as jest.Mock).mockResolvedValue({
-            insuranceId: legacyInsuranceId,
-          });
+            // Legacy FK exists
+            (prismaService.order.findUnique as jest.Mock).mockResolvedValue({
+              insuranceId: legacyInsuranceId,
+            });
 
-          const result = await service.getOrderPrimaryInsurance(orderId);
+            const result = await service.getOrderPrimaryInsurance(orderId);
 
-          expect(result.source).toBe('ORDER_LEGACY_FK');
-          expect(result.insuranceId).toBe(legacyInsuranceId);
-          expect(result.orderInsurance).toBeUndefined();
-        }),
+            expect(result.source).toBe('ORDER_LEGACY_FK');
+            expect(result.insuranceId).toBe(legacyInsuranceId);
+            expect(result.orderInsurance).toBeUndefined();
+          },
+        ),
         { numRuns: 100 },
       );
     });
@@ -149,16 +166,18 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(arbUuid, async (orderId) => {
           // No junction record
-          (prismaService.orderInsurance.findFirst as jest.Mock).mockResolvedValue(null);
+          (
+            prismaService.orderInsurance.findFirst as jest.Mock
+          ).mockResolvedValue(null);
 
           // No legacy FK
           (prismaService.order.findUnique as jest.Mock).mockResolvedValue({
             insuranceId: null,
           });
 
-          await expect(service.getOrderPrimaryInsurance(orderId)).rejects.toThrow(
-            NotFoundException,
-          );
+          await expect(
+            service.getOrderPrimaryInsurance(orderId),
+          ).rejects.toThrow(NotFoundException);
         }),
         { numRuns: 100 },
       );
@@ -173,14 +192,16 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(arbUuid, async (orderId) => {
           // No junction record
-          (prismaService.orderInsurance.findFirst as jest.Mock).mockResolvedValue(null);
+          (
+            prismaService.orderInsurance.findFirst as jest.Mock
+          ).mockResolvedValue(null);
 
           // Order not found
           (prismaService.order.findUnique as jest.Mock).mockResolvedValue(null);
 
-          await expect(service.getOrderPrimaryInsurance(orderId)).rejects.toThrow(
-            NotFoundException,
-          );
+          await expect(
+            service.getOrderPrimaryInsurance(orderId),
+          ).rejects.toThrow(NotFoundException);
         }),
         { numRuns: 100 },
       );
@@ -214,7 +235,9 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
             });
 
             // OrderInsurance PRIMARY exists matching insurance
-            (prismaService.orderInsurance.findFirst as jest.Mock).mockResolvedValue({
+            (
+              prismaService.orderInsurance.findFirst as jest.Mock
+            ).mockResolvedValue({
               id: 'oi-id',
               orderId,
               insuranceId,
@@ -235,7 +258,9 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
             });
 
             // Patient has the insurance as active enrollment
-            (prismaService.patientInsurance.findMany as jest.Mock).mockResolvedValue([
+            (
+              prismaService.patientInsurance.findMany as jest.Mock
+            ).mockResolvedValue([
               {
                 id: 'pi-id',
                 patientId,
@@ -272,7 +297,13 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
           arbUuid,
           arbUuid,
           arbUuid,
-          async (orderId, visitId, patientId, orderInsuranceId, visitInsuranceId) => {
+          async (
+            orderId,
+            visitId,
+            patientId,
+            orderInsuranceId,
+            visitInsuranceId,
+          ) => {
             // Ensure they differ to exercise the mismatch case
             fc.pre(orderInsuranceId !== visitInsuranceId);
 
@@ -288,7 +319,9 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
             });
 
             // OrderInsurance PRIMARY exists with different insurance than visit
-            (prismaService.orderInsurance.findFirst as jest.Mock).mockResolvedValue({
+            (
+              prismaService.orderInsurance.findFirst as jest.Mock
+            ).mockResolvedValue({
               id: 'oi-id',
               orderId,
               insuranceId: orderInsuranceId,
@@ -331,7 +364,13 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
           arbUuid,
           arbUuid,
           arbUuid,
-          async (orderId, visitId, patientId, sharedInsuranceId, otherInsuranceId) => {
+          async (
+            orderId,
+            visitId,
+            patientId,
+            sharedInsuranceId,
+            otherInsuranceId,
+          ) => {
             // Ensure the patient's active enrollments don't include the shared insurance
             fc.pre(sharedInsuranceId !== otherInsuranceId);
 
@@ -347,7 +386,9 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
             });
 
             // OrderInsurance PRIMARY matches visit insurance
-            (prismaService.orderInsurance.findFirst as jest.Mock).mockResolvedValue({
+            (
+              prismaService.orderInsurance.findFirst as jest.Mock
+            ).mockResolvedValue({
               id: 'oi-id',
               orderId,
               insuranceId: sharedInsuranceId,
@@ -368,7 +409,9 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
             });
 
             // Patient's active enrollments do NOT include the shared insurance
-            (prismaService.patientInsurance.findMany as jest.Mock).mockResolvedValue([
+            (
+              prismaService.patientInsurance.findMany as jest.Mock
+            ).mockResolvedValue([
               {
                 id: 'pi-id',
                 patientId,
@@ -402,25 +445,31 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
      */
     it('returns junction insuranceId when priority=1 record exists', async () => {
       await fc.assert(
-        fc.asyncProperty(arbUuid, arbUuid, async (patientId, junctionInsuranceId) => {
-          // Junction record with priority=1 exists
-          (prismaService.patientInsurance.findFirst as jest.Mock).mockResolvedValue({
-            id: 'pi-id',
-            patientId,
-            insuranceId: junctionInsuranceId,
-            priority: 1,
-            isActive: true,
-            validFrom: null,
-            validUntil: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            insurance: { id: junctionInsuranceId, name: 'Test Insurance' },
-          });
+        fc.asyncProperty(
+          arbUuid,
+          arbUuid,
+          async (patientId, junctionInsuranceId) => {
+            // Junction record with priority=1 exists
+            (
+              prismaService.patientInsurance.findFirst as jest.Mock
+            ).mockResolvedValue({
+              id: 'pi-id',
+              patientId,
+              insuranceId: junctionInsuranceId,
+              priority: 1,
+              isActive: true,
+              validFrom: null,
+              validUntil: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              insurance: { id: junctionInsuranceId, name: 'Test Insurance' },
+            });
 
-          const result = await service.resolvePatientInsuranceId(patientId);
+            const result = await service.resolvePatientInsuranceId(patientId);
 
-          expect(result).toBe(junctionInsuranceId);
-        }),
+            expect(result).toBe(junctionInsuranceId);
+          },
+        ),
         { numRuns: 100 },
       );
     });
@@ -433,19 +482,25 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
      */
     it('returns legacy FK value when no junction record exists', async () => {
       await fc.assert(
-        fc.asyncProperty(arbUuid, arbUuid, async (patientId, legacyInsuranceId) => {
-          // No junction record with priority=1
-          (prismaService.patientInsurance.findFirst as jest.Mock).mockResolvedValue(null);
+        fc.asyncProperty(
+          arbUuid,
+          arbUuid,
+          async (patientId, legacyInsuranceId) => {
+            // No junction record with priority=1
+            (
+              prismaService.patientInsurance.findFirst as jest.Mock
+            ).mockResolvedValue(null);
 
-          // Legacy FK exists
-          (prismaService.patient.findUnique as jest.Mock).mockResolvedValue({
-            insuranceId: legacyInsuranceId,
-          });
+            // Legacy FK exists
+            (prismaService.patient.findUnique as jest.Mock).mockResolvedValue({
+              insuranceId: legacyInsuranceId,
+            });
 
-          const result = await service.resolvePatientInsuranceId(patientId);
+            const result = await service.resolvePatientInsuranceId(patientId);
 
-          expect(result).toBe(legacyInsuranceId);
-        }),
+            expect(result).toBe(legacyInsuranceId);
+          },
+        ),
         { numRuns: 100 },
       );
     });
@@ -460,7 +515,9 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(arbUuid, async (patientId) => {
           // No junction record
-          (prismaService.patientInsurance.findFirst as jest.Mock).mockResolvedValue(null);
+          (
+            prismaService.patientInsurance.findFirst as jest.Mock
+          ).mockResolvedValue(null);
 
           // No legacy FK
           (prismaService.patient.findUnique as jest.Mock).mockResolvedValue({
@@ -492,7 +549,9 @@ describe('Insurance Consolidation Cascade & Fallback Property Tests', () => {
             fc.pre(junctionInsuranceId !== legacyInsuranceId);
 
             // Junction record with priority=1 exists
-            (prismaService.patientInsurance.findFirst as jest.Mock).mockResolvedValue({
+            (
+              prismaService.patientInsurance.findFirst as jest.Mock
+            ).mockResolvedValue({
               id: 'pi-id',
               patientId,
               insuranceId: junctionInsuranceId,

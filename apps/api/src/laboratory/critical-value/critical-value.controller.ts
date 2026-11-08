@@ -43,7 +43,9 @@ export class CriticalValueController {
 
   @Get('unacknowledged')
   @Roles(Role.DOKTER, Role.ANALIS, Role.ADMIN, Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Get active (unacknowledged) critical value alerts for dashboard' })
+  @ApiOperation({
+    summary: 'Get active (unacknowledged) critical value alerts for dashboard',
+  })
   async getUnacknowledged(@Query('clinicId') clinicId?: string) {
     return this.criticalValueService.getUnacknowledged(clinicId);
   }

@@ -30,7 +30,10 @@ export class PdfGeneratorService {
    * Includes: clinic header, patient info, test results table with
    * reference ranges and flag indicators, addendums, and report version in footer.
    */
-  async generateReport(order: OrderWithDetails, options?: { accreditationNumber?: string }): Promise<Buffer> {
+  async generateReport(
+    order: OrderWithDetails,
+    options?: { accreditationNumber?: string },
+  ): Promise<Buffer> {
     this.logger.log(`Generating PDF report for order ${order.orderNumber}`);
 
     return new Promise<Buffer>((resolve, reject) => {
@@ -82,10 +85,16 @@ export class PdfGeneratorService {
       .text(clinicName, { align: 'center' });
 
     if (clinicAddress) {
-      doc.fontSize(9).font('Helvetica').text(clinicAddress, { align: 'center' });
+      doc
+        .fontSize(9)
+        .font('Helvetica')
+        .text(clinicAddress, { align: 'center' });
     }
     if (clinicPhone) {
-      doc.fontSize(9).font('Helvetica').text(`Tel: ${clinicPhone}`, { align: 'center' });
+      doc
+        .fontSize(9)
+        .font('Helvetica')
+        .text(`Tel: ${clinicPhone}`, { align: 'center' });
     }
 
     doc.moveDown(0.5);
@@ -110,7 +119,10 @@ export class PdfGeneratorService {
     doc.moveDown(0.5);
   }
 
-  private renderPatientInfo(doc: PDFKit.PDFDocument, order: OrderWithDetails): void {
+  private renderPatientInfo(
+    doc: PDFKit.PDFDocument,
+    order: OrderWithDetails,
+  ): void {
     const patient = order.patient;
     const leftCol = 50;
     const rightCol = 300;
@@ -124,7 +136,9 @@ export class PdfGeneratorService {
     doc.text(`Nama        : ${patient.name}`, leftCol, doc.y + 4);
     doc.text(`MRN         : ${patient.mrn}`);
     doc.text(`Tgl Lahir   : ${this.formatDate(patient.dateOfBirth)}`);
-    doc.text(`Jenis Kelamin: ${patient.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}`);
+    doc.text(
+      `Jenis Kelamin: ${patient.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}`,
+    );
 
     const leftEndY = doc.y;
 
@@ -160,7 +174,10 @@ export class PdfGeneratorService {
     doc.moveDown(0.5);
   }
 
-  private renderResultsTable(doc: PDFKit.PDFDocument, order: OrderWithDetails): void {
+  private renderResultsTable(
+    doc: PDFKit.PDFDocument,
+    order: OrderWithDetails,
+  ): void {
     doc.fontSize(10).font('Helvetica-Bold').text('Hasil Pemeriksaan:', 50);
     doc.moveDown(0.5);
 
@@ -192,7 +209,9 @@ export class PdfGeneratorService {
     doc.text('Hasil', colX.result, headerY, { width: colWidths.result });
     doc.text('Flag', colX.flag, headerY, { width: colWidths.flag });
     doc.text('Satuan', colX.unit, headerY, { width: colWidths.unit });
-    doc.text('Nilai Rujukan', colX.refRange, headerY, { width: colWidths.refRange });
+    doc.text('Nilai Rujukan', colX.refRange, headerY, {
+      width: colWidths.refRange,
+    });
 
     doc.y = headerY + 18;
 
@@ -218,7 +237,10 @@ export class PdfGeneratorService {
       // Alternating row background
       const rowIndex = order.orderDetails.indexOf(detail);
       if (rowIndex % 2 === 1) {
-        doc.rect(colX.test - 2, rowY - 1, 499, 14).fillColor('#fafafa').fill();
+        doc
+          .rect(colX.test - 2, rowY - 1, 499, 14)
+          .fillColor('#fafafa')
+          .fill();
         doc.fillColor('#000000');
       }
 
@@ -234,7 +256,9 @@ export class PdfGeneratorService {
       // Flag with color indicator
       if (flag && flag !== 'NORMAL') {
         doc.fillColor(flagColor);
-        doc.text(this.formatFlag(flag), colX.flag, rowY, { width: colWidths.flag });
+        doc.text(this.formatFlag(flag), colX.flag, rowY, {
+          width: colWidths.flag,
+        });
         doc.fillColor('#000000');
       } else {
         doc.text('', colX.flag, rowY, { width: colWidths.flag });
@@ -249,7 +273,10 @@ export class PdfGeneratorService {
     doc.moveDown(1);
   }
 
-  private renderInterpretation(doc: PDFKit.PDFDocument, order: OrderWithDetails): void {
+  private renderInterpretation(
+    doc: PDFKit.PDFDocument,
+    order: OrderWithDetails,
+  ): void {
     if (!order.interpretation) return;
 
     doc.fontSize(9).font('Helvetica-Bold').text('Interpretasi:', 50);
@@ -257,7 +284,10 @@ export class PdfGeneratorService {
     doc.moveDown(1);
   }
 
-  private renderAddendums(doc: PDFKit.PDFDocument, order: OrderWithDetails): void {
+  private renderAddendums(
+    doc: PDFKit.PDFDocument,
+    order: OrderWithDetails,
+  ): void {
     const addendums = order.addendums;
     if (!addendums || addendums.length === 0) return;
 
@@ -298,7 +328,11 @@ export class PdfGeneratorService {
     }
   }
 
-  private renderFooter(doc: PDFKit.PDFDocument, order: OrderWithDetails, accreditationNumber?: string): void {
+  private renderFooter(
+    doc: PDFKit.PDFDocument,
+    order: OrderWithDetails,
+    accreditationNumber?: string,
+  ): void {
     const pages = doc.bufferedPageRange();
     const totalPages = pages.count;
 
@@ -318,28 +352,22 @@ export class PdfGeneratorService {
         .fontSize(7)
         .font('Helvetica')
         .fillColor('#666666')
-        .text(
-          `Report Version: v${order.reportVersion ?? 1}`,
-          50,
-          765,
-          { width: 200, align: 'left' },
-        );
+        .text(`Report Version: v${order.reportVersion ?? 1}`, 50, 765, {
+          width: 200,
+          align: 'left',
+        });
 
       // Footer center: page number
-      doc.text(
-        `Halaman ${i + 1} dari ${totalPages}`,
-        200,
-        765,
-        { width: 150, align: 'center' },
-      );
+      doc.text(`Halaman ${i + 1} dari ${totalPages}`, 200, 765, {
+        width: 150,
+        align: 'center',
+      });
 
       // Footer right: generated timestamp
-      doc.text(
-        `Dicetak: ${this.formatDateTime(new Date())}`,
-        350,
-        765,
-        { width: 195, align: 'right' },
-      );
+      doc.text(`Dicetak: ${this.formatDateTime(new Date())}`, 350, 765, {
+        width: 195,
+        align: 'right',
+      });
 
       // Disclaimer + Accreditation
       const disclaimer = accreditationNumber
@@ -348,12 +376,7 @@ export class PdfGeneratorService {
       doc
         .fontSize(6)
         .fillColor('#999999')
-        .text(
-          disclaimer,
-          50,
-          778,
-          { width: 495, align: 'center' },
-        );
+        .text(disclaimer, 50, 778, { width: 495, align: 'center' });
     }
 
     // Reset fill color

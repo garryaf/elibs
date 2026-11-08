@@ -87,7 +87,10 @@ describe('InsuranceMigrationService Property Tests', () => {
         }),
         create: jest.fn().mockImplementation(({ data }) => {
           patientInsuranceCreated.push(data);
-          return Promise.resolve({ id: `pi-${patientInsuranceCreated.length}`, ...data });
+          return Promise.resolve({
+            id: `pi-${patientInsuranceCreated.length}`,
+            ...data,
+          });
         }),
         update: jest.fn().mockImplementation(({ where, data }) => {
           patientInsuranceUpdated.push({ where, data });
@@ -98,9 +101,9 @@ describe('InsuranceMigrationService Property Tests', () => {
         findMany: jest.fn().mockResolvedValue(patientsToMigrate),
       },
       insurance: {
-        findMany: jest.fn().mockResolvedValue(
-          validInsuranceIds.map((id) => ({ id })),
-        ),
+        findMany: jest
+          .fn()
+          .mockResolvedValue(validInsuranceIds.map((id) => ({ id }))),
       },
       order: {
         findMany: jest.fn().mockResolvedValue(ordersToMigrate),
@@ -108,14 +111,21 @@ describe('InsuranceMigrationService Property Tests', () => {
       orderInsurance: {
         create: jest.fn().mockImplementation(({ data }) => {
           orderInsuranceCreated.push(data);
-          return Promise.resolve({ id: `oi-${orderInsuranceCreated.length}`, ...data });
+          return Promise.resolve({
+            id: `oi-${orderInsuranceCreated.length}`,
+            ...data,
+          });
         }),
       },
     };
 
-    return { tx, patientInsuranceCreated, orderInsuranceCreated, patientInsuranceUpdated };
+    return {
+      tx,
+      patientInsuranceCreated,
+      orderInsuranceCreated,
+      patientInsuranceUpdated,
+    };
   }
-
 
   // --- Property 3: Patient migration preserves legacy data in junction ---
 
@@ -139,7 +149,9 @@ describe('InsuranceMigrationService Property Tests', () => {
           ),
           async (patients) => {
             // All patient insuranceIds are valid
-            const validInsuranceIds = [...new Set(patients.map((p) => p.insuranceId))];
+            const validInsuranceIds = [
+              ...new Set(patients.map((p) => p.insuranceId)),
+            ];
 
             const { tx, patientInsuranceCreated } = createTxProxy({
               patientsToMigrate: patients,
@@ -147,7 +159,9 @@ describe('InsuranceMigrationService Property Tests', () => {
               ordersToMigrate: [],
             });
 
-            mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(tx));
+            mockPrisma.$transaction.mockImplementation(async (cb: any) =>
+              cb(tx),
+            );
 
             const report = await service.migrateForward();
 
@@ -192,7 +206,9 @@ describe('InsuranceMigrationService Property Tests', () => {
               ordersToMigrate: [],
             });
 
-            mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(tx));
+            mockPrisma.$transaction.mockImplementation(async (cb: any) =>
+              cb(tx),
+            );
 
             const report = await service.migrateForward();
 
@@ -211,7 +227,6 @@ describe('InsuranceMigrationService Property Tests', () => {
       );
     });
   });
-
 
   // --- Property 8: Order migration copies legacy FK to junction ---
 
@@ -234,7 +249,9 @@ describe('InsuranceMigrationService Property Tests', () => {
             { minLength: 1, maxLength: 10 },
           ),
           async (orders) => {
-            const validInsuranceIds = [...new Set(orders.map((o) => o.insuranceId))];
+            const validInsuranceIds = [
+              ...new Set(orders.map((o) => o.insuranceId)),
+            ];
 
             const { tx, orderInsuranceCreated } = createTxProxy({
               patientsToMigrate: [],
@@ -242,7 +259,9 @@ describe('InsuranceMigrationService Property Tests', () => {
               validInsuranceIds,
             });
 
-            mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(tx));
+            mockPrisma.$transaction.mockImplementation(async (cb: any) =>
+              cb(tx),
+            );
 
             const report = await service.migrateForward();
 
@@ -286,7 +305,9 @@ describe('InsuranceMigrationService Property Tests', () => {
               validInsuranceIds: [], // No valid insurances
             });
 
-            mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(tx));
+            mockPrisma.$transaction.mockImplementation(async (cb: any) =>
+              cb(tx),
+            );
 
             const report = await service.migrateForward();
 
@@ -303,7 +324,6 @@ describe('InsuranceMigrationService Property Tests', () => {
       );
     });
   });
-
 
   // --- Property 14: Priority uniqueness per patient ---
 
@@ -324,14 +344,17 @@ describe('InsuranceMigrationService Property Tests', () => {
           fc.integer({ min: 2, max: 5 }), // number of records with same priority
           async (patientId, recordCount) => {
             // Create records all with the same priority (duplicates)
-            const duplicateRecords = Array.from({ length: recordCount }, (_, i) => ({
-              id: `record-${i}-${patientId.slice(0, 8)}`,
-              patientId,
-              insuranceId: `ins-${i}`,
-              priority: 1, // All same priority
-              isActive: true,
-              createdAt: new Date(2024, 0, i + 1), // Sequential createdAt
-            }));
+            const duplicateRecords = Array.from(
+              { length: recordCount },
+              (_, i) => ({
+                id: `record-${i}-${patientId.slice(0, 8)}`,
+                patientId,
+                insuranceId: `ins-${i}`,
+                priority: 1, // All same priority
+                isActive: true,
+                createdAt: new Date(2024, 0, i + 1), // Sequential createdAt
+              }),
+            );
 
             const updatedRecords: any[] = [];
 
@@ -342,14 +365,25 @@ describe('InsuranceMigrationService Property Tests', () => {
             });
 
             // Override specific mocks for priority resolution
-            tx.$queryRaw = jest.fn().mockResolvedValue([{ patient_id: patientId }]);
-            tx.patientInsurance.findMany = jest.fn().mockResolvedValue(duplicateRecords);
-            tx.patientInsurance.update = jest.fn().mockImplementation(({ where, data }) => {
-              updatedRecords.push({ id: where.id, newPriority: data.priority });
-              return Promise.resolve({ id: where.id, ...data });
-            });
+            tx.$queryRaw = jest
+              .fn()
+              .mockResolvedValue([{ patient_id: patientId }]);
+            tx.patientInsurance.findMany = jest
+              .fn()
+              .mockResolvedValue(duplicateRecords);
+            tx.patientInsurance.update = jest
+              .fn()
+              .mockImplementation(({ where, data }) => {
+                updatedRecords.push({
+                  id: where.id,
+                  newPriority: data.priority,
+                });
+                return Promise.resolve({ id: where.id, ...data });
+              });
 
-            mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(tx));
+            mockPrisma.$transaction.mockImplementation(async (cb: any) =>
+              cb(tx),
+            );
 
             const report = await service.migrateForward();
 
@@ -373,7 +407,6 @@ describe('InsuranceMigrationService Property Tests', () => {
       );
     });
   });
-
 
   // --- Property 15: Priority migration resolves duplicates sequentially ---
 
@@ -414,14 +447,22 @@ describe('InsuranceMigrationService Property Tests', () => {
               validInsuranceIds: [],
             });
 
-            tx.$queryRaw = jest.fn().mockResolvedValue([{ patient_id: patientId }]);
-            tx.patientInsurance.findMany = jest.fn().mockResolvedValue(sortedRecords);
-            tx.patientInsurance.update = jest.fn().mockImplementation(({ where, data }) => {
-              updates.push({ id: where.id, newPriority: data.priority });
-              return Promise.resolve({ id: where.id, ...data });
-            });
+            tx.$queryRaw = jest
+              .fn()
+              .mockResolvedValue([{ patient_id: patientId }]);
+            tx.patientInsurance.findMany = jest
+              .fn()
+              .mockResolvedValue(sortedRecords);
+            tx.patientInsurance.update = jest
+              .fn()
+              .mockImplementation(({ where, data }) => {
+                updates.push({ id: where.id, newPriority: data.priority });
+                return Promise.resolve({ id: where.id, ...data });
+              });
 
-            mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(tx));
+            mockPrisma.$transaction.mockImplementation(async (cb: any) =>
+              cb(tx),
+            );
 
             await service.migrateForward();
 
@@ -429,13 +470,17 @@ describe('InsuranceMigrationService Property Tests', () => {
             // The first record (sorted by createdAt) gets priority=1 (unchanged),
             // subsequent records get 2, 3, etc.
             for (const update of updates) {
-              const recordIndex = sortedRecords.findIndex((r) => r.id === update.id);
+              const recordIndex = sortedRecords.findIndex(
+                (r) => r.id === update.id,
+              );
               const expectedPriority = recordIndex + 1;
               expect(update.newPriority).toBe(expectedPriority);
             }
 
             // The first record already has priority=1, so it should NOT be updated
-            const firstRecordUpdated = updates.find((u) => u.id === sortedRecords[0].id);
+            const firstRecordUpdated = updates.find(
+              (u) => u.id === sortedRecords[0].id,
+            );
             expect(firstRecordUpdated).toBeUndefined();
           },
         ),
@@ -443,7 +488,6 @@ describe('InsuranceMigrationService Property Tests', () => {
       );
     });
   });
-
 
   // --- Property 17: Migration report completeness ---
 
@@ -474,7 +518,9 @@ describe('InsuranceMigrationService Property Tests', () => {
               validInsuranceIds,
             });
 
-            mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(tx));
+            mockPrisma.$transaction.mockImplementation(async (cb: any) =>
+              cb(tx),
+            );
 
             const report = await service.migrateForward();
 
@@ -514,7 +560,9 @@ describe('InsuranceMigrationService Property Tests', () => {
               validInsuranceIds,
             });
 
-            mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(tx));
+            mockPrisma.$transaction.mockImplementation(async (cb: any) =>
+              cb(tx),
+            );
 
             const report = await service.migrateForward();
 
@@ -528,7 +576,6 @@ describe('InsuranceMigrationService Property Tests', () => {
       );
     });
   });
-
 
   // --- Property 18: Migration preserves existing junction records ---
 
@@ -562,7 +609,9 @@ describe('InsuranceMigrationService Property Tests', () => {
               validInsuranceIds,
             });
 
-            mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(tx));
+            mockPrisma.$transaction.mockImplementation(async (cb: any) =>
+              cb(tx),
+            );
 
             await service.migrateForward();
 
@@ -609,7 +658,9 @@ describe('InsuranceMigrationService Property Tests', () => {
               validInsuranceIds,
             });
 
-            mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(tx));
+            mockPrisma.$transaction.mockImplementation(async (cb: any) =>
+              cb(tx),
+            );
 
             await service.migrateForward();
 
@@ -624,7 +675,6 @@ describe('InsuranceMigrationService Property Tests', () => {
       );
     });
   });
-
 
   // --- Property 19: Rollback removes only batch-marked records ---
 
@@ -658,7 +708,9 @@ describe('InsuranceMigrationService Property Tests', () => {
               },
             };
 
-            mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(txProxy));
+            mockPrisma.$transaction.mockImplementation(async (cb: any) =>
+              cb(txProxy),
+            );
 
             await service.rollback(batchId);
 
@@ -720,7 +772,9 @@ describe('InsuranceMigrationService Property Tests', () => {
               },
             };
 
-            mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(txProxy));
+            mockPrisma.$transaction.mockImplementation(async (cb: any) =>
+              cb(txProxy),
+            );
 
             await service.rollback(batchId1);
 

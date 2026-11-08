@@ -49,8 +49,7 @@ export class DashboardService {
     });
 
     const tatMinutes = completedOrders.map(
-      (o) =>
-        (o.approvedAt!.getTime() - o.sampleCollectedAt!.getTime()) / 60000,
+      (o) => (o.approvedAt!.getTime() - o.sampleCollectedAt!.getTime()) / 60000,
     );
     const averageTat =
       tatMinutes.length > 0
@@ -169,9 +168,7 @@ export class DashboardService {
         select: { id: true, name: true },
       });
 
-      const nameMap = new Map(
-        kabupatenKotaRecords.map((r) => [r.id, r.name]),
-      );
+      const nameMap = new Map(kabupatenKotaRecords.map((r) => [r.id, r.name]));
 
       return groups.map((g) => ({
         id: g.kabupatenKotaId!,
@@ -326,7 +323,9 @@ export class DashboardService {
     startOfYesterday.setDate(startOfYesterday.getDate() - 1);
 
     const startOfThisWeek = new Date(startOfToday);
-    startOfThisWeek.setDate(startOfThisWeek.getDate() - startOfThisWeek.getDay());
+    startOfThisWeek.setDate(
+      startOfThisWeek.getDate() - startOfThisWeek.getDay(),
+    );
 
     const startOfLastWeek = new Date(startOfThisWeek);
     startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
@@ -345,13 +344,34 @@ export class DashboardService {
       revenueLastMonth,
     ] = await Promise.all([
       this.prisma.order.count({ where: { createdAt: { gte: startOfToday } } }),
-      this.prisma.order.count({ where: { createdAt: { gte: startOfYesterday, lt: startOfToday } } }),
-      this.prisma.order.aggregate({ _sum: { amountPaid: true }, where: { paidAt: { gte: startOfToday } } }),
-      this.prisma.order.aggregate({ _sum: { amountPaid: true }, where: { paidAt: { gte: startOfYesterday, lt: startOfToday } } }),
-      this.prisma.patient.count({ where: { createdAt: { gte: startOfThisWeek }, deletedAt: null } }),
-      this.prisma.patient.count({ where: { createdAt: { gte: startOfLastWeek, lt: startOfThisWeek }, deletedAt: null } }),
-      this.prisma.order.aggregate({ _sum: { amountPaid: true }, where: { paidAt: { gte: startOfThisMonth } } }),
-      this.prisma.order.aggregate({ _sum: { amountPaid: true }, where: { paidAt: { gte: startOfLastMonth, lt: startOfThisMonth } } }),
+      this.prisma.order.count({
+        where: { createdAt: { gte: startOfYesterday, lt: startOfToday } },
+      }),
+      this.prisma.order.aggregate({
+        _sum: { amountPaid: true },
+        where: { paidAt: { gte: startOfToday } },
+      }),
+      this.prisma.order.aggregate({
+        _sum: { amountPaid: true },
+        where: { paidAt: { gte: startOfYesterday, lt: startOfToday } },
+      }),
+      this.prisma.patient.count({
+        where: { createdAt: { gte: startOfThisWeek }, deletedAt: null },
+      }),
+      this.prisma.patient.count({
+        where: {
+          createdAt: { gte: startOfLastWeek, lt: startOfThisWeek },
+          deletedAt: null,
+        },
+      }),
+      this.prisma.order.aggregate({
+        _sum: { amountPaid: true },
+        where: { paidAt: { gte: startOfThisMonth } },
+      }),
+      this.prisma.order.aggregate({
+        _sum: { amountPaid: true },
+        where: { paidAt: { gte: startOfLastMonth, lt: startOfThisMonth } },
+      }),
     ]);
 
     const revToday = Number(revenueToday._sum.amountPaid ?? 0);
@@ -363,22 +383,39 @@ export class DashboardService {
       orders: {
         today: ordersToday,
         yesterday: ordersYesterday,
-        delta: ordersYesterday > 0 ? Math.round(((ordersToday - ordersYesterday) / ordersYesterday) * 100) : 0,
+        delta:
+          ordersYesterday > 0
+            ? Math.round(
+                ((ordersToday - ordersYesterday) / ordersYesterday) * 100,
+              )
+            : 0,
       },
       revenue: {
         today: revToday,
         yesterday: revYesterday,
-        delta: revYesterday > 0 ? Math.round(((revToday - revYesterday) / revYesterday) * 100) : 0,
+        delta:
+          revYesterday > 0
+            ? Math.round(((revToday - revYesterday) / revYesterday) * 100)
+            : 0,
       },
       patients: {
         thisWeek: patientsThisWeek,
         lastWeek: patientsLastWeek,
-        delta: patientsLastWeek > 0 ? Math.round(((patientsThisWeek - patientsLastWeek) / patientsLastWeek) * 100) : 0,
+        delta:
+          patientsLastWeek > 0
+            ? Math.round(
+                ((patientsThisWeek - patientsLastWeek) / patientsLastWeek) *
+                  100,
+              )
+            : 0,
       },
       monthlyRevenue: {
         thisMonth: revThisMonth,
         lastMonth: revLastMonth,
-        delta: revLastMonth > 0 ? Math.round(((revThisMonth - revLastMonth) / revLastMonth) * 100) : 0,
+        delta:
+          revLastMonth > 0
+            ? Math.round(((revThisMonth - revLastMonth) / revLastMonth) * 100)
+            : 0,
       },
     };
   }
@@ -413,7 +450,12 @@ export class DashboardService {
         slaCompliance: 100,
         ordersWithinSla: 0,
         ordersExceedingSla: 0,
-        phases: { registration_to_sample: 0, sample_to_verification: 0, verification_to_approval: 0, total: 0 },
+        phases: {
+          registration_to_sample: 0,
+          sample_to_verification: 0,
+          verification_to_approval: 0,
+          total: 0,
+        },
       };
     }
 
@@ -427,22 +469,26 @@ export class DashboardService {
     let withinSla = 0;
 
     for (const o of orders) {
-      const totalMin = (o.approvedAt!.getTime() - o.createdAt.getTime()) / 60000;
+      const totalMin =
+        (o.approvedAt!.getTime() - o.createdAt.getTime()) / 60000;
       sumTotal += totalMin;
 
       if (totalMin <= slaTargetMinutes) withinSla++;
 
       if (o.sampleCollectedAt) {
-        const regToSample = (o.sampleCollectedAt.getTime() - o.createdAt.getTime()) / 60000;
+        const regToSample =
+          (o.sampleCollectedAt.getTime() - o.createdAt.getTime()) / 60000;
         sumRegToSample += regToSample;
         countRegToSample++;
 
         if (o.verifiedAt) {
-          const sampleToVerify = (o.verifiedAt.getTime() - o.sampleCollectedAt.getTime()) / 60000;
+          const sampleToVerify =
+            (o.verifiedAt.getTime() - o.sampleCollectedAt.getTime()) / 60000;
           sumSampleToVerify += sampleToVerify;
           countSampleToVerify++;
 
-          const verifyToApproval = (o.approvedAt!.getTime() - o.verifiedAt.getTime()) / 60000;
+          const verifyToApproval =
+            (o.approvedAt!.getTime() - o.verifiedAt.getTime()) / 60000;
           sumVerifyToApproval += verifyToApproval;
           countVerifyToApproval++;
         }
@@ -456,9 +502,18 @@ export class DashboardService {
       ordersWithinSla: withinSla,
       ordersExceedingSla: orders.length - withinSla,
       phases: {
-        registration_to_sample: countRegToSample > 0 ? Math.round(sumRegToSample / countRegToSample) : 0,
-        sample_to_verification: countSampleToVerify > 0 ? Math.round(sumSampleToVerify / countSampleToVerify) : 0,
-        verification_to_approval: countVerifyToApproval > 0 ? Math.round(sumVerifyToApproval / countVerifyToApproval) : 0,
+        registration_to_sample:
+          countRegToSample > 0
+            ? Math.round(sumRegToSample / countRegToSample)
+            : 0,
+        sample_to_verification:
+          countSampleToVerify > 0
+            ? Math.round(sumSampleToVerify / countSampleToVerify)
+            : 0,
+        verification_to_approval:
+          countVerifyToApproval > 0
+            ? Math.round(sumVerifyToApproval / countVerifyToApproval)
+            : 0,
         total: Math.round(sumTotal / orders.length),
       },
     };
@@ -491,7 +546,10 @@ export class DashboardService {
     const data = results
       .map((r) => ({
         userId: r.verifiedBy!,
-        name: userMap.get(r.verifiedBy!)?.name ?? userMap.get(r.verifiedBy!)?.email ?? 'Unknown',
+        name:
+          userMap.get(r.verifiedBy!)?.name ??
+          userMap.get(r.verifiedBy!)?.email ??
+          'Unknown',
         role: userMap.get(r.verifiedBy!)?.role ?? 'ANALIS',
         orderCount: r._count.id,
       }))
@@ -512,26 +570,30 @@ export class DashboardService {
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const [paidAgg, totalAgg, discountAgg, outstandingCount] = await Promise.all([
-      this.prisma.order.aggregate({
-        _sum: { amountPaid: true },
-        where: { paidAt: { gte: startOfMonth } },
-      }),
-      this.prisma.order.aggregate({
-        _sum: { totalAmount: true },
-        where: { createdAt: { gte: startOfMonth } },
-      }),
-      this.prisma.order.aggregate({
-        _sum: { discountAmount: true },
-        where: { createdAt: { gte: startOfMonth }, discountAmount: { not: null } },
-      }),
-      this.prisma.order.count({
-        where: {
-          createdAt: { gte: startOfMonth },
-          status: { in: [OrderStatus.PENDING_PAYMENT] },
-        },
-      }),
-    ]);
+    const [paidAgg, totalAgg, discountAgg, outstandingCount] =
+      await Promise.all([
+        this.prisma.order.aggregate({
+          _sum: { amountPaid: true },
+          where: { paidAt: { gte: startOfMonth } },
+        }),
+        this.prisma.order.aggregate({
+          _sum: { totalAmount: true },
+          where: { createdAt: { gte: startOfMonth } },
+        }),
+        this.prisma.order.aggregate({
+          _sum: { discountAmount: true },
+          where: {
+            createdAt: { gte: startOfMonth },
+            discountAmount: { not: null },
+          },
+        }),
+        this.prisma.order.count({
+          where: {
+            createdAt: { gte: startOfMonth },
+            status: { in: [OrderStatus.PENDING_PAYMENT] },
+          },
+        }),
+      ]);
 
     const totalBilled = Number(totalAgg._sum.totalAmount ?? 0);
     const totalPaid = Number(paidAgg._sum.amountPaid ?? 0);

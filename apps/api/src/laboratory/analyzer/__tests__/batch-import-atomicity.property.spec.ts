@@ -319,7 +319,9 @@ describe('Batch Import Atomicity Property Tests', () => {
             expect(result.totalRows).toBe(allRows.length);
 
             // Error count should be at least the number of pre-validation invalid rows
-            expect(result.errorCount).toBeGreaterThanOrEqual(invalidRows.length);
+            expect(result.errorCount).toBeGreaterThanOrEqual(
+              invalidRows.length,
+            );
 
             // Success count should be at most the number of valid rows
             expect(result.successCount).toBeLessThanOrEqual(validRows.length);

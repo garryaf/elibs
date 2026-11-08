@@ -195,11 +195,17 @@ export class EmailService {
   /**
    * Sends a test email to verify SMTP configuration.
    */
-  async sendTestEmail(recipientEmail: string): Promise<{ success: boolean; message: string }> {
+  async sendTestEmail(
+    recipientEmail: string,
+  ): Promise<{ success: boolean; message: string }> {
     const config = await this.getSmtpConfig();
 
     if (!config) {
-      return { success: false, message: 'SMTP belum dikonfigurasi. Silakan isi pengaturan SMTP terlebih dahulu.' };
+      return {
+        success: false,
+        message:
+          'SMTP belum dikonfigurasi. Silakan isi pengaturan SMTP terlebih dahulu.',
+      };
     }
 
     try {
@@ -227,7 +233,10 @@ export class EmailService {
         `,
       });
 
-      return { success: true, message: `Email test berhasil dikirim ke ${recipientEmail}` };
+      return {
+        success: true,
+        message: `Email test berhasil dikirim ke ${recipientEmail}`,
+      };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       return { success: false, message: `Gagal mengirim email: ${message}` };

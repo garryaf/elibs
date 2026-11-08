@@ -86,9 +86,9 @@ describe('Self-Delete and Last Admin Protection Property Tests', () => {
             });
 
             // Act & Assert: self-delete should always throw 403
-            await expect(
-              service.softDelete(userId, userId),
-            ).rejects.toThrow(ForbiddenException);
+            await expect(service.softDelete(userId, userId)).rejects.toThrow(
+              ForbiddenException,
+            );
           },
         ),
         { numRuns: 100 },
@@ -174,7 +174,9 @@ describe('Self-Delete and Last Admin Protection Property Tests', () => {
             });
 
             // Mock count: other active SUPER_ADMINs exist
-            (prismaService.user.count as jest.Mock).mockResolvedValue(otherSuperAdminCount);
+            (prismaService.user.count as jest.Mock).mockResolvedValue(
+              otherSuperAdminCount,
+            );
 
             // Mock update: soft-delete succeeds
             (prismaService.user.update as jest.Mock).mockResolvedValue({
@@ -207,7 +209,9 @@ describe('Self-Delete and Last Admin Protection Property Tests', () => {
      * **Validates: Requirements 4.3**
      */
     it('deleting a non-SUPER_ADMIN user always succeeds (last-admin check not applied)', async () => {
-      const nonSuperAdminRoles = Object.values(Role).filter(r => r !== Role.SUPER_ADMIN);
+      const nonSuperAdminRoles = Object.values(Role).filter(
+        (r) => r !== Role.SUPER_ADMIN,
+      );
 
       await fc.assert(
         fc.asyncProperty(

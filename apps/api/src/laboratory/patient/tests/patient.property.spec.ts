@@ -174,10 +174,7 @@ describe('Patient Property Tests', () => {
       const sequenceArb = fc.integer({ min: 1, max: 9999 });
       // Generate two distinct months
       const distinctMonthsArb = fc
-        .tuple(
-          fc.integer({ min: 1, max: 12 }),
-          fc.integer({ min: 1, max: 12 }),
-        )
+        .tuple(fc.integer({ min: 1, max: 12 }), fc.integer({ min: 1, max: 12 }))
         .filter(([a, b]) => a !== b);
 
       fc.assert(

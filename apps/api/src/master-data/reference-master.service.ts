@@ -49,7 +49,12 @@ export class ReferenceMasterService {
     }
 
     const [data, total] = await Promise.all([
-      model.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      model.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
       model.count({ where }),
     ]);
 

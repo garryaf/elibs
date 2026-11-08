@@ -63,7 +63,10 @@ export class DoctorController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateDoctorDto>) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<CreateDoctorDto>,
+  ) {
     return this.service.update('doctor', id, dto);
   }
 
@@ -101,7 +104,10 @@ export class ClinicController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateClinicDto>) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<CreateClinicDto>,
+  ) {
     return this.service.update('clinic', id, dto);
   }
 
@@ -139,7 +145,10 @@ export class InsuranceController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateInsuranceDto>) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<CreateInsuranceDto>,
+  ) {
     return this.service.update('insurance', id, dto);
   }
 
@@ -177,7 +186,10 @@ export class EquipmentController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateEquipmentDto>) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<CreateEquipmentDto>,
+  ) {
     return this.service.update('equipment', id, dto);
   }
 
@@ -215,7 +227,10 @@ export class ReagentController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateReagentDto>) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<CreateReagentDto>,
+  ) {
     return this.service.update('reagent', id, dto);
   }
 
@@ -235,10 +250,7 @@ export class SampleTypeController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
+  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
     return this.service.findAll('sampleTypeMaster', { page, limit });
   }
 
@@ -252,7 +264,10 @@ export class SampleTypeController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateSampleTypeDto>) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<CreateSampleTypeDto>,
+  ) {
     return this.service.update('sampleTypeMaster', id, dto);
   }
 
@@ -272,10 +287,7 @@ export class MeasurementUnitController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
+  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
     return this.service.findAll('measurementUnit', { page, limit });
   }
 
@@ -289,7 +301,10 @@ export class MeasurementUnitController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateMeasurementUnitDto>) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<CreateMeasurementUnitDto>,
+  ) {
     return this.service.update('measurementUnit', id, dto);
   }
 
@@ -327,7 +342,10 @@ export class MethodController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateMethodDto>) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<CreateMethodDto>,
+  ) {
     return this.service.update('methodMaster', id, dto);
   }
 

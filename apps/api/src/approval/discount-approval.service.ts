@@ -165,7 +165,10 @@ export class DiscountApprovalService {
     }
 
     // Validate approver's role against configured allowed roles
-    await this.validateApproverRole(approverId, request.payload as unknown as DiscountApprovalPayload);
+    await this.validateApproverRole(
+      approverId,
+      request.payload as unknown as DiscountApprovalPayload,
+    );
 
     // Record the approval step
     await this.prisma.approvalStep.create({
@@ -192,7 +195,9 @@ export class DiscountApprovalService {
       });
 
       // Apply discount to order (Requirement 9.3)
-      await this.applyDiscountToOrder(request.payload as unknown as DiscountApprovalPayload);
+      await this.applyDiscountToOrder(
+        request.payload as unknown as DiscountApprovalPayload,
+      );
 
       // Requirement 15.5: Explicit audit log for discount approval
       await this.auditService.log(
@@ -204,8 +209,11 @@ export class DiscountApprovalService {
         {
           status: ApprovalStatus.APPROVED,
           currentLevel: newLevel,
-          discountPercent: (request.payload as unknown as DiscountApprovalPayload).discountPercent,
-          orderId: (request.payload as unknown as DiscountApprovalPayload).orderId,
+          discountPercent: (
+            request.payload as unknown as DiscountApprovalPayload
+          ).discountPercent,
+          orderId: (request.payload as unknown as DiscountApprovalPayload)
+            .orderId,
         },
       );
 
@@ -243,7 +251,9 @@ export class DiscountApprovalService {
    * Get the approved discount details for an order.
    * Returns null if no approved discount request exists.
    */
-  async getApprovedDiscount(orderId: string): Promise<DiscountApprovalPayload | null> {
+  async getApprovedDiscount(
+    orderId: string,
+  ): Promise<DiscountApprovalPayload | null> {
     const approvedRequest = await this.prisma.approvalRequest.findFirst({
       where: {
         requestType: ApprovalType.DISCOUNT,
@@ -299,7 +309,7 @@ export class DiscountApprovalService {
     if (!routingRule.allowedRoles.includes(user.role)) {
       throw new ForbiddenException(
         `User role '${user.role}' is not authorized to approve discounts of ${payload.discountPercent}%. ` +
-        `Allowed roles: ${routingRule.allowedRoles.join(', ')}.`,
+          `Allowed roles: ${routingRule.allowedRoles.join(', ')}.`,
       );
     }
   }
@@ -310,7 +320,9 @@ export class DiscountApprovalService {
    * Requirement 9.3: Populate Order.discountAmount and Order.discountReason
    * from the approved ApprovalRequest payload.
    */
-  private async applyDiscountToOrder(payload: DiscountApprovalPayload): Promise<void> {
+  private async applyDiscountToOrder(
+    payload: DiscountApprovalPayload,
+  ): Promise<void> {
     await this.prisma.order.update({
       where: { id: payload.orderId },
       data: {

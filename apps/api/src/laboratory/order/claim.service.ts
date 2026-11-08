@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ClaimStatus } from '@prisma/client';
-import { SubmitClaimDto, ApproveClaimDto, RejectClaimDto } from './dto/claim.dto';
+import {
+  SubmitClaimDto,
+  ApproveClaimDto,
+  RejectClaimDto,
+} from './dto/claim.dto';
 
 /**
  * Valid claim status transitions:
@@ -37,11 +41,14 @@ export class ClaimService {
    * Submit a claim: PENDING → SUBMITTED
    */
   async submitClaim(dto: SubmitClaimDto) {
-    const orderInsurance = await this.findOrderInsuranceOrThrow(dto.orderInsuranceId);
+    const orderInsurance = await this.findOrderInsuranceOrThrow(
+      dto.orderInsuranceId,
+    );
 
     this.validateTransition(orderInsurance.claimStatus, ClaimStatus.SUBMITTED);
 
-    const claimReference = dto.claimReference || (await this.generateClaimReference());
+    const claimReference =
+      dto.claimReference || (await this.generateClaimReference());
 
     const updated = await this.prisma.orderInsurance.update({
       where: { id: dto.orderInsuranceId },
@@ -62,9 +69,13 @@ export class ClaimService {
    * Mark claim under review: SUBMITTED → UNDER_REVIEW
    */
   async reviewClaim(orderInsuranceId: string) {
-    const orderInsurance = await this.findOrderInsuranceOrThrow(orderInsuranceId);
+    const orderInsurance =
+      await this.findOrderInsuranceOrThrow(orderInsuranceId);
 
-    this.validateTransition(orderInsurance.claimStatus, ClaimStatus.UNDER_REVIEW);
+    this.validateTransition(
+      orderInsurance.claimStatus,
+      ClaimStatus.UNDER_REVIEW,
+    );
 
     const updated = await this.prisma.orderInsurance.update({
       where: { id: orderInsuranceId },
@@ -83,7 +94,8 @@ export class ClaimService {
    * Approve claim: UNDER_REVIEW → APPROVED
    */
   async approveClaim(orderInsuranceId: string, dto: ApproveClaimDto) {
-    const orderInsurance = await this.findOrderInsuranceOrThrow(orderInsuranceId);
+    const orderInsurance =
+      await this.findOrderInsuranceOrThrow(orderInsuranceId);
 
     this.validateTransition(orderInsurance.claimStatus, ClaimStatus.APPROVED);
 
@@ -108,9 +120,13 @@ export class ClaimService {
    * Partially approve claim: UNDER_REVIEW → PARTIALLY_APPROVED
    */
   async partiallyApproveClaim(orderInsuranceId: string, dto: ApproveClaimDto) {
-    const orderInsurance = await this.findOrderInsuranceOrThrow(orderInsuranceId);
+    const orderInsurance =
+      await this.findOrderInsuranceOrThrow(orderInsuranceId);
 
-    this.validateTransition(orderInsurance.claimStatus, ClaimStatus.PARTIALLY_APPROVED);
+    this.validateTransition(
+      orderInsurance.claimStatus,
+      ClaimStatus.PARTIALLY_APPROVED,
+    );
 
     const updated = await this.prisma.orderInsurance.update({
       where: { id: orderInsuranceId },
@@ -133,7 +149,8 @@ export class ClaimService {
    * Reject claim: UNDER_REVIEW → REJECTED
    */
   async rejectClaim(orderInsuranceId: string, dto: RejectClaimDto) {
-    const orderInsurance = await this.findOrderInsuranceOrThrow(orderInsuranceId);
+    const orderInsurance =
+      await this.findOrderInsuranceOrThrow(orderInsuranceId);
 
     this.validateTransition(orderInsurance.claimStatus, ClaimStatus.REJECTED);
 
@@ -156,7 +173,8 @@ export class ClaimService {
    * Mark claim as paid: APPROVED/PARTIALLY_APPROVED → PAID
    */
   async markClaimPaid(orderInsuranceId: string) {
-    const orderInsurance = await this.findOrderInsuranceOrThrow(orderInsuranceId);
+    const orderInsurance =
+      await this.findOrderInsuranceOrThrow(orderInsuranceId);
 
     this.validateTransition(orderInsurance.claimStatus, ClaimStatus.PAID);
 
@@ -178,7 +196,9 @@ export class ClaimService {
    * Get all claim records for an order
    */
   async getClaimHistory(orderId: string) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -206,7 +226,10 @@ export class ClaimService {
     return orderInsurance;
   }
 
-  private validateTransition(currentStatus: ClaimStatus, targetStatus: ClaimStatus) {
+  private validateTransition(
+    currentStatus: ClaimStatus,
+    targetStatus: ClaimStatus,
+  ) {
     const allowed = VALID_TRANSITIONS[currentStatus];
     if (!allowed || !allowed.includes(targetStatus)) {
       throw new BadRequestException({
@@ -227,7 +250,11 @@ export class ClaimService {
     const dateStr = `${yyyy}${mm}${dd}`;
 
     // Count today's claims to determine the next sequential number
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
     const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
 
     const todayCount = await this.prisma.orderInsurance.count({

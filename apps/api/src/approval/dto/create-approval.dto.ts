@@ -1,4 +1,11 @@
-import { IsEnum, IsUUID, IsInt, IsObject, IsOptional, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsUUID,
+  IsInt,
+  IsObject,
+  IsOptional,
+  Min,
+} from 'class-validator';
 import { ApprovalType } from '@prisma/client';
 
 export class CreateApprovalDto {

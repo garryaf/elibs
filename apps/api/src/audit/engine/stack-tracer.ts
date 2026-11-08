@@ -45,7 +45,9 @@ export class StackTracer {
    * Wraps a single layer inspection in a timeout race.
    * If inspection exceeds the configured timeout, returns ABSENT with timeout note.
    */
-  private async inspectLayerWithTimeout(target: InspectionTarget): Promise<LayerTrace> {
+  private async inspectLayerWithTimeout(
+    target: InspectionTarget,
+  ): Promise<LayerTrace> {
     return Promise.race([
       this.inspectLayer(target),
       this.createTimeoutPromise(target.layer),
@@ -90,7 +92,9 @@ export class StackTracer {
         });
         matchedFiles.push(...files);
       } catch (err) {
-        issues.push(`Glob pattern error for "${pattern.glob}": ${(err as Error).message}`);
+        issues.push(
+          `Glob pattern error for "${pattern.glob}": ${(err as Error).message}`,
+        );
       }
     }
 
@@ -169,7 +173,9 @@ export class StackTracer {
     try {
       regex = new RegExp(searchPattern, 'm');
     } catch (err) {
-      issues.push(`Invalid regex pattern "${searchPattern}": ${(err as Error).message}`);
+      issues.push(
+        `Invalid regex pattern "${searchPattern}": ${(err as Error).message}`,
+      );
       return undefined;
     }
 
@@ -192,7 +198,9 @@ export class StackTracer {
 
         if (match) {
           // Calculate line number from match index
-          const lineNumber = content.substring(0, match.index).split('\n').length;
+          const lineNumber = content
+            .substring(0, match.index)
+            .split('\n').length;
           return { filePath: normalizedPath, lineNumber };
         }
       } catch (err) {

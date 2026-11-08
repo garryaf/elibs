@@ -77,7 +77,12 @@ export class PatientController {
 
     const target: InspectionTarget = {
       layer: 'CONTROLLER',
-      patterns: [{ glob: 'src/patient/**/*.controller.ts', purpose: 'Patient controller' }],
+      patterns: [
+        {
+          glob: 'src/patient/**/*.controller.ts',
+          purpose: 'Patient controller',
+        },
+      ],
       requiredArtifacts: [],
     };
 
@@ -110,7 +115,9 @@ export class VisitController {
 
     const target: InspectionTarget = {
       layer: 'CONTROLLER',
-      patterns: [{ glob: 'src/visit/**/*.controller.ts', purpose: 'Visit controller' }],
+      patterns: [
+        { glob: 'src/visit/**/*.controller.ts', purpose: 'Visit controller' },
+      ],
       requiredArtifacts: [],
     };
 
@@ -144,7 +151,9 @@ export class OrderController {
 
     const target: InspectionTarget = {
       layer: 'CONTROLLER',
-      patterns: [{ glob: 'src/order/**/*.controller.ts', purpose: 'Order controller' }],
+      patterns: [
+        { glob: 'src/order/**/*.controller.ts', purpose: 'Order controller' },
+      ],
       requiredArtifacts: [
         {
           description: 'UseGuards decorator',
@@ -197,7 +206,9 @@ export class LabWorkflowController {
 
     const target: InspectionTarget = {
       layer: 'CONTROLLER',
-      patterns: [{ glob: 'src/lab/**/*.controller.ts', purpose: 'Lab controller' }],
+      patterns: [
+        { glob: 'src/lab/**/*.controller.ts', purpose: 'Lab controller' },
+      ],
       requiredArtifacts: [
         {
           description: 'Constructor with service injection',

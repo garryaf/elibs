@@ -20,12 +20,7 @@ import type {
 // Keyword patterns for detection (case-insensitive)
 // ---------------------------------------------------------------------------
 
-const BROKEN_KEYWORDS = [
-  'runtime error',
-  'exception',
-  'broken',
-  'crash',
-];
+const BROKEN_KEYWORDS = ['runtime error', 'exception', 'broken', 'crash'];
 
 const WRONG_LOGIC_KEYWORDS = [
   'contradicts',
@@ -96,7 +91,9 @@ function buildGapDescription(
         .filter((c) => c.gap && containsAny(c.gap, MOCK_STATIC_KEYWORDS))
         .map((c) => c.gap);
       const mockEvidence = traces
-        .filter((t) => t.evidence && containsAny(t.evidence, MOCK_STATIC_KEYWORDS))
+        .filter(
+          (t) => t.evidence && containsAny(t.evidence, MOCK_STATIC_KEYWORDS),
+        )
         .map((t) => t.evidence);
       const details = [...mockGaps, ...mockEvidence].slice(0, 3);
       return `Hardcoded or placeholder data detected: ${details.join('; ') || 'implementation uses mock/static values'}.`;
@@ -242,7 +239,10 @@ export class GapClassifier {
    * OR some layers are PRESENT and others are not,
    * OR any layer has PARTIAL status (not fully PRESENT, not fully ABSENT).
    */
-  private isPartial(traces: LayerTrace[], criteria: CriterionResult[]): boolean {
+  private isPartial(
+    traces: LayerTrace[],
+    criteria: CriterionResult[],
+  ): boolean {
     // Check criteria: mixed pass/fail
     if (criteria.length > 0) {
       const passedCount = criteria.filter((c) => c.passed).length;
@@ -273,7 +273,10 @@ export class GapClassifier {
    * MISSING: ALL layers are ABSENT, OR ALL criteria fail,
    * OR no evidence of implementation (empty traces and criteria).
    */
-  private isMissing(traces: LayerTrace[], criteria: CriterionResult[]): boolean {
+  private isMissing(
+    traces: LayerTrace[],
+    criteria: CriterionResult[],
+  ): boolean {
     // No evidence at all
     if (traces.length === 0 && criteria.length === 0) {
       return true;

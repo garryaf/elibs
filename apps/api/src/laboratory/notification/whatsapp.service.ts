@@ -34,10 +34,15 @@ export class WhatsAppService {
 
     try {
       // Create a Blob from the Buffer for the FormData
-const blob = new Blob([new Uint8Array(pdfBuffer)], { type: 'application/pdf' });
+      const blob = new Blob([new Uint8Array(pdfBuffer)], {
+        type: 'application/pdf',
+      });
       const formData = new FormData();
       formData.append('target', phone);
-      formData.append('message', `Berikut adalah hasil laboratorium untuk order ${orderNumber}.`);
+      formData.append(
+        'message',
+        `Berikut adalah hasil laboratorium untuk order ${orderNumber}.`,
+      );
       formData.append('file', blob, `Hasil_Lab_${orderNumber}.pdf`);
 
       const response = await fetch('https://api.fonnte.com/send', {
@@ -49,14 +54,16 @@ const blob = new Blob([new Uint8Array(pdfBuffer)], { type: 'application/pdf' });
       });
 
       const result = await response.json();
-      
+
       if (!result.status) {
         throw new Error(result.reason || 'Failed to send WhatsApp message');
       }
-      
+
       this.logger.log(`[WhatsApp] Successfully sent to ${phone}`);
     } catch (error: any) {
-      this.logger.error(`[WhatsApp] Failed to send to ${phone}: ${error.message}`);
+      this.logger.error(
+        `[WhatsApp] Failed to send to ${phone}: ${error.message}`,
+      );
       throw error;
     }
   }

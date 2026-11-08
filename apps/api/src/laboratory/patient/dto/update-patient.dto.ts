@@ -68,22 +68,30 @@ export class UpdatePatientDto {
   // Region FK fields (EMSIFA numeric codes, NOT UUIDs)
   @IsOptional()
   @IsString()
-  @Matches(REGION_CODE_REGEX, { message: 'provinsiId must be a valid EMSIFA region code (2-13 digits)' })
+  @Matches(REGION_CODE_REGEX, {
+    message: 'provinsiId must be a valid EMSIFA region code (2-13 digits)',
+  })
   provinsiId?: string;
 
   @IsOptional()
   @IsString()
-  @Matches(REGION_CODE_REGEX, { message: 'kabupatenKotaId must be a valid EMSIFA region code (2-13 digits)' })
+  @Matches(REGION_CODE_REGEX, {
+    message: 'kabupatenKotaId must be a valid EMSIFA region code (2-13 digits)',
+  })
   kabupatenKotaId?: string;
 
   @IsOptional()
   @IsString()
-  @Matches(REGION_CODE_REGEX, { message: 'kecamatanId must be a valid EMSIFA region code (2-13 digits)' })
+  @Matches(REGION_CODE_REGEX, {
+    message: 'kecamatanId must be a valid EMSIFA region code (2-13 digits)',
+  })
   kecamatanId?: string;
 
   @IsOptional()
   @IsString()
-  @Matches(REGION_CODE_REGEX, { message: 'kelurahanDesaId must be a valid EMSIFA region code (2-13 digits)' })
+  @Matches(REGION_CODE_REGEX, {
+    message: 'kelurahanDesaId must be a valid EMSIFA region code (2-13 digits)',
+  })
   kelurahanDesaId?: string;
 
   // Clinical fields

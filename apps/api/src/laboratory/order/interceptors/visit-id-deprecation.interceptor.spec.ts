@@ -31,7 +31,10 @@ describe('VisitIdDeprecationInterceptor', () => {
   };
 
   it('should log a warning when visitId is missing from request body', (done) => {
-    const context = createMockContext({ patientId: '123', testIds: ['abc'] }, 'user-42');
+    const context = createMockContext(
+      { patientId: '123', testIds: ['abc'] },
+      'user-42',
+    );
 
     interceptor.intercept(context, mockNext).subscribe(() => {
       expect(warnSpy).toHaveBeenCalledTimes(1);
@@ -46,7 +49,10 @@ describe('VisitIdDeprecationInterceptor', () => {
   });
 
   it('should log a warning when visitId is null', (done) => {
-    const context = createMockContext({ visitId: null, patientId: '123', testIds: ['abc'] }, 'user-99');
+    const context = createMockContext(
+      { visitId: null, patientId: '123', testIds: ['abc'] },
+      'user-99',
+    );
 
     interceptor.intercept(context, mockNext).subscribe(() => {
       expect(warnSpy).toHaveBeenCalledTimes(1);
@@ -58,7 +64,10 @@ describe('VisitIdDeprecationInterceptor', () => {
   });
 
   it('should log a warning when visitId is empty string', (done) => {
-    const context = createMockContext({ visitId: '', patientId: '123', testIds: ['abc'] }, 'user-10');
+    const context = createMockContext(
+      { visitId: '', patientId: '123', testIds: ['abc'] },
+      'user-10',
+    );
 
     interceptor.intercept(context, mockNext).subscribe(() => {
       expect(warnSpy).toHaveBeenCalledTimes(1);
@@ -71,7 +80,11 @@ describe('VisitIdDeprecationInterceptor', () => {
 
   it('should NOT log a warning when visitId is present', (done) => {
     const context = createMockContext(
-      { visitId: '550e8400-e29b-41d4-a716-446655440000', patientId: '123', testIds: ['abc'] },
+      {
+        visitId: '550e8400-e29b-41d4-a716-446655440000',
+        patientId: '123',
+        testIds: ['abc'],
+      },
       'user-1',
     );
 
@@ -93,7 +106,10 @@ describe('VisitIdDeprecationInterceptor', () => {
   });
 
   it('should include timestamp in the warning message', (done) => {
-    const context = createMockContext({ patientId: '123', testIds: ['abc'] }, 'user-1');
+    const context = createMockContext(
+      { patientId: '123', testIds: ['abc'] },
+      'user-1',
+    );
 
     interceptor.intercept(context, mockNext).subscribe(() => {
       expect(warnSpy).toHaveBeenCalledWith(
@@ -104,7 +120,10 @@ describe('VisitIdDeprecationInterceptor', () => {
   });
 
   it('should still call next.handle() even when logging a warning', (done) => {
-    const context = createMockContext({ patientId: '123', testIds: ['abc'] }, 'user-1');
+    const context = createMockContext(
+      { patientId: '123', testIds: ['abc'] },
+      'user-1',
+    );
     const handleSpy = jest.spyOn(mockNext, 'handle');
 
     interceptor.intercept(context, mockNext).subscribe(() => {

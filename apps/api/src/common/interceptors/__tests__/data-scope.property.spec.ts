@@ -59,20 +59,17 @@ describe('DataScopeInterceptor - Property Tests', () => {
      */
     it('KLINIK_PARTNER with clinicId sets dataScope matching user clinicId', () => {
       fc.assert(
-        fc.property(
-          fc.uuid(),
-          (clinicId) => {
-            const user = { role: Role.KLINIK_PARTNER, clinicId };
-            const { context, request } = createMockExecutionContext(user);
-            const callHandler = createMockCallHandler();
+        fc.property(fc.uuid(), (clinicId) => {
+          const user = { role: Role.KLINIK_PARTNER, clinicId };
+          const { context, request } = createMockExecutionContext(user);
+          const callHandler = createMockCallHandler();
 
-            interceptor.intercept(context, callHandler);
+          interceptor.intercept(context, callHandler);
 
-            // dataScope must be set with exactly the user's clinicId
-            expect(request.dataScope).toBeDefined();
-            expect(request.dataScope.clinicId).toBe(clinicId);
-          },
-        ),
+          // dataScope must be set with exactly the user's clinicId
+          expect(request.dataScope).toBeDefined();
+          expect(request.dataScope.clinicId).toBe(clinicId);
+        }),
         { numRuns: 100 },
       );
     });
@@ -85,18 +82,15 @@ describe('DataScopeInterceptor - Property Tests', () => {
      */
     it('KLINIK_PARTNER without clinicId throws ForbiddenException', () => {
       fc.assert(
-        fc.property(
-          fc.constantFrom(null, undefined),
-          (clinicId) => {
-            const user = { role: Role.KLINIK_PARTNER, clinicId };
-            const { context } = createMockExecutionContext(user);
-            const callHandler = createMockCallHandler();
+        fc.property(fc.constantFrom(null, undefined), (clinicId) => {
+          const user = { role: Role.KLINIK_PARTNER, clinicId };
+          const { context } = createMockExecutionContext(user);
+          const callHandler = createMockCallHandler();
 
-            expect(() => {
-              interceptor.intercept(context, callHandler);
-            }).toThrow(ForbiddenException);
-          },
-        ),
+          expect(() => {
+            interceptor.intercept(context, callHandler);
+          }).toThrow(ForbiddenException);
+        }),
         { numRuns: 100 },
       );
     });

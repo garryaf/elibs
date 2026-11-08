@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Flag, ResultType, OrderDetailStatus } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CriticalValueService } from '../critical-value/critical-value.service';
@@ -165,16 +170,18 @@ export class AnalyzerService {
 
     // Critical Value Alerts: trigger after transaction commits (non-blocking)
     for (const critical of criticalResults) {
-      await this.criticalValueService.detectAndAlert(
-        critical.orderId,
-        critical.orderDetailId,
-        critical.resultValue,
-        critical.testId,
-      ).catch((err) => {
-        this.logger.warn(
-          `Failed to trigger critical value alert for batch import detail ${critical.orderDetailId}: ${err.message}`,
-        );
-      });
+      await this.criticalValueService
+        .detectAndAlert(
+          critical.orderId,
+          critical.orderDetailId,
+          critical.resultValue,
+          critical.testId,
+        )
+        .catch((err) => {
+          this.logger.warn(
+            `Failed to trigger critical value alert for batch import detail ${critical.orderDetailId}: ${err.message}`,
+          );
+        });
     }
 
     // Adjust error count — some rows may have failed inside the transaction
@@ -369,7 +376,11 @@ export class AnalyzerService {
       (h) => h === 'testcode' || h === 'test_code' || h === 'test',
     );
     const resultValueIdx = headers.findIndex(
-      (h) => h === 'resultvalue' || h === 'result_value' || h === 'result' || h === 'value',
+      (h) =>
+        h === 'resultvalue' ||
+        h === 'result_value' ||
+        h === 'result' ||
+        h === 'value',
     );
     const analyzedAtIdx = headers.findIndex(
       (h) => h === 'analyzedat' || h === 'analyzed_at' || h === 'date',
@@ -488,16 +499,18 @@ export class AnalyzerService {
 
     // Critical Value Alert: trigger detection if result is CRITICAL
     if (flag === Flag.CRITICAL) {
-      await this.criticalValueService.detectAndAlert(
-        orderDetail.order.id,
-        orderDetail.id,
-        dto.resultValue,
-        orderDetail.testId,
-      ).catch((err) => {
-        this.logger.warn(
-          `Failed to trigger critical value alert for order ${dto.orderNumber}, test ${dto.testCode}: ${err.message}`,
-        );
-      });
+      await this.criticalValueService
+        .detectAndAlert(
+          orderDetail.order.id,
+          orderDetail.id,
+          dto.resultValue,
+          orderDetail.testId,
+        )
+        .catch((err) => {
+          this.logger.warn(
+            `Failed to trigger critical value alert for order ${dto.orderNumber}, test ${dto.testCode}: ${err.message}`,
+          );
+        });
     }
 
     this.logger.log(
@@ -511,10 +524,7 @@ export class AnalyzerService {
    * Get import history by querying audit logs for BATCH_IMPORT actions.
    * Returns a list of previous imports with summary stats.
    */
-  async getImportHistory(query?: {
-    page?: number;
-    limit?: number;
-  }): Promise<{
+  async getImportHistory(query?: { page?: number; limit?: number }): Promise<{
     data: any[];
     total: number;
     page: number;

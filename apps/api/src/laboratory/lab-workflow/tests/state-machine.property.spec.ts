@@ -76,26 +76,23 @@ describe('State Machine Property Tests', () => {
 
     it('getValidTransitions returns exactly the set of valid targets for any status', () => {
       fc.assert(
-        fc.property(
-          fc.constantFrom(...ALL_STATUSES),
-          (status) => {
-            const validTargets = service.getValidTransitions(status);
+        fc.property(fc.constantFrom(...ALL_STATUSES), (status) => {
+          const validTargets = service.getValidTransitions(status);
 
-            // Every target returned by getValidTransitions must be in VALID_TRANSITIONS
-            for (const target of validTargets) {
-              const key = `${status}->${target}`;
-              expect(VALID_TRANSITIONS.has(key)).toBe(true);
-            }
+          // Every target returned by getValidTransitions must be in VALID_TRANSITIONS
+          for (const target of validTargets) {
+            const key = `${status}->${target}`;
+            expect(VALID_TRANSITIONS.has(key)).toBe(true);
+          }
 
-            // Every valid transition from this status must appear in the result
-            for (const target of ALL_STATUSES) {
-              const key = `${status}->${target}`;
-              if (VALID_TRANSITIONS.has(key)) {
-                expect(validTargets).toContain(target);
-              }
+          // Every valid transition from this status must appear in the result
+          for (const target of ALL_STATUSES) {
+            const key = `${status}->${target}`;
+            if (VALID_TRANSITIONS.has(key)) {
+              expect(validTargets).toContain(target);
             }
-          },
-        ),
+          }
+        }),
         { numRuns: 100 },
       );
     });

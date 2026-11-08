@@ -9,7 +9,12 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+} from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import type { Response, Request } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -93,19 +98,23 @@ export class PdfReportController {
 
     // BP-2: Audit log — track who downloaded the report
     const userId = user?.sub || user?.id || 'unknown';
-    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip;
-    await this.auditService.log(
-      userId,
-      'REPORT_DOWNLOADED',
-      'Order',
-      id,
-      null,
-      { format: 'pdf', version, orderNumber },
-      ipAddress,
-    ).catch((err) => {
-      // Non-blocking: don't fail the download if audit logging fails
-      this.logger.warn(`Failed to log report download audit: ${err.message}`);
-    });
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      req.ip;
+    await this.auditService
+      .log(
+        userId,
+        'REPORT_DOWNLOADED',
+        'Order',
+        id,
+        null,
+        { format: 'pdf', version, orderNumber },
+        ipAddress,
+      )
+      .catch((err) => {
+        // Non-blocking: don't fail the download if audit logging fails
+        this.logger.warn(`Failed to log report download audit: ${err.message}`);
+      });
 
     res.set({
       'Content-Type': 'application/pdf',

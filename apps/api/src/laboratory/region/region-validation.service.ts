@@ -34,8 +34,7 @@ export class RegionValidationService {
     if (filled.length < 4) {
       throw new BadRequestException({
         errorCode: 'ERR_VALIDATION',
-        message:
-          'All region levels are required when any region is selected',
+        message: 'All region levels are required when any region is selected',
       });
     }
 

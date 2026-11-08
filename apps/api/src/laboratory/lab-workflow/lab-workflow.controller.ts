@@ -121,10 +121,7 @@ export class LabWorkflowController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SAMPLING, Role.ANALIS, Role.DOKTER, Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get workload summary for current user today' })
-  async getMyWorkload(
-    @CurrentUser() user: { id: string },
-    @Req() req?: any,
-  ) {
+  async getMyWorkload(@CurrentUser() user: { id: string }, @Req() req?: any) {
     const clinicId = req?.dataScope?.clinicId;
     return this.labWorkflowService.getMyWorkload(user.id, clinicId);
   }
@@ -132,7 +129,9 @@ export class LabWorkflowController {
   @Post(':orderId/recall')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.DOKTER, Role.ADMIN, Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Recall an approved order back to IN_ANALYSIS for correction' })
+  @ApiOperation({
+    summary: 'Recall an approved order back to IN_ANALYSIS for correction',
+  })
   async recallOrder(
     @Param('orderId', ParseUUIDPipe) orderId: string,
     @Body() body: { reason: string },
@@ -157,9 +156,7 @@ export class LabWorkflowController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ANALIS, Role.DOKTER, Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get delta check comparison with previous results' })
-  async getDeltaCheck(
-    @Param('orderId', ParseUUIDPipe) orderId: string,
-  ) {
+  async getDeltaCheck(@Param('orderId', ParseUUIDPipe) orderId: string) {
     return this.labWorkflowService.getDeltaCheck(orderId);
   }
 

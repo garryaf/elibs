@@ -1,4 +1,13 @@
-import { IsOptional, IsString, IsArray, IsEnum, IsNumber, IsBoolean, IsUUID, IsDateString } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsArray,
+  IsEnum,
+  IsNumber,
+  IsBoolean,
+  IsUUID,
+  IsDateString,
+} from 'class-validator';
 
 export enum AdjustmentType {
   PERCENTAGE = 'PERCENTAGE',
@@ -15,7 +24,9 @@ export class BulkAdjustRequestDto {
   @IsUUID('4', { each: true })
   testIds?: string[];
 
-  @IsEnum(AdjustmentType, { message: 'adjustmentType must be PERCENTAGE or FIXED' })
+  @IsEnum(AdjustmentType, {
+    message: 'adjustmentType must be PERCENTAGE or FIXED',
+  })
   adjustmentType: AdjustmentType;
 
   @IsNumber()

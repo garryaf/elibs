@@ -31,7 +31,13 @@ export interface PricingResult {
   basePrice: Decimal;
   adjustments: PricingAdjustment[];
   finalPrice: Decimal;
-  resolution: 'PRICE_LIST' | 'SPECIFIC' | 'CLINIC_ONLY' | 'INSURANCE_ONLY' | 'DEFAULT' | 'FALLBACK';
+  resolution:
+    | 'PRICE_LIST'
+    | 'SPECIFIC'
+    | 'CLINIC_ONLY'
+    | 'INSURANCE_ONLY'
+    | 'DEFAULT'
+    | 'FALLBACK';
   tariffId?: string;
   priceListItemId?: string;
 }
@@ -68,11 +74,17 @@ export class PricingService {
     const adjustments: PricingAdjustment[] = [];
 
     // Step 1: Check PriceListItem matching context
-    const priceListResult = await this.resolvePriceListItem(testId, context, asOfDate);
+    const priceListResult = await this.resolvePriceListItem(
+      testId,
+      context,
+      asOfDate,
+    );
     if (priceListResult) {
       const basePrice = priceListResult.price;
       const discountPercent = Number(priceListResult.discount);
-      const discountAmount = basePrice.mul(new Decimal(discountPercent)).div(new Decimal(100));
+      const discountAmount = basePrice
+        .mul(new Decimal(discountPercent))
+        .div(new Decimal(100));
       const finalPrice = basePrice.sub(discountAmount);
 
       if (discountPercent > 0) {
@@ -97,7 +109,9 @@ export class PricingService {
     if (tariffResult) {
       const basePrice = tariffResult.tariff.price;
       const discountPercent = Number(tariffResult.tariff.discount);
-      const discountAmount = basePrice.mul(new Decimal(discountPercent)).div(new Decimal(100));
+      const discountAmount = basePrice
+        .mul(new Decimal(discountPercent))
+        .div(new Decimal(100));
       const finalPrice = basePrice.sub(discountAmount);
 
       if (discountPercent > 0) {
@@ -144,7 +158,9 @@ export class PricingService {
     });
 
     if (!priceList) {
-      throw new NotFoundException(`Price list with id '${priceListId}' not found`);
+      throw new NotFoundException(
+        `Price list with id '${priceListId}' not found`,
+      );
     }
 
     return priceList;
@@ -161,10 +177,7 @@ export class PricingService {
       where: {
         isActive: true,
         effectiveFrom: { lte: now },
-        OR: [
-          { effectiveTo: null },
-          { effectiveTo: { gte: now } },
-        ],
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }],
       },
       include: { items: true },
       orderBy: { effectiveFrom: 'desc' },
@@ -219,14 +232,18 @@ export class PricingService {
     });
 
     if (!existing) {
-      throw new NotFoundException(`Price list with id '${priceListId}' not found`);
+      throw new NotFoundException(
+        `Price list with id '${priceListId}' not found`,
+      );
     }
 
     return this.prisma.priceList.update({
       where: { id: priceListId },
       data: {
         ...(data.name !== undefined && { name: data.name }),
-        ...(data.description !== undefined && { description: data.description }),
+        ...(data.description !== undefined && {
+          description: data.description,
+        }),
         ...(data.type !== undefined && { type: data.type }),
         ...(data.entityId !== undefined && { entityId: data.entityId }),
         ...(data.effectiveFrom !== undefined && {
@@ -352,10 +369,16 @@ export class PricingService {
     const entityConditions: Array<{ type: string; entityId: string }> = [];
 
     if (context.corporateId) {
-      entityConditions.push({ type: 'CORPORATE', entityId: context.corporateId });
+      entityConditions.push({
+        type: 'CORPORATE',
+        entityId: context.corporateId,
+      });
     }
     if (context.insuranceId) {
-      entityConditions.push({ type: 'INSURANCE', entityId: context.insuranceId });
+      entityConditions.push({
+        type: 'INSURANCE',
+        entityId: context.insuranceId,
+      });
     }
     if (context.packageId) {
       entityConditions.push({ type: 'PACKAGE', entityId: context.packageId });
@@ -375,10 +398,7 @@ export class PricingService {
             entityId: condition.entityId,
             isActive: true,
             effectiveFrom: { lte: asOfDate },
-            OR: [
-              { effectiveTo: null },
-              { effectiveTo: { gte: asOfDate } },
-            ],
+            OR: [{ effectiveTo: null }, { effectiveTo: { gte: asOfDate } }],
           },
         },
         include: { priceList: true },
@@ -412,10 +432,7 @@ export class PricingService {
 
     const dateFilter = {
       effectiveFrom: { lte: asOfDate },
-      OR: [
-        { effectiveTo: null },
-        { effectiveTo: { gte: asOfDate } },
-      ],
+      OR: [{ effectiveTo: null }, { effectiveTo: { gte: asOfDate } }],
     };
 
     const orderByEffective = { effectiveFrom: 'desc' as const };

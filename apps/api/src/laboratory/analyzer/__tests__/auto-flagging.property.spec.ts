@@ -20,7 +20,12 @@ describe('Auto-flagging Correctness Property Tests', () => {
   // and criticalMin <= minRef, criticalMax >= maxRef when present
   const referenceRangeArb: fc.Arbitrary<ReferenceRange> = fc
     .tuple(
-      fc.double({ min: -10000, max: 10000, noNaN: true, noDefaultInfinity: true }),
+      fc.double({
+        min: -10000,
+        max: 10000,
+        noNaN: true,
+        noDefaultInfinity: true,
+      }),
       fc.double({ min: 0.01, max: 5000, noNaN: true, noDefaultInfinity: true }),
     )
     .chain(([base, spread]) => {
@@ -29,11 +34,21 @@ describe('Auto-flagging Correctness Property Tests', () => {
       return fc
         .tuple(
           fc.option(
-            fc.double({ min: 0.01, max: 5000, noNaN: true, noDefaultInfinity: true }),
+            fc.double({
+              min: 0.01,
+              max: 5000,
+              noNaN: true,
+              noDefaultInfinity: true,
+            }),
             { nil: undefined },
           ),
           fc.option(
-            fc.double({ min: 0.01, max: 5000, noNaN: true, noDefaultInfinity: true }),
+            fc.double({
+              min: 0.01,
+              max: 5000,
+              noNaN: true,
+              noDefaultInfinity: true,
+            }),
             { nil: undefined },
           ),
         )

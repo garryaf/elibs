@@ -54,19 +54,16 @@ describe('Property 7: AllExceptionsFilter propagates traceId from X-Request-ID',
     const filter = new AllExceptionsFilter();
 
     fc.assert(
-      fc.property(
-        fc.string({ minLength: 1, maxLength: 128 }),
-        (requestId) => {
-          const { mockResponse, mockHost } = createMockHost({
-            'x-request-id': requestId,
-          });
+      fc.property(fc.string({ minLength: 1, maxLength: 128 }), (requestId) => {
+        const { mockResponse, mockHost } = createMockHost({
+          'x-request-id': requestId,
+        });
 
-          filter.catch(new HttpException('error', 400), mockHost);
+        filter.catch(new HttpException('error', 400), mockHost);
 
-          const body: ErrorEnvelope = mockResponse.json.mock.calls[0][0];
-          expect(body.traceId).toBe(requestId);
-        },
-      ),
+        const body: ErrorEnvelope = mockResponse.json.mock.calls[0][0];
+        expect(body.traceId).toBe(requestId);
+      }),
       { numRuns: 100 },
     );
   });
@@ -129,23 +126,20 @@ describe('Property 8: AllExceptionsFilter never leaks stack traces', () => {
     const filter = new AllExceptionsFilter();
 
     fc.assert(
-      fc.property(
-        fc.string({ minLength: 1, maxLength: 100 }),
-        (message) => {
-          const err = new TypeError(message);
-          err.stack = `TypeError: ${message}\n    at Object.<anonymous> (/app/src/service.ts:42:7)\n    at Module._compile (node:internal/modules/cjs/loader:1376:14)`;
+      fc.property(fc.string({ minLength: 1, maxLength: 100 }), (message) => {
+        const err = new TypeError(message);
+        err.stack = `TypeError: ${message}\n    at Object.<anonymous> (/app/src/service.ts:42:7)\n    at Module._compile (node:internal/modules/cjs/loader:1376:14)`;
 
-          const { mockResponse, mockHost } = createMockHost();
-          filter.catch(err, mockHost);
+        const { mockResponse, mockHost } = createMockHost();
+        filter.catch(err, mockHost);
 
-          const body: ErrorEnvelope = mockResponse.json.mock.calls[0][0];
-          const bodyStr = JSON.stringify(body);
+        const body: ErrorEnvelope = mockResponse.json.mock.calls[0][0];
+        const bodyStr = JSON.stringify(body);
 
-          expect(bodyStr).not.toMatch(/\s{4}at\s/);
-          expect(bodyStr).not.toContain('Object.<anonymous>');
-          expect(bodyStr).not.toContain('Module._compile');
-        },
-      ),
+        expect(bodyStr).not.toMatch(/\s{4}at\s/);
+        expect(bodyStr).not.toContain('Object.<anonymous>');
+        expect(bodyStr).not.toContain('Module._compile');
+      }),
       { numRuns: 100 },
     );
   });
@@ -183,22 +177,19 @@ describe('Property 9: AllExceptionsFilter preserves HttpException status codes',
     const filter = new AllExceptionsFilter();
 
     fc.assert(
-      fc.property(
-        fc.integer({ min: 400, max: 499 }),
-        (statusCode) => {
-          const exception = new HttpException(
-            { message: 'Error occurred', statusCode },
-            statusCode,
-          );
-          const { mockResponse, mockHost } = createMockHost();
+      fc.property(fc.integer({ min: 400, max: 499 }), (statusCode) => {
+        const exception = new HttpException(
+          { message: 'Error occurred', statusCode },
+          statusCode,
+        );
+        const { mockResponse, mockHost } = createMockHost();
 
-          filter.catch(exception, mockHost);
+        filter.catch(exception, mockHost);
 
-          // The response status must match the HttpException status, not default to 500
-          expect(mockResponse.status).toHaveBeenCalledWith(statusCode);
-          expect(mockResponse.status).not.toHaveBeenCalledWith(500);
-        },
-      ),
+        // The response status must match the HttpException status, not default to 500
+        expect(mockResponse.status).toHaveBeenCalledWith(statusCode);
+        expect(mockResponse.status).not.toHaveBeenCalledWith(500);
+      }),
       { numRuns: 100 },
     );
   });

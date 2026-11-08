@@ -66,7 +66,9 @@ describe('Payment Property Tests - Discount Approval Invariant', () => {
         {
           provide: DiscountApprovalService,
           useValue: {
-            hasApprovedDiscountRequest: jest.fn().mockResolvedValue(hasApprovedDiscount),
+            hasApprovedDiscountRequest: jest
+              .fn()
+              .mockResolvedValue(hasApprovedDiscount),
             getApprovedDiscount: jest.fn().mockResolvedValue(null),
           },
         },
@@ -91,9 +93,19 @@ describe('Payment Property Tests - Discount Approval Invariant', () => {
       await fc.assert(
         fc.asyncProperty(
           // Generate totalAmount: positive amounts
-          fc.double({ min: 10, max: 1_000_000, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: 10,
+            max: 1_000_000,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           // Generate discount ratio (0, 1) to derive a valid discount amount
-          fc.double({ min: 0.01, max: 0.99, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: 0.01,
+            max: 0.99,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           async (totalAmount, discountRatio) => {
             const discountAmount = totalAmount * discountRatio;
 
@@ -112,7 +124,9 @@ describe('Payment Property Tests - Discount Approval Invariant', () => {
               orderDetails: [],
             };
 
-            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(mockOrder);
+            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(
+              mockOrder,
+            );
 
             // Act & Assert: should throw BadRequestException with ERR_DISCOUNT_NOT_APPROVED
             try {
@@ -127,12 +141,16 @@ describe('Payment Property Tests - Discount Approval Invariant', () => {
                 'user-uuid-1',
               );
               // If we reach here, the property is violated
-              throw new Error('Expected payment to be rejected without approved discount');
+              throw new Error(
+                'Expected payment to be rejected without approved discount',
+              );
             } catch (error) {
               expect(error).toBeInstanceOf(BadRequestException);
               const response = (error as BadRequestException).getResponse();
               if (typeof response === 'object' && response !== null) {
-                expect((response as any).errorCode).toBe('ERR_DISCOUNT_NOT_APPROVED');
+                expect((response as any).errorCode).toBe(
+                  'ERR_DISCOUNT_NOT_APPROVED',
+                );
               }
             }
           },
@@ -155,9 +173,19 @@ describe('Payment Property Tests - Discount Approval Invariant', () => {
       await fc.assert(
         fc.asyncProperty(
           // Generate totalAmount: positive amounts
-          fc.double({ min: 10, max: 1_000_000, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: 10,
+            max: 1_000_000,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           // Generate discount ratio (0, 1) to derive a valid discount amount
-          fc.double({ min: 0.01, max: 0.99, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: 0.01,
+            max: 0.99,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           async (totalAmount, discountRatio) => {
             const discountAmount = totalAmount * discountRatio;
 
@@ -176,15 +204,19 @@ describe('Payment Property Tests - Discount Approval Invariant', () => {
               orderDetails: [],
             };
 
-            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(mockOrder);
-            (prismaService.order.update as jest.Mock).mockImplementation((args: any) => {
-              return Promise.resolve({
-                ...mockOrder,
-                ...args.data,
-                patient: mockOrder.patient,
-                orderDetails: mockOrder.orderDetails,
-              });
-            });
+            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(
+              mockOrder,
+            );
+            (prismaService.order.update as jest.Mock).mockImplementation(
+              (args: any) => {
+                return Promise.resolve({
+                  ...mockOrder,
+                  ...args.data,
+                  patient: mockOrder.patient,
+                  orderDetails: mockOrder.orderDetails,
+                });
+              },
+            );
 
             // Act: should succeed
             const result = await service.processPayment(
@@ -203,7 +235,9 @@ describe('Payment Property Tests - Discount Approval Invariant', () => {
             expect(result.id).toBe(orderId);
 
             // Assert: amountPaid reflects discount (totalAmount - discountAmount)
-            const expectedPayable = totalDecimal.minus(new Decimal(discountAmount));
+            const expectedPayable = totalDecimal.minus(
+              new Decimal(discountAmount),
+            );
             const actualAmountPaid = new Decimal(result.amountPaid!.toString());
             expect(actualAmountPaid.equals(expectedPayable)).toBe(true);
           },
@@ -222,16 +256,28 @@ describe('Payment Property Tests - Discount Approval Invariant', () => {
       const module = await createTestingModule(false);
       service = module.get<PaymentService>(PaymentService);
       prismaService = module.get<PrismaService>(PrismaService);
-      discountApprovalService = module.get<DiscountApprovalService>(DiscountApprovalService);
+      discountApprovalService = module.get<DiscountApprovalService>(
+        DiscountApprovalService,
+      );
 
       await fc.assert(
         fc.asyncProperty(
           // Generate random order IDs
           fc.uuid(),
           // Generate totalAmount
-          fc.double({ min: 10, max: 1_000_000, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: 10,
+            max: 1_000_000,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           // Generate discount ratio
-          fc.double({ min: 0.01, max: 0.5, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: 0.01,
+            max: 0.5,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           async (orderId, totalAmount, discountRatio) => {
             const discountAmount = totalAmount * discountRatio;
             if (discountAmount <= 0 || discountAmount > totalAmount) return;
@@ -247,7 +293,9 @@ describe('Payment Property Tests - Discount Approval Invariant', () => {
               orderDetails: [],
             };
 
-            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(mockOrder);
+            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(
+              mockOrder,
+            );
 
             // Act & Assert: service checks approval for THIS specific orderId
             await expect(

@@ -33,20 +33,38 @@ export class VisitController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.KLINIK_PARTNER, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  @Roles(
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.KLINIK_PARTNER,
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+  )
   async create(
     @Body() dto: CreateVisitDto,
     @CurrentUser() user: any,
     @Req() req: express.Request,
   ) {
-    const ipAddress =
-      (req.headers['x-forwarded-for'] as string) || req.ip;
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.ip;
     return this.visitService.create(dto, user.sub, ipAddress);
   }
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.ADMIN, Role.KASIR, Role.CS, Role.KLINIK_PARTNER, Role.SAMPLING, Role.ANALIS, Role.DOKTER)
+  @Roles(
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+    Role.ADMIN,
+    Role.KASIR,
+    Role.CS,
+    Role.KLINIK_PARTNER,
+    Role.SAMPLING,
+    Role.ANALIS,
+    Role.DOKTER,
+  )
   async findAll(@Query() query: VisitQueryDto, @Req() req: express.Request) {
     const clinicId = (req as any).dataScope?.clinicId;
     return this.visitService.findAll(query, clinicId);
@@ -54,7 +72,15 @@ export class VisitController {
 
   @Get(':id/orders')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.ADMIN, Role.KASIR, Role.CS, Role.KLINIK_PARTNER)
+  @Roles(
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+    Role.ADMIN,
+    Role.KASIR,
+    Role.CS,
+    Role.KLINIK_PARTNER,
+  )
   async findOrdersByVisit(
     @Param('id', ParseUUIDPipe) id: string,
     @Query() query: OrderQueryDto,
@@ -64,23 +90,43 @@ export class VisitController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER, Role.ADMIN, Role.KASIR, Role.CS, Role.KLINIK_PARTNER, Role.SAMPLING, Role.ANALIS, Role.DOKTER)
-  async findById(@Param('id', ParseUUIDPipe) id: string, @Req() req: express.Request) {
+  @Roles(
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+    Role.ADMIN,
+    Role.KASIR,
+    Role.CS,
+    Role.KLINIK_PARTNER,
+    Role.SAMPLING,
+    Role.ANALIS,
+    Role.DOKTER,
+  )
+  async findById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: express.Request,
+  ) {
     const clinicId = (req as any).dataScope?.clinicId;
     return this.visitService.findById(id, clinicId);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.SUPER_ADMIN, Role.OWNER, Role.MANAGER)
+  @Roles(
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+    Role.OWNER,
+    Role.MANAGER,
+  )
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateVisitDto,
     @CurrentUser() user: any,
     @Req() req: express.Request,
   ) {
-    const ipAddress =
-      (req.headers['x-forwarded-for'] as string) || req.ip;
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.ip;
     return this.visitService.update(id, dto, user.sub, ipAddress);
   }
 
@@ -93,8 +139,7 @@ export class VisitController {
     @CurrentUser() user: any,
     @Req() req: express.Request,
   ) {
-    const ipAddress =
-      (req.headers['x-forwarded-for'] as string) || req.ip;
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.ip;
     return this.visitService.cancel(id, dto, user.sub, ipAddress);
   }
 
@@ -107,8 +152,7 @@ export class VisitController {
     @CurrentUser() user: any,
     @Req() req: express.Request,
   ) {
-    const ipAddress =
-      (req.headers['x-forwarded-for'] as string) || req.ip;
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.ip;
     return this.visitService.manualTransition(
       id,
       dto.targetStatus,

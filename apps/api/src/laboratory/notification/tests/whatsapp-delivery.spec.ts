@@ -39,7 +39,9 @@ describe('WhatsAppDeliveryController', () => {
       ],
     }).compile();
 
-    controller = module.get<WhatsAppDeliveryController>(WhatsAppDeliveryController);
+    controller = module.get<WhatsAppDeliveryController>(
+      WhatsAppDeliveryController,
+    );
   });
 
   it('should throw NotFoundException when order does not exist', async () => {
@@ -80,7 +82,9 @@ describe('WhatsAppDeliveryController', () => {
         orderId,
         'WHATSAPP',
         '6281234567890',
-        expect.objectContaining({ message: expect.stringContaining('/portal/') }),
+        expect.objectContaining({
+          message: expect.stringContaining('/portal/'),
+        }),
       );
     } finally {
       if (originalToken !== undefined) {

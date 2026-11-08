@@ -55,9 +55,7 @@ export class AuditArchivalService implements OnModuleInit {
       },
     );
 
-    this.logger.log(
-      `Audit archival job scheduled with cron: ${cronPattern}`,
-    );
+    this.logger.log(`Audit archival job scheduled with cron: ${cronPattern}`);
   }
 
   /**

@@ -3,6 +3,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
+import type { PatientFormData } from "@/types/patient";
 
 // ─── Query Keys ──────────────────────────────────────────────────────────────
 
@@ -27,7 +28,7 @@ export function usePatients(params?: { page?: number; limit?: number; search?: s
 export function usePatient(id: string) {
   return useQuery({
     queryKey: patientKeys.detail(id),
-    queryFn: () => apiClient.get(`/api/v1/patients/${id}`),
+    queryFn: () => apiClient.getPatient(id),
     enabled: !!id,
   });
 }
@@ -35,7 +36,7 @@ export function usePatient(id: string) {
 export function useCreatePatient() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: unknown) => apiClient.createPatient(data as any),
+    mutationFn: (data: PatientFormData | Record<string, unknown>) => apiClient.createPatient(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: patientKeys.lists() });
     },
@@ -45,8 +46,8 @@ export function useCreatePatient() {
 export function useUpdatePatient() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
-      apiClient.updatePatient(id, data as any),
+    mutationFn: ({ id, data }: { id: string; data: Partial<PatientFormData> | Record<string, unknown> }) =>
+      apiClient.updatePatient(id, data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: patientKeys.lists() });
       queryClient.invalidateQueries({ queryKey: patientKeys.detail(variables.id) });

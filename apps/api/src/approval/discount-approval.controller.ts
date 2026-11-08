@@ -18,7 +18,10 @@ import { PrismaService } from '../common/prisma/prisma.service';
 import { AuditService } from '../laboratory/audit/audit.service';
 import { DiscountApprovalService } from './discount-approval.service';
 import { CreateDiscountApprovalDto } from './dto/create-discount-approval.dto';
-import { DecideDiscountApprovalDto, DiscountDecision } from './dto/decide-discount-approval.dto';
+import {
+  DecideDiscountApprovalDto,
+  DiscountDecision,
+} from './dto/decide-discount-approval.dto';
 import { resolveDiscountRoutingRule } from './discount-routing.config';
 
 /**
@@ -50,7 +53,14 @@ export class DiscountApprovalController {
    * role can request a discount approval.
    */
   @Post()
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.MANAGER, Role.OWNER, Role.SUPER_ADMIN)
+  @Roles(
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.MANAGER,
+    Role.OWNER,
+    Role.SUPER_ADMIN,
+  )
   @ApiOperation({ summary: 'Request a discount approval' })
   async requestDiscount(
     @Body() dto: CreateDiscountApprovalDto,
@@ -74,10 +84,10 @@ export class DiscountApprovalController {
    */
   @Get('pending')
   @Roles(Role.MANAGER, Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'List pending discount approvals filtered by role/level' })
-  async getPendingDiscounts(
-    @CurrentUser() user: { id: string; role: Role },
-  ) {
+  @ApiOperation({
+    summary: 'List pending discount approvals filtered by role/level',
+  })
+  async getPendingDiscounts(@CurrentUser() user: { id: string; role: Role }) {
     // Fetch all pending DISCOUNT approval requests
     const pendingRequests = await this.prisma.approvalRequest.findMany({
       where: {
@@ -108,7 +118,14 @@ export class DiscountApprovalController {
    * Returns the most recent approval request (any status) for this order.
    */
   @Get('order/:orderId')
-  @Roles(Role.KASIR, Role.CS, Role.ADMIN, Role.MANAGER, Role.OWNER, Role.SUPER_ADMIN)
+  @Roles(
+    Role.KASIR,
+    Role.CS,
+    Role.ADMIN,
+    Role.MANAGER,
+    Role.OWNER,
+    Role.SUPER_ADMIN,
+  )
   @ApiOperation({ summary: 'Get discount approval status for an order' })
   async getDiscountApprovalForOrder(
     @Param('orderId', ParseUUIDPipe) orderId: string,
@@ -220,7 +237,7 @@ export class DiscountApprovalController {
     if (routingRule && !routingRule.allowedRoles.includes(userRecord.role)) {
       throw new ForbiddenException(
         `User role '${userRecord.role}' is not authorized to reject discounts of ${payload.discountPercent}%. ` +
-        `Allowed roles: ${routingRule.allowedRoles.join(', ')}.`,
+          `Allowed roles: ${routingRule.allowedRoles.join(', ')}.`,
       );
     }
 

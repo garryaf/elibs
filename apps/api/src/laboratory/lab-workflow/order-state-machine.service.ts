@@ -11,8 +11,17 @@ export interface TransitionContext {
 }
 
 const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  [OrderStatus.PENDING_PAYMENT]: [OrderStatus.PAID, OrderStatus.DEPOSIT_RECEIVED, OrderStatus.PAYMENT_OVERDUE, OrderStatus.CANCELLED],
-  [OrderStatus.PAYMENT_OVERDUE]: [OrderStatus.PAID, OrderStatus.DEPOSIT_RECEIVED, OrderStatus.CANCELLED],
+  [OrderStatus.PENDING_PAYMENT]: [
+    OrderStatus.PAID,
+    OrderStatus.DEPOSIT_RECEIVED,
+    OrderStatus.PAYMENT_OVERDUE,
+    OrderStatus.CANCELLED,
+  ],
+  [OrderStatus.PAYMENT_OVERDUE]: [
+    OrderStatus.PAID,
+    OrderStatus.DEPOSIT_RECEIVED,
+    OrderStatus.CANCELLED,
+  ],
   [OrderStatus.DEPOSIT_RECEIVED]: [OrderStatus.PAID, OrderStatus.CANCELLED],
   [OrderStatus.PAID]: [OrderStatus.SAMPLE_COLLECTED],
   [OrderStatus.SAMPLE_COLLECTED]: [OrderStatus.IN_ANALYSIS],
@@ -49,7 +58,10 @@ export class OrderStateMachineService {
     });
 
     if (!order) {
-      throw new NotFoundException({ errorCode: 'ERR_NOT_FOUND', message: 'Order not found' });
+      throw new NotFoundException({
+        errorCode: 'ERR_NOT_FOUND',
+        message: 'Order not found',
+      });
     }
 
     if (!this.canTransition(order.status, toStatus)) {
@@ -118,7 +130,10 @@ export class OrderStateMachineService {
           };
         }
         // Recall from APPROVED or NOTIFIED
-        if (_fromStatus === OrderStatus.APPROVED || _fromStatus === OrderStatus.NOTIFIED) {
+        if (
+          _fromStatus === OrderStatus.APPROVED ||
+          _fromStatus === OrderStatus.NOTIFIED
+        ) {
           return {
             rejectedAt: now,
             rejectedBy: context.userId,

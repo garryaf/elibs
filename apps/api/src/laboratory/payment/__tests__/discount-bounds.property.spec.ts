@@ -87,9 +87,19 @@ describe('Payment Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           // Generate totalAmount: positive finite doubles
-          fc.double({ min: 0.01, max: 1_000_000, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: 0.01,
+            max: 1_000_000,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           // Generate a ratio in (0, 1] to derive a valid discountAmount
-          fc.double({ min: 0.001, max: 1.0, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: 0.001,
+            max: 1.0,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           async (totalAmount, ratio) => {
             // Derive discountAmount that satisfies 0 < discount <= total
             const discountAmount = totalAmount * ratio;
@@ -110,15 +120,19 @@ describe('Payment Property Tests', () => {
             };
 
             // Reset and setup mocks
-            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(mockOrder);
-            (prismaService.order.update as jest.Mock).mockImplementation((args: any) => {
-              return Promise.resolve({
-                ...mockOrder,
-                ...args.data,
-                patient: mockOrder.patient,
-                orderDetails: mockOrder.orderDetails,
-              });
-            });
+            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(
+              mockOrder,
+            );
+            (prismaService.order.update as jest.Mock).mockImplementation(
+              (args: any) => {
+                return Promise.resolve({
+                  ...mockOrder,
+                  ...args.data,
+                  patient: mockOrder.patient,
+                  orderDetails: mockOrder.orderDetails,
+                });
+              },
+            );
 
             // Act
             const result = await service.processPayment(
@@ -133,7 +147,9 @@ describe('Payment Property Tests', () => {
             );
 
             // Assert: amountPaid === totalAmount - discountAmount
-            const expectedPaid = totalDecimal.minus(new Decimal(discountAmount));
+            const expectedPaid = totalDecimal.minus(
+              new Decimal(discountAmount),
+            );
             const actualPaid = new Decimal(result.amountPaid.toString());
             expect(actualPaid.equals(expectedPaid)).toBe(true);
           },
@@ -152,9 +168,19 @@ describe('Payment Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           // Generate totalAmount: positive finite doubles
-          fc.double({ min: 0.01, max: 1_000_000, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: 0.01,
+            max: 1_000_000,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           // Generate non-positive discount amounts (zero or negative)
-          fc.double({ min: -1_000_000, max: 0, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: -1_000_000,
+            max: 0,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           async (totalAmount, discountAmount) => {
             const totalDecimal = new Decimal(totalAmount);
             const orderId = 'order-uuid-test';
@@ -168,7 +194,9 @@ describe('Payment Property Tests', () => {
               orderDetails: [],
             };
 
-            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(mockOrder);
+            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(
+              mockOrder,
+            );
 
             // Act & Assert: should throw 400
             await expect(
@@ -199,9 +227,19 @@ describe('Payment Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           // Generate totalAmount: positive finite doubles
-          fc.double({ min: 0.01, max: 1_000_000, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: 0.01,
+            max: 1_000_000,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           // Generate a multiplier > 1 to make discount exceed total
-          fc.double({ min: 1.001, max: 10, noNaN: true, noDefaultInfinity: true }),
+          fc.double({
+            min: 1.001,
+            max: 10,
+            noNaN: true,
+            noDefaultInfinity: true,
+          }),
           async (totalAmount, multiplier) => {
             const discountAmount = totalAmount * multiplier;
             const totalDecimal = new Decimal(totalAmount);
@@ -216,7 +254,9 @@ describe('Payment Property Tests', () => {
               orderDetails: [],
             };
 
-            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(mockOrder);
+            (prismaService.order.findUnique as jest.Mock).mockResolvedValue(
+              mockOrder,
+            );
 
             // Act & Assert: should throw 400
             await expect(

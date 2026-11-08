@@ -21,7 +21,10 @@ export class RepositoryLayerInspector {
    * @param projectRoot - Absolute path to the project workspace root
    * @returns LayerTrace for the REPOSITORY layer
    */
-  async inspect(target: InspectionTarget, projectRoot: string): Promise<LayerTrace> {
+  async inspect(
+    target: InspectionTarget,
+    projectRoot: string,
+  ): Promise<LayerTrace> {
     const matchedFiles: string[] = [];
     const issues: string[] = [];
 
@@ -36,7 +39,9 @@ export class RepositoryLayerInspector {
         });
         matchedFiles.push(...files);
       } catch (err) {
-        issues.push(`Glob error for "${pattern.glob}": ${(err as Error).message}`);
+        issues.push(
+          `Glob error for "${pattern.glob}": ${(err as Error).message}`,
+        );
       }
     }
 
@@ -58,7 +63,8 @@ export class RepositoryLayerInspector {
     const detectedQueryMethods = new Set<string>();
 
     // Repository-layer detection patterns
-    const prismaUsagePattern = /this\.prisma\.|this\.prismaService\.|prismaService\./;
+    const prismaUsagePattern =
+      /this\.prisma\.|this\.prismaService\.|prismaService\./;
     const queryMethodPatterns: Record<string, RegExp> = {
       findUnique: /\.findUnique\s*\(/,
       findMany: /\.findMany\s*\(/,
@@ -92,12 +98,16 @@ export class RepositoryLayerInspector {
           if (!firstMatchedFile) {
             firstMatchedFile = normalizedPath;
           }
-          const lineNumber = content.substring(0, prismaMatch.index).split('\n').length;
+          const lineNumber = content
+            .substring(0, prismaMatch.index)
+            .split('\n').length;
           lineReferences.push(lineNumber);
         }
 
         // Check query method patterns
-        for (const [methodName, methodPattern] of Object.entries(queryMethodPatterns)) {
+        for (const [methodName, methodPattern] of Object.entries(
+          queryMethodPatterns,
+        )) {
           if (methodPattern.test(content)) {
             queryMethodsFound = true;
             detectedQueryMethods.add(methodName);
@@ -109,7 +119,9 @@ export class RepositoryLayerInspector {
           transactionFound = true;
         }
       } catch (err) {
-        issues.push(`Error reading "${normalizedPath}": ${(err as Error).message}`);
+        issues.push(
+          `Error reading "${normalizedPath}": ${(err as Error).message}`,
+        );
       }
     }
 
@@ -122,7 +134,9 @@ export class RepositoryLayerInspector {
       try {
         regex = new RegExp(artifact.searchPattern, 'm');
       } catch (err) {
-        issues.push(`Invalid regex "${artifact.searchPattern}": ${(err as Error).message}`);
+        issues.push(
+          `Invalid regex "${artifact.searchPattern}": ${(err as Error).message}`,
+        );
         continue;
       }
 
@@ -157,7 +171,9 @@ export class RepositoryLayerInspector {
     }
     if (transactionFound) evidenceParts.push('$transaction pattern found');
     if (totalArtifacts > 0) {
-      evidenceParts.push(`${artifactsFound}/${totalArtifacts} required artifacts matched`);
+      evidenceParts.push(
+        `${artifactsFound}/${totalArtifacts} required artifacts matched`,
+      );
     }
 
     return {
@@ -165,9 +181,10 @@ export class RepositoryLayerInspector {
       status,
       filePath: firstMatchedFile,
       lineReferences: lineReferences.length > 0 ? lineReferences : undefined,
-      evidence: evidenceParts.length > 0
-        ? evidenceParts.join('; ')
-        : `Scanned ${matchedFiles.length} file(s), no repository indicators found`,
+      evidence:
+        evidenceParts.length > 0
+          ? evidenceParts.join('; ')
+          : `Scanned ${matchedFiles.length} file(s), no repository indicators found`,
       issues: issues.length > 0 ? issues : undefined,
     };
   }
@@ -191,7 +208,8 @@ export class RepositoryLayerInspector {
     // If no required artifacts are specified, determine by indicators alone
     if (totalArtifacts === 0) {
       if (hasRepositoryIndicators) return 'PRESENT';
-      if (prismaUsageFound || queryMethodsFound || transactionFound) return 'PARTIAL';
+      if (prismaUsageFound || queryMethodsFound || transactionFound)
+        return 'PARTIAL';
       return 'ABSENT';
     }
 
@@ -199,7 +217,12 @@ export class RepositoryLayerInspector {
     const allArtifactsFound = artifactsFound >= totalArtifacts;
 
     if (hasRepositoryIndicators && allArtifactsFound) return 'PRESENT';
-    if (prismaUsageFound || queryMethodsFound || transactionFound || artifactsFound > 0) {
+    if (
+      prismaUsageFound ||
+      queryMethodsFound ||
+      transactionFound ||
+      artifactsFound > 0
+    ) {
       return 'PARTIAL';
     }
     return 'ABSENT';

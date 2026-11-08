@@ -28,7 +28,12 @@ describe('ServiceLayerInspector', () => {
     it('should return ABSENT status', async () => {
       const target: InspectionTarget = {
         layer: 'SERVICE',
-        patterns: [{ glob: 'apps/api/src/laboratory/patient/**/*.service.ts', purpose: 'Patient services' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/patient/**/*.service.ts',
+            purpose: 'Patient services',
+          },
+        ],
         requiredArtifacts: [],
       };
 
@@ -36,7 +41,9 @@ describe('ServiceLayerInspector', () => {
 
       expect(result.layer).toBe('SERVICE');
       expect(result.status).toBe('ABSENT');
-      expect(result.evidence).toBe('No service files matched inspection patterns');
+      expect(result.evidence).toBe(
+        'No service files matched inspection patterns',
+      );
     });
   });
 
@@ -64,7 +71,12 @@ export class PatientService {
 
       const target: InspectionTarget = {
         layer: 'SERVICE',
-        patterns: [{ glob: 'apps/api/src/laboratory/patient/**/*.service.ts', purpose: 'Patient services' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/patient/**/*.service.ts',
+            purpose: 'Patient services',
+          },
+        ],
         requiredArtifacts: [],
       };
 
@@ -95,7 +107,12 @@ export class PatientService {
 
       const target: InspectionTarget = {
         layer: 'SERVICE',
-        patterns: [{ glob: 'apps/api/src/laboratory/patient/**/*.service.ts', purpose: 'Patient services' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/patient/**/*.service.ts',
+            purpose: 'Patient services',
+          },
+        ],
         requiredArtifacts: [],
       };
 
@@ -128,9 +145,18 @@ export class PatientService {
 
       const target: InspectionTarget = {
         layer: 'SERVICE',
-        patterns: [{ glob: 'apps/api/src/laboratory/patient/**/*.service.ts', purpose: 'Patient services' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/patient/**/*.service.ts',
+            purpose: 'Patient services',
+          },
+        ],
         requiredArtifacts: [
-          { description: 'MRN generation', searchPattern: 'generateMrn|MrnGenerator', layer: 'SERVICE' },
+          {
+            description: 'MRN generation',
+            searchPattern: 'generateMrn|MrnGenerator',
+            layer: 'SERVICE',
+          },
         ],
       };
 
@@ -161,10 +187,23 @@ export class PatientService {
 
       const target: InspectionTarget = {
         layer: 'SERVICE',
-        patterns: [{ glob: 'apps/api/src/laboratory/patient/**/*.service.ts', purpose: 'Patient services' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/patient/**/*.service.ts',
+            purpose: 'Patient services',
+          },
+        ],
         requiredArtifacts: [
-          { description: 'MRN generation', searchPattern: 'generateMrn|MrnGenerator', layer: 'SERVICE' },
-          { description: 'Validation logic', searchPattern: 'validatePatient|PatientValidator', layer: 'SERVICE' },
+          {
+            description: 'MRN generation',
+            searchPattern: 'generateMrn|MrnGenerator',
+            layer: 'SERVICE',
+          },
+          {
+            description: 'Validation logic',
+            searchPattern: 'validatePatient|PatientValidator',
+            layer: 'SERVICE',
+          },
         ],
       };
 
@@ -195,7 +234,12 @@ export class OrderService {
 
       const target: InspectionTarget = {
         layer: 'SERVICE',
-        patterns: [{ glob: 'apps/api/src/laboratory/order/**/*.service.ts', purpose: 'Order services' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/order/**/*.service.ts',
+            purpose: 'Order services',
+          },
+        ],
         requiredArtifacts: [],
       };
 
@@ -208,13 +252,25 @@ export class OrderService {
 
   describe('error handling', () => {
     it('should handle invalid regex patterns gracefully', async () => {
-      createFile('apps/api/src/laboratory/patient/patient.service.ts', 'export class PatientService {}');
+      createFile(
+        'apps/api/src/laboratory/patient/patient.service.ts',
+        'export class PatientService {}',
+      );
 
       const target: InspectionTarget = {
         layer: 'SERVICE',
-        patterns: [{ glob: 'apps/api/src/laboratory/patient/**/*.service.ts', purpose: 'Services' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/patient/**/*.service.ts',
+            purpose: 'Services',
+          },
+        ],
         requiredArtifacts: [
-          { description: 'Bad pattern', searchPattern: '[invalid(regex', layer: 'SERVICE' },
+          {
+            description: 'Bad pattern',
+            searchPattern: '[invalid(regex',
+            layer: 'SERVICE',
+          },
         ],
       };
 
@@ -249,7 +305,12 @@ describe('RepositoryLayerInspector', () => {
     it('should return ABSENT status', async () => {
       const target: InspectionTarget = {
         layer: 'REPOSITORY',
-        patterns: [{ glob: 'apps/api/src/laboratory/patient/**/*.service.ts', purpose: 'Patient repo' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/patient/**/*.service.ts',
+            purpose: 'Patient repo',
+          },
+        ],
         requiredArtifacts: [],
       };
 
@@ -257,7 +318,9 @@ describe('RepositoryLayerInspector', () => {
 
       expect(result.layer).toBe('REPOSITORY');
       expect(result.status).toBe('ABSENT');
-      expect(result.evidence).toBe('No repository files matched inspection patterns');
+      expect(result.evidence).toBe(
+        'No repository files matched inspection patterns',
+      );
     });
   });
 
@@ -292,7 +355,12 @@ export class PatientService {
 
       const target: InspectionTarget = {
         layer: 'REPOSITORY',
-        patterns: [{ glob: 'apps/api/src/laboratory/patient/**/*.service.ts', purpose: 'Patient data access' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/patient/**/*.service.ts',
+            purpose: 'Patient data access',
+          },
+        ],
         requiredArtifacts: [],
       };
 
@@ -329,7 +397,12 @@ export class PatientService {
 
       const target: InspectionTarget = {
         layer: 'REPOSITORY',
-        patterns: [{ glob: 'apps/api/src/laboratory/patient/**/*.service.ts', purpose: 'Patient data access' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/patient/**/*.service.ts',
+            purpose: 'Patient data access',
+          },
+        ],
         requiredArtifacts: [],
       };
 
@@ -366,7 +439,12 @@ export class OrderService {
 
       const target: InspectionTarget = {
         layer: 'REPOSITORY',
-        patterns: [{ glob: 'apps/api/src/laboratory/order/**/*.service.ts', purpose: 'Order data access' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/order/**/*.service.ts',
+            purpose: 'Order data access',
+          },
+        ],
         requiredArtifacts: [],
       };
 
@@ -399,9 +477,18 @@ export class PatientService {
 
       const target: InspectionTarget = {
         layer: 'REPOSITORY',
-        patterns: [{ glob: 'apps/api/src/laboratory/patient/**/*.service.ts', purpose: 'Patient data access' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/patient/**/*.service.ts',
+            purpose: 'Patient data access',
+          },
+        ],
         requiredArtifacts: [
-          { description: 'Patient query', searchPattern: 'prisma\\.patient\\.', layer: 'REPOSITORY' },
+          {
+            description: 'Patient query',
+            searchPattern: 'prisma\\.patient\\.',
+            layer: 'REPOSITORY',
+          },
         ],
       };
 
@@ -432,10 +519,23 @@ export class PatientService {
 
       const target: InspectionTarget = {
         layer: 'REPOSITORY',
-        patterns: [{ glob: 'apps/api/src/laboratory/patient/**/*.service.ts', purpose: 'Patient data access' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/patient/**/*.service.ts',
+            purpose: 'Patient data access',
+          },
+        ],
         requiredArtifacts: [
-          { description: 'Patient create', searchPattern: 'prisma\\.patient\\.create', layer: 'REPOSITORY' },
-          { description: 'Patient update', searchPattern: 'prisma\\.patient\\.update', layer: 'REPOSITORY' },
+          {
+            description: 'Patient create',
+            searchPattern: 'prisma\\.patient\\.create',
+            layer: 'REPOSITORY',
+          },
+          {
+            description: 'Patient update',
+            searchPattern: 'prisma\\.patient\\.update',
+            layer: 'REPOSITORY',
+          },
         ],
       };
 
@@ -470,7 +570,12 @@ export class OrderService {
 
       const target: InspectionTarget = {
         layer: 'REPOSITORY',
-        patterns: [{ glob: 'apps/api/src/laboratory/order/**/*.service.ts', purpose: 'Order repo' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/order/**/*.service.ts',
+            purpose: 'Order repo',
+          },
+        ],
         requiredArtifacts: [],
       };
 
@@ -488,13 +593,25 @@ export class OrderService {
 
   describe('error handling', () => {
     it('should handle invalid regex patterns gracefully', async () => {
-      createFile('apps/api/src/laboratory/patient/patient.service.ts', 'export class PatientService {}');
+      createFile(
+        'apps/api/src/laboratory/patient/patient.service.ts',
+        'export class PatientService {}',
+      );
 
       const target: InspectionTarget = {
         layer: 'REPOSITORY',
-        patterns: [{ glob: 'apps/api/src/laboratory/patient/**/*.service.ts', purpose: 'Services' }],
+        patterns: [
+          {
+            glob: 'apps/api/src/laboratory/patient/**/*.service.ts',
+            purpose: 'Services',
+          },
+        ],
         requiredArtifacts: [
-          { description: 'Bad pattern', searchPattern: '[invalid(regex', layer: 'REPOSITORY' },
+          {
+            description: 'Bad pattern',
+            searchPattern: '[invalid(regex',
+            layer: 'REPOSITORY',
+          },
         ],
       };
 

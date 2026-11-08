@@ -31,8 +31,14 @@ export function stripSensitiveFields(
 }
 
 // ─── Allowed sort fields to prevent SQL injection ─────────────────────────────
-const ALLOWED_SORT_FIELDS = ['timestamp', 'action', 'entityName', 'entityId', 'userId'] as const;
-type AuditSortField = typeof ALLOWED_SORT_FIELDS[number];
+const ALLOWED_SORT_FIELDS = [
+  'timestamp',
+  'action',
+  'entityName',
+  'entityId',
+  'userId',
+] as const;
+type AuditSortField = (typeof ALLOWED_SORT_FIELDS)[number];
 
 export interface AuditLogQueryParams {
   entityName?: string;
@@ -100,8 +106,12 @@ export class AuditService {
         action,
         entityName,
         entityId,
-        oldValues: stripSensitiveFields(oldValues) as Prisma.InputJsonValue ?? Prisma.JsonNull,
-        newValues: stripSensitiveFields(newValues) as Prisma.InputJsonValue ?? Prisma.JsonNull,
+        oldValues:
+          (stripSensitiveFields(oldValues) as Prisma.InputJsonValue) ??
+          Prisma.JsonNull,
+        newValues:
+          (stripSensitiveFields(newValues) as Prisma.InputJsonValue) ??
+          Prisma.JsonNull,
         ipAddress: ipAddress ?? null,
       },
     });
@@ -145,7 +155,8 @@ export class AuditService {
    */
   async findAll(params: AuditLogQueryParams): Promise<PaginatedAuditLogs> {
     const page = params.page && params.page > 0 ? params.page : 1;
-    const limit = params.limit && params.limit > 0 ? Math.min(params.limit, 100) : 20;
+    const limit =
+      params.limit && params.limit > 0 ? Math.min(params.limit, 100) : 20;
     const skip = (page - 1) * limit;
     const sortField = this.getSortField(params.sortField);
     const sortDir = this.getSortDir(params.sortDir);
@@ -192,12 +203,13 @@ export class AuditService {
 
     // AT-FN-02+03: Resolve userIds to user names
     const userIds = [...new Set(rawLogs.map((l) => l.userId))];
-    const users = userIds.length > 0
-      ? await this.prisma.user.findMany({
-          where: { id: { in: userIds } },
-          select: { id: true, name: true, email: true },
-        })
-      : [];
+    const users =
+      userIds.length > 0
+        ? await this.prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, name: true, email: true },
+          })
+        : [];
 
     const userMap = new Map(users.map((u) => [u.id, u]));
     const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
@@ -285,13 +297,22 @@ export class AuditService {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [totalAll, totalToday, createCount, updateCount, deleteCount] = await Promise.all([
-      this.prisma.auditLog.count(),
-      this.prisma.auditLog.count({ where: { timestamp: { gte: todayStart } } }),
-      this.prisma.auditLog.count({ where: { timestamp: { gte: todayStart }, action: 'CREATE' } }),
-      this.prisma.auditLog.count({ where: { timestamp: { gte: todayStart }, action: 'UPDATE' } }),
-      this.prisma.auditLog.count({ where: { timestamp: { gte: todayStart }, action: 'DELETE' } }),
-    ]);
+    const [totalAll, totalToday, createCount, updateCount, deleteCount] =
+      await Promise.all([
+        this.prisma.auditLog.count(),
+        this.prisma.auditLog.count({
+          where: { timestamp: { gte: todayStart } },
+        }),
+        this.prisma.auditLog.count({
+          where: { timestamp: { gte: todayStart }, action: 'CREATE' },
+        }),
+        this.prisma.auditLog.count({
+          where: { timestamp: { gte: todayStart }, action: 'UPDATE' },
+        }),
+        this.prisma.auditLog.count({
+          where: { timestamp: { gte: todayStart }, action: 'DELETE' },
+        }),
+      ]);
 
     return { totalToday, createCount, updateCount, deleteCount, totalAll };
   }
@@ -340,22 +361,29 @@ export class AuditService {
 
     // Resolve user names for export
     const userIds = [...new Set(logs.map((l) => l.userId))];
-    const users = userIds.length > 0
-      ? await this.prisma.user.findMany({
-          where: { id: { in: userIds } },
-          select: { id: true, name: true, email: true },
-        })
-      : [];
+    const users =
+      userIds.length > 0
+        ? await this.prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, name: true, email: true },
+          })
+        : [];
     const userMap = new Map(users.map((u) => [u.id, u]));
     const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
 
-    const header = 'ID,Timestamp,User ID,User Name,User Email,Action,Entity,Entity ID,IP Address,Old Values,New Values';
+    const header =
+      'ID,Timestamp,User ID,User Name,User Email,Action,Entity,Entity ID,IP Address,Old Values,New Values';
     const rows = logs.map((log) => {
       const user = userMap.get(log.userId);
-      const userName = log.userId === SYSTEM_USER_ID ? 'SYSTEM' : (user?.name || '');
-      const userEmail = log.userId === SYSTEM_USER_ID ? '' : (user?.email || '');
-      const oldVals = log.oldValues ? JSON.stringify(log.oldValues).replace(/"/g, '""') : '';
-      const newVals = log.newValues ? JSON.stringify(log.newValues).replace(/"/g, '""') : '';
+      const userName =
+        log.userId === SYSTEM_USER_ID ? 'SYSTEM' : user?.name || '';
+      const userEmail = log.userId === SYSTEM_USER_ID ? '' : user?.email || '';
+      const oldVals = log.oldValues
+        ? JSON.stringify(log.oldValues).replace(/"/g, '""')
+        : '';
+      const newVals = log.newValues
+        ? JSON.stringify(log.newValues).replace(/"/g, '""')
+        : '';
       return `${log.id},${log.timestamp.toISOString()},${log.userId},"${userName}","${userEmail}",${log.action},${log.entityName},${log.entityId},${log.ipAddress || ''},"${oldVals}","${newVals}"`;
     });
 

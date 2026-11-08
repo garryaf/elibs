@@ -14,11 +14,17 @@ describe('parseCorsOrigins - Property Tests', () => {
       // Generate arrays of URL origins (1–10 items), excluding URLs that contain commas
       // since commas are the separator in the CORS_ORIGINS format
       const originArbitrary = fc.webUrl().filter((url) => !url.includes(','));
-      const originsArrayArbitrary = fc.array(originArbitrary, { minLength: 1, maxLength: 10 });
+      const originsArrayArbitrary = fc.array(originArbitrary, {
+        minLength: 1,
+        maxLength: 10,
+      });
 
       // Generate whitespace strings (spaces/tabs, 0–3 chars) for padding around commas
       const whitespaceArbitrary = fc
-        .array(fc.constantFrom(' ', '\t', ' ', ''), { minLength: 0, maxLength: 3 })
+        .array(fc.constantFrom(' ', '\t', ' ', ''), {
+          minLength: 0,
+          maxLength: 3,
+        })
         .map((chars) => chars.join(''));
 
       fc.assert(

@@ -120,22 +120,24 @@ describe('Privilege Escalation Guard Property Tests', () => {
           async (requestingRole, targetRole) => {
             // Reset mocks for each iteration
             (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
-            (prismaService.user.create as jest.Mock).mockImplementation((args: any) =>
-              Promise.resolve({
-                id: 'new-user-uuid',
-                email: args.data.email,
-                name: args.data.name,
-                role: args.data.role,
-                departmentId: null,
-                positionId: null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                deletedAt: null,
-              }),
+            (prismaService.user.create as jest.Mock).mockImplementation(
+              (args: any) =>
+                Promise.resolve({
+                  id: 'new-user-uuid',
+                  email: args.data.email,
+                  name: args.data.name,
+                  role: args.data.role,
+                  departmentId: null,
+                  positionId: null,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  deletedAt: null,
+                }),
             );
 
             const shouldSucceed =
-              targetRole !== Role.SUPER_ADMIN || requestingRole === Role.SUPER_ADMIN;
+              targetRole !== Role.SUPER_ADMIN ||
+              requestingRole === Role.SUPER_ADMIN;
 
             const createPromise = service.create(
               {
@@ -185,22 +187,24 @@ describe('Privilege Escalation Guard Property Tests', () => {
               deletedAt: null,
             });
             (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
-            (prismaService.user.update as jest.Mock).mockImplementation((args: any) =>
-              Promise.resolve({
-                id: args.where.id,
-                email: 'target@example.com',
-                name: 'Target User',
-                role: args.data.role || Role.ADMIN,
-                departmentId: null,
-                positionId: null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                deletedAt: null,
-              }),
+            (prismaService.user.update as jest.Mock).mockImplementation(
+              (args: any) =>
+                Promise.resolve({
+                  id: args.where.id,
+                  email: 'target@example.com',
+                  name: 'Target User',
+                  role: args.data.role || Role.ADMIN,
+                  departmentId: null,
+                  positionId: null,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  deletedAt: null,
+                }),
             );
 
             const shouldSucceed =
-              targetRole !== Role.SUPER_ADMIN || requestingRole === Role.SUPER_ADMIN;
+              targetRole !== Role.SUPER_ADMIN ||
+              requestingRole === Role.SUPER_ADMIN;
 
             const updatePromise = service.update(
               'target-uuid',

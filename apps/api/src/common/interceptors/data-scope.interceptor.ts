@@ -41,7 +41,8 @@ export class DataScopeInterceptor implements NestInterceptor {
       if (!user.clinicId) {
         throw new ForbiddenException({
           errorCode: 'ERR_NO_CLINIC_ASSIGNED',
-          message: 'Klinik belum ditetapkan untuk user ini. Hubungi admin untuk menetapkan klinik.',
+          message:
+            'Klinik belum ditetapkan untuk user ini. Hubungi admin untuk menetapkan klinik.',
           userRole: user.role,
         });
       }

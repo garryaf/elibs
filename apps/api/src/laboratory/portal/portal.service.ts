@@ -1,6 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { PdfGeneratorService, OrderWithDetails } from '../notification/pdf-generator.service';
+import {
+  PdfGeneratorService,
+  OrderWithDetails,
+} from '../notification/pdf-generator.service';
 
 export interface PortalReportResult {
   orderNumber: string;
@@ -68,9 +76,11 @@ export class PortalService {
   /**
    * Generate or retrieve PDF report buffer by portal token.
    */
-  async getReportPdfByToken(token: string): Promise<{ buffer: Buffer; orderNumber: string }> {
+  async getReportPdfByToken(
+    token: string,
+  ): Promise<{ buffer: Buffer; orderNumber: string }> {
     const order = await this.findOrderByToken(token);
-    const buffer = await this.pdfGeneratorService.generateReport(order as unknown as OrderWithDetails);
+    const buffer = await this.pdfGeneratorService.generateReport(order);
     return { buffer, orderNumber: order.orderNumber };
   }
 
@@ -87,7 +97,9 @@ export class PortalService {
 
     if (!notificationLog) {
       this.logger.warn(`Portal access attempted with invalid token: ${token}`);
-      throw new NotFoundException('Laporan tidak ditemukan atau token tidak valid');
+      throw new NotFoundException(
+        'Laporan tidak ditemukan atau token tidak valid',
+      );
     }
 
     // Fetch the full order with all relations needed for report generation

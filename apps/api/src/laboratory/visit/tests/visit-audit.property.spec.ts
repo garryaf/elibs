@@ -76,7 +76,14 @@ describe('Feature: visit-management, Property 12: Audit Log Completeness', () =>
           useValue: mockVisitNumberGenerator,
         },
         { provide: AuditService, useValue: mockAuditService },
-        { provide: InsuranceConsolidationService, useValue: { validateVisitInsurance: jest.fn().mockResolvedValue(undefined), getDefaultInsurance: jest.fn().mockResolvedValue(null), getActiveInsurances: jest.fn().mockResolvedValue([]) } },
+        {
+          provide: InsuranceConsolidationService,
+          useValue: {
+            validateVisitInsurance: jest.fn().mockResolvedValue(undefined),
+            getDefaultInsurance: jest.fn().mockResolvedValue(null),
+            getActiveInsurances: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -124,7 +131,7 @@ describe('Feature: visit-management, Property 12: Audit Log Completeness', () =>
 
             const dto: CreateVisitDto = {
               patientId,
-              paymentMethod: PaymentMethod.CASH as any,
+              paymentMethod: PaymentMethod.CASH,
             };
 
             await visitService.create(dto, userId, ipAddress);

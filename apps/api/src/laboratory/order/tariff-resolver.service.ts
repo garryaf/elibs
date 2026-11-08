@@ -9,11 +9,7 @@ export interface TariffResult {
   finalPrice: number;
   tariffId: string | null;
   resolution:
-    | 'SPECIFIC'
-    | 'CLINIC_ONLY'
-    | 'INSURANCE_ONLY'
-    | 'DEFAULT'
-    | 'FALLBACK';
+    'SPECIFIC' | 'CLINIC_ONLY' | 'INSURANCE_ONLY' | 'DEFAULT' | 'FALLBACK';
 }
 
 export interface OrderPricing {
@@ -53,10 +49,7 @@ export class TariffResolverService {
     // Date filter: effectiveFrom <= now AND (effectiveTo is null OR effectiveTo >= now)
     const dateFilter = {
       effectiveFrom: { lte: now },
-      OR: [
-        { effectiveTo: null },
-        { effectiveTo: { gte: now } },
-      ],
+      OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }],
     };
 
     // Order by most recent effectiveFrom to pick the latest valid tariff
@@ -69,7 +62,12 @@ export class TariffResolverService {
         orderBy: orderByEffective,
       });
       if (tariff) {
-        return this.buildResult(tariff.id, tariff.price, tariff.discount, 'SPECIFIC');
+        return this.buildResult(
+          tariff.id,
+          tariff.price,
+          tariff.discount,
+          'SPECIFIC',
+        );
       }
     }
 
@@ -80,7 +78,12 @@ export class TariffResolverService {
         orderBy: orderByEffective,
       });
       if (tariff) {
-        return this.buildResult(tariff.id, tariff.price, tariff.discount, 'CLINIC_ONLY');
+        return this.buildResult(
+          tariff.id,
+          tariff.price,
+          tariff.discount,
+          'CLINIC_ONLY',
+        );
       }
     }
 
@@ -91,7 +94,12 @@ export class TariffResolverService {
         orderBy: orderByEffective,
       });
       if (tariff) {
-        return this.buildResult(tariff.id, tariff.price, tariff.discount, 'INSURANCE_ONLY');
+        return this.buildResult(
+          tariff.id,
+          tariff.price,
+          tariff.discount,
+          'INSURANCE_ONLY',
+        );
       }
     }
 
@@ -135,8 +143,14 @@ export class TariffResolverService {
       items.push({ testId, tariff });
     }
 
-    const subtotal = items.reduce((sum, item) => sum + item.tariff.basePrice, 0);
-    const totalAmount = items.reduce((sum, item) => sum + item.tariff.finalPrice, 0);
+    const subtotal = items.reduce(
+      (sum, item) => sum + item.tariff.basePrice,
+      0,
+    );
+    const totalAmount = items.reduce(
+      (sum, item) => sum + item.tariff.finalPrice,
+      0,
+    );
     const totalDiscount = subtotal - totalAmount;
 
     return {

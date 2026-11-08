@@ -15,7 +15,7 @@
 
 import * as fc from "fast-check";
 import React from "react";
-import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, act } from "@/test-utils";
 import "@testing-library/jest-dom";
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────

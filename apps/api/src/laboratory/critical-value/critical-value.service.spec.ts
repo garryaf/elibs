@@ -50,7 +50,10 @@ describe('CriticalValueService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: NotificationService, useValue: notificationService },
         { provide: EventEmitter2, useValue: eventEmitter },
-        { provide: getQueueToken('critical-value-escalation'), useValue: escalationQueue },
+        {
+          provide: getQueueToken('critical-value-escalation'),
+          useValue: escalationQueue,
+        },
       ],
     }).compile();
 
@@ -61,13 +64,22 @@ describe('CriticalValueService', () => {
     it('should return null when order is not found', async () => {
       prisma.order.findUnique.mockResolvedValue(null);
 
-      const result = await service.detectAndAlert('order-1', 'detail-1', '200', 'test-1');
+      const result = await service.detectAndAlert(
+        'order-1',
+        'detail-1',
+        '200',
+        'test-1',
+      );
 
       expect(result).toBeNull();
     });
 
     it('should create a CriticalValueLog, emit event, and schedule escalation', async () => {
-      const mockOrder = { patientId: 'patient-1', clinicId: 'clinic-1', doctorId: 'doctor-1' };
+      const mockOrder = {
+        patientId: 'patient-1',
+        clinicId: 'clinic-1',
+        doctorId: 'doctor-1',
+      };
       const mockLog = {
         id: 'log-1',
         orderId: 'order-1',
@@ -78,14 +90,23 @@ describe('CriticalValueService', () => {
         notificationStatus: CriticalValueStatus.PENDING,
         flaggedAt: new Date('2026-01-01'),
       };
-      const mockUpdatedLog = { ...mockLog, notificationStatus: CriticalValueStatus.NOTIFIED, notifiedAt: new Date() };
+      const mockUpdatedLog = {
+        ...mockLog,
+        notificationStatus: CriticalValueStatus.NOTIFIED,
+        notifiedAt: new Date(),
+      };
 
       prisma.order.findUnique.mockResolvedValue(mockOrder);
       prisma.criticalValueLog.create.mockResolvedValue(mockLog);
       prisma.criticalValueLog.update.mockResolvedValue(mockUpdatedLog);
       prisma.systemSetting.findUnique.mockResolvedValue(null);
 
-      const result = await service.detectAndAlert('order-1', 'detail-1', '200', 'test-1');
+      const result = await service.detectAndAlert(
+        'order-1',
+        'detail-1',
+        '200',
+        'test-1',
+      );
 
       expect(result).toEqual(mockUpdatedLog);
       expect(prisma.criticalValueLog.create).toHaveBeenCalledWith({
@@ -99,11 +120,14 @@ describe('CriticalValueService', () => {
           clinicianId: 'doctor-1',
         }),
       });
-      expect(eventEmitter.emit).toHaveBeenCalledWith('critical-value.new', expect.objectContaining({
-        id: 'log-1',
-        orderId: 'order-1',
-        testId: 'test-1',
-      }));
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        'critical-value.new',
+        expect.objectContaining({
+          id: 'log-1',
+          orderId: 'order-1',
+          testId: 'test-1',
+        }),
+      );
       expect(escalationQueue.add).toHaveBeenCalledWith(
         'escalate',
         { logId: 'log-1' },
@@ -116,10 +140,19 @@ describe('CriticalValueService', () => {
 
     it('should use configurable escalation timeout from system settings', async () => {
       const customTimeout = 5 * 60 * 1000; // 5 minutes
-      prisma.order.findUnique.mockResolvedValue({ patientId: 'p1', clinicId: 'c1', doctorId: 'd1' });
-      prisma.criticalValueLog.create.mockResolvedValue({ id: 'log-2', flaggedAt: new Date() });
+      prisma.order.findUnique.mockResolvedValue({
+        patientId: 'p1',
+        clinicId: 'c1',
+        doctorId: 'd1',
+      });
+      prisma.criticalValueLog.create.mockResolvedValue({
+        id: 'log-2',
+        flaggedAt: new Date(),
+      });
       prisma.criticalValueLog.update.mockResolvedValue({ id: 'log-2' });
-      prisma.systemSetting.findUnique.mockResolvedValue({ value: String(customTimeout) });
+      prisma.systemSetting.findUnique.mockResolvedValue({
+        value: String(customTimeout),
+      });
 
       await service.detectAndAlert('order-2', 'detail-2', '300', 'test-2');
 
@@ -135,12 +168,21 @@ describe('CriticalValueService', () => {
     it('should throw NotFoundException when log does not exist', async () => {
       prisma.criticalValueLog.findUnique.mockResolvedValue(null);
 
-      await expect(service.acknowledge('non-existent', 'user-1')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.acknowledge('non-existent', 'user-1'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should update status to ACKNOWLEDGED and cancel escalation job', async () => {
-      const mockLog = { id: 'log-1', notificationStatus: CriticalValueStatus.NOTIFIED };
-      const mockUpdated = { ...mockLog, notificationStatus: CriticalValueStatus.ACKNOWLEDGED, acknowledgedBy: 'user-1' };
+      const mockLog = {
+        id: 'log-1',
+        notificationStatus: CriticalValueStatus.NOTIFIED,
+      };
+      const mockUpdated = {
+        ...mockLog,
+        notificationStatus: CriticalValueStatus.ACKNOWLEDGED,
+        acknowledgedBy: 'user-1',
+      };
       const mockJob = { remove: jest.fn() };
 
       prisma.criticalValueLog.findUnique.mockResolvedValue(mockLog);
@@ -164,7 +206,10 @@ describe('CriticalValueService', () => {
 
     it('should still succeed if escalation job not found', async () => {
       prisma.criticalValueLog.findUnique.mockResolvedValue({ id: 'log-1' });
-      prisma.criticalValueLog.update.mockResolvedValue({ id: 'log-1', notificationStatus: CriticalValueStatus.ACKNOWLEDGED });
+      prisma.criticalValueLog.update.mockResolvedValue({
+        id: 'log-1',
+        notificationStatus: CriticalValueStatus.ACKNOWLEDGED,
+      });
       escalationQueue.getJob.mockResolvedValue(null);
 
       const result = await service.acknowledge('log-1', 'user-1');
@@ -210,11 +255,16 @@ describe('CriticalValueService', () => {
         'order-1',
         NotificationType.WHATSAPP,
         'doctor-1',
-        expect.objectContaining({ subject: 'Critical Value Alert - Escalation' }),
+        expect.objectContaining({
+          subject: 'Critical Value Alert - Escalation',
+        }),
       );
-      expect(eventEmitter.emit).toHaveBeenCalledWith('critical-value.escalated', expect.objectContaining({
-        id: 'log-1',
-      }));
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        'critical-value.escalated',
+        expect.objectContaining({
+          id: 'log-1',
+        }),
+      );
     });
 
     it('should not send notification when clinicianId is null', async () => {

@@ -1,6 +1,14 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { AuditService, stripSensitiveFields } from '../laboratory/audit/audit.service';
+import {
+  AuditService,
+  stripSensitiveFields,
+} from '../laboratory/audit/audit.service';
 import { User, Role } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -27,9 +35,17 @@ export class UsersService {
     private auditService: AuditService,
   ) {}
 
-  private validateRoleEscalation(requestingUserRole: Role, targetRole: Role): void {
-    if (targetRole === Role.SUPER_ADMIN && requestingUserRole !== Role.SUPER_ADMIN) {
-      throw new ForbiddenException('Only SUPER_ADMIN can assign SUPER_ADMIN role');
+  private validateRoleEscalation(
+    requestingUserRole: Role,
+    targetRole: Role,
+  ): void {
+    if (
+      targetRole === Role.SUPER_ADMIN &&
+      requestingUserRole !== Role.SUPER_ADMIN
+    ) {
+      throw new ForbiddenException(
+        'Only SUPER_ADMIN can assign SUPER_ADMIN role',
+      );
     }
   }
 
@@ -37,11 +53,17 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email, deletedAt: null } });
   }
 
-  async create(dto: CreateUserDto, requestingUser: { id: string; role: Role }, ipAddress?: string) {
+  async create(
+    dto: CreateUserDto,
+    requestingUser: { id: string; role: Role },
+    ipAddress?: string,
+  ) {
     this.validateRoleEscalation(requestingUser.role, dto.role);
 
     if (dto.role === Role.KLINIK_PARTNER && !dto.clinicId) {
-      throw new ConflictException('clinicId wajib diisi untuk role KLINIK_PARTNER');
+      throw new ConflictException(
+        'clinicId wajib diisi untuk role KLINIK_PARTNER',
+      );
     }
 
     // Check for active (non-deleted) user with same email.
@@ -72,7 +94,7 @@ export class UsersService {
       'User',
       createdUser.id,
       null,
-      stripSensitiveFields(createdUser as unknown as Record<string, unknown>),
+      stripSensitiveFields(createdUser),
       ipAddress,
     );
 
@@ -130,7 +152,12 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, dto: UpdateUserDto, requestingUser: { id: string; role: Role }, ipAddress?: string) {
+  async update(
+    id: string,
+    dto: UpdateUserDto,
+    requestingUser: { id: string; role: Role },
+    ipAddress?: string,
+  ) {
     const oldUser = await this.findById(id);
 
     // Validate role escalation only when role is being changed
@@ -149,10 +176,13 @@ export class UsersService {
     }
 
     const finalRole = dto.role || oldUser.role;
-    const finalClinicId = dto.clinicId !== undefined ? dto.clinicId : oldUser.clinicId;
+    const finalClinicId =
+      dto.clinicId !== undefined ? dto.clinicId : oldUser.clinicId;
 
     if (finalRole === Role.KLINIK_PARTNER && !finalClinicId) {
-      throw new ConflictException('clinicId wajib diisi untuk role KLINIK_PARTNER');
+      throw new ConflictException(
+        'clinicId wajib diisi untuk role KLINIK_PARTNER',
+      );
     }
 
     const data: any = {};
@@ -177,8 +207,8 @@ export class UsersService {
       'UPDATE',
       'User',
       id,
-      stripSensitiveFields(oldUser as unknown as Record<string, unknown>),
-      stripSensitiveFields(updatedUser as unknown as Record<string, unknown>),
+      stripSensitiveFields(oldUser),
+      stripSensitiveFields(updatedUser),
       ipAddress,
     );
 
@@ -215,7 +245,7 @@ export class UsersService {
       'DELETE',
       'User',
       id,
-      stripSensitiveFields(targetUser as unknown as Record<string, unknown>),
+      stripSensitiveFields(targetUser),
       null,
       ipAddress,
     );

@@ -1,4 +1,12 @@
-import { IsUUID, IsNumber, IsString, IsNotEmpty, IsOptional, Min, Max } from 'class-validator';
+import {
+  IsUUID,
+  IsNumber,
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  Min,
+  Max,
+} from 'class-validator';
 
 /**
  * DTO for creating a DISCOUNT approval request.

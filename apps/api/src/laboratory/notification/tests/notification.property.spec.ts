@@ -50,9 +50,9 @@ describe('Notification Property Tests', () => {
     it('should reject any phone string NOT starting with "62" or "08"', () => {
       fc.assert(
         fc.property(
-          fc.string({ minLength: 1 }).filter(
-            (s) => !s.startsWith('62') && !s.startsWith('08'),
-          ),
+          fc
+            .string({ minLength: 1 })
+            .filter((s) => !s.startsWith('62') && !s.startsWith('08')),
           (phone) => {
             expect(whatsAppService.isValidPhone(phone)).toBe(false);
           },

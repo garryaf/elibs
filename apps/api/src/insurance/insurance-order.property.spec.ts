@@ -87,7 +87,9 @@ describe('Order Insurance Property Tests', () => {
       mockOrderValidationGuard,
       mockConsolidationService,
       mockOrderStateMachine as any,
-      { generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001') } as any,
+      {
+        generateOrderNumber: jest.fn().mockResolvedValue('LAB-202507-0001'),
+      } as any,
     );
   });
 
@@ -101,7 +103,8 @@ describe('Order Insurance Property Tests', () => {
     visitInsuranceId: string | null;
     paymentMethod: PaymentMethod;
   }) {
-    const { visitId, patientId, testIds, visitInsuranceId, paymentMethod } = params;
+    const { visitId, patientId, testIds, visitInsuranceId, paymentMethod } =
+      params;
 
     // Mock: patient exists
     mockPrisma.patient.findFirst.mockResolvedValue({
@@ -202,7 +205,13 @@ describe('Order Insurance Property Tests', () => {
           validUuidV4Arb, // insuranceId (on the visit)
           fc.array(validUuidV4Arb, { minLength: 1, maxLength: 3 }), // testIds
           insurancePaymentMethodArb, // paymentMethod
-          async (visitId, patientId, visitInsuranceId, testIds, paymentMethod) => {
+          async (
+            visitId,
+            patientId,
+            visitInsuranceId,
+            testIds,
+            paymentMethod,
+          ) => {
             const uniqueTestIds = [...new Set(testIds)];
             if (uniqueTestIds.length === 0) return;
 
@@ -266,7 +275,13 @@ describe('Order Insurance Property Tests', () => {
           validUuidV4Arb, // visit insuranceId
           fc.array(validUuidV4Arb, { minLength: 1, maxLength: 3 }), // testIds
           insurancePaymentMethodArb,
-          async (visitId, patientId, visitInsuranceId, testIds, paymentMethod) => {
+          async (
+            visitId,
+            patientId,
+            visitInsuranceId,
+            testIds,
+            paymentMethod,
+          ) => {
             const uniqueTestIds = [...new Set(testIds)];
             if (uniqueTestIds.length === 0) return;
 
@@ -318,7 +333,14 @@ describe('Order Insurance Property Tests', () => {
           validUuidV4Arb, // override insuranceId (different from visit's)
           fc.array(validUuidV4Arb, { minLength: 1, maxLength: 3 }), // testIds
           insurancePaymentMethodArb,
-          async (visitId, patientId, visitInsuranceId, overrideInsuranceId, testIds, paymentMethod) => {
+          async (
+            visitId,
+            patientId,
+            visitInsuranceId,
+            overrideInsuranceId,
+            testIds,
+            paymentMethod,
+          ) => {
             // Ensure override differs from visit insurance to trigger validation
             if (overrideInsuranceId === visitInsuranceId) return;
 
@@ -338,7 +360,9 @@ describe('Order Insurance Property Tests', () => {
             });
 
             // consolidationService.validateVisitInsurance passes (insurance is valid)
-            mockConsolidationService.validateVisitInsurance.mockResolvedValue(undefined);
+            mockConsolidationService.validateVisitInsurance.mockResolvedValue(
+              undefined,
+            );
 
             // DTO with override
             const dto = {
@@ -351,10 +375,9 @@ describe('Order Insurance Property Tests', () => {
             await orderService.create(dto, 'user-id');
 
             // ASSERTION 1: validateVisitInsurance was called with the override
-            expect(mockConsolidationService.validateVisitInsurance).toHaveBeenCalledWith(
-              patientId,
-              overrideInsuranceId,
-            );
+            expect(
+              mockConsolidationService.validateVisitInsurance,
+            ).toHaveBeenCalledWith(patientId, overrideInsuranceId);
 
             // ASSERTION 2: OrderInsurance PRIMARY uses the override insuranceId
             expect(txOrderInsuranceCreateCalls.length).toBe(1);
@@ -419,13 +442,14 @@ describe('Order Insurance Property Tests', () => {
               coverageType: 'SECONDARY' as const,
             };
 
-            const result = await orderService.addOrderInsurance(orderId, dto as any);
+            const result = await orderService.addOrderInsurance(orderId, dto);
 
             // ASSERTION 1: OrderInsurance was created successfully
             expect(mockPrisma.orderInsurance.create).toHaveBeenCalledTimes(1);
 
             // ASSERTION 2: The created record is SECONDARY type
-            const createCall = mockPrisma.orderInsurance.create.mock.calls[0][0];
+            const createCall =
+              mockPrisma.orderInsurance.create.mock.calls[0][0];
             expect(createCall.data.coverageType).toBe('SECONDARY');
             expect(createCall.data.insuranceId).toBe(secondaryInsuranceId);
             expect(createCall.data.orderId).toBe(orderId);
@@ -452,7 +476,12 @@ describe('Order Insurance Property Tests', () => {
           validUuidV4Arb, // patientId
           validUuidV4Arb, // primary insuranceId
           validUuidV4Arb, // secondary insuranceId (may differ from primary)
-          async (orderId, patientId, primaryInsuranceId, secondaryInsuranceId) => {
+          async (
+            orderId,
+            patientId,
+            primaryInsuranceId,
+            secondaryInsuranceId,
+          ) => {
             jest.clearAllMocks();
 
             // Mock: order exists (already has a PRIMARY)
@@ -487,7 +516,7 @@ describe('Order Insurance Property Tests', () => {
               coverageType: 'SECONDARY' as const,
             };
 
-            const result = await orderService.addOrderInsurance(orderId, dto as any);
+            const result = await orderService.addOrderInsurance(orderId, dto);
 
             // ASSERTION 1: Secondary was accepted
             expect(result.coverageType).toBe('SECONDARY');
@@ -495,7 +524,9 @@ describe('Order Insurance Property Tests', () => {
 
             // ASSERTION 2: No validation of secondary against PRIMARY was enforced
             // (addOrderInsurance only checks insurance exists + is active, no PRIMARY coupling)
-            expect(mockConsolidationService.validateVisitInsurance).not.toHaveBeenCalled();
+            expect(
+              mockConsolidationService.validateVisitInsurance,
+            ).not.toHaveBeenCalled();
           },
         ),
         { numRuns: 100 },

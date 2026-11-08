@@ -3,7 +3,10 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, Job } from 'bullmq';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { PdfGeneratorService, OrderWithDetails } from './pdf-generator.service';
-import { PdfGenerationJobData, PdfGenerationResult } from './pdf-report.processor';
+import {
+  PdfGenerationJobData,
+  PdfGenerationResult,
+} from './pdf-report.processor';
 
 /**
  * Service responsible for managing PDF report caching and on-demand generation.
@@ -40,7 +43,9 @@ export class PdfReportCacheService {
    * Get or generate a PDF report for the given order.
    * Returns the PDF buffer immediately (generates on-demand if not cached).
    */
-  async getOrGeneratePdf(orderId: string): Promise<{ buffer: Buffer; orderNumber: string; version: number }> {
+  async getOrGeneratePdf(
+    orderId: string,
+  ): Promise<{ buffer: Buffer; orderNumber: string; version: number }> {
     // Fetch order to get current version
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
@@ -57,7 +62,9 @@ export class PdfReportCacheService {
     // Check cache
     const cached = this.pdfCache.get(cacheKey);
     if (cached) {
-      this.logger.debug(`Serving cached PDF for order ${order.orderNumber} v${version}`);
+      this.logger.debug(
+        `Serving cached PDF for order ${order.orderNumber} v${version}`,
+      );
       return {
         buffer: Buffer.from(cached, 'base64'),
         orderNumber: order.orderNumber,
@@ -66,7 +73,9 @@ export class PdfReportCacheService {
     }
 
     // Generate on-demand (synchronous fast path)
-    this.logger.log(`Generating PDF on-demand for order ${order.orderNumber} v${version}`);
+    this.logger.log(
+      `Generating PDF on-demand for order ${order.orderNumber} v${version}`,
+    );
 
     const fullOrder = await this.prisma.order.findUnique({
       where: { id: orderId },
@@ -98,10 +107,9 @@ export class PdfReportCacheService {
       where: { key: 'lab_accreditation_number' },
     });
 
-    const pdfBuffer = await this.pdfGeneratorService.generateReport(
-      fullOrder as unknown as OrderWithDetails,
-      { accreditationNumber: accreditationSetting?.value },
-    );
+    const pdfBuffer = await this.pdfGeneratorService.generateReport(fullOrder, {
+      accreditationNumber: accreditationSetting?.value,
+    });
 
     // Store in cache
     this.setCacheEntry(cacheKey, pdfBuffer.toString('base64'));
@@ -136,7 +144,9 @@ export class PdfReportCacheService {
       },
     );
 
-    this.logger.log(`Enqueued PDF generation job ${job.id} for order ${orderId}`);
+    this.logger.log(
+      `Enqueued PDF generation job ${job.id} for order ${orderId}`,
+    );
     return job;
   }
 
@@ -145,7 +155,9 @@ export class PdfReportCacheService {
    * Used when report content changes (e.g., after addendum, correction).
    * Invalidates existing cache and increments Order.reportVersion.
    */
-  async enqueueRegeneration(orderId: string): Promise<Job<PdfGenerationJobData>> {
+  async enqueueRegeneration(
+    orderId: string,
+  ): Promise<Job<PdfGenerationJobData>> {
     // Invalidate existing cache entries for this order
     this.invalidateCache(orderId);
 
@@ -199,7 +211,9 @@ export class PdfReportCacheService {
       this.pdfCache.delete(key);
     }
     if (keysToDelete.length > 0) {
-      this.logger.debug(`Invalidated ${keysToDelete.length} cached PDFs for order ${orderId}`);
+      this.logger.debug(
+        `Invalidated ${keysToDelete.length} cached PDFs for order ${orderId}`,
+      );
     }
   }
 

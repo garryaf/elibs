@@ -48,17 +48,26 @@ export class VisitService {
     }
 
     // Insurance validation against patient enrollments (Requirement 3.1, 3.2, 3.3)
-    if (dto.paymentMethod === PaymentMethod.INSURANCE || dto.paymentMethod === PaymentMethod.BPJS) {
+    if (
+      dto.paymentMethod === PaymentMethod.INSURANCE ||
+      dto.paymentMethod === PaymentMethod.BPJS
+    ) {
       if (dto.insuranceId) {
         // Validate that the provided insuranceId is in the patient's active enrollments
-        await this.consolidationService.validateVisitInsurance(dto.patientId, dto.insuranceId);
+        await this.consolidationService.validateVisitInsurance(
+          dto.patientId,
+          dto.insuranceId,
+        );
       } else {
         // Default to patient's priority=1 insurance
-        const defaultIns = await this.consolidationService.getDefaultInsurance(dto.patientId);
+        const defaultIns = await this.consolidationService.getDefaultInsurance(
+          dto.patientId,
+        );
         if (!defaultIns) {
           throw new BadRequestException({
             errorCode: 'ERR_NO_DEFAULT_INSURANCE',
-            message: 'Patient has no active insurance enrollment with priority=1',
+            message:
+              'Patient has no active insurance enrollment with priority=1',
           });
         }
         dto.insuranceId = defaultIns.insuranceId;
@@ -225,7 +234,10 @@ export class VisitService {
     target: VisitStatus,
   ): void {
     const allowedTransitions: Record<VisitStatus, VisitStatus[]> = {
-      [VisitStatus.REGISTERED]: [VisitStatus.IN_PROGRESS, VisitStatus.CANCELLED],
+      [VisitStatus.REGISTERED]: [
+        VisitStatus.IN_PROGRESS,
+        VisitStatus.CANCELLED,
+      ],
       [VisitStatus.IN_PROGRESS]: [VisitStatus.COMPLETED, VisitStatus.CANCELLED],
       [VisitStatus.COMPLETED]: [],
       [VisitStatus.CANCELLED]: [],
@@ -271,10 +283,14 @@ export class VisitService {
     if (query.startDate || query.endDate) {
       where.registrationDate = {};
       if (query.startDate) {
-        where.registrationDate.gte = new Date(query.startDate + 'T00:00:00.000+07:00');
+        where.registrationDate.gte = new Date(
+          query.startDate + 'T00:00:00.000+07:00',
+        );
       }
       if (query.endDate) {
-        where.registrationDate.lte = new Date(query.endDate + 'T23:59:59.999+07:00');
+        where.registrationDate.lte = new Date(
+          query.endDate + 'T23:59:59.999+07:00',
+        );
       }
     }
 
@@ -372,7 +388,9 @@ export class VisitService {
 
     // DataScope: verify resource belongs to the user's clinic
     if (clinicId && visit.clinicId !== clinicId) {
-      throw new ForbiddenException('Access denied: resource belongs to another clinic');
+      throw new ForbiddenException(
+        'Access denied: resource belongs to another clinic',
+      );
     }
 
     return visit;
@@ -458,12 +476,16 @@ export class VisitService {
     // Build a merged DTO-like object for payment validation
     const paymentValidationDto = {
       paymentMethod: effectivePaymentMethod,
-      bpjsNumber: dto.bpjsNumber !== undefined ? dto.bpjsNumber : visit.bpjsNumber,
-      insuranceId: dto.insuranceId !== undefined ? dto.insuranceId : visit.insuranceId,
+      bpjsNumber:
+        dto.bpjsNumber !== undefined ? dto.bpjsNumber : visit.bpjsNumber,
+      insuranceId:
+        dto.insuranceId !== undefined ? dto.insuranceId : visit.insuranceId,
     };
 
     if (dto.paymentMethod) {
-      this.validatePaymentFields(paymentValidationDto as CreateVisitDto | UpdateVisitDto);
+      this.validatePaymentFields(
+        paymentValidationDto as CreateVisitDto | UpdateVisitDto,
+      );
     }
 
     // 5. Validate references if provided
@@ -626,7 +648,11 @@ export class VisitService {
       'Visit',
       visit.id,
       null,
-      { cancelReason: dto.reason, cancelledAt, cascadedOrderCount: orders.length },
+      {
+        cancelReason: dto.reason,
+        cancelledAt,
+        cascadedOrderCount: orders.length,
+      },
       ipAddress,
     );
 
@@ -639,7 +665,10 @@ export class VisitService {
           'Order',
           order.id,
           { status: 'PENDING_PAYMENT' },
-          { status: 'CANCELLED', cancelReason: `Otomatis dibatalkan: kunjungan induk dibatalkan` },
+          {
+            status: 'CANCELLED',
+            cancelReason: `Otomatis dibatalkan: kunjungan induk dibatalkan`,
+          },
           ipAddress,
         );
       }

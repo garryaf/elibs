@@ -53,7 +53,11 @@ export class SettingsService implements ISettingsQueryService {
    * Encrypt a value if the key is marked as sensitive.
    */
   private encryptIfSensitive(key: string, value: string): string {
-    if (this.isSensitiveKey(key) && value && !this.cryptoService.isEncrypted(value)) {
+    if (
+      this.isSensitiveKey(key) &&
+      value &&
+      !this.cryptoService.isEncrypted(value)
+    ) {
       return this.cryptoService.encrypt(value);
     }
     return value;
@@ -63,7 +67,11 @@ export class SettingsService implements ISettingsQueryService {
    * Decrypt a value if the key is marked as sensitive and the value is encrypted.
    */
   private decryptIfSensitive(key: string, value: string): string {
-    if (this.isSensitiveKey(key) && value && this.cryptoService.isEncrypted(value)) {
+    if (
+      this.isSensitiveKey(key) &&
+      value &&
+      this.cryptoService.isEncrypted(value)
+    ) {
       try {
         return this.cryptoService.decrypt(value);
       } catch {
