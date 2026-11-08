@@ -121,7 +121,7 @@ echo "[6/8] Building Web (Next.js)..."
 cd "$APP_DIR/apps/web"
 
 # Clean old .next build cache to avoid EACCES permission errors
-rm -rf .next
+sudo rm -rf .next 2>/dev/null || rm -rf .next 2>/dev/null || true
 
 NEXT_PUBLIC_API_URL="" NEXT_TELEMETRY_DISABLED=1 npm run build
 
