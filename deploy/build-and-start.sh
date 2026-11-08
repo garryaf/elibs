@@ -77,6 +77,11 @@ echo ""
 echo "[3/8] Installing dependencies..."
 cd "$APP_DIR"
 
+# Fix ownership if previous Docker or sudo runs left root-owned files
+sudo chown -R "$(id -u):$(id -g)" "$APP_DIR/node_modules" 2>/dev/null || true
+sudo chown -R "$(id -u):$(id -g)" "$APP_DIR/apps/api/node_modules" 2>/dev/null || true
+sudo chown -R "$(id -u):$(id -g)" "$APP_DIR/apps/web/node_modules" 2>/dev/null || true
+
 # CRITICAL: Delete any global prisma cache that npm might use
 rm -rf node_modules/.prisma node_modules/@prisma node_modules/prisma 2>/dev/null || true
 rm -rf apps/api/node_modules/.prisma apps/api/node_modules/@prisma apps/api/node_modules/prisma 2>/dev/null || true
