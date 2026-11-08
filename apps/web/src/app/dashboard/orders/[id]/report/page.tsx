@@ -170,17 +170,7 @@ export default function ReportPreviewPage() {
     if (!id || downloading) return;
     setDownloading(true);
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") : null;
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(`${baseUrl}/api/v1/orders/${id}/report/pdf`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-
-      if (!response.ok) {
-        throw new Error(`Download gagal (HTTP ${response.status})`);
-      }
-
-      const blob = await response.blob();
+      const blob = await apiClient.getOrderReportPdf(id);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
