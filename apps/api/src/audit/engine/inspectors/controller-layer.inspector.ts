@@ -15,6 +15,15 @@ import { InspectionTarget, LayerTrace } from '../interfaces';
  * - Method signatures matching expected controller patterns
  */
 export class ControllerLayerInspector {
+  // Controller-specific detection patterns (compiled once, reused per file)
+  private static readonly PATTERNS = {
+    controllerDecorator: /@Controller\(/,
+    useGuards: /@UseGuards\(/,
+    roles: /@Roles\(/,
+    controllerClass: /export\s+class\s+\w+Controller/,
+    constructor: /constructor\s*\(/,
+  } as const;
+
   /**
    * Inspects the Controller layer for a given inspection target.
    *
@@ -26,11 +35,76 @@ export class ControllerLayerInspector {
     target: InspectionTarget,
     projectRoot: string,
   ): Promise<LayerTrace> {
-    const matchedFiles: string[] = [];
     const issues: string[] = [];
 
     // Step 1: Resolve glob patterns to find relevant controller files
-    for (const pattern of target.patterns) {
+    const matchedFiles = await this.resolveFiles(
+      target.patterns,
+      projectRoot,
+      issues,
+    );
+
+    if (matchedFiles.length === 0) {
+      return {
+        layer: 'CONTROLLER',
+        status: 'ABSENT',
+        evidence: 'No files matched Controller layer inspection patterns',
+        issues: issues.length > 0 ? issues : undefined,
+      };
+    }
+
+    // Step 2: Scan files for controller-specific patterns
+    const scan = this.scanFiles(matchedFiles, issues);
+
+    // Step 3: Check required artifacts (regex patterns from target)
+    const { foundArtifacts, totalRequired } = this.countArtifacts(
+      target.requiredArtifacts,
+      matchedFiles,
+      issues,
+    );
+
+    // Step 4: Determine status based on what was found
+    const status = this.determineStatus(
+      scan.foundControllerDecorators,
+      scan.foundClasses,
+      scan.foundConstructors,
+      foundArtifacts,
+      totalRequired,
+    );
+
+    const securityInfo =
+      scan.foundGuards > 0 || scan.foundRoles > 0
+        ? `, guards: ${scan.foundGuards}, roles: ${scan.foundRoles}`
+        : ', no security decorators found';
+
+    return {
+      layer: 'CONTROLLER',
+      status,
+      filePath: scan.firstMatchedFile,
+      lineReferences:
+        scan.lineReferences.length > 0
+          ? scan.lineReferences.slice(0, 20)
+          : undefined,
+      evidence: `Found ${scan.foundControllerDecorators} @Controller decorators, ${scan.foundClasses} controller classes, ${foundArtifacts}/${totalRequired} required artifacts${securityInfo} in ${matchedFiles.length} file(s)`,
+      issues: issues.length > 0 ? issues : undefined,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private helpers
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Resolves a list of glob patterns into matched absolute file paths.
+   * Glob errors are appended to `issues` and do not throw.
+   */
+  private async resolveFiles(
+    patterns: InspectionTarget['patterns'],
+    projectRoot: string,
+    issues: string[],
+  ): Promise<string[]> {
+    const matchedFiles: string[] = [];
+    for (const pattern of patterns) {
       try {
         const files = await fg(pattern.glob, {
           cwd: projectRoot,
@@ -45,22 +119,26 @@ export class ControllerLayerInspector {
         );
       }
     }
+    return matchedFiles;
+  }
 
-    if (matchedFiles.length === 0) {
-      return {
-        layer: 'CONTROLLER',
-        status: 'ABSENT',
-        evidence: 'No files matched Controller layer inspection patterns',
-        issues: issues.length > 0 ? issues : undefined,
-      };
-    }
-
-    // Step 2: Scan for controller-specific patterns
-    const controllerDecoratorPattern = /@Controller\(/;
-    const useGuardsPattern = /@UseGuards\(/;
-    const rolesPattern = /@Roles\(/;
-    const classPattern = /export\s+class\s+\w+Controller/;
-    const constructorPattern = /constructor\s*\(/;
+  /**
+   * Counts occurrences of controller-specific patterns across all matched files.
+   * File read errors are appended to `issues` and do not throw.
+   */
+  private scanFiles(
+    matchedFiles: string[],
+    issues: string[],
+  ): {
+    foundControllerDecorators: number;
+    foundGuards: number;
+    foundRoles: number;
+    foundClasses: number;
+    foundConstructors: number;
+    firstMatchedFile: string | undefined;
+    lineReferences: number[];
+  } {
+    const { PATTERNS } = ControllerLayerInspector;
 
     let foundControllerDecorators = 0;
     let foundGuards = 0;
@@ -74,49 +152,30 @@ export class ControllerLayerInspector {
       const normalizedPath = path.resolve(filePath);
 
       try {
-        if (!fs.existsSync(normalizedPath)) {
-          continue;
-        }
+        if (!fs.existsSync(normalizedPath)) continue;
 
         const content = fs.readFileSync(normalizedPath, 'utf-8');
         const lines = content.split('\n');
-
         let fileHasController = false;
 
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i];
 
-          if (controllerDecoratorPattern.test(line)) {
+          if (PATTERNS.controllerDecorator.test(line)) {
             foundControllerDecorators++;
             fileHasController = true;
-            if (!firstMatchedFile) {
-              firstMatchedFile = normalizedPath;
-            }
+            if (!firstMatchedFile) firstMatchedFile = normalizedPath;
             lineReferences.push(i + 1);
           }
-
-          if (useGuardsPattern.test(line)) {
-            foundGuards++;
-          }
-
-          if (rolesPattern.test(line)) {
-            foundRoles++;
-          }
-
-          if (classPattern.test(line)) {
-            foundClasses++;
-          }
-
-          if (constructorPattern.test(line)) {
-            foundConstructors++;
-          }
+          if (PATTERNS.useGuards.test(line)) foundGuards++;
+          if (PATTERNS.roles.test(line)) foundRoles++;
+          if (PATTERNS.controllerClass.test(line)) foundClasses++;
+          if (PATTERNS.constructor.test(line)) foundConstructors++;
         }
 
         // If no @Controller decorator but has a controller-named class, still partial
-        if (!fileHasController && classPattern.test(content)) {
-          if (!firstMatchedFile) {
-            firstMatchedFile = normalizedPath;
-          }
+        if (!fileHasController && PATTERNS.controllerClass.test(content)) {
+          if (!firstMatchedFile) firstMatchedFile = normalizedPath;
         }
       } catch (err) {
         issues.push(
@@ -125,11 +184,31 @@ export class ControllerLayerInspector {
       }
     }
 
-    // Step 3: Check required artifacts (regex patterns from target)
-    let foundArtifacts = 0;
-    const totalRequired = target.requiredArtifacts.length;
+    return {
+      foundControllerDecorators,
+      foundGuards,
+      foundRoles,
+      foundClasses,
+      foundConstructors,
+      firstMatchedFile,
+      lineReferences,
+    };
+  }
 
-    for (const artifact of target.requiredArtifacts) {
+  /**
+   * Counts how many required artifacts (regex patterns) are present in the
+   * matched files. Invalid regex patterns and read errors are appended to
+   * `issues` rather than thrown.
+   */
+  private countArtifacts(
+    requiredArtifacts: InspectionTarget['requiredArtifacts'],
+    matchedFiles: string[],
+    issues: string[],
+  ): { foundArtifacts: number; totalRequired: number } {
+    let foundArtifacts = 0;
+    const totalRequired = requiredArtifacts.length;
+
+    for (const artifact of requiredArtifacts) {
       let regex: RegExp;
       try {
         regex = new RegExp(artifact.searchPattern, 'm');
@@ -149,48 +228,43 @@ export class ControllerLayerInspector {
             foundArtifacts++;
             break;
           }
-        } catch {
-          // Already tracked in issues above
+        } catch (err) {
+          // Surface the error — it may differ from the scan-phase read error
+          // (e.g. file appeared between scans). Avoid duplicate messages by
+          // only pushing if the same path hasn't already failed.
+          const msg = `Error reading "${normalizedPath}" during artifact check: ${(err as Error).message}`;
+          if (!issues.includes(msg)) issues.push(msg);
         }
       }
     }
 
-    // Step 4: Determine status based on what was found
+    return { foundArtifacts, totalRequired };
+  }
+
+  /**
+   * Determines the CONTROLLER layer status from collected scan metrics.
+   *
+   * PRESENT: proper structure (decorator + class + constructor) AND all
+   *          required artifacts matched (or none required)
+   * PARTIAL: controller class found OR some artifacts matched
+   * ABSENT:  nothing recognisable found
+   */
+  private determineStatus(
+    foundControllerDecorators: number,
+    foundClasses: number,
+    foundConstructors: number,
+    foundArtifacts: number,
+    totalRequired: number,
+  ): 'PRESENT' | 'PARTIAL' | 'ABSENT' {
     const hasControllerClass =
       foundControllerDecorators > 0 && foundClasses > 0;
     const hasProperStructure = hasControllerClass && foundConstructors > 0;
-    const hasSecurityDecorators = foundGuards > 0 || foundRoles > 0;
+    const allArtifactsMet =
+      totalRequired === 0 || foundArtifacts >= totalRequired;
 
-    let status: 'PRESENT' | 'PARTIAL' | 'ABSENT';
-
-    if (
-      hasProperStructure &&
-      (totalRequired === 0 || foundArtifacts >= totalRequired)
-    ) {
-      // Full controller structure found with all required artifacts
-      status = 'PRESENT';
-    } else if (hasControllerClass || foundArtifacts > 0) {
-      // Controller exists but may be missing guards, roles, or some artifacts
-      status = 'PARTIAL';
-    } else if (foundClasses > 0) {
-      // Class exists but missing @Controller decorator
-      status = 'PARTIAL';
-    } else {
-      status = 'ABSENT';
-    }
-
-    const securityInfo = hasSecurityDecorators
-      ? `, guards: ${foundGuards}, roles: ${foundRoles}`
-      : ', no security decorators found';
-
-    return {
-      layer: 'CONTROLLER',
-      status,
-      filePath: firstMatchedFile,
-      lineReferences:
-        lineReferences.length > 0 ? lineReferences.slice(0, 20) : undefined,
-      evidence: `Found ${foundControllerDecorators} @Controller decorators, ${foundClasses} controller classes, ${foundArtifacts}/${totalRequired} required artifacts${securityInfo} in ${matchedFiles.length} file(s)`,
-      issues: issues.length > 0 ? issues : undefined,
-    };
+    if (hasProperStructure && allArtifactsMet) return 'PRESENT';
+    if (hasControllerClass || foundArtifacts > 0 || foundClasses > 0)
+      return 'PARTIAL';
+    return 'ABSENT';
   }
 }
