@@ -31,6 +31,8 @@ echo "[1/8] Starting Docker infrastructure (postgres, redis, nginx, certbot)..."
 
 # Stop PM2 first to release file locks on .next and dist folders
 pm2 kill 2>/dev/null || true
+# Free ports 3000 and 3001 from any orphaned processes
+sudo fuser -k 3000/tcp 3001/tcp 2>/dev/null || true
 
 # Recreate nginx with extra_hosts for host.docker.internal
 sudo docker compose -f docker-compose.yml up -d postgres redis certbot
@@ -155,8 +157,9 @@ echo ""
 echo "[8/8] Starting PM2..."
 cd "$APP_DIR"
 
-# Kill old processes cleanly
+# Kill old processes cleanly and free ports
 pm2 kill 2>/dev/null || true
+sudo fuser -k 3000/tcp 3001/tcp 2>/dev/null || true
 sleep 2
 
 # Start fresh
