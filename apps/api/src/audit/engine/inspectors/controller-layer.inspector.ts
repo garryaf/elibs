@@ -3,6 +3,16 @@ import * as path from 'path';
 import fg from 'fast-glob';
 import { InspectionTarget, LayerTrace } from '../interfaces';
 
+interface ScanAccumulator {
+  foundControllerDecorators: number;
+  foundGuards: number;
+  foundRoles: number;
+  foundClasses: number;
+  foundConstructors: number;
+  firstMatchedFile: string | undefined;
+  lineReferences: number[];
+}
+
 /**
  * ControllerLayerInspector scans for NestJS controller class structures
  * including decorators, guard usage, and method signatures.
@@ -129,70 +139,89 @@ export class ControllerLayerInspector {
   private scanFiles(
     matchedFiles: string[],
     issues: string[],
-  ): {
-    foundControllerDecorators: number;
-    foundGuards: number;
-    foundRoles: number;
-    foundClasses: number;
-    foundConstructors: number;
-    firstMatchedFile: string | undefined;
-    lineReferences: number[];
-  } {
-    const { PATTERNS } = ControllerLayerInspector;
-
-    let foundControllerDecorators = 0;
-    let foundGuards = 0;
-    let foundRoles = 0;
-    let foundClasses = 0;
-    let foundConstructors = 0;
-    let firstMatchedFile: string | undefined;
-    const lineReferences: number[] = [];
+  ): ScanAccumulator {
+    const state: ScanAccumulator = {
+      foundControllerDecorators: 0,
+      foundGuards: 0,
+      foundRoles: 0,
+      foundClasses: 0,
+      foundConstructors: 0,
+      firstMatchedFile: undefined,
+      lineReferences: [],
+    };
 
     for (const filePath of matchedFiles) {
-      const normalizedPath = path.resolve(filePath);
-
-      try {
-        if (!fs.existsSync(normalizedPath)) continue;
-
-        const content = fs.readFileSync(normalizedPath, 'utf-8');
-        const lines = content.split('\n');
-        let fileHasController = false;
-
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-
-          if (PATTERNS.controllerDecorator.test(line)) {
-            foundControllerDecorators++;
-            fileHasController = true;
-            if (!firstMatchedFile) firstMatchedFile = normalizedPath;
-            lineReferences.push(i + 1);
-          }
-          if (PATTERNS.useGuards.test(line)) foundGuards++;
-          if (PATTERNS.roles.test(line)) foundRoles++;
-          if (PATTERNS.controllerClass.test(line)) foundClasses++;
-          if (PATTERNS.constructor.test(line)) foundConstructors++;
-        }
-
-        // If no @Controller decorator but has a controller-named class, still partial
-        if (!fileHasController && PATTERNS.controllerClass.test(content)) {
-          if (!firstMatchedFile) firstMatchedFile = normalizedPath;
-        }
-      } catch (err) {
-        issues.push(
-          `Error reading "${normalizedPath}": ${(err as Error).message}`,
-        );
-      }
+      this.scanSingleFile(path.resolve(filePath), state, issues);
     }
 
-    return {
-      foundControllerDecorators,
-      foundGuards,
-      foundRoles,
-      foundClasses,
-      foundConstructors,
-      firstMatchedFile,
-      lineReferences,
-    };
+    return state;
+  }
+
+  /**
+   * Scans a single file for controller indicators and updates accumulator state.
+   */
+  private scanSingleFile(
+    normalizedPath: string,
+    state: ScanAccumulator,
+    issues: string[],
+  ): void {
+    const { PATTERNS } = ControllerLayerInspector;
+
+    try {
+      if (!fs.existsSync(normalizedPath)) return;
+
+      const content = fs.readFileSync(normalizedPath, 'utf-8');
+      const lines = content.split('\n');
+      let fileHasController = false;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (PATTERNS.controllerDecorator.test(line)) {
+          state.foundControllerDecorators++;
+          fileHasController = true;
+          if (!state.firstMatchedFile) state.firstMatchedFile = normalizedPath;
+          state.lineReferences.push(i + 1);
+        }
+        if (PATTERNS.useGuards.test(line)) state.foundGuards++;
+        if (PATTERNS.roles.test(line)) state.foundRoles++;
+        if (PATTERNS.controllerClass.test(line)) state.foundClasses++;
+        if (PATTERNS.constructor.test(line)) state.foundConstructors++;
+      }
+
+      // If no @Controller decorator but has a controller-named class, still partial
+      if (!fileHasController && PATTERNS.controllerClass.test(content)) {
+        if (!state.firstMatchedFile) state.firstMatchedFile = normalizedPath;
+      }
+    } catch (err) {
+      issues.push(
+        `Error reading "${normalizedPath}": ${(err as Error).message}`,
+      );
+    }
+  }
+
+  /**
+   * Checks whether a regex pattern matches any of the given files.
+   */
+  private isArtifactPresentInFiles(
+    regex: RegExp,
+    matchedFiles: string[],
+    issues: string[],
+  ): boolean {
+    for (const filePath of matchedFiles) {
+      const normalizedPath = path.resolve(filePath);
+      try {
+        if (!fs.existsSync(normalizedPath)) continue;
+        const content = fs.readFileSync(normalizedPath, 'utf-8');
+        if (regex.test(content)) {
+          return true;
+        }
+      } catch (err) {
+        const msg = `Error reading "${normalizedPath}" during artifact check: ${(err as Error).message}`;
+        if (!issues.includes(msg)) issues.push(msg);
+      }
+    }
+    return false;
   }
 
   /**
@@ -206,39 +235,21 @@ export class ControllerLayerInspector {
     issues: string[],
   ): { foundArtifacts: number; totalRequired: number } {
     let foundArtifacts = 0;
-    const totalRequired = requiredArtifacts.length;
 
     for (const artifact of requiredArtifacts) {
-      let regex: RegExp;
       try {
-        regex = new RegExp(artifact.searchPattern, 'm');
+        const regex = new RegExp(artifact.searchPattern, 'm');
+        if (this.isArtifactPresentInFiles(regex, matchedFiles, issues)) {
+          foundArtifacts++;
+        }
       } catch (err) {
         issues.push(
           `Invalid regex "${artifact.searchPattern}": ${(err as Error).message}`,
         );
-        continue;
-      }
-
-      for (const filePath of matchedFiles) {
-        const normalizedPath = path.resolve(filePath);
-        try {
-          if (!fs.existsSync(normalizedPath)) continue;
-          const content = fs.readFileSync(normalizedPath, 'utf-8');
-          if (regex.test(content)) {
-            foundArtifacts++;
-            break;
-          }
-        } catch (err) {
-          // Surface the error — it may differ from the scan-phase read error
-          // (e.g. file appeared between scans). Avoid duplicate messages by
-          // only pushing if the same path hasn't already failed.
-          const msg = `Error reading "${normalizedPath}" during artifact check: ${(err as Error).message}`;
-          if (!issues.includes(msg)) issues.push(msg);
-        }
       }
     }
 
-    return { foundArtifacts, totalRequired };
+    return { foundArtifacts, totalRequired: requiredArtifacts.length };
   }
 
   /**
