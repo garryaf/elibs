@@ -23,6 +23,24 @@ import * as fc from 'fast-check';
 // ─── Simulate the unwrapResponse utility (preservation-safe version) ────────
 
 /**
+ * Type guard to check if an unknown value has the standard API envelope shape:
+ * { success: boolean, message: string, data: unknown }
+ */
+function isEnvelopeShape(
+  data: unknown,
+): data is { success: boolean; message: string; data: unknown } {
+  if (data === null || typeof data !== 'object') {
+    return false;
+  }
+  const record = data as Record<string, unknown>;
+  const hasValidSuccess = typeof record.success === 'boolean';
+  const hasValidMessage = typeof record.message === 'string';
+  const hasDataKey = 'data' in record;
+
+  return hasValidSuccess && hasValidMessage && hasDataKey;
+}
+
+/**
  * The unwrapResponse utility that will be added in task 3.3.
  * For preservation, it must be IDEMPOTENT on single-envelope responses:
  * - If data does NOT have a nested envelope (no double-wrap), return data as-is.
@@ -35,17 +53,9 @@ import * as fc from 'fast-check';
  */
 function unwrapResponse<T>(data: unknown): T {
   // Detect double-wrapped shape: data has { success: boolean, message: string, data: any }
-  if (
-    data !== null &&
-    typeof data === 'object' &&
-    'success' in data &&
-    typeof (data as Record<string, unknown>).success === 'boolean' &&
-    'message' in data &&
-    typeof (data as Record<string, unknown>).message === 'string' &&
-    'data' in data
-  ) {
+  if (isEnvelopeShape(data)) {
     // This IS a double-wrapped response — extract inner data
-    return (data as Record<string, unknown>).data as T;
+    return data.data as T;
   }
   // Not double-wrapped — return as-is (preservation)
   return data as T;
@@ -138,15 +148,7 @@ describe('Preservation: unwrapResponse is idempotent on single-envelope data', (
         const result = unwrapResponse(payload);
 
         // For payloads that don't look like an envelope, should be unchanged
-        if (
-          payload === null ||
-          typeof payload !== 'object' ||
-          !('success' in (payload as Record<string, unknown>)) ||
-          typeof (payload as Record<string, unknown>).success !== 'boolean' ||
-          !('message' in (payload as Record<string, unknown>)) ||
-          typeof (payload as Record<string, unknown>).message !== 'string' ||
-          !('data' in (payload as Record<string, unknown>))
-        ) {
+        if (!isEnvelopeShape(payload)) {
           expect(result).toEqual(payload);
         }
       }),
@@ -225,12 +227,7 @@ describe('Preservation: unwrapResponse is idempotent on single-envelope data', (
         const result = unwrapResponse(data);
         // Objects without the FULL envelope shape (success: boolean + message: string + data)
         // should pass through unchanged
-        const hasFullEnvelopeShape =
-          typeof (data as Record<string, unknown>).success === 'boolean' &&
-          typeof (data as Record<string, unknown>).message === 'string' &&
-          'data' in (data as Record<string, unknown>);
-
-        if (!hasFullEnvelopeShape) {
+        if (!isEnvelopeShape(data)) {
           expect(result).toEqual(data);
         }
       }),
