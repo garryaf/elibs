@@ -174,9 +174,7 @@ export default function ReportPreviewPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const contentDisposition = response.headers.get("content-disposition");
-      const filenameMatch = contentDisposition?.match(/filename="?([^"]+)"?/);
-      a.download = filenameMatch?.[1] || `lab-report-${order?.orderNumber || id}.pdf`;
+      a.download = `lab-report-${order?.orderNumber || id}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

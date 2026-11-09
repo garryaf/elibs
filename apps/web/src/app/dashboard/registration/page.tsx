@@ -54,7 +54,7 @@ function RegistrationWorkflow() {
         const res = await apiClient.getPatient(patientId);
         if (cancelled) return;
 
-        const data = (res?.data ?? res) as Record<string, unknown> | undefined;
+        const data = (res?.data ?? res) as unknown as Record<string, unknown> | undefined;
         if (!data || !data.id) {
           // Patient not found — fall back to normal search flow
           setLoadingPreselect(false);
@@ -66,7 +66,7 @@ function RegistrationWorkflow() {
           name: data.name as string,
           mrn: data.mrn as string,
           nik: (data.nik as string) || "",
-          dateOfBirth: (data.dateOfBirth as string) || "",
+          dateOfBirth: (data.dateOfBirth as string) || (data.dob as string) || "",
           gender: (data.gender as "MALE" | "FEMALE") || "MALE",
         };
 

@@ -73,7 +73,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
         setLoadingPreselected(true);
         apiClient.getPatient(preselectedPatientId)
           .then((res) => {
-            const data = (res?.data ?? res) as Record<string, unknown> | undefined;
+            const data = (res?.data ?? res) as unknown as Record<string, unknown> | undefined;
             if (data && data.id) {
               setSelectedPatient({
                 id: data.id as string,
