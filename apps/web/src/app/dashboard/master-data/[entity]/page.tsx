@@ -566,44 +566,372 @@ const entityConfigs: Record<string, EntityConfig> = {
   },
 };
 
-// ─── Page Component ──────────────────────────────────────────────────────────
+// ─── Sub-components ──────────────────────────────────────────────────────────
 
-export default function MasterDataEntityPage() {
-  const params = useParams();
-  const entity = params.entity as string;
+interface DeleteConfirmDialogProps {
+  entity: string;
+  item: Record<string, unknown> | null;
+  isPending: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}
 
-  // State
+function DeleteConfirmDialog({
+  entity,
+  item,
+  isPending,
+  onClose,
+  onConfirm,
+}: DeleteConfirmDialogProps) {
+  if (!item) return null;
+
+  const itemName = (item.name as string) ?? (item.code as string) ?? "item ini";
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="delete-dialog-title"
+      aria-describedby="delete-dialog-description"
+    >
+      <div
+        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+        aria-hidden="true"
+        onClick={onClose}
+      />
+      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+        <h3
+          id="delete-dialog-title"
+          className="text-lg font-bold text-slate-900 dark:text-white"
+        >
+          Hapus Data
+        </h3>
+        <p
+          id="delete-dialog-description"
+          className="mt-2 text-sm text-slate-500 dark:text-slate-400"
+        >
+          Apakah Anda yakin ingin menghapus{" "}
+          <span className="font-semibold text-slate-700 dark:text-slate-300">
+            {itemName}
+          </span>
+          ? Tindakan ini tidak dapat dibatalkan.
+        </p>
+
+        {/* Dependency warning for entities with relations */}
+        {entity === "pemeriksaan-lab" && (
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-800 dark:bg-amber-900/20">
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              Jika pemeriksaan ini digunakan oleh order aktif, panel, atau tarif, penghapusan akan ditolak oleh sistem (ERR_REFERENCE_CONFLICT).
+            </p>
+          </div>
+        )}
+        {entity === "kategori-pemeriksaan" && (
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-800 dark:bg-amber-900/20">
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              Kategori yang masih memiliki pemeriksaan aktif tidak dapat dihapus.
+            </p>
+          </div>
+        )}
+
+        <div className="mt-5 flex justify-end gap-3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="rounded-xl px-4 py-2"
+          >
+            Batal
+          </Button>
+          <Button
+            onClick={onConfirm}
+            disabled={isPending}
+            className="rounded-xl bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+          >
+            {isPending ? "Menghapus..." : "Hapus"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface ImportPreviewData {
+  file: File;
+  rows: Record<string, string>[];
+}
+
+interface ImportPreviewDialogProps {
+  entity: string;
+  preview: ImportPreviewData | null;
+  onClose: () => void;
+}
+
+function ImportPreviewDialog({ entity, preview, onClose }: ImportPreviewDialogProps) {
+  const [importing, setImporting] = useState(false);
+
+  if (!preview) return null;
+
+  const handleImportSubmit = async () => {
+    setImporting(true);
+    const entityMap: Record<string, string> = {
+      "pemeriksaan-lab": "tests",
+      tarif: "tariffs",
+      dokter: "doctors",
+      klinik: "clinics",
+    };
+    const importType = entityMap[entity] ?? entity;
+    const formData = new FormData();
+    formData.append("file", preview.file);
+
+    try {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("elis_token") || localStorage.getItem("token") || ""
+          : "";
+      const resp = await fetch(`/api/v1/master/import/${importType}`, {
+        method: "POST",
+        body: formData,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const result = await resp.json();
+
+      if (result.success !== false && resp.ok) {
+        const importData = result.data ?? result;
+        const count = importData?.successCount ?? 0;
+        const errorCount = importData?.errorCount ?? 0;
+        const errors = importData?.errors as
+          | Array<{ row: number; field: string; message: string }>
+          | undefined;
+
+        let msg =
+          errorCount > 0
+            ? `Import selesai: ${count} data berhasil, ${errorCount} data gagal.`
+            : `Import berhasil: ${count} data diimpor.`;
+
+        if (errors && errors.length > 0) {
+          const details = errors
+            .slice(0, 3)
+            .map((e) => `  Baris ${e.row}: ${e.message}`)
+            .join("\n");
+          msg += `\n\nDetail error:\n${details}`;
+          if (errors.length > 3) msg += `\n  ... dan ${errors.length - 3} error lainnya`;
+        }
+        alert(msg);
+        if (count > 0) window.location.reload();
+      } else {
+        alert(`Import gagal: ${result.message || result.data?.message || "Unknown error"}`);
+      }
+    } catch (err) {
+      console.error("Import request failed:", err);
+      alert("Import gagal. Periksa format file.");
+    } finally {
+      setImporting(false);
+      onClose();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 max-h-[80vh] overflow-hidden flex flex-col">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Preview Import</h3>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          File: <span className="font-medium">{preview.file.name}</span> — menampilkan{" "}
+          {preview.rows.length} baris pertama
+        </p>
+
+        <div className="mt-4 flex-1 overflow-auto rounded-xl border border-slate-200 dark:border-slate-700">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800">
+              <tr>
+                {Object.keys(preview.rows[0] || {}).map((key) => (
+                  <th
+                    key={key}
+                    className="px-3 py-2 text-left font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap"
+                  >
+                    {key}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {preview.rows.map((row, i) => (
+                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                  {Object.values(row).map((val, j) => (
+                    <td
+                      key={j}
+                      className="px-3 py-2 text-slate-700 dark:text-slate-300 whitespace-nowrap max-w-[200px] truncate"
+                    >
+                      {val || "—"}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-xs text-slate-500">Total file kemungkinan lebih banyak dari preview.</p>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+            >
+              Batal
+            </button>
+            <button
+              onClick={handleImportSubmit}
+              disabled={importing}
+              className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+            >
+              {importing ? "Mengimpor..." : `Import ${preview.rows.length}+ Data`}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface EntityHeaderActionsProps {
+  entity: string;
+  onOpenCreate: () => void;
+  onSetImportPreview: (preview: ImportPreviewData | null) => void;
+}
+
+function EntityHeaderActions({
+  entity,
+  onOpenCreate,
+  onSetImportPreview,
+}: EntityHeaderActionsProps) {
+  const supportsImportExport = ["pemeriksaan-lab", "tarif", "dokter", "klinik"].includes(entity);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const lines = text.split("\n").filter((l) => l.trim());
+      if (lines.length < 2) {
+        alert("File kosong atau hanya berisi header.");
+        e.target.value = "";
+        return;
+      }
+      const headers = lines[0]
+        .replace(/^\ufeff/, "")
+        .split(",")
+        .map((h) => h.trim().replace(/^"|"$/g, ""));
+      const previewRows: Record<string, string>[] = [];
+      for (let i = 1; i < Math.min(lines.length, 11); i++) {
+        const values = lines[i].split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+        const row: Record<string, string> = {};
+        headers.forEach((h, idx) => {
+          row[h] = values[idx] || "";
+        });
+        previewRows.push(row);
+      }
+      onSetImportPreview({ file, rows: previewRows });
+    } catch (err) {
+      console.error("Gagal membaca file import:", err);
+      alert("Gagal membaca file.");
+    }
+    e.target.value = "";
+  };
+
+  const handleExport = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const exportEntity =
+      entity === "pemeriksaan-lab"
+        ? "tests"
+        : entity === "tarif"
+        ? "tariffs"
+        : entity === "dokter"
+        ? "doctors"
+        : entity === "panel"
+        ? "panels"
+        : "clinics";
+    const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || "" : "";
+
+    fetch(`/api/v1/master/export/${exportEntity}?format=csv`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${exportEntity}-export.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      })
+      .catch((err) => {
+        console.error("Export failed:", err);
+        alert(`Export gagal: ${err.message || "Terjadi kesalahan"}`);
+      });
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      {supportsImportExport && (
+        <>
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
+            <input
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            Import CSV/Excel
+          </label>
+          <a
+            href="#"
+            onClick={handleExport}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            Export CSV
+          </a>
+        </>
+      )}
+      <Button
+        onClick={onOpenCreate}
+        className="gap-2 rounded-xl bg-brand px-4 py-2.5 text-white shadow-sm shadow-brand/20 hover:bg-brand-dark"
+      >
+        <Plus className="h-4 w-4" />
+        Tambah
+      </Button>
+    </div>
+  );
+}
+
+// ─── Custom Hook for Entity Page Logic ───────────────────────────────────────
+
+function useMasterDataEntity(entity: string, config?: EntityConfig) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Record<string, unknown> | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Record<string, unknown> | null>(null);
-  // Gap 4: Import preview state
-  const [importPreview, setImportPreview] = useState<{ file: File; rows: Record<string, string>[]; } | null>(null);
-  const [importing, setImporting] = useState(false);
 
-  // Look up entity configuration
-  const config = entityConfigs[entity];
-
-  // Hooks must be called unconditionally — use a fallback config for invalid slugs
+  // Unconditional hook lookup with fallbacks
   const queryHook = config?.useQuery ?? useMasterUnits;
   const createHook = config?.useCreate ?? useCreateMasterUnit;
   const updateHook = config?.useUpdate ?? useUpdateMasterUnit;
   const deleteHook = config?.useDelete ?? useDeleteMasterUnit;
 
-  // Call hooks (must be unconditional per React rules)
   const queryResult = queryHook({ page, limit: 10, search: search || undefined, ...filters });
   const createMutation = createHook();
   const updateMutation = updateHook();
   const deleteMutation = deleteHook();
 
-  // CRITICAL: Unwrap paginated response — extract .data array from wrapper
-  // Response shape is { data: [...], meta: {...} } — we must extract .data before .map()
   const items = (queryResult.data?.data ?? []) as Record<string, unknown>[];
   const meta = queryResult.data?.meta;
 
-  // Handlers
   const handleSearch = useCallback((query: string) => {
     setSearch(query);
     setPage(1);
@@ -627,7 +955,6 @@ export default function MasterDataEntityPage() {
   }, []);
 
   const handleEdit = useCallback((row: Record<string, unknown>) => {
-    // Transform panelTests to testIds for panel entity editing
     if (entity === "panel" && Array.isArray(row.panelTests)) {
       const testIds = (row.panelTests as Array<{ testId: string }>).map((pt) => pt.testId);
       setEditingItem({ ...row, testIds });
@@ -650,16 +977,21 @@ export default function MasterDataEntityPage() {
     }
   }, [deleteConfirm, deleteMutation]);
 
-  // Gap 5: Bulk delete handler
   const handleBulkDelete = useCallback(async (ids: string[]) => {
+    const failedIds: string[] = [];
     for (const id of ids) {
       try {
         await deleteMutation.mutateAsync(id);
-      } catch { /* continue with remaining */ }
+      } catch (err) {
+        console.error(`Failed to delete master data item ${id}:`, err);
+        failedIds.push(id);
+      }
+    }
+    if (failedIds.length > 0) {
+      alert(`${failedIds.length} item gagal dihapus.`);
     }
   }, [deleteMutation]);
 
-  // Gap 7: Detect duplicate names in current data
   const duplicateNames = useMemo(() => {
     const nameCount = new Map<string, number>();
     for (const item of items) {
@@ -699,7 +1031,42 @@ export default function MasterDataEntityPage() {
     setEditingItem(null);
   }, []);
 
-  // Handle invalid entity slug — show not found message
+  return {
+    filters,
+    items,
+    meta,
+    isLoading: queryResult.isLoading,
+    isMutating: createMutation.isPending || updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
+    isModalOpen,
+    editingItem,
+    deleteConfirm,
+    duplicateNames,
+    handleSearch,
+    handleFilterChange,
+    handlePageChange,
+    handleEdit,
+    handleDelete,
+    handleConfirmDelete,
+    handleBulkDelete,
+    handleFormSubmit,
+    handleOpenCreate,
+    handleCloseModal,
+    setDeleteConfirm,
+  };
+}
+
+// ─── Page Component ──────────────────────────────────────────────────────────
+
+export default function MasterDataEntityPage() {
+  const params = useParams();
+  const entity = params.entity as string;
+  const config = entityConfigs[entity];
+
+  const [importPreview, setImportPreview] = useState<ImportPreviewData | null>(null);
+
+  const entityState = useMasterDataEntity(entity, config);
+
   if (!config) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
@@ -725,100 +1092,34 @@ export default function MasterDataEntityPage() {
             Kelola data {config.displayName.toLowerCase()}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {/* UI-MD-02: Import/Export buttons for supported entities */}
-          {["pemeriksaan-lab", "tarif", "dokter", "klinik"].includes(entity) && (
-            <>
-              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
-                <input
-                  type="file"
-                  accept=".csv,.xlsx,.xls"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    // Gap 4: Read file and show preview before importing
-                    try {
-                      const text = await file.text();
-                      const lines = text.split("\n").filter((l) => l.trim());
-                      if (lines.length < 2) { alert("File kosong atau hanya berisi header."); e.target.value = ""; return; }
-                      const headers = lines[0].replace(/^\ufeff/, "").split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
-                      const previewRows: Record<string, string>[] = [];
-                      for (let i = 1; i < Math.min(lines.length, 11); i++) {
-                        const values = lines[i].split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
-                        const row: Record<string, string> = {};
-                        headers.forEach((h, idx) => { row[h] = values[idx] || ""; });
-                        previewRows.push(row);
-                      }
-                      setImportPreview({ file, rows: previewRows });
-                    } catch { alert("Gagal membaca file."); }
-                    e.target.value = "";
-                  }}
-                />
-                Import CSV/Excel
-              </label>
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const exportEntity = entity === "pemeriksaan-lab" ? "tests" : entity === "tarif" ? "tariffs" : entity === "dokter" ? "doctors" : entity === "panel" ? "panels" : "clinics";
-                  const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || "" : "";
-                  fetch(`/api/v1/master/export/${exportEntity}?format=csv`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                  })
-                    .then((res) => {
-                      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                      return res.blob();
-                    })
-                    .then((blob) => {
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `${exportEntity}-export.csv`;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                    })
-                    .catch((err) => {
-                      alert(`Export gagal: ${err.message || "Terjadi kesalahan"}`);
-                    });
-                }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-              >
-                Export CSV
-              </a>
-            </>
-          )}
-          <Button
-            onClick={handleOpenCreate}
-            className="gap-2 rounded-xl bg-brand px-4 py-2.5 text-white shadow-sm shadow-brand/20 hover:bg-brand-dark"
-          >
-            <Plus className="h-4 w-4" />
-            Tambah
-          </Button>
-        </div>
+        <EntityHeaderActions
+          entity={entity}
+          onOpenCreate={entityState.handleOpenCreate}
+          onSetImportPreview={setImportPreview}
+        />
       </div>
 
       {/* Entity Filters (e.g. tarif filter by clinic/insurance) */}
       {config.filters && config.filters.length > 0 && (
         <EntityFilterBar
           filters={config.filters}
-          values={filters}
-          onChange={handleFilterChange}
+          values={entityState.filters}
+          onChange={entityState.handleFilterChange}
         />
       )}
 
       {/* Table */}
       <MasterDataTable
         columns={config.columns}
-        data={items}
-        meta={meta}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onBulkDelete={entity === "pemeriksaan-lab" ? handleBulkDelete : undefined}
-        onSearch={handleSearch}
-        onPageChange={handlePageChange}
-        isLoading={queryResult.isLoading}
-        duplicateNames={entity === "pemeriksaan-lab" ? duplicateNames : undefined}
+        data={entityState.items}
+        meta={entityState.meta}
+        onEdit={entityState.handleEdit}
+        onDelete={entityState.handleDelete}
+        onBulkDelete={entity === "pemeriksaan-lab" ? entityState.handleBulkDelete : undefined}
+        onSearch={entityState.handleSearch}
+        onPageChange={entityState.handlePageChange}
+        isLoading={entityState.isLoading}
+        duplicateNames={entity === "pemeriksaan-lab" ? entityState.duplicateNames : undefined}
         renderExpandedRow={
           entity === "pemeriksaan-lab"
             ? (row) => <TestDetailPanel testId={row.id as string} />
@@ -829,168 +1130,29 @@ export default function MasterDataEntityPage() {
       {/* Create/Edit Modal */}
       <MasterDataFormModal
         fields={config.formFields}
-        initialData={editingItem ?? undefined}
-        onSubmit={handleFormSubmit}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        title={editingItem ? `Edit ${config.displayName}` : `Tambah ${config.displayName}`}
-        isLoading={createMutation.isPending || updateMutation.isPending}
+        initialData={entityState.editingItem ?? undefined}
+        onSubmit={entityState.handleFormSubmit}
+        isOpen={entityState.isModalOpen}
+        onClose={entityState.handleCloseModal}
+        title={entityState.editingItem ? `Edit ${config.displayName}` : `Tambah ${config.displayName}`}
+        isLoading={entityState.isMutating}
       />
 
-      {/* Delete Confirmation Dialog (UI-MD-06: with dependency warning) */}
-      {deleteConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="delete-dialog-title"
-          aria-describedby="delete-dialog-description"
-        >
-          <div
-            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
-            aria-hidden="true"
-            onClick={() => setDeleteConfirm(null)}
-          />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
-            <h3
-              id="delete-dialog-title"
-              className="text-lg font-bold text-slate-900 dark:text-white"
-            >
-              Hapus Data
-            </h3>
-            <p
-              id="delete-dialog-description"
-              className="mt-2 text-sm text-slate-500 dark:text-slate-400"
-            >
-              Apakah Anda yakin ingin menghapus{" "}
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                {(deleteConfirm.name as string) ?? (deleteConfirm.code as string) ?? "item ini"}
-              </span>
-              ? Tindakan ini tidak dapat dibatalkan.
-            </p>
-            {/* UI-MD-06: Dependency warning for entities with relations */}
-            {entity === "pemeriksaan-lab" && (
-              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-800 dark:bg-amber-900/20">
-                <p className="text-xs text-amber-700 dark:text-amber-300">
-                  Jika pemeriksaan ini digunakan oleh order aktif, panel, atau tarif, penghapusan akan ditolak oleh sistem (ERR_REFERENCE_CONFLICT).
-                </p>
-              </div>
-            )}
-            {entity === "kategori-pemeriksaan" && (
-              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-800 dark:bg-amber-900/20">
-                <p className="text-xs text-amber-700 dark:text-amber-300">
-                  Kategori yang masih memiliki pemeriksaan aktif tidak dapat dihapus.
-                </p>
-              </div>
-            )}
-            <div className="mt-5 flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setDeleteConfirm(null)}
-                className="rounded-xl px-4 py-2"
-              >
-                Batal
-              </Button>
-              <Button
-                onClick={handleConfirmDelete}
-                disabled={deleteMutation.isPending}
-                className="rounded-xl bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-              >
-                {deleteMutation.isPending ? "Menghapus..." : "Hapus"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        entity={entity}
+        item={entityState.deleteConfirm}
+        isPending={entityState.isDeleting}
+        onClose={() => entityState.setDeleteConfirm(null)}
+        onConfirm={entityState.handleConfirmDelete}
+      />
 
-      {/* Gap 4: Import Preview Dialog */}
-      {importPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setImportPreview(null)} />
-          <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 max-h-[80vh] overflow-hidden flex flex-col">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Preview Import</h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              File: <span className="font-medium">{importPreview.file.name}</span> — menampilkan {importPreview.rows.length} baris pertama
-            </p>
-
-            <div className="mt-4 flex-1 overflow-auto rounded-xl border border-slate-200 dark:border-slate-700">
-              <table className="w-full text-xs">
-                <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800">
-                  <tr>
-                    {Object.keys(importPreview.rows[0] || {}).map((key) => (
-                      <th key={key} className="px-3 py-2 text-left font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                        {key}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {importPreview.rows.map((row, i) => (
-                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                      {Object.values(row).map((val, j) => (
-                        <td key={j} className="px-3 py-2 text-slate-700 dark:text-slate-300 whitespace-nowrap max-w-[200px] truncate">
-                          {val || "—"}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-xs text-slate-500">Total file kemungkinan lebih banyak dari preview.</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setImportPreview(null)}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={async () => {
-                    setImporting(true);
-                    const entityMap: Record<string, string> = { "pemeriksaan-lab": "tests", tarif: "tariffs", dokter: "doctors", klinik: "clinics" };
-                    const importType = entityMap[entity] ?? entity;
-                    const formData = new FormData();
-                    formData.append("file", importPreview.file);
-                    try {
-                      const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || localStorage.getItem("token") || "" : "";
-                      const resp = await fetch(`/api/v1/master/import/${importType}`, { method: "POST", body: formData, headers: token ? { Authorization: `Bearer ${token}` } : {} });
-                      const result = await resp.json();
-                      if (result.success !== false && resp.ok) {
-                        const importData = result.data ?? result;
-                        const count = importData?.successCount ?? 0;
-                        const errorCount = importData?.errorCount ?? 0;
-                        const errors = importData?.errors as Array<{ row: number; field: string; message: string }> | undefined;
-                        let msg = errorCount > 0
-                          ? `Import selesai: ${count} data berhasil, ${errorCount} data gagal.`
-                          : `Import berhasil: ${count} data diimpor.`;
-                        // Show first 3 error details
-                        if (errors && errors.length > 0) {
-                          const details = errors.slice(0, 3).map((e) => `  Baris ${e.row}: ${e.message}`).join("\n");
-                          msg += `\n\nDetail error:\n${details}`;
-                          if (errors.length > 3) msg += `\n  ... dan ${errors.length - 3} error lainnya`;
-                        }
-                        alert(msg);
-                        if (count > 0) window.location.reload();
-                      } else {
-                        alert(`Import gagal: ${result.message || result.data?.message || "Unknown error"}`);
-                      }
-                    } catch { alert("Import gagal. Periksa format file."); }
-                    setImporting(false);
-                    setImportPreview(null);
-                  }}
-                  disabled={importing}
-                  className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
-                >
-                  {importing ? "Mengimpor..." : `Import ${importPreview.rows.length}+ Data`}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Import Preview Dialog */}
+      <ImportPreviewDialog
+        entity={entity}
+        preview={importPreview}
+        onClose={() => setImportPreview(null)}
+      />
     </div>
   );
 }
