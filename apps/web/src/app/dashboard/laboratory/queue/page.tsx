@@ -201,6 +201,647 @@ function isTatOverdue(order: LabQueueOrder): boolean {
   return elapsed > maxTat;
 }
 
+// ---------- useOrderRowState Hook ----------
+
+function useOrderRowState(
+  order: LabQueueOrder,
+  isFocused: boolean,
+  rowIndex: number,
+  totalRows: number,
+  onToggle: () => void,
+  onSelect: () => void,
+  onFocusRow: (index: number) => void,
+  confirmSampleMutation: ReturnType<typeof useConfirmSample>,
+  queryClient: ReturnType<typeof useQueryClient>
+) {
+  // Dialog & feedback state
+  const [confirmSuccess, setConfirmSuccess] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [barcodeError, setBarcodeError] = useState<string | null>(null);
+  const [showSampleDialog, setShowSampleDialog] = useState(false);
+  const [selectedCondition, setSelectedCondition] = useState<string>("ACCEPTABLE");
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const [barcodeVerified, setBarcodeVerified] = useState(false);
+
+  // BP-LAB-03: Rerun state
+  const [showRerunDialog, setShowRerunDialog] = useState(false);
+  const [rerunTestId, setRerunTestId] = useState<string | null>(null);
+  const [rerunReason, setRerunReason] = useState("");
+  const [rerunSubmitting, setRerunSubmitting] = useState(false);
+  const [rerunError, setRerunError] = useState<string | null>(null);
+
+  // UX-GAP-05: Focus trap refs for dialogs
+  const sampleDialogRef = useFocusTrap(showSampleDialog);
+  const rerunDialogRef = useFocusTrap(showRerunDialog);
+
+  // UX-LAB-05: TAT indicator
+  const tatOverdue = isTatOverdue(order);
+  const elapsed = getElapsedTime(order.sampleCollectedAt || order.paidAt || order.createdAt);
+
+  // UX-GAP-07: Rejected sample needing re-sampling
+  const isRejectedSample = order.sampleCondition && order.sampleCondition !== "ACCEPTABLE" && order.status === "PAID";
+
+  // BP-GAP-01: Order rejected by doctor (sent back to IN_ANALYSIS)
+  const isDoctorRejected = !!order.rejectedReason && order.status === "IN_ANALYSIS";
+
+  // DATA-GAP-08: CITO priority check
+  const isCito = order.priority === "CITO" || order.priority === "URGENT";
+
+  // DATA-GAP-10: Progress indicator for IN_ANALYSIS orders
+  const resultsCompleted = order.details.filter((d) => d.status === "RESULT_ENTERED" || d.status === "VERIFIED" || d.status === "APPROVED").length;
+  const resultsTotal = order.details.length;
+  const allResultsEntered = resultsCompleted === resultsTotal && resultsTotal > 0;
+
+  // DATA-GAP-11: Dual-approval indicator (CRITICAL flags in details)
+  const hasCriticalFlag = order.details.some((d) => d.flag === "CRITICAL");
+
+  // UX-LAB-02: Sample confirmation handler
+  const handleConfirmSample = async () => {
+    setConfirmError(null);
+    try {
+      const payload: { sampleCondition: string; rejectionReason?: string; notes?: string } = {
+        sampleCondition: selectedCondition,
+      };
+      if (selectedCondition !== "ACCEPTABLE" && rejectionReason.trim()) {
+        payload.rejectionReason = rejectionReason.trim();
+      }
+      await confirmSampleMutation.mutateAsync({ orderId: order.id, data: payload as any });
+      setConfirmSuccess(true);
+      setShowSampleDialog(false);
+      // No window.location.reload() — TanStack Query handles cache invalidation
+    } catch (err: unknown) {
+      const apiErr = err as { message?: string };
+      setConfirmError(apiErr?.message || "Gagal konfirmasi sampel");
+    }
+  };
+
+  const handlePrintBarcode = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setBarcodeError(null);
+    try {
+      const token = localStorage.getItem("elis_token") || localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+      const res = await fetch(`/api/v1/orders/${order.id}/barcode.png`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error("Failed");
+      const blob = await res.blob();
+      const barcodeDataUrl = URL.createObjectURL(blob);
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) { setBarcodeError("Popup blocker aktif"); URL.revokeObjectURL(barcodeDataUrl); return; }
+      printWindow.document.write(`<html><head><title>Barcode ${order.orderNumber}</title><style>body{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:monospace}img{max-width:100%;height:auto}.label{margin-top:5px;font-size:12px;font-weight:bold}@page{size:auto;margin:0}</style></head><body><img src="${barcodeDataUrl}" /><div class="label">${order.orderNumber}</div><script>window.onload=function(){window.print();setTimeout(function(){window.close()},500)}</script></body></html>`);
+      printWindow.document.close();
+    } catch { setBarcodeError("Gagal memuat barcode"); }
+  };
+
+  // BP-LAB-03: Rerun submit handler
+  const handleRerunSubmit = async () => {
+    if (!rerunTestId || !rerunReason) return;
+    setRerunSubmitting(true);
+    setRerunError(null);
+    try {
+      await apiClient.post(`/api/v1/lab-workflow/order-details/${rerunTestId}/rerun`, { reason: rerunReason });
+      setShowRerunDialog(false);
+      setRerunTestId(null);
+      setRerunReason("");
+      // UX-GAP-03: Properly invalidate cache
+      queryClient.invalidateQueries({ queryKey: labKeys.queue() });
+      queryClient.invalidateQueries({ queryKey: labKeys.queueStats() });
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setRerunError(e?.message || "Gagal submit rerun. Coba lagi.");
+    } finally {
+      setRerunSubmitting(false);
+    }
+  };
+
+  // UX-GAP-01: Keyboard handler for row navigation
+  const handleRowKeyDown = (e: React.KeyboardEvent<HTMLTableRowElement>) => {
+    switch (e.key) {
+      case "Enter":
+      case " ":
+        e.preventDefault();
+        onToggle();
+        break;
+      case "ArrowDown":
+        e.preventDefault();
+        if (rowIndex < totalRows - 1) onFocusRow(rowIndex + 1);
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        if (rowIndex > 0) onFocusRow(rowIndex - 1);
+        break;
+      case "s":
+        // 's' to select (for PAID orders)
+        if (order.status === "PAID") {
+          e.preventDefault();
+          onSelect();
+        }
+        break;
+    }
+  };
+
+  // UX-GAP-01: Auto-focus row ref
+  const rowRef = useRef<HTMLTableRowElement>(null);
+  useEffect(() => {
+    if (isFocused && rowRef.current) {
+      rowRef.current.focus();
+    }
+  }, [isFocused]);
+
+  return {
+    // State
+    confirmSuccess, confirmError, barcodeError, setBarcodeError,
+    showSampleDialog, setShowSampleDialog,
+    selectedCondition, setSelectedCondition,
+    rejectionReason, setRejectionReason,
+    barcodeInput, setBarcodeInput,
+    barcodeVerified, setBarcodeVerified,
+    showRerunDialog, setShowRerunDialog,
+    rerunTestId, setRerunTestId,
+    rerunReason, setRerunReason,
+    rerunSubmitting, rerunError,
+    // Computed flags
+    tatOverdue, elapsed,
+    isRejectedSample, isDoctorRejected, isCito,
+    resultsCompleted, resultsTotal, allResultsEntered, hasCriticalFlag,
+    // Handlers
+    handleConfirmSample, handlePrintBarcode, handleRerunSubmit, handleRowKeyDown,
+    // Refs
+    rowRef, sampleDialogRef, rerunDialogRef,
+  };
+}
+
+// ---------- RerunDialog Component ----------
+
+interface RerunDialogProps {
+  show: boolean;
+  order: LabQueueOrder;
+  rerunTestId: string | null;
+  rerunReason: string;
+  rerunSubmitting: boolean;
+  rerunError: string | null;
+  dialogRef: React.RefObject<HTMLDivElement>;
+  onClose: () => void;
+  onSelectTest: (id: string) => void;
+  onChangeReason: (reason: string) => void;
+  onSubmit: () => void;
+}
+
+function RerunDialog({
+  show, order, rerunTestId, rerunReason, rerunSubmitting, rerunError,
+  dialogRef, onClose, onSelectTest, onChangeReason, onSubmit,
+}: RerunDialogProps) {
+  if (!show) return null;
+  return (
+    // BP-LAB-03: Rerun Dialog (UX-GAP-05: with focus trap)
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()} data-dialog-open>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div ref={dialogRef} className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200" role="dialog" aria-modal="true" aria-labelledby="rerun-dialog-title">
+        <h3 id="rerun-dialog-title" className="text-lg font-bold text-slate-900 dark:text-white">Request Rerun</h3>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Pilih parameter yang perlu diulang
+        </p>
+
+        <div className="mt-4 space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wide text-slate-500">Parameter</label>
+          <div className="space-y-1.5">
+            {order.details.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => onSelectTest(d.id)}
+                className={cn(
+                  "w-full rounded-lg border px-3 py-2 text-left text-sm font-medium transition",
+                  rerunTestId === d.id
+                    ? "border-brand bg-brand/10 text-brand ring-1 ring-brand/30"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                )}
+              >
+                <span className="font-mono text-xs">{d.testCode}</span> — {d.testName}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-3">
+          <label htmlFor="rerun-reason" className="text-xs font-bold uppercase tracking-wide text-slate-500">Alasan Rerun</label>
+          <select
+            id="rerun-reason"
+            value={rerunReason}
+            onChange={(e) => onChangeReason(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+          >
+            <option value="">Pilih alasan...</option>
+            <option value="QC_FAILURE">QC Failure</option>
+            <option value="SPECIMEN_ISSUE">Masalah Spesimen</option>
+            <option value="EQUIPMENT_ERROR">Error Alat</option>
+            <option value="OPERATOR_ERROR">Error Operator</option>
+            <option value="OTHER">Lainnya</option>
+          </select>
+        </div>
+
+        {/* Error message */}
+        {rerunError && (
+          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+            {rerunError}
+          </div>
+        )}
+
+        <div className="mt-5 flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+          >
+            Batal
+          </button>
+          <button
+            onClick={onSubmit}
+            disabled={!rerunTestId || !rerunReason || rerunSubmitting}
+            className="flex-1 rounded-xl bg-amber-500 py-2.5 text-sm font-bold text-white transition hover:bg-amber-600 disabled:opacity-50"
+          >
+            {rerunSubmitting ? "Memproses..." : "Submit Rerun"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- SampleConditionDialog Component ----------
+
+interface SampleConditionDialogProps {
+  show: boolean;
+  order: LabQueueOrder;
+  selectedCondition: string;
+  rejectionReason: string;
+  barcodeInput: string;
+  barcodeVerified: boolean;
+  confirmError: string | null;
+  isPending: boolean;
+  dialogRef: React.RefObject<HTMLDivElement>;
+  onClose: () => void;
+  onSelectCondition: (cond: string) => void;
+  onChangeRejectionReason: (r: string) => void;
+  onChangeBarcodeInput: (val: string, verified: boolean) => void;
+  onConfirm: () => void;
+}
+
+function SampleConditionDialog({
+  show, order, selectedCondition, rejectionReason, barcodeInput, barcodeVerified,
+  confirmError, isPending, dialogRef,
+  onClose, onSelectCondition, onChangeRejectionReason, onChangeBarcodeInput, onConfirm,
+}: SampleConditionDialogProps) {
+  if (!show) return null;
+  return (
+    // Sample Condition Dialog (UX-GAP-05: with focus trap)
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()} data-dialog-open>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        ref={dialogRef}
+        className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="sample-dialog-title"
+        onKeyDown={(e) => {
+          // UX-GAP-02: Ctrl+Enter to confirm in dialog
+          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+            e.preventDefault();
+            if (barcodeVerified && (selectedCondition === "ACCEPTABLE" || rejectionReason.trim())) {
+              onConfirm();
+            }
+          }
+          // Escape to close
+          if (e.key === "Escape") {
+            onClose();
+          }
+        }}
+      >
+        <h3 id="sample-dialog-title" className="text-lg font-bold text-slate-900 dark:text-white">Konfirmasi Kondisi Sampel</h3>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Order <span className="font-semibold text-brand">{order.orderNumber}</span> — {order.patientName}
+        </p>
+
+        {/* BP-LAB-01: Barcode Verification */}
+        <div className="mt-4 space-y-2">
+          <label htmlFor="barcode-verify" className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Verifikasi Barcode Sampel
+          </label>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Barcode className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                id="barcode-verify"
+                type="text"
+                value={barcodeInput}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  onChangeBarcodeInput(val, val.trim().toUpperCase() === order.orderNumber.toUpperCase());
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    onChangeBarcodeInput(barcodeInput, barcodeInput.trim().toUpperCase() === order.orderNumber.toUpperCase());
+                  }
+                }}
+                placeholder="Scan atau ketik nomor barcode..."
+                autoFocus
+                className={cn(
+                  "h-10 w-full rounded-xl border pl-10 pr-4 text-sm font-mono outline-none transition-all placeholder:text-slate-400 focus:ring-1",
+                  barcodeVerified
+                    ? "border-green-400 bg-green-50 focus:border-green-500 focus:ring-green-200 dark:border-green-600 dark:bg-green-900/20"
+                    : barcodeInput && !barcodeVerified
+                      ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200 dark:border-red-700 dark:bg-red-900/20"
+                      : "border-slate-200 bg-white focus:border-brand focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-800"
+                )}
+              />
+            </div>
+            {barcodeVerified && <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />}
+          </div>
+          {barcodeInput && !barcodeVerified && (
+            <p className="text-xs text-red-600 dark:text-red-400">Barcode tidak cocok dengan order {order.orderNumber}</p>
+          )}
+          {!barcodeInput && (
+            <p className="text-xs text-slate-400">Scan barcode pada tabung sampel untuk verifikasi identitas pasien</p>
+          )}
+        </div>
+
+        <div className="mt-4 space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Kondisi Sampel</label>
+          <div className="grid grid-cols-2 gap-2">
+            {SAMPLE_CONDITIONS.map((cond) => (
+              <button
+                key={cond.value}
+                type="button"
+                onClick={() => onSelectCondition(cond.value)}
+                className={cn(
+                  "rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-all",
+                  selectedCondition === cond.value
+                    ? cond.color + " ring-2 ring-brand/30"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                )}
+              >
+                {cond.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {selectedCondition !== "ACCEPTABLE" && (
+          <div className="mt-4">
+            <label htmlFor="rejection-reason" className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Alasan Penolakan</label>
+            <textarea
+              id="rejection-reason"
+              rows={2}
+              value={rejectionReason}
+              onChange={(e) => onChangeRejectionReason(e.target.value)}
+              placeholder="Jelaskan alasan penolakan sampel..."
+              className="mt-1 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none placeholder:text-slate-400 focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            />
+          </div>
+        )}
+        {selectedCondition !== "ACCEPTABLE" && (
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800 dark:bg-amber-900/20">
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              Sampel akan ditandai <strong>ditolak</strong>. Order memerlukan pengambilan ulang.
+            </p>
+          </div>
+        )}
+        {confirmError && (
+          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">{confirmError}</div>
+        )}
+        <div className="mt-5 flex flex-col gap-2">
+          <div className="flex gap-3">
+            <button onClick={onClose} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300">Batal</button>
+            <button
+              onClick={onConfirm}
+              disabled={isPending || !barcodeVerified || (selectedCondition !== "ACCEPTABLE" && !rejectionReason.trim())}
+              className={cn("flex-1 rounded-xl py-2.5 text-sm font-bold text-white transition disabled:opacity-50", selectedCondition === "ACCEPTABLE" ? "bg-brand hover:bg-brand-dark" : "bg-red-600 hover:bg-red-700")}
+            >
+              {isPending ? "Memproses..." : selectedCondition === "ACCEPTABLE" ? "Terima Sampel" : "Tolak Sampel"}
+            </button>
+          </div>
+          {/* UX-GAP-02: Keyboard shortcut hint */}
+          <p className="text-center text-[10px] text-slate-400 dark:text-slate-500">
+            Tekan <kbd className="rounded border border-slate-300 px-1 py-0.5 font-mono text-[9px] dark:border-slate-600">Ctrl+Enter</kbd> untuk konfirmasi cepat
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- OrderExpandedDetail Component ----------
+
+interface OrderExpandedDetailProps {
+  order: LabQueueOrder;
+  isDoctorRejected: boolean;
+  confirmError: string | null;
+  barcodeError: string | null;
+  confirmSuccess: boolean;
+  selectedCondition: string;
+  allResultsEntered: boolean;
+  activeTab: QueueTab;
+  confirmSampleMutation: ReturnType<typeof useConfirmSample>;
+  verifyMutation: ReturnType<typeof useVerifyResults>;
+  recallMutation: ReturnType<typeof useRecallOrder>;
+  handlePrintBarcode: (e: React.MouseEvent) => void;
+  onOpenSampleDialog: () => void;
+  onOpenRerunDialog: () => void;
+  rerunDialog: React.ReactNode;
+  sampleDialog: React.ReactNode;
+}
+
+function OrderExpandedDetail({
+  order, isDoctorRejected, confirmError, barcodeError, confirmSuccess, selectedCondition,
+  allResultsEntered, activeTab, confirmSampleMutation, verifyMutation, recallMutation,
+  handlePrintBarcode, onOpenSampleDialog, onOpenRerunDialog,
+  rerunDialog, sampleDialog,
+}: OrderExpandedDetailProps) {
+  return (
+    <>
+      {/* 3-column info grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Patient Info */}
+        <div className="rounded-xl border border-border bg-card p-4">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <User className="h-3.5 w-3.5" /> Informasi Pasien
+          </div>
+          <div className="space-y-1 text-sm">
+            <p><span className="text-muted-foreground">Nama:</span> <span className="font-medium text-foreground">{order.patientName}</span></p>
+            <p><span className="text-muted-foreground">MRN:</span> <span className="font-mono text-foreground">{order.patientMrn}</span></p>
+            <p><span className="text-muted-foreground">Total:</span> <span className="font-medium text-foreground">Rp {order.totalAmount.toLocaleString("id-ID")}</span></p>
+          </div>
+        </div>
+
+        {/* Barcode */}
+        <div className="rounded-xl border border-border bg-card p-4">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Barcode className="h-3.5 w-3.5" /> Barcode
+          </div>
+          {(order.barcodeImage || order.status !== "PENDING_PAYMENT") ? (
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex h-16 w-full items-center justify-center rounded-lg bg-white p-2">
+                <AuthenticatedBarcodeImage orderId={order.id} orderNumber={order.orderNumber} />
+              </div>
+              <button onClick={handlePrintBarcode} className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline">
+                <Printer className="h-3.5 w-3.5" /> Cetak Barcode
+              </button>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">Barcode belum tersedia</p>
+          )}
+        </div>
+
+        {/* Test List */}
+        <div className="rounded-xl border border-border bg-card p-4 sm:col-span-2 lg:col-span-1">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <FlaskConical className="h-3.5 w-3.5" /> Daftar Tes ({order.details.length})
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {order.details.map((d) => (
+              <span
+                key={d.id}
+                className={cn(
+                  "rounded-md px-2 py-1 font-mono text-[11px] font-semibold inline-flex items-center gap-1",
+                  d.status === "RESULT_ENTERED" || d.status === "VERIFIED" || d.status === "APPROVED"
+                    ? "bg-brand/10 text-brand dark:bg-brand-light dark:text-brand"
+                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                )}
+                title={`${d.testName} (${d.resultType === "QUALITATIVE" ? "Kualitatif" : d.resultType === "TEXT" ? "Teks" : "Numerik"})`}
+              >
+                {d.testCode}
+                {d.resultType === "QUALITATIVE" && <span className="text-[8px] font-bold opacity-60">Q</span>}
+                {d.resultType === "TEXT" && <span className="text-[8px] font-bold opacity-60">T</span>}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* BP-GAP-01: Doctor rejection reason banner */}
+      {isDoctorRejected && order.rejectedReason && (
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+          <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+            <AlertCircle className="h-3.5 w-3.5" /> Catatan Dokter (Alasan Penolakan)
+          </div>
+          <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+            {order.rejectedReason}
+          </p>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="mt-4 flex items-center gap-3 flex-wrap">
+        {confirmError && (
+          <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
+            <AlertCircle className="h-3.5 w-3.5" /> {confirmError}
+          </div>
+        )}
+        {barcodeError && (
+          <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
+            <AlertCircle className="h-3.5 w-3.5" /> {barcodeError}
+          </div>
+        )}
+        {confirmSuccess && (
+          <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-xs text-green-700 dark:bg-green-900/20 dark:text-green-300">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            {selectedCondition === "ACCEPTABLE" ? "Sampel diterima!" : "Sampel ditolak."}
+          </div>
+        )}
+        {order.status === "PAID" && !confirmSuccess && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onOpenSampleDialog(); }}
+            disabled={confirmSampleMutation.isPending}
+            className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98] disabled:opacity-60"
+          >
+            <Barcode className="h-4 w-4" /> Konfirmasi Sampel
+          </button>
+        )}
+        {(order.status === "SAMPLE_COLLECTED" || order.status === "IN_ANALYSIS") && (
+          <a href={`/dashboard/laboratory/results/${order.id}`} className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]">
+            <FlaskConical className="h-4 w-4" /> {order.status === "SAMPLE_COLLECTED" ? "Input Hasil" : allResultsEntered ? "Lihat Hasil" : "Lanjut Input"}
+          </a>
+        )}
+        {/* DATA-GAP-07: Quick verify from queue for IN_ANALYSIS with all results entered */}
+        {order.status === "IN_ANALYSIS" && allResultsEntered && activeTab !== "COMPLETED_TODAY" && activeTab !== "HISTORY" && (
+          <button
+            onClick={(e) => { e.stopPropagation(); verifyMutation.mutate({ orderId: order.id }); }}
+            disabled={verifyMutation.isPending}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-[0.98] disabled:opacity-60"
+          >
+            {verifyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Verifikasi
+          </button>
+        )}
+        {/* BP-LAB-03: Rerun button for IN_ANALYSIS orders */}
+        {order.status === "IN_ANALYSIS" && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onOpenRerunDialog(); }}
+            className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-100 active:scale-[0.98] dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+          >
+            <RotateCcw className="h-4 w-4" /> Request Rerun
+          </button>
+        )}
+        {/* Rerun count indicator */}
+        {order.details.some((d) => (d as any).rerunCount > 0) && (
+          <span className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+            <RotateCcw className="h-3 w-3" />
+            Rerun: {order.details.filter((d) => (d as any).rerunCount > 0).length} tes
+          </span>
+        )}
+        {order.status === "VERIFIED" && (
+          <a href="/dashboard/laboratory/approval" className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-600 hover:shadow-md active:scale-[0.98]">
+            <ShieldCheck className="h-4 w-4" /> Menunggu Approval Dokter
+          </a>
+        )}
+        {/* Task 3.2: Recall button for APPROVED/NOTIFIED orders (< 24 hours) */}
+        {(order.status === "APPROVED" || order.status === "NOTIFIED") && order.approvedAt && (
+          (() => {
+            const hoursSince = (Date.now() - new Date(order.approvedAt).getTime()) / (1000 * 60 * 60);
+            if (hoursSince > 24) return null;
+            return (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const reason = window.prompt("Alasan recall order ini untuk koreksi:");
+                  if (reason && reason.trim()) {
+                    recallMutation.mutate({ orderId: order.id, reason: reason.trim() });
+                  }
+                }}
+                disabled={recallMutation.isPending}
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-100 active:scale-[0.98] disabled:opacity-60 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+              >
+                {recallMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Recall
+              </button>
+            );
+          })()
+        )}
+        {/* Task 3.3: Reprint button for APPROVED/NOTIFIED orders */}
+        {(order.status === "APPROVED" || order.status === "NOTIFIED") && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const token = localStorage.getItem("elis_token") || localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+              window.open(`/api/v1/orders/${order.id}/report/pdf?token=${encodeURIComponent(token)}`, "_blank");
+            }}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-all hover:bg-brand/5 active:scale-[0.98]"
+          >
+            <Printer className="h-4 w-4" /> Cetak Hasil
+          </button>
+        )}
+        {/* DATA-GAP-09: Rejection count badge */}
+        {order.rejectionCount && order.rejectionCount > 1 && (
+          <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-300">
+            <AlertTriangle className="h-3 w-3" />
+            Ditolak {order.rejectionCount}x
+          </span>
+        )}
+      </div>
+
+      {/* Dialogs rendered here (inside expanded detail) */}
+      {rerunDialog}
+      {sampleDialog}
+    </>
+  );
+}
+
 // ---------- Main Component ----------
 
 export default function LaboratoryQueuePage() {
@@ -220,6 +861,8 @@ export default function LaboratoryQueuePage() {
   const [bulkBarcodeVerified, setBulkBarcodeVerified] = useState(false);
   // UX-GAP-01: Focused row index for keyboard navigation
   const [focusedRowIndex, setFocusedRowIndex] = useState<number>(-1);
+  // Bulk operation error feedback
+  const [bulkError, setBulkError] = useState<string | null>(null);
   const tableBodyRef = useRef<HTMLTableSectionElement>(null);
 
   // DATA-GAP-04: History tab state
@@ -421,14 +1064,17 @@ export default function LaboratoryQueuePage() {
   const handleBulkConfirm = async () => {
     if (selectedIds.size === 0) return;
     setBulkConfirming(true);
+    setBulkError(null);
     const ids = Array.from(selectedIds);
+    const errors: string[] = [];
 
     if (bulkMode === "accept") {
       for (const id of ids) {
         try {
           await confirmSampleMutation.mutateAsync({ orderId: id, data: { sampleCondition: "ACCEPTABLE" as const } });
-        } catch {
-          // continue with remaining
+        } catch (err: unknown) {
+          const e = err as { message?: string };
+          errors.push(e?.message || id);
         }
       }
     } else {
@@ -439,8 +1085,9 @@ export default function LaboratoryQueuePage() {
             orderId: id,
             data: { sampleCondition: bulkRejectCondition as any, rejectionReason: bulkRejectReason } as any,
           });
-        } catch {
-          // continue with remaining
+        } catch (err: unknown) {
+          const e = err as { message?: string };
+          errors.push(e?.message || id);
         }
       }
     }
@@ -452,6 +1099,10 @@ export default function LaboratoryQueuePage() {
     setBulkRejectCondition("LIPEMIC");
     setBulkRejectReason("");
     setBulkBarcodeVerified(false);
+
+    if (errors.length > 0) {
+      setBulkError(`${errors.length} order gagal diproses. Silakan coba lagi.`);
+    }
   };
 
   // UX-GAP-06: Focus trap ref for bulk confirm dialog
@@ -556,6 +1207,11 @@ export default function LaboratoryQueuePage() {
         <div className="flex items-center gap-3 rounded-xl border border-brand/30 bg-brand/5 px-4 py-3 dark:bg-brand/10">
           <CheckSquare className="h-4 w-4 text-brand" />
           <span className="text-sm font-medium text-brand">{selectedIds.size} order dipilih</span>
+          {bulkError && (
+            <span className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1">
+              <AlertCircle className="h-3.5 w-3.5" /> {bulkError}
+            </span>
+          )}
           <button
             onClick={() => { setBulkMode("accept"); setShowBulkConfirmDialog(true); }}
             disabled={bulkConfirming}
@@ -879,115 +1535,22 @@ interface OrderRowProps {
 }
 
 function OrderRow({ order, isExpanded, isSelected, isFocused, rowIndex, totalRows, activeTab, onToggle, onSelect, onFocusRow, confirmSampleMutation, verifyMutation, recallMutation, queryClient }: OrderRowProps) {
-  const [confirmSuccess, setConfirmSuccess] = useState(false);
-  const [confirmError, setConfirmError] = useState<string | null>(null);
-  const [barcodeError, setBarcodeError] = useState<string | null>(null);
-  const [showSampleDialog, setShowSampleDialog] = useState(false);
-  const [selectedCondition, setSelectedCondition] = useState<string>("ACCEPTABLE");
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [barcodeInput, setBarcodeInput] = useState("");
-  const [barcodeVerified, setBarcodeVerified] = useState(false);
-
-  // BP-LAB-03: Rerun state
-  const [showRerunDialog, setShowRerunDialog] = useState(false);
-  const [rerunTestId, setRerunTestId] = useState<string | null>(null);
-  const [rerunReason, setRerunReason] = useState("");
-  const [rerunSubmitting, setRerunSubmitting] = useState(false);
-
-  // UX-LAB-02: Use mutation hook
-  const handleConfirmSample = async () => {
-    setConfirmError(null);
-    try {
-      const payload: { sampleCondition: string; rejectionReason?: string; notes?: string } = {
-        sampleCondition: selectedCondition,
-      };
-      if (selectedCondition !== "ACCEPTABLE" && rejectionReason.trim()) {
-        payload.rejectionReason = rejectionReason.trim();
-      }
-      await confirmSampleMutation.mutateAsync({ orderId: order.id, data: payload as any });
-      setConfirmSuccess(true);
-      setShowSampleDialog(false);
-      // No window.location.reload() — TanStack Query handles cache invalidation
-    } catch (err: unknown) {
-      const apiErr = err as { message?: string };
-      setConfirmError(apiErr?.message || "Gagal konfirmasi sampel");
-    }
-  };
-
-  const handlePrintBarcode = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setBarcodeError(null);
-    try {
-      const token = localStorage.getItem("elis_token") || localStorage.getItem("token") || sessionStorage.getItem("token") || "";
-      const res = await fetch(`/api/v1/orders/${order.id}/barcode.png`, { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error("Failed");
-      const blob = await res.blob();
-      const barcodeDataUrl = URL.createObjectURL(blob);
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) { setBarcodeError("Popup blocker aktif"); URL.revokeObjectURL(barcodeDataUrl); return; }
-      printWindow.document.write(`<html><head><title>Barcode ${order.orderNumber}</title><style>body{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:monospace}img{max-width:100%;height:auto}.label{margin-top:5px;font-size:12px;font-weight:bold}@page{size:auto;margin:0}</style></head><body><img src="${barcodeDataUrl}" /><div class="label">${order.orderNumber}</div><script>window.onload=function(){window.print();setTimeout(function(){window.close()},500)}</script></body></html>`);
-      printWindow.document.close();
-    } catch { setBarcodeError("Gagal memuat barcode"); }
-  };
-
-  // UX-GAP-05: Focus trap for dialogs
-  const sampleDialogRef = useFocusTrap(showSampleDialog);
-  const rerunDialogRef = useFocusTrap(showRerunDialog);
-
-  // UX-LAB-05: TAT indicator
-  const tatOverdue = isTatOverdue(order);
-  const elapsed = getElapsedTime(order.sampleCollectedAt || order.paidAt || order.createdAt);
-
-  // UX-GAP-07: Check if this is a rejected sample needing re-sampling
-  const isRejectedSample = order.sampleCondition && order.sampleCondition !== "ACCEPTABLE" && order.status === "PAID";
-
-  // BP-GAP-01: Check if this order was rejected by doctor (sent back to IN_ANALYSIS)
-  const isDoctorRejected = !!order.rejectedReason && order.status === "IN_ANALYSIS";
-
-  // DATA-GAP-08: CITO priority check
-  const isCito = order.priority === "CITO" || order.priority === "URGENT";
-
-  // DATA-GAP-10: Progress indicator for IN_ANALYSIS orders
-  const resultsCompleted = order.details.filter((d) => d.status === "RESULT_ENTERED" || d.status === "VERIFIED" || d.status === "APPROVED").length;
-  const resultsTotal = order.details.length;
-  const allResultsEntered = resultsCompleted === resultsTotal && resultsTotal > 0;
-
-  // DATA-GAP-11: Dual-approval indicator (CRITICAL flags in details)
-  const hasCriticalFlag = order.details.some((d) => d.flag === "CRITICAL");
-
-  // UX-GAP-01: Keyboard handler for row navigation
-  const handleRowKeyDown = (e: React.KeyboardEvent<HTMLTableRowElement>) => {
-    switch (e.key) {
-      case "Enter":
-      case " ":
-        e.preventDefault();
-        onToggle();
-        break;
-      case "ArrowDown":
-        e.preventDefault();
-        if (rowIndex < totalRows - 1) onFocusRow(rowIndex + 1);
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        if (rowIndex > 0) onFocusRow(rowIndex - 1);
-        break;
-      case "s":
-        // 's' to select (for PAID orders)
-        if (order.status === "PAID") {
-          e.preventDefault();
-          onSelect();
-        }
-        break;
-    }
-  };
-
-  // UX-GAP-01: Auto-focus row when focusedRowIndex changes
-  const rowRef = useRef<HTMLTableRowElement>(null);
-  useEffect(() => {
-    if (isFocused && rowRef.current) {
-      rowRef.current.focus();
-    }
-  }, [isFocused]);
+  const {
+    confirmSuccess, confirmError, barcodeError,
+    showSampleDialog, setShowSampleDialog,
+    selectedCondition, setSelectedCondition,
+    rejectionReason, setRejectionReason,
+    barcodeInput, setBarcodeInput, barcodeVerified, setBarcodeVerified,
+    showRerunDialog, setShowRerunDialog,
+    rerunTestId, setRerunTestId,
+    rerunReason, setRerunReason,
+    rerunSubmitting, rerunError,
+    tatOverdue, elapsed,
+    isRejectedSample, isDoctorRejected, isCito,
+    resultsCompleted, resultsTotal, allResultsEntered, hasCriticalFlag,
+    handleConfirmSample, handlePrintBarcode, handleRerunSubmit, handleRowKeyDown,
+    rowRef, sampleDialogRef, rerunDialogRef,
+  } = useOrderRowState(order, isFocused, rowIndex, totalRows, onToggle, onSelect, onFocusRow, confirmSampleMutation, queryClient);
 
   return (
     <>
@@ -1116,406 +1679,55 @@ function OrderRow({ order, isExpanded, isSelected, isFocused, rowIndex, totalRow
       {isExpanded && (
         <tr className="border-b border-border bg-brand/[0.02]">
           <td colSpan={7} className="px-4 py-4">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Patient Info */}
-              <div className="rounded-xl border border-border bg-card p-4">
-                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <User className="h-3.5 w-3.5" /> Informasi Pasien
-                </div>
-                <div className="space-y-1 text-sm">
-                  <p><span className="text-muted-foreground">Nama:</span> <span className="font-medium text-foreground">{order.patientName}</span></p>
-                  <p><span className="text-muted-foreground">MRN:</span> <span className="font-mono text-foreground">{order.patientMrn}</span></p>
-                  <p><span className="text-muted-foreground">Total:</span> <span className="font-medium text-foreground">Rp {order.totalAmount.toLocaleString("id-ID")}</span></p>
-                </div>
-              </div>
-
-              {/* Barcode */}
-              <div className="rounded-xl border border-border bg-card p-4">
-                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Barcode className="h-3.5 w-3.5" /> Barcode
-                </div>
-                {(order.barcodeImage || order.status !== "PENDING_PAYMENT") ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="flex h-16 w-full items-center justify-center rounded-lg bg-white p-2">
-                      <AuthenticatedBarcodeImage orderId={order.id} orderNumber={order.orderNumber} />
-                    </div>
-                    <button onClick={handlePrintBarcode} className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline">
-                      <Printer className="h-3.5 w-3.5" /> Cetak Barcode
-                    </button>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">Barcode belum tersedia</p>
-                )}
-              </div>
-
-              {/* Test List */}
-              <div className="rounded-xl border border-border bg-card p-4 sm:col-span-2 lg:col-span-1">
-                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <FlaskConical className="h-3.5 w-3.5" /> Daftar Tes ({order.details.length})
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {order.details.map((d) => (
-                    <span
-                      key={d.id}
-                      className={cn(
-                        "rounded-md px-2 py-1 font-mono text-[11px] font-semibold inline-flex items-center gap-1",
-                        d.status === "RESULT_ENTERED" || d.status === "VERIFIED" || d.status === "APPROVED"
-                          ? "bg-brand/10 text-brand dark:bg-brand-light dark:text-brand"
-                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                      )}
-                      title={`${d.testName} (${d.resultType === "QUALITATIVE" ? "Kualitatif" : d.resultType === "TEXT" ? "Teks" : "Numerik"})`}
-                    >
-                      {d.testCode}
-                      {d.resultType === "QUALITATIVE" && <span className="text-[8px] font-bold opacity-60">Q</span>}
-                      {d.resultType === "TEXT" && <span className="text-[8px] font-bold opacity-60">T</span>}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* BP-GAP-01: Doctor rejection reason banner */}
-            {isDoctorRejected && order.rejectedReason && (
-              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
-                <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
-                  <AlertCircle className="h-3.5 w-3.5" /> Catatan Dokter (Alasan Penolakan)
-                </div>
-                <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                  {order.rejectedReason}
-                </p>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="mt-4 flex items-center gap-3 flex-wrap">
-              {confirmError && (
-                <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
-                  <AlertCircle className="h-3.5 w-3.5" /> {confirmError}
-                </div>
-              )}
-              {barcodeError && (
-                <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
-                  <AlertCircle className="h-3.5 w-3.5" /> {barcodeError}
-                </div>
-              )}
-              {confirmSuccess && (
-                <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-xs text-green-700 dark:bg-green-900/20 dark:text-green-300">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  {selectedCondition === "ACCEPTABLE" ? "Sampel diterima!" : "Sampel ditolak."}
-                </div>
-              )}
-              {order.status === "PAID" && !confirmSuccess && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowSampleDialog(true); }}
-                  disabled={confirmSampleMutation.isPending}
-                  className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98] disabled:opacity-60"
-                >
-                  <Barcode className="h-4 w-4" /> Konfirmasi Sampel
-                </button>
-              )}
-              {(order.status === "SAMPLE_COLLECTED" || order.status === "IN_ANALYSIS") && (
-                <a href={`/dashboard/laboratory/results/${order.id}`} className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]">
-                  <FlaskConical className="h-4 w-4" /> {order.status === "SAMPLE_COLLECTED" ? "Input Hasil" : allResultsEntered ? "Lihat Hasil" : "Lanjut Input"}
-                </a>
-              )}
-              {/* DATA-GAP-07: Quick verify from queue for IN_ANALYSIS with all results entered */}
-              {order.status === "IN_ANALYSIS" && allResultsEntered && activeTab !== "COMPLETED_TODAY" && activeTab !== "HISTORY" && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); verifyMutation.mutate({ orderId: order.id }); }}
-                  disabled={verifyMutation.isPending}
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-[0.98] disabled:opacity-60"
-                >
-                  {verifyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Verifikasi
-                </button>
-              )}
-              {/* BP-LAB-03: Rerun button for IN_ANALYSIS orders */}
-              {order.status === "IN_ANALYSIS" && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowRerunDialog(true); }}
-                  className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-100 active:scale-[0.98] dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
-                >
-                  <RotateCcw className="h-4 w-4" /> Request Rerun
-                </button>
-              )}
-              {/* Rerun count indicator */}
-              {order.details.some((d) => (d as any).rerunCount > 0) && (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                  <RotateCcw className="h-3 w-3" />
-                  Rerun: {order.details.filter((d) => (d as any).rerunCount > 0).length} tes
-                </span>
-              )}
-              {order.status === "VERIFIED" && (
-                <a href="/dashboard/laboratory/approval" className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-600 hover:shadow-md active:scale-[0.98]">
-                  <ShieldCheck className="h-4 w-4" /> Menunggu Approval Dokter
-                </a>
-              )}
-              {/* Task 3.2: Recall button for APPROVED/NOTIFIED orders (< 24 hours) */}
-              {(order.status === "APPROVED" || order.status === "NOTIFIED") && order.approvedAt && (
-                (() => {
-                  const hoursSince = (Date.now() - new Date(order.approvedAt).getTime()) / (1000 * 60 * 60);
-                  if (hoursSince > 24) return null;
-                  return (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const reason = window.prompt("Alasan recall order ini untuk koreksi:");
-                        if (reason && reason.trim()) {
-                          recallMutation.mutate({ orderId: order.id, reason: reason.trim() });
-                        }
-                      }}
-                      disabled={recallMutation.isPending}
-                      className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-100 active:scale-[0.98] disabled:opacity-60 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
-                    >
-                      {recallMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Recall
-                    </button>
-                  );
-                })()
-              )}
-              {/* Task 3.3: Reprint button for APPROVED/NOTIFIED orders */}
-              {(order.status === "APPROVED" || order.status === "NOTIFIED") && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const token = localStorage.getItem("elis_token") || localStorage.getItem("token") || sessionStorage.getItem("token") || "";
-                    window.open(`/api/v1/orders/${order.id}/report/pdf?token=${encodeURIComponent(token)}`, "_blank");
-                  }}
-                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-all hover:bg-brand/5 active:scale-[0.98]"
-                >
-                  <Printer className="h-4 w-4" /> Cetak Hasil
-                </button>
-              )}
-              {/* DATA-GAP-09: Rejection count badge */}
-              {order.rejectionCount && order.rejectionCount > 1 && (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-300">
-                  <AlertTriangle className="h-3 w-3" />
-                  Ditolak {order.rejectionCount}x
-                </span>
-              )}
-            </div>
-
-            {/* BP-LAB-03: Rerun Dialog (UX-GAP-05: with focus trap) */}
-            {showRerunDialog && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()} data-dialog-open>
-                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowRerunDialog(false)} />
-                <div ref={rerunDialogRef} className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200" role="dialog" aria-modal="true" aria-labelledby="rerun-dialog-title">
-                  <h3 id="rerun-dialog-title" className="text-lg font-bold text-slate-900 dark:text-white">Request Rerun</h3>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Pilih parameter yang perlu diulang
-                  </p>
-
-                  <div className="mt-4 space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wide text-slate-500">Parameter</label>
-                    <div className="space-y-1.5">
-                      {order.details.map((d) => (
-                        <button
-                          key={d.id}
-                          type="button"
-                          onClick={() => setRerunTestId(d.id)}
-                          className={cn(
-                            "w-full rounded-lg border px-3 py-2 text-left text-sm font-medium transition",
-                            rerunTestId === d.id
-                              ? "border-brand bg-brand/10 text-brand ring-1 ring-brand/30"
-                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                          )}
-                        >
-                          <span className="font-mono text-xs">{d.testCode}</span> — {d.testName}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-3">
-                    <label htmlFor="rerun-reason" className="text-xs font-bold uppercase tracking-wide text-slate-500">Alasan Rerun</label>
-                    <select
-                      id="rerun-reason"
-                      value={rerunReason}
-                      onChange={(e) => setRerunReason(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    >
-                      <option value="">Pilih alasan...</option>
-                      <option value="QC_FAILURE">QC Failure</option>
-                      <option value="SPECIMEN_ISSUE">Masalah Spesimen</option>
-                      <option value="EQUIPMENT_ERROR">Error Alat</option>
-                      <option value="OPERATOR_ERROR">Error Operator</option>
-                      <option value="OTHER">Lainnya</option>
-                    </select>
-                  </div>
-
-                  <div className="mt-5 flex gap-3">
-                    <button
-                      onClick={() => { setShowRerunDialog(false); setRerunTestId(null); setRerunReason(""); }}
-                      className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (!rerunTestId || !rerunReason) return;
-                        setRerunSubmitting(true);
-                        try {
-                          await apiClient.post(`/api/v1/lab-workflow/order-details/${rerunTestId}/rerun`, { reason: rerunReason });
-                          setShowRerunDialog(false);
-                          setRerunTestId(null);
-                          setRerunReason("");
-                          // UX-GAP-03: Properly invalidate cache instead of just resetting mutation
-                          queryClient.invalidateQueries({ queryKey: labKeys.queue() });
-                          queryClient.invalidateQueries({ queryKey: labKeys.queueStats() });
-                        } catch {
-                          // silently fail — API may not support yet
-                        } finally {
-                          setRerunSubmitting(false);
-                        }
-                      }}
-                      disabled={!rerunTestId || !rerunReason || rerunSubmitting}
-                      className="flex-1 rounded-xl bg-amber-500 py-2.5 text-sm font-bold text-white transition hover:bg-amber-600 disabled:opacity-50"
-                    >
-                      {rerunSubmitting ? "Memproses..." : "Submit Rerun"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Sample Condition Dialog (UX-GAP-05: with focus trap) */}
-            {showSampleDialog && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()} data-dialog-open>
-                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowSampleDialog(false)} />
-                <div
-                  ref={sampleDialogRef}
-                  className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-labelledby="sample-dialog-title"
-                  onKeyDown={(e) => {
-                    // UX-GAP-02: Ctrl+Enter to confirm in dialog
-                    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-                      e.preventDefault();
-                      if (barcodeVerified && (selectedCondition === "ACCEPTABLE" || rejectionReason.trim())) {
-                        handleConfirmSample();
-                      }
-                    }
-                    // Escape to close
-                    if (e.key === "Escape") {
-                      setShowSampleDialog(false);
-                      setSelectedCondition("ACCEPTABLE");
-                      setRejectionReason("");
-                      setConfirmError(null);
-                      setBarcodeInput("");
-                      setBarcodeVerified(false);
-                    }
-                  }}
-                >
-                  <h3 id="sample-dialog-title" className="text-lg font-bold text-slate-900 dark:text-white">Konfirmasi Kondisi Sampel</h3>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Order <span className="font-semibold text-brand">{order.orderNumber}</span> — {order.patientName}
-                  </p>
-
-                  {/* BP-LAB-01: Barcode Verification */}
-                  <div className="mt-4 space-y-2">
-                    <label htmlFor="barcode-verify" className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                      Verifikasi Barcode Sampel
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <div className="relative flex-1">
-                        <Barcode className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input
-                          id="barcode-verify"
-                          type="text"
-                          value={barcodeInput}
-                          onChange={(e) => {
-                            setBarcodeInput(e.target.value);
-                            setBarcodeVerified(e.target.value.trim().toUpperCase() === order.orderNumber.toUpperCase());
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              setBarcodeVerified(barcodeInput.trim().toUpperCase() === order.orderNumber.toUpperCase());
-                            }
-                          }}
-                          placeholder="Scan atau ketik nomor barcode..."
-                          autoFocus
-                          className={cn(
-                            "h-10 w-full rounded-xl border pl-10 pr-4 text-sm font-mono outline-none transition-all placeholder:text-slate-400 focus:ring-1",
-                            barcodeVerified
-                              ? "border-green-400 bg-green-50 focus:border-green-500 focus:ring-green-200 dark:border-green-600 dark:bg-green-900/20"
-                              : barcodeInput && !barcodeVerified
-                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200 dark:border-red-700 dark:bg-red-900/20"
-                                : "border-slate-200 bg-white focus:border-brand focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-800"
-                          )}
-                        />
-                      </div>
-                      {barcodeVerified && <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />}
-                    </div>
-                    {barcodeInput && !barcodeVerified && (
-                      <p className="text-xs text-red-600 dark:text-red-400">Barcode tidak cocok dengan order {order.orderNumber}</p>
-                    )}
-                    {!barcodeInput && (
-                      <p className="text-xs text-slate-400">Scan barcode pada tabung sampel untuk verifikasi identitas pasien</p>
-                    )}
-                  </div>
-
-                  <div className="mt-4 space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Kondisi Sampel</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {SAMPLE_CONDITIONS.map((cond) => (
-                        <button
-                          key={cond.value}
-                          type="button"
-                          onClick={() => setSelectedCondition(cond.value)}
-                          className={cn(
-                            "rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-all",
-                            selectedCondition === cond.value
-                              ? cond.color + " ring-2 ring-brand/30"
-                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                          )}
-                        >
-                          {cond.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {selectedCondition !== "ACCEPTABLE" && (
-                    <div className="mt-4">
-                      <label htmlFor="rejection-reason" className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Alasan Penolakan</label>
-                      <textarea
-                        id="rejection-reason"
-                        rows={2}
-                        value={rejectionReason}
-                        onChange={(e) => setRejectionReason(e.target.value)}
-                        placeholder="Jelaskan alasan penolakan sampel..."
-                        className="mt-1 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none placeholder:text-slate-400 focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                      />
-                    </div>
-                  )}
-                  {selectedCondition !== "ACCEPTABLE" && (
-                    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800 dark:bg-amber-900/20">
-                      <p className="text-xs text-amber-700 dark:text-amber-300">
-                        Sampel akan ditandai <strong>ditolak</strong>. Order memerlukan pengambilan ulang.
-                      </p>
-                    </div>
-                  )}
-                  {confirmError && (
-                    <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">{confirmError}</div>
-                  )}
-                  <div className="mt-5 flex flex-col gap-2">
-                    <div className="flex gap-3">
-                      <button onClick={() => { setShowSampleDialog(false); setSelectedCondition("ACCEPTABLE"); setRejectionReason(""); setConfirmError(null); setBarcodeInput(""); setBarcodeVerified(false); }} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300">Batal</button>
-                      <button
-                        onClick={handleConfirmSample}
-                        disabled={confirmSampleMutation.isPending || !barcodeVerified || (selectedCondition !== "ACCEPTABLE" && !rejectionReason.trim())}
-                        className={cn("flex-1 rounded-xl py-2.5 text-sm font-bold text-white transition disabled:opacity-50", selectedCondition === "ACCEPTABLE" ? "bg-brand hover:bg-brand-dark" : "bg-red-600 hover:bg-red-700")}
-                      >
-                        {confirmSampleMutation.isPending ? "Memproses..." : selectedCondition === "ACCEPTABLE" ? "Terima Sampel" : "Tolak Sampel"}
-                      </button>
-                    </div>
-                    {/* UX-GAP-02: Keyboard shortcut hint */}
-                    <p className="text-center text-[10px] text-slate-400 dark:text-slate-500">
-                      Tekan <kbd className="rounded border border-slate-300 px-1 py-0.5 font-mono text-[9px] dark:border-slate-600">Ctrl+Enter</kbd> untuk konfirmasi cepat
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            <OrderExpandedDetail
+              order={order}
+              isDoctorRejected={isDoctorRejected}
+              confirmError={confirmError}
+              barcodeError={barcodeError}
+              confirmSuccess={confirmSuccess}
+              selectedCondition={selectedCondition}
+              allResultsEntered={allResultsEntered}
+              activeTab={activeTab}
+              confirmSampleMutation={confirmSampleMutation}
+              verifyMutation={verifyMutation}
+              recallMutation={recallMutation}
+              handlePrintBarcode={handlePrintBarcode}
+              onOpenSampleDialog={() => setShowSampleDialog(true)}
+              onOpenRerunDialog={() => setShowRerunDialog(true)}
+              rerunDialog={
+                <RerunDialog
+                  show={showRerunDialog}
+                  order={order}
+                  rerunTestId={rerunTestId}
+                  rerunReason={rerunReason}
+                  rerunSubmitting={rerunSubmitting}
+                  rerunError={rerunError}
+                  dialogRef={rerunDialogRef}
+                  onClose={() => { setShowRerunDialog(false); setRerunTestId(null); setRerunReason(""); }}
+                  onSelectTest={setRerunTestId}
+                  onChangeReason={setRerunReason}
+                  onSubmit={handleRerunSubmit}
+                />
+              }
+              sampleDialog={
+                <SampleConditionDialog
+                  show={showSampleDialog}
+                  order={order}
+                  selectedCondition={selectedCondition}
+                  rejectionReason={rejectionReason}
+                  barcodeInput={barcodeInput}
+                  barcodeVerified={barcodeVerified}
+                  confirmError={confirmError}
+                  isPending={confirmSampleMutation.isPending}
+                  dialogRef={sampleDialogRef}
+                  onClose={() => { setShowSampleDialog(false); setSelectedCondition("ACCEPTABLE"); setRejectionReason(""); setBarcodeInput(""); setBarcodeVerified(false); }}
+                  onSelectCondition={setSelectedCondition}
+                  onChangeRejectionReason={setRejectionReason}
+                  onChangeBarcodeInput={(val, verified) => { setBarcodeInput(val); setBarcodeVerified(verified); }}
+                  onConfirm={handleConfirmSample}
+                />
+              }
+            />
           </td>
         </tr>
       )}
