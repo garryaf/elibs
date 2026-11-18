@@ -51,13 +51,12 @@ function getToken(): string | null {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 async function uploadCsvFile(file: File): Promise<BatchImportResult> {
-  const token = getToken();
   const formData = new FormData();
   formData.append("file", file);
 
   const response = await fetch(`${API_BASE_URL}/api/v1/analyzer/import`, {
     method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: "include",
     body: formData,
   });
 

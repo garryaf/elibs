@@ -235,8 +235,7 @@ function useOrderRowState(
     e.stopPropagation();
     setBarcodeError(null);
     try {
-      const token = localStorage.getItem("elis_token") || localStorage.getItem("token") || sessionStorage.getItem("token") || "";
-      const res = await fetch(`/api/v1/orders/${order.id}/barcode.png`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`/api/v1/orders/${order.id}/barcode.png`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed");
       const blob = await res.blob();
       const barcodeDataUrl = URL.createObjectURL(blob);
@@ -776,8 +775,7 @@ function OrderExpandedDetail({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              const token = localStorage.getItem("elis_token") || localStorage.getItem("token") || sessionStorage.getItem("token") || "";
-              window.open(`/api/v1/orders/${order.id}/report/pdf?token=${encodeURIComponent(token)}`, "_blank");
+              window.open(`/api/v1/orders/${order.id}/report/pdf`, "_blank");
             }}
             className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand/5 active:scale-[0.98]"
           >
@@ -1510,8 +1508,7 @@ function AuthenticatedBarcodeImage({ orderId, orderNumber }: { orderId: string; 
 
   useEffect(() => {
     let cancelled = false;
-    const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || localStorage.getItem("token") || sessionStorage.getItem("token") : null;
-    fetch(`/api/v1/orders/${orderId}/barcode.png`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    fetch(`/api/v1/orders/${orderId}/barcode.png`, { credentials: "include" })
       .then((res) => { if (!res.ok) throw new Error("Failed"); return res.blob(); })
       .then((blob) => { if (!cancelled) setDataUrl(URL.createObjectURL(blob)); })
       .catch(() => { if (!cancelled) setDataUrl(null); })

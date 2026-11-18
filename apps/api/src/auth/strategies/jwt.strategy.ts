@@ -4,6 +4,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Role } from '@prisma/client';
 import { TokenBlocklistService } from '../token-blocklist.service';
+import { extractCookie } from '../../common/utils/cookie.util';
 
 export interface JwtPayload {
   sub: string;
@@ -21,7 +22,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private tokenBlocklist: TokenBlocklistService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (req) => extractCookie(req?.headers?.cookie, 'elis_token'),
+      ]),
       ignoreExpiration: false,
       secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
     });

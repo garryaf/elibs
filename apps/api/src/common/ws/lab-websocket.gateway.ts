@@ -11,6 +11,7 @@ import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
+import { extractCookie } from '../utils/cookie.util';
 
 export interface CriticalValuePayload {
   id: string;
@@ -34,7 +35,7 @@ export interface NotificationStatusPayload {
   updatedAt?: Date | string;
 }
 
-@WebSocketGateway({ namespace: '/ws', cors: { origin: '*' } })
+@WebSocketGateway({ namespace: '/ws', cors: { origin: true, credentials: true } })
 export class LabWebSocketGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
@@ -53,7 +54,8 @@ export class LabWebSocketGateway
     try {
       const token =
         client.handshake?.auth?.token ||
-        client.handshake?.headers?.authorization?.replace('Bearer ', '');
+        client.handshake?.headers?.authorization?.replace('Bearer ', '') ||
+        extractCookie(client.handshake?.headers?.cookie, 'elis_token');
 
       if (!token) {
         this.logger.warn(

@@ -34,66 +34,86 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Hydrate auth state from localStorage on mount
+  // Hydrate display user from localStorage and verify HttpOnly cookie session
   useEffect(() => {
-    const storedToken = localStorage.getItem(TOKEN_KEY);
+    let active = true;
     const storedUser = localStorage.getItem(USER_KEY);
-
-    if (storedToken && storedUser) {
+    if (storedUser) {
       try {
-        setToken(storedToken);
         setUser(JSON.parse(storedUser));
-        // Ensure cookies are set for middleware
-        document.cookie = `elis_authenticated=true; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
-        document.cookie = `elis_token=${storedToken}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
       } catch {
-        // Corrupted data — clear it
-        localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
-        document.cookie = "elis_authenticated=; path=/; max-age=0";
-        document.cookie = "elis_token=; path=/; max-age=0";
       }
     }
-    setIsLoading(false);
+
+    // Remove any legacy tokens previously persisted in localStorage
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+
+    fetch("/api/v1/auth/me", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body) => {
+        if (!active) return;
+        const me = body?.data?.user ?? body?.user;
+        if (me?.sub) {
+          const authUser: AuthUser = {
+            sub: me.sub,
+            email: me.email,
+            role: me.role,
+          };
+          setUser(authUser);
+          localStorage.setItem(USER_KEY, JSON.stringify(authUser));
+        } else {
+          setUser(null);
+          localStorage.removeItem(USER_KEY);
+        }
+      })
+      .catch(() => {
+        // Keep cached user on transient network error
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const login = useCallback(async (payload: LoginPayload) => {
     const response = await apiClient.login(payload);
 
-    // After unwrapResponse(), the envelope is stripped — response contains the inner data directly.
-    // Cast needed because LoginResponse type still reflects the raw API shape.
-    const { accessToken, refreshToken, user: userData } = response as unknown as {
-      accessToken: string;
-      refreshToken?: string;
+    // Backend sets HttpOnly cookies (elis_token, elis_refresh_token) on login.
+    // We only cache non-sensitive user display metadata in localStorage.
+    const { user: userData } = response as unknown as {
+      accessToken?: string;
       user: AuthUser;
     };
 
-    if (!accessToken || !userData) {
+    if (!userData) {
       throw new Error("Login failed: unexpected response format");
     }
 
-    localStorage.setItem(TOKEN_KEY, accessToken);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
-    if (refreshToken) {
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-    }
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
 
-    // Set cookies for middleware route protection (httpOnly not possible from client)
-    document.cookie = `elis_authenticated=true; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
-    document.cookie = `elis_token=${accessToken}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
-
-    setToken(accessToken);
+    setToken(null);
     setUser(userData);
   }, []);
 
   const logout = useCallback(() => {
+    // Invalidate JWT on the server and clear HttpOnly cookies
+    fetch("/api/v1/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {
+      // Best-effort server revocation
+    });
+
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-
-    // Clear auth cookies
-    document.cookie = "elis_authenticated=; path=/; max-age=0";
-    document.cookie = "elis_token=; path=/; max-age=0";
 
     setToken(null);
     setUser(null);

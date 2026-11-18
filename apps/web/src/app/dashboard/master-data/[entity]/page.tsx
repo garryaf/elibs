@@ -697,14 +697,10 @@ function ImportPreviewDialog({ entity, preview, onClose, onNotify }: ImportPrevi
     formData.append("file", preview.file);
 
     try {
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("elis_token") || localStorage.getItem("token") || ""
-          : "";
       const resp = await fetch(`/api/v1/master/import/${importType}`, {
         method: "POST",
+        credentials: "include",
         body: formData,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const result = await resp.json();
 
@@ -866,10 +862,8 @@ function EntityHeaderActions({
         : entity === "panel"
         ? "panels"
         : "clinics";
-    const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || "" : "";
-
     fetch(`/api/v1/master/export/${exportEntity}?format=csv`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
     })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

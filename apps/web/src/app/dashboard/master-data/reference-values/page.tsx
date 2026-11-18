@@ -860,9 +860,8 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
   // Fetch qualitative references
   useEffect(() => {
     setLoading(true);
-    const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || "" : "";
     fetch(`/api/v1/master/tests/${testId}/qualitative-references`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
     })
       .then((r) => r.json())
       .then((res) => {
@@ -879,10 +878,10 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
     setSaving(true);
     setQualError(null);
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || "" : "";
       const resp = await fetch(`/api/v1/master/tests/${testId}/qualitative-references`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ optionValue: newOption.trim(), flag: newFlag }),
       });
       const result = await resp.json();
@@ -903,10 +902,9 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
   const handleDelete = async (id: string) => {
     setQualError(null);
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || "" : "";
       const resp = await fetch(`/api/v1/master/tests/${testId}/qualitative-references/${id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
       });
       if (!resp.ok) throw new Error("Gagal menghapus");
       setItems((prev) => prev.filter((i) => i.id !== id));

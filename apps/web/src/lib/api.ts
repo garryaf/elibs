@@ -146,13 +146,13 @@ class ApiClient {
 
   private async attemptRefresh(): Promise<boolean> {
     const refreshToken = this.getRefreshToken();
-    if (!refreshToken) return false;
 
     try {
       const response = await fetch(`${this.baseUrl}/api/v1/auth/refresh`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
+        body: JSON.stringify(refreshToken ? { refreshToken } : {}),
       });
 
       if (!response.ok) return false;
@@ -160,20 +160,7 @@ class ApiClient {
       const raw = await response.json();
       const data = unwrapResponse<{ data?: { accessToken?: string; refreshToken?: string } }>(raw);
       const inner = (data as any)?.data ?? data;
-      const accessToken = inner?.accessToken;
-      const newRefreshToken = inner?.refreshToken;
-
-      if (accessToken) {
-        localStorage.setItem(STORAGE_KEYS.TOKEN, accessToken);
-        if (newRefreshToken) {
-          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
-        }
-        // Update cookies for middleware
-        document.cookie = `elis_token=${accessToken}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
-        document.cookie = `elis_authenticated=true; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
-        return true;
-      }
-      return false;
+      return Boolean(inner?.accessToken);
     } catch {
       return false;
     }
@@ -196,10 +183,11 @@ class ApiClient {
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       ...options,
+      credentials: "include",
       headers,
     });
 
-    // If 401 and not the auth endpoints, try refresh
+    // If 401 and not the auth endpoints, try silent refresh
     if (response.status === 401 && !endpoint.includes("/auth/")) {
       // Deduplicate concurrent refresh attempts
       if (!this.isRefreshing) {
@@ -213,13 +201,10 @@ class ApiClient {
       const refreshed = await (this.refreshPromise ?? Promise.resolve(false));
 
       if (refreshed) {
-        // Retry original request with new token
-        const newToken = this.getToken();
-        if (newToken) {
-          headers["Authorization"] = `Bearer ${newToken}`;
-        }
+        // Retry original request — updated HttpOnly cookie is sent automatically
         const retryResponse = await fetch(`${this.baseUrl}${endpoint}`, {
           ...options,
+          credentials: "include",
           headers,
         });
         const retryData = await retryResponse.json();
@@ -229,10 +214,11 @@ class ApiClient {
         return unwrapResponse<T>(retryData);
       }
 
-      // Refresh failed — clear tokens and redirect to login
+      // Refresh failed — clear cached user state and redirect to login
       if (typeof window !== "undefined") {
         localStorage.removeItem(STORAGE_KEYS.TOKEN);
         localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.USER);
         window.location.href = "/";
       }
     }

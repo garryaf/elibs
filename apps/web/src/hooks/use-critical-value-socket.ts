@@ -47,18 +47,9 @@ export function useCriticalValueSocket(options: UseCriticalValueSocketOptions = 
   useEffect(() => {
     if (!enabled) return;
 
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("elis_token")
-        : null;
-
-    // Don't attempt connection without a token — the server will immediately
-    // disconnect unauthenticated clients, causing a reconnect loop.
-    if (!token) return;
-
     const socket = io(`${WS_URL}/ws`, {
       transports: ["websocket", "polling"],
-      auth: { token },
+      withCredentials: true,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 3000,

@@ -306,10 +306,9 @@ export default function GeneralSettingsPage() {
       formData.append("file", file);
       formData.append("type", type);
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") : null;
       const response = await fetch("/api/v1/settings/general/logo", {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
         body: formData,
       });
 
@@ -338,9 +337,8 @@ export default function GeneralSettingsPage() {
     setExporting(true);
     setMessage(null);
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") : null;
       const response = await fetch("/api/v1/settings/export", {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
       });
       if (!response.ok) throw new Error("Export failed");
       const result = await response.json();
