@@ -105,7 +105,7 @@ export default function NotificationsPage() {
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
           >
             <option value="">Semua Status</option>
             <option value="PENDING">Pending</option>
@@ -116,7 +116,7 @@ export default function NotificationsPage() {
           <select
             value={typeFilter}
             onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
           >
             <option value="">Semua Media</option>
             <option value="EMAIL">Email</option>
@@ -233,7 +233,7 @@ export default function NotificationsPage() {
                         <button
                           onClick={() => handleRetry(notif.id)}
                           disabled={retryMutation.isPending}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,transform,opacity] active:scale-95 disabled:opacity-50"
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
                           Retry

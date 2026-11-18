@@ -377,7 +377,7 @@ function RegionDistributionChart({ data }: { data: { id: string; name: string; c
               </span>
               <div className="flex-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-purple-500 dark:bg-purple-400 transition-all"
+                  className="h-full rounded-full bg-purple-500 dark:bg-purple-400 transition-colors"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -394,7 +394,7 @@ function RegionDistributionChart({ data }: { data: { id: string; name: string; c
             </span>
             <div className="flex-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
               <div
-                className="h-full rounded-full bg-slate-300 dark:bg-slate-600 transition-all"
+                className="h-full rounded-full bg-slate-300 dark:bg-slate-600 transition-colors"
                 style={{ width: `${(otherCount / maxCount) * 100}%` }}
               />
             </div>
@@ -636,36 +636,36 @@ export default function DashboardPage() {
         {["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "KASIR", "CS"].includes(userRole) && (
           <Link
             href="/dashboard/registration"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:border-brand hover:text-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-brand dark:hover:text-brand"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
           >
-            <UserPlus className="h-4 w-4" />
+            <UserPlus className="h-4 w-4" aria-hidden="true" />
             Registrasi Pasien
           </Link>
         )}
         {["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "KASIR", "CS"].includes(userRole) && (
           <Link
             href="/dashboard/orders"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:border-brand hover:text-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-brand dark:hover:text-brand"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4" aria-hidden="true" />
             Buat Order
           </Link>
         )}
         {["SUPER_ADMIN", "ADMIN", "ANALIS", "SAMPLING"].includes(userRole) && (
           <Link
             href="/dashboard/laboratory/queue"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:border-brand hover:text-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-brand dark:hover:text-brand"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
           >
-            <FlaskConical className="h-4 w-4" />
+            <FlaskConical className="h-4 w-4" aria-hidden="true" />
             Antrian Lab
           </Link>
         )}
         {["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "KASIR"].includes(userRole) && (
           <Link
             href="/dashboard/reports"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:border-brand hover:text-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-brand dark:hover:text-brand"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
           >
-            <FileText className="h-4 w-4" />
+            <FileText className="h-4 w-4" aria-hidden="true" />
             Laporan
           </Link>
         )}
@@ -677,42 +677,42 @@ export default function DashboardPage() {
       ) : summary ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Pasien Hari Ini — visible to all */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                <p className="text-sm font-medium text-muted-foreground">
                   Pasien Hari Ini
                 </p>
-                <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">
+                <p className="mt-2 text-3xl font-bold tabular-nums text-foreground">
                   {summary.patientsToday}
                 </p>
               </div>
               <div className="rounded-lg bg-blue-100 p-3 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400">
-                <Users className="h-6 w-6" />
+                <Users className="h-6 w-6" aria-hidden="true" />
               </div>
             </div>
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-3 text-xs tabular-nums text-muted-foreground">
               Total: {summary.totalPatients.toLocaleString("id-ID")} pasien
             </p>
           </div>
 
           {/* Pendapatan — visible to OWNER, MANAGER, ADMIN, KASIR, SUPER_ADMIN */}
           {["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "KASIR"].includes(userRole) && (
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                <p className="text-sm font-medium text-muted-foreground">
                   Pendapatan Hari Ini
                 </p>
-                <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">
+                <p className="mt-2 text-3xl font-bold tabular-nums text-foreground">
                   {formatShortCurrency(summary.revenueToday)}
                 </p>
               </div>
               <div className="rounded-lg bg-brand/10 p-3 text-brand dark:bg-brand/20 dark:text-brand">
-                <Banknote className="h-6 w-6" />
+                <Banknote className="h-6 w-6" aria-hidden="true" />
               </div>
             </div>
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-3 text-xs tabular-nums text-muted-foreground">
               Bulan ini: {formatShortCurrency(summary.totalRevenueMonth)}
             </p>
           </div>
@@ -720,42 +720,50 @@ export default function DashboardPage() {
 
           {/* Hasil Kritis — visible to ADMIN, ANALIS, DOKTER, SUPER_ADMIN */}
           {["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "ANALIS", "DOKTER"].includes(userRole) && (
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className={cn(
+            "rounded-xl border p-6 shadow-sm",
+            summary.criticalResults > 0
+              ? "border-amber-300 bg-amber-50/40 dark:border-amber-800 dark:bg-amber-950/20"
+              : "border-border bg-card"
+          )}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                <p className="text-sm font-medium text-muted-foreground">
                   Hasil Kritis
                 </p>
-                <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">
+                <p className={cn(
+                  "mt-2 text-3xl font-bold tabular-nums",
+                  summary.criticalResults > 0 ? "text-amber-700 dark:text-amber-300" : "text-foreground"
+                )}>
                   {summary.criticalResults}
                 </p>
               </div>
               <div className="rounded-lg bg-amber-100 p-3 text-amber-600 dark:bg-amber-900/50 dark:text-amber-400">
-                <AlertTriangle className="h-6 w-6" />
+                <AlertTriangle className="h-6 w-6" aria-hidden="true" />
               </div>
             </div>
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-3 text-xs text-muted-foreground">
               Perlu tindak lanjut segera
             </p>
           </div>
           )}
 
           {/* Selesai Hari Ini — visible to all */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                <p className="text-sm font-medium text-muted-foreground">
                   Selesai Hari Ini
                 </p>
-                <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">
+                <p className="mt-2 text-3xl font-bold tabular-nums text-foreground">
                   {summary.completedToday}
                 </p>
               </div>
               <div className="rounded-lg bg-indigo-100 p-3 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
-                <CheckCircle className="h-6 w-6" />
+                <CheckCircle className="h-6 w-6" aria-hidden="true" />
               </div>
             </div>
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-3 text-xs tabular-nums text-muted-foreground">
               Pending sampel: {summary.pendingSampleCollection}
             </p>
           </div>
@@ -764,7 +772,7 @@ export default function DashboardPage() {
 
       {/* Critical Values Alert (#25) — only for roles that deal with lab results */}
       {!loading && summary && summary.criticalResults > 0 && ["SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "ANALIS", "DOKTER"].includes(userRole) && (
-        <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-900/50 dark:bg-amber-950/30">
+        <div className="flex items-center justify-between rounded-xl border border-amber-200 border-l-4 border-l-amber-500 bg-amber-50 px-5 py-4 dark:border-amber-900/50 dark:border-l-amber-400 dark:bg-amber-950/30">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50">
               <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
@@ -802,7 +810,7 @@ export default function DashboardPage() {
                 key={preset.value}
                 onClick={() => setDateRange(preset.value)}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+                  "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   dateRange === preset.value
                     ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white"
                     : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"

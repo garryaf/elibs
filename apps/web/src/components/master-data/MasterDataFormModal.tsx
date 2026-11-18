@@ -276,7 +276,7 @@ export function MasterDataFormModal({
                     onChange={(e) => handleChange(field.name, e.target.value)}
                     aria-invalid={!!errors[field.name]}
                     aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
-                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand"
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand"
                   />
                 ) : field.type === "select" ? (
                   <select
@@ -286,7 +286,7 @@ export function MasterDataFormModal({
                     onChange={(e) => handleChange(field.name, e.target.value)}
                     aria-invalid={!!errors[field.name]}
                     aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
-                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand"
                   >
                     <option value="">— Pilih —</option>
                     {field.options?.map((opt) => (

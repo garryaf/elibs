@@ -295,7 +295,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
                 aria-label="Pilih asuransi untuk klaim"
                 value={selectedInsurance}
                 onChange={(e) => setSelectedInsurance(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none flex-1 min-w-[180px] dark:border-slate-700 dark:text-slate-200"
+                className="rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 flex-1 min-w-[180px] dark:border-slate-700 dark:text-slate-200"
               >
                 <option value="">Pilih Asuransi...</option>
                 {insurances.map((ins) => (
@@ -311,7 +311,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
                 placeholder="No Referensi"
                 value={claimReference}
                 onChange={(e) => setClaimReference(e.target.value)}
-                className="w-1/3 min-w-[120px] rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none dark:border-slate-700 dark:text-slate-200"
+                className="w-1/3 min-w-[120px] rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-slate-200"
               />
               <button
                 id="claim-submit-btn"
@@ -349,7 +349,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
                         type="number"
                         value={coveredAmount}
                         onChange={(e) => setCoveredAmount(e.target.value)}
-                        className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                       />
                     </div>
                     <div>
@@ -359,7 +359,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
                         type="number"
                         value={copayAmount}
                         onChange={(e) => setCopayAmount(e.target.value)}
-                        className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                       />
                     </div>
                     <div>
@@ -370,7 +370,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         placeholder="Opsional"
-                        className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                       />
                     </div>
                   </>
@@ -382,7 +382,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
                       value={rejectionReason}
                       onChange={(e) => setRejectionReason(e.target.value)}
                       placeholder="Jelaskan alasan penolakan klaim..."
-                      className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                       rows={3}
                     />
                   </div>

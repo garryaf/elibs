@@ -218,7 +218,7 @@ export default function PatientInsurancePage() {
           </p>
           <button
             onClick={handleAdd}
-            className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
+            className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
           >
             <Plus className="h-4 w-4" />
             Tambah Asuransi
@@ -330,7 +330,7 @@ function InsuranceRecordCard({
   const insuranceCode = record.insurance?.code ?? "";
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700">
       <div className="flex items-start justify-between gap-4">
         {/* Left: Insurance Info */}
         <div className="flex items-start gap-3">
@@ -593,7 +593,7 @@ function InsuranceFormModal({
               onChange={(e) => setMemberNumber(e.target.value)}
               maxLength={50}
               placeholder="Masukkan nomor anggota"
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
           </div>
 
@@ -608,7 +608,7 @@ function InsuranceFormModal({
               onChange={(e) => setPolicyNumber(e.target.value)}
               maxLength={50}
               placeholder="Masukkan nomor polis"
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
           </div>
 
@@ -620,7 +620,7 @@ function InsuranceFormModal({
             <select
               value={priority}
               onChange={(e) => setPriority(Number(e.target.value))}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             >
               <option value={1}>1 — Primer</option>
               <option value={2}>2 — Sekunder</option>
@@ -638,7 +638,7 @@ function InsuranceFormModal({
             <select
               value={insuranceType}
               onChange={(e) => setInsuranceType(e.target.value as InsuranceType | "")}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             >
               <option value="">— Pilih tipe —</option>
               <option value="BPJS">BPJS</option>
@@ -656,7 +656,7 @@ function InsuranceFormModal({
               <select
                 value={bpjsClassLevel}
                 onChange={(e) => setBpjsClassLevel(e.target.value ? Number(e.target.value) : "")}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               >
                 <option value="">— Pilih kelas —</option>
                 <option value={1}>Kelas 1</option>
@@ -676,7 +676,7 @@ function InsuranceFormModal({
                 type="date"
                 value={validFrom}
                 onChange={(e) => setValidFrom(e.target.value)}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               />
             </div>
             <div>
@@ -687,7 +687,7 @@ function InsuranceFormModal({
                 type="date"
                 value={validUntil}
                 onChange={(e) => setValidUntil(e.target.value)}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               />
             </div>
           </div>
@@ -702,7 +702,7 @@ function InsuranceFormModal({
                   onChange={(e) => setIsActive(e.target.checked)}
                   className="peer sr-only"
                 />
-                <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-brand peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-2 peer-focus:ring-brand/20 dark:bg-slate-700" />
+                <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-[color,background-color,border-color,box-shadow,transform,opacity] after:content-[''] peer-checked:bg-brand peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-2 peer-focus:ring-brand/20 dark:bg-slate-700" />
               </label>
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 {isActive ? "Aktif" : "Nonaktif"}
@@ -720,7 +720,7 @@ function InsuranceFormModal({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Catatan tambahan (opsional)"
               rows={2}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 resize-none"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 resize-none"
             />
           </div>
 

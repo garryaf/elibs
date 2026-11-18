@@ -359,7 +359,7 @@ function RegisterSampleForm({ onClose }: { onClose: () => void }) {
         <button
           type="submit"
           disabled={createMutation.isPending}
-          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark disabled:opacity-60"
         >
           {createMutation.isPending && (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -599,7 +599,7 @@ export default function QCDashboardPage() {
             {!showRegisterForm && (
               <button
                 onClick={() => setShowRegisterForm(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-dark transition-all"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-dark transition-[color,background-color,border-color,box-shadow,transform,opacity]"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Tambah Sample

@@ -102,7 +102,7 @@ export function PatientSearchStep({
           placeholder="Cari pasien berdasarkan nama, NIK, MRN, telepon, atau email (min. 2 karakter)..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-12 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-12 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
         {loading && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -144,7 +144,7 @@ export function PatientSearchStep({
                 key={patient.id}
                 type="button"
                 onClick={() => handleSelect(patient)}
-                className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-brand/40 hover:bg-brand/5 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/40 dark:hover:bg-brand/5"
+                className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:border-brand/40 hover:bg-brand/5 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/40 dark:hover:bg-brand/5"
               >
                 {/* Avatar */}
                 <PatientAvatar name={patient.name} gender={patient.gender} size="md" className="h-10 w-10 text-sm" />
@@ -193,7 +193,7 @@ export function PatientSearchStep({
           <button
             type="button"
             onClick={onRegisterNew}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md"
           >
             <UserPlus className="h-4 w-4" />
             Daftar Pasien Baru

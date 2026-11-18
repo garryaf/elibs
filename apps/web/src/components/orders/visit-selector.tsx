@@ -245,7 +245,7 @@ export function VisitSelector({
             placeholder="Cari kunjungan berdasarkan nomor visit, nama pasien, atau MRN..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className={`h-11 w-full rounded-xl border pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 ${
+            className={`h-11 w-full rounded-xl border pl-10 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 ${
               error
                 ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/10"
                 : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"

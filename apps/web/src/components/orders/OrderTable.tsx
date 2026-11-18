@@ -239,7 +239,7 @@ export function OrderTable({ orders, sortField, sortDir, onSort }: OrderTablePro
                   <td className="px-5 py-4">
                     <Link
                       href={order.status === "APPROVED" || order.status === "NOTIFIED" ? `/dashboard/orders/${order.id}/report` : `/dashboard/orders/${order.id}`}
-                      className="flex w-max items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-brand/50 hover:bg-brand/10 hover:text-brand"
+                      className="flex w-max items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-brand/50 hover:bg-brand/10 hover:text-brand"
                     >
                       <ExternalLink className="h-3 w-3" />
                       {order.status === "APPROVED" || order.status === "NOTIFIED" ? "Hasil" : "Detail"}

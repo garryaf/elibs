@@ -5,6 +5,7 @@ import { Loader2, ArrowLeft, AlertTriangle } from "lucide-react";
 import { apiClient, parseApiErrors } from "@/lib/api";
 import { SearchableDropdown, type DropdownOption } from "@/components/visits/SearchableDropdown";
 import { PatientAvatar } from "@/components/patients/PatientAvatar";
+import { DiscardChangesDialog } from "@/components/ui/DiscardChangesDialog";
 import type { PatientOption } from "@/types/visit";
 
 type PaymentMethod = "CASH" | "BPJS" | "INSURANCE" | "TRANSFER" | "EDC" | "INSURANCE_CASH_FALLBACK" | "CORPORATE_DEFERRED";
@@ -122,13 +123,13 @@ export function VisitCreationStep({
     );
   };
 
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+
   // Handle back with unsaved data confirmation
   const handleBack = () => {
     if (hasFormData()) {
-      const confirmed = window.confirm(
-        "Anda memiliki data yang belum disimpan. Yakin ingin kembali?"
-      );
-      if (!confirmed) return;
+      setShowDiscardConfirm(true);
+      return;
     }
     onBack();
   };
@@ -410,7 +411,7 @@ export function VisitCreationStep({
                 placeholder="dr. Nama Dokter"
                 value={referringDoctorName}
                 onChange={(e) => setReferringDoctorName(e.target.value)}
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               />
             </div>
             <div>
@@ -424,7 +425,7 @@ export function VisitCreationStep({
                 placeholder="Nomor surat rujukan"
                 value={referralLetterNo}
                 onChange={(e) => setReferralLetterNo(e.target.value)}
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               />
             </div>
             <div>
@@ -437,7 +438,7 @@ export function VisitCreationStep({
                 placeholder="Misal: Cek darah rutin, MCU"
                 value={encounterReason}
                 onChange={(e) => setEncounterReason(e.target.value)}
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               />
             </div>
             <div>
@@ -450,7 +451,7 @@ export function VisitCreationStep({
                 placeholder="Keluhan pasien (opsional)"
                 value={chiefComplaint}
                 onChange={(e) => setChiefComplaint(e.target.value)}
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               />
             </div>
           </div>
@@ -488,7 +489,7 @@ export function VisitCreationStep({
                       insurance: undefined,
                     }));
                   }}
-                  className={`rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
+                  className={`rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
                     paymentMethod === option.value
                       ? "border-brand bg-brand/5 text-brand ring-2 ring-brand/20"
                       : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600"
@@ -546,7 +547,7 @@ export function VisitCreationStep({
                     }}
                     placeholder="Masukkan 13 digit nomor BPJS"
                     maxLength={13}
-                    className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none transition-all ${
+                    className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 transition-colors ${
                       errors.bpjsNumber
                         ? "border-red-300 bg-red-50 focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:border-red-700 dark:bg-red-900/10"
                         : "border-slate-200 bg-white focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900"
@@ -616,7 +617,7 @@ export function VisitCreationStep({
           <button
             type="button"
             onClick={handleBack}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="flex items-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <ArrowLeft className="h-4 w-4" />
             Kembali ke Pencarian
@@ -625,7 +626,7 @@ export function VisitCreationStep({
           <button
             type="submit"
             disabled={submitting || !isFormValid || ((paymentMethod === "BPJS" || paymentMethod === "INSURANCE") && enrollmentChecked && !hasInsuranceEnrollment)}
-            className="flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md hover:shadow-brand/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-brand disabled:hover:shadow-sm disabled:active:scale-100"
+            className="flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md hover:shadow-brand/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-brand disabled:hover:shadow-sm disabled:active:scale-100"
           >
             {submitting ? (
               <>
@@ -638,6 +639,14 @@ export function VisitCreationStep({
           </button>
         </div>
       </form>
+      <DiscardChangesDialog
+        open={showDiscardConfirm}
+        onConfirm={() => {
+          setShowDiscardConfirm(false);
+          onBack();
+        }}
+        onCancel={() => setShowDiscardConfirm(false)}
+      />
     </div>
   );
 }

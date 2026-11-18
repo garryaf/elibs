@@ -97,7 +97,7 @@ export default function AppearanceSettingsPage() {
                 <button
                   key={option.value}
                   onClick={() => setTheme(option.value)}
-                  className={`flex flex-col items-center gap-2 rounded-xl border p-4 text-center transition-all ${
+                  className={`flex flex-col items-center gap-2 rounded-xl border p-4 text-center transition-colors ${
                     isSelected
                       ? "border-brand bg-brand/5 ring-2 ring-brand/20 dark:border-brand dark:bg-brand/10"
                       : "border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:border-slate-600 dark:hover:bg-slate-800"
@@ -119,7 +119,7 @@ export default function AppearanceSettingsPage() {
           </div>
           <label className="relative inline-flex shrink-0 cursor-pointer items-center">
             <input type="checkbox" checked={compactMode} onChange={(e) => setCompactMode(e.target.checked)} className="peer sr-only" />
-            <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-brand peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-slate-700" />
+            <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-[color,background-color,border-color,box-shadow,transform,opacity] after:content-[''] peer-checked:bg-brand peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-slate-700" />
           </label>
         </div>
       </div>

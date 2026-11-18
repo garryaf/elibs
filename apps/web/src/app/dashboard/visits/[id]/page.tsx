@@ -302,7 +302,7 @@ function VisitDetailPageContent() {
         {canCancel && (
           <button
             onClick={() => setShowCancelDialog(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition-all hover:bg-red-50 active:scale-[0.98] dark:border-red-800 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-900/20"
+            className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-red-50 active:scale-[0.98] dark:border-red-800 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-900/20"
           >
             <AlertTriangle className="h-4 w-4" />
             Batalkan Kunjungan
@@ -611,7 +611,7 @@ function OrdersList({ orders }: { orders: VisitOrder[] }) {
             <Link
               key={order.id}
               href={`/dashboard/orders/${order.id}`}
-              className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-4 transition-all hover:border-brand/30 hover:bg-brand/5 dark:border-slate-800 dark:bg-slate-900/50 dark:hover:border-brand/30"
+              className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-4 transition-colors hover:border-brand/30 hover:bg-brand/5 dark:border-slate-800 dark:bg-slate-900/50 dark:hover:border-brand/30"
             >
               <div className="space-y-1">
                 <p className="font-mono text-sm font-medium text-brand">

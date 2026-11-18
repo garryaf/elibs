@@ -358,7 +358,7 @@ export default function ReportPreviewPage() {
             disabled={waSending || !isApproved}
             title={!isApproved ? "Order harus divalidasi (APPROVED) sebelum bisa dikirim" : undefined}
             className={cn(
-              "flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+              "flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
               (waSending || !isApproved) && "opacity-50 cursor-not-allowed"
             )}
           >
@@ -374,7 +374,7 @@ export default function ReportPreviewPage() {
             disabled={!isApproved}
             title={!isApproved ? "Order harus divalidasi (APPROVED) sebelum bisa dibagikan" : "Salin link portal pasien ke clipboard"}
             className={cn(
-              "flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+              "flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
               !isApproved && "opacity-50 cursor-not-allowed"
             )}
           >
@@ -390,7 +390,7 @@ export default function ReportPreviewPage() {
             disabled={downloading || !isApproved}
             title={!isApproved ? "Order harus divalidasi (APPROVED) sebelum bisa diunduh" : undefined}
             className={cn(
-              "flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+              "flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
               (downloading || !isApproved) && "opacity-50 cursor-not-allowed"
             )}
           >
@@ -427,7 +427,7 @@ export default function ReportPreviewPage() {
       {waStatus && (
         <div
           className={cn(
-            "no-print flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all",
+            "no-print flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-colors",
             waStatus.type === "success"
               ? "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300"
               : "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300"

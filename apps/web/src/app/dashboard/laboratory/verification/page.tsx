@@ -286,7 +286,7 @@ function ParameterVerificationRow({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Catatan verifikasi..."
-              className="h-7 w-full max-w-[180px] rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-primary text-foreground placeholder:text-muted-foreground"
+              className="h-7 w-full max-w-[180px] rounded-md border border-border bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-primary text-foreground placeholder:text-muted-foreground"
             />
           )}
         </td>
@@ -355,7 +355,7 @@ function ParameterVerificationRow({
           onChange={(e) => setRejectionReason(e.target.value)}
           placeholder="Alasan penolakan..."
           rows={3}
-          className="mt-4 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary resize-none"
+          className="mt-4 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-primary resize-none"
         />
       </ConfirmDialog>
 
@@ -378,7 +378,7 @@ function ParameterVerificationRow({
             <select
               value={rerunReason}
               onChange={(e) => setRerunReason(e.target.value as RerunReason)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-primary"
             >
               {RERUN_REASONS.map((r) => (
                 <option key={r.value} value={r.value}>{r.label}</option>
@@ -390,7 +390,7 @@ function ParameterVerificationRow({
             onChange={(e) => setRerunNotes(e.target.value)}
             placeholder="Catatan tambahan (opsional)..."
             rows={2}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary resize-none"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-primary resize-none"
           />
         </div>
       </ConfirmDialog>
@@ -482,7 +482,7 @@ function VerificationCard({
         <div className="flex items-center gap-2">
           <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-green-500 transition-all"
+              className="h-full rounded-full bg-green-500 transition-colors"
               style={{ width: `${totalCount > 0 ? (verifiedCount / totalCount) * 100 : 0}%` }}
             />
           </div>

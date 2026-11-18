@@ -13,7 +13,9 @@ import { PatientFormModal } from "@/components/patients/PatientFormModal";
 import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
 import { PatientLabHistory } from "@/components/patients/PatientLabHistory";
 import { RoleGuard } from "@/components/guards/RoleGuard";
-import { StatsCardsSkeleton, PatientAvatar, ActiveFilters, type ActiveFilterItem } from "@/components";
+import { StatsCardsSkeleton } from "@/components/skeleton";
+import { PatientAvatar } from "@/components/patients/PatientAvatar";
+import { ActiveFilters, type ActiveFilterItem } from "@/components/ui/ActiveFilters";
 
 const ALL_ROLES = [
   "SUPER_ADMIN", "OWNER", "MANAGER", "ADMIN", "KASIR", "CS",
@@ -606,7 +608,7 @@ export default function PatientsPage() {
               setEditingPatient(null);
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md hover:shadow-brand/20 active:scale-[0.98]"
+            className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md hover:shadow-brand/20 active:scale-[0.98]"
           >
             <UserPlus className="h-4 w-4" />
             Daftarkan Pasien
@@ -680,7 +682,7 @@ export default function PatientsPage() {
               placeholder="Cari nama, NIK, atau MRN..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -691,7 +693,7 @@ export default function PatientsPage() {
                   key={s}
                   id={`patient-filter-${s.toLowerCase()}`}
                   onClick={() => setStatusFilter(s)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                     statusFilter === s
                       ? "bg-brand text-white shadow-sm"
                       : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -706,7 +708,7 @@ export default function PatientsPage() {
             <button
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-xl border transition-all",
+                "flex h-10 w-10 items-center justify-center rounded-xl border transition-colors",
                 showAdvancedFilters
                   ? "border-brand bg-brand/10 text-brand"
                   : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
@@ -722,7 +724,7 @@ export default function PatientsPage() {
               title={isExporting ? "Mengexport Data..." : "Export Data (CSV)"}
               disabled={isExporting}
               onClick={handleExportCsv}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
             >
               {isExporting ? (
                 <Loader2 className="h-4 w-4 animate-spin text-brand" />
@@ -1017,7 +1019,7 @@ export default function PatientsPage() {
                   setViewingPatient(null);
                   router.push(`/dashboard/patients/${patientId}`);
                 }}
-                className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:border-brand hover:bg-brand/5 hover:text-brand dark:border-slate-700 dark:text-slate-400"
+                className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-brand hover:bg-brand/5 hover:text-brand dark:border-slate-700 dark:text-slate-400"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 Buka Profil Lengkap

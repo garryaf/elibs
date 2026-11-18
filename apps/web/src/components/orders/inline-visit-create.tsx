@@ -312,7 +312,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
                     placeholder="Cari pasien (nama, MRN)..."
                     value={patientQuery}
                     onChange={(e) => setPatientQuery(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                   />
                   {patientLoading && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -363,7 +363,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
             <select
               value={paymentMethod}
               onChange={(e) => { setPaymentMethod(e.target.value as PaymentMethod); setDirty(); }}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             >
               <option value="CASH">Tunai (Cash)</option>
               <option value="TRANSFER">Transfer Bank</option>

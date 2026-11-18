@@ -414,7 +414,7 @@ function ReferenceValuesContent() {
                 setShowDropdown(true);
               }}
               onFocus={() => setShowDropdown(true)}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               aria-label="Cari pemeriksaan"
               aria-expanded={showDropdown && filteredTests.length > 0}
               role="combobox"
@@ -465,7 +465,7 @@ function ReferenceValuesContent() {
             </h2>
             <button
               onClick={handleOpenCreateForm}
-              className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
+              className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
             >
               <Plus className="h-4 w-4" />
               Tambah
@@ -651,7 +651,7 @@ function ReferenceValuesContent() {
                     type="button"
                     onClick={() => setFormData((p) => ({ ...p, gender: "MALE" }))}
                     className={cn(
-                      "rounded-xl border-2 px-4 py-2.5 text-sm font-semibold transition-all",
+                      "rounded-xl border-2 px-4 py-2.5 text-sm font-semibold transition-colors",
                       formData.gender === "MALE"
                         ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300"
                         : "border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400"
@@ -663,7 +663,7 @@ function ReferenceValuesContent() {
                     type="button"
                     onClick={() => setFormData((p) => ({ ...p, gender: "FEMALE" }))}
                     className={cn(
-                      "rounded-xl border-2 px-4 py-2.5 text-sm font-semibold transition-all",
+                      "rounded-xl border-2 px-4 py-2.5 text-sm font-semibold transition-colors",
                       formData.gender === "FEMALE"
                         ? "border-pink-500 bg-pink-50 text-pink-700 dark:border-pink-400 dark:bg-pink-900/30 dark:text-pink-300"
                         : "border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400"
@@ -709,8 +709,9 @@ function ReferenceValuesContent() {
 
               {/* Normal range */}
               <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-800 dark:bg-emerald-900/10">
-                <label className="block text-sm font-semibold text-emerald-700 dark:text-emerald-400 mb-2">
-                  🟢 Rentang Normal (wajib)
+                <label className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" aria-hidden="true" />
+                  Rentang Normal (wajib)
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -742,8 +743,9 @@ function ReferenceValuesContent() {
 
               {/* Critical range */}
               <div className="rounded-xl border border-red-200 bg-red-50/50 p-4 dark:border-red-800 dark:bg-red-900/10">
-                <label className="block text-sm font-semibold text-red-600 dark:text-red-400 mb-1">
-                  🔴 Batas Kritis (opsional — untuk alert)
+                <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-red-600 dark:text-red-400">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" aria-hidden="true" />
+                  Batas Kritis (opsional — untuk alert)
                 </label>
                 <p className="mb-3 text-xs text-red-500 dark:text-red-400/70">
                   Jika hasil melampaui batas ini, sistem akan memicu Critical Value Alert.
@@ -852,6 +854,8 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
   const [newOption, setNewOption] = useState("");
   const [newFlag, setNewFlag] = useState("NORMAL");
   const [saving, setSaving] = useState(false);
+  const [qualError, setQualError] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Fetch qualitative references
   useEffect(() => {
@@ -873,6 +877,7 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
   const handleAdd = async () => {
     if (!newOption.trim()) return;
     setSaving(true);
+    setQualError(null);
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || "" : "";
       const resp = await fetch(`/api/v1/master/tests/${testId}/qualitative-references`, {
@@ -887,20 +892,28 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
         setNewOption("");
         setNewFlag("NORMAL");
       } else {
-        alert(result?.message || "Gagal menambahkan");
+        setQualError(result?.message || "Gagal menambahkan mapping kualitatif");
       }
-    } catch { alert("Gagal menambahkan"); }
+    } catch {
+      setQualError("Gagal menambahkan mapping kualitatif");
+    }
     setSaving(false);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Hapus mapping ini?")) return;
-    const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || "" : "";
-    await fetch(`/api/v1/master/tests/${testId}/qualitative-references/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setItems((prev) => prev.filter((i) => i.id !== id));
+    setQualError(null);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("elis_token") || "" : "";
+      const resp = await fetch(`/api/v1/master/tests/${testId}/qualitative-references/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!resp.ok) throw new Error("Gagal menghapus");
+      setItems((prev) => prev.filter((i) => i.id !== id));
+      setConfirmDeleteId(null);
+    } catch {
+      setQualError("Gagal menghapus mapping kualitatif");
+    }
   };
 
   const flagColors: Record<string, string> = {
@@ -943,9 +956,32 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
                         </span>
                       </td>
                       <td className="px-4 py-2.5 text-right">
-                        <button onClick={() => handleDelete(item.id)} className="text-xs text-red-500 hover:text-red-700 font-medium">
-                          Hapus
-                        </button>
+                        {confirmDeleteId === item.id ? (
+                          <span className="inline-flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(item.id)}
+                              className="text-xs font-semibold text-red-600 hover:underline"
+                            >
+                              Ya, Hapus
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="text-xs text-slate-500 hover:underline"
+                            >
+                              Batal
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(item.id)}
+                            className="text-xs font-medium text-red-500 hover:text-red-700"
+                          >
+                            Hapus
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -960,6 +996,12 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
             </div>
           )}
 
+          {qualError && (
+            <div role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+              {qualError}
+            </div>
+          )}
+
           {/* Add form */}
           <div className="flex items-end gap-3">
             <div className="flex-1">
@@ -969,7 +1011,7 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
                 value={newOption}
                 onChange={(e) => setNewOption(e.target.value)}
                 placeholder="misal: Reaktif, Non-Reaktif, Positif..."
-                className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>
             <div className="w-32">
@@ -977,7 +1019,7 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
               <select
                 value={newFlag}
                 onChange={(e) => setNewFlag(e.target.value)}
-                className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               >
                 <option value="NORMAL">NORMAL</option>
                 <option value="LOW">LOW</option>

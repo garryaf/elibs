@@ -318,7 +318,7 @@ function CreateRefundForm({ onClose, onSuccess }: CreateRefundFormProps) {
             <button
               type="submit"
               disabled={!selectedOrderId || !amount || !reason || createRefund.isPending}
-              className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {createRefund.isPending ? (
                 <>
@@ -432,7 +432,7 @@ export default function RefundsPage() {
 
           <button
             onClick={() => setShowCreateForm(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
+            className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
           >
             <Plus className="h-4 w-4" />
             Buat Refund
@@ -562,7 +562,7 @@ export default function RefundsPage() {
                               setSearch("");
                               setStatusFilter("ALL");
                             }}
-                            className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-all shadow-sm"
+                            className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-[color,background-color,border-color,box-shadow,transform,opacity] shadow-sm"
                           >
                             <RotateCcw className="h-3.5 w-3.5" />
                             Reset Filter

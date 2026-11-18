@@ -89,7 +89,7 @@ function Numpad({ onPress }: { onPress: (v: string) => void }) {
           id={`numpad-${k}`}
           onClick={() => onPress(k)}
           className={cn(
-            "flex h-12 items-center justify-center rounded-xl border text-base font-semibold transition-all active:scale-95",
+            "flex h-12 items-center justify-center rounded-xl border text-base font-semibold transition-[color,background-color,border-color,box-shadow,transform,opacity] active:scale-95",
             k === "⌫"
               ? "border-red-200 bg-red-50 text-red-600 hover:bg-red-100 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400"
               : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50 hover:border-brand/50 hover:text-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-brand dark:hover:text-brand"
@@ -200,7 +200,7 @@ function OrderStatusTimeline({ currentStatus }: { currentStatus: string }) {
               <div className="flex flex-col items-center gap-1">
                 <div
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all",
+                    "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors",
                     isCurrent
                       ? "border-brand bg-brand text-white shadow-sm shadow-brand/30"
                       : isCompleted
@@ -226,7 +226,7 @@ function OrderStatusTimeline({ currentStatus }: { currentStatus: string }) {
               {!isLast && (
                 <div
                   className={cn(
-                    "h-0.5 flex-1 mx-1.5 rounded-full transition-all",
+                    "h-0.5 flex-1 mx-1.5 rounded-full transition-colors",
                     idx < currentIndex
                       ? "bg-brand/40 dark:bg-brand/30"
                       : "bg-slate-200 dark:bg-slate-700"
@@ -315,7 +315,7 @@ function NextStepPanel({ order }: { order: OrderApi }) {
         <a
           href={step.href}
           target={status === "APPROVED" ? "_blank" : undefined}
-          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
         >
           <Icon className="h-4 w-4" />
           {step.action}
@@ -790,7 +790,7 @@ export default function OrderDetailPage() {
                           onChange={(e) => setDiscount(e.target.value.replace(/\D/g, ""))}
                           placeholder="0"
                           disabled={discountApproval?.exists && discountApproval.status === "APPROVED"}
-                          className="h-7 w-28 rounded-lg border border-slate-200 bg-white px-2 text-right text-sm outline-none focus:border-brand disabled:bg-slate-50 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+                          className="h-7 w-28 rounded-lg border border-slate-200 bg-white px-2 text-right text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand disabled:bg-slate-50 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                         />
                         {discountAmount > 0 && !discountApproval?.exists && (
                           <span className="text-[10px] text-amber-600 dark:text-amber-400" title="Diskon memerlukan persetujuan">
@@ -1155,7 +1155,7 @@ export default function OrderDetailPage() {
                       <label
                         key={m.value}
                         className={cn(
-                          "flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-all",
+                          "flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors",
                           paymentMethod === m.value
                             ? "border-brand bg-brand/10 ring-1 ring-brand/30 dark:border-brand dark:bg-brand/10"
                             : "border-slate-200 bg-white hover:border-brand/30 dark:border-slate-700 dark:bg-slate-900"
@@ -1225,7 +1225,7 @@ export default function OrderDetailPage() {
                 id="order-pay-btn"
                 onClick={() => setShowConfirmPay(true)}
                 disabled={!canPay || isProcessing}
-                className="w-full rounded-2xl bg-brand py-4 text-base font-bold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+                className="w-full rounded-2xl bg-brand py-4 text-base font-bold text-white shadow-sm shadow-brand/20 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {isProcessing ? (
                   <span className="flex items-center justify-center gap-2">

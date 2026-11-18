@@ -240,7 +240,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
                           href={item.href}
                           onClick={onMobileClose}
                           className={cn(
-                            "group flex items-center rounded-xl px-3 py-2.5 text-slate-600 hover:bg-white hover:text-brand hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-brand transition-all duration-200 ease-in-out",
+                            "group flex items-center rounded-xl px-3 py-2.5 text-slate-600 hover:bg-white hover:text-brand hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-brand transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 ease-in-out",
                             isActive &&
                               "bg-white text-brand shadow-sm ring-1 ring-brand/20 dark:bg-slate-900 dark:text-brand dark:ring-brand/30"
                           )}
@@ -271,7 +271,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   return (
     <>
       {/* Desktop sidebar - always visible on lg+ */}
-      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-slate-200 bg-slate-50 pt-16 transition-all duration-300 dark:border-slate-800 dark:bg-slate-950 lg:flex">
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-slate-200 bg-slate-50 pt-16 transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950 lg:flex">
         {sidebarContent}
       </aside>
 

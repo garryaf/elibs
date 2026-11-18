@@ -688,7 +688,7 @@ export default function AuditTrailPage() {
                 onChange={(e) =>
                   setAutoRefreshInterval(Number(e.target.value))
                 }
-                className="bg-transparent text-xs font-medium text-muted-foreground outline-none cursor-pointer"
+                className="bg-transparent text-xs font-medium text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-brand/40 cursor-pointer"
                 title="Auto-refresh interval"
               >
                 {REFRESH_INTERVALS.map((opt) => (
@@ -703,7 +703,7 @@ export default function AuditTrailPage() {
               onClick={handleRefresh}
               disabled={loading}
               title="Refresh data"
-              className="flex h-9 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-medium text-muted-foreground transition-all hover:border-brand/50 hover:bg-brand/10 hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-9 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-medium text-muted-foreground transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:border-brand/50 hover:bg-brand/10 hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
@@ -715,7 +715,7 @@ export default function AuditTrailPage() {
               onClick={handleExportCsv}
               disabled={exporting || total === 0}
               title="Export ke CSV"
-              className="flex h-9 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-medium text-muted-foreground transition-all hover:border-brand/50 hover:bg-brand/10 hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-9 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-medium text-muted-foreground transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:border-brand/50 hover:bg-brand/10 hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Download
                 className={`h-3.5 w-3.5 ${exporting ? "animate-pulse" : ""}`}
@@ -868,7 +868,7 @@ export default function AuditTrailPage() {
             <div className="mt-3 flex items-center">
               <button
                 onClick={handleResetFilters}
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300"
               >
                 <X className="h-3 w-3" />
                 Reset semua filter
@@ -1106,7 +1106,7 @@ export default function AuditTrailPage() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-slate-600 transition-all hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed dark:text-slate-400 dark:hover:bg-slate-800"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-slate-600 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed dark:text-slate-400 dark:hover:bg-slate-800"
                 aria-label="Halaman sebelumnya"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -1123,7 +1123,7 @@ export default function AuditTrailPage() {
                   <button
                     key={p}
                     onClick={() => setPage(p)}
-                    className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-medium transition-colors ${
                       page === p
                         ? "bg-brand text-white shadow-sm"
                         : "border border-border text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
@@ -1136,7 +1136,7 @@ export default function AuditTrailPage() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-slate-600 transition-all hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed dark:text-slate-400 dark:hover:bg-slate-800"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-slate-600 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed dark:text-slate-400 dark:hover:bg-slate-800"
                 aria-label="Halaman berikutnya"
               >
                 <ChevronRight className="h-4 w-4" />

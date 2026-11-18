@@ -57,7 +57,7 @@ export function WorkflowStepIndicator({
                     onClick={() => isClickable && onStepClick(step.id)}
                     disabled={!isClickable}
                     className={cn(
-                      "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all",
+                      "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-colors",
                       isCurrent
                         ? "bg-brand text-white ring-4 ring-brand/20"
                         : isCompleted

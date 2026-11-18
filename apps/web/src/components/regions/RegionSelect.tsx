@@ -86,7 +86,7 @@ export function RegionSelect({
         onClick={handleToggle}
         disabled={disabled}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-xl border bg-white px-3.5 py-2 text-sm transition-all",
+          "flex h-10 w-full items-center justify-between rounded-xl border bg-white px-3.5 py-2 text-sm transition-colors",
           "border-slate-200 dark:border-slate-700 dark:bg-slate-900",
           "hover:border-slate-300 dark:hover:border-slate-600",
           "focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none",
@@ -134,7 +134,7 @@ export function RegionSelect({
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="Cari wilayah..."
                 className={cn(
-                  "h-8 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-sm outline-none",
+                  "h-8 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
                   "placeholder:text-slate-400",
                   "focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20",
                   "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:bg-slate-900"

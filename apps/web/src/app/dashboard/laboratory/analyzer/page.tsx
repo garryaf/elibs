@@ -256,7 +256,7 @@ export default function AnalyzerImportPage() {
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
           className={cn(
-            "relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-all",
+            "relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-colors",
             isDragging
               ? "border-primary bg-primary/5"
               : "border-border hover:border-primary/50 hover:bg-muted/50",
@@ -320,7 +320,7 @@ export default function AnalyzerImportPage() {
             onClick={handleUpload}
             disabled={!selectedFile || isUploading}
             className={cn(
-              "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all shadow-sm",
+              "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,transform,opacity] shadow-sm",
               selectedFile && !isUploading
                 ? "bg-primary text-white hover:bg-primary/90"
                 : "bg-muted text-muted-foreground cursor-not-allowed"
@@ -342,7 +342,7 @@ export default function AnalyzerImportPage() {
           {selectedFile && (
             <button
               onClick={handleReset}
-              className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-all"
+              className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
             >
               <RotateCcw className="h-4 w-4" />
               Reset
@@ -473,7 +473,7 @@ export default function AnalyzerImportPage() {
           <button
             onClick={() => loadHistory(historyPage)}
             disabled={isLoadingHistory}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-all"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
             aria-label="Refresh import history"
           >
             <RotateCcw
@@ -594,7 +594,7 @@ export default function AnalyzerImportPage() {
                   <button
                     onClick={() => loadHistory(historyPage - 1)}
                     disabled={historyPage <= 1 || isLoadingHistory}
-                    className="rounded-lg border border-border px-3 py-1.5 font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="rounded-lg border border-border px-3 py-1.5 font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-[color,background-color,border-color,box-shadow,transform,opacity]"
                   >
                     Sebelumnya
                   </button>
@@ -603,7 +603,7 @@ export default function AnalyzerImportPage() {
                     disabled={
                       historyPage * 10 >= historyTotal || isLoadingHistory
                     }
-                    className="rounded-lg border border-border px-3 py-1.5 font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="rounded-lg border border-border px-3 py-1.5 font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-[color,background-color,border-color,box-shadow,transform,opacity]"
                   >
                     Berikutnya
                   </button>

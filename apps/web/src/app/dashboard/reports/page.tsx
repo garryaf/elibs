@@ -222,7 +222,7 @@ export default function ReportsPage() {
             disabled={!summary}
             title="Export data sebagai CSV"
             className={cn(
-              "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all active:scale-[0.98]",
+              "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] active:scale-[0.98]",
               summary
                 ? "border border-brand text-brand hover:bg-brand/5 dark:border-brand dark:text-brand"
                 : "cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
@@ -235,7 +235,7 @@ export default function ReportsPage() {
             disabled={!isPdfSupported}
             title={isPdfSupported ? "Unduh laporan sebagai PDF" : "Export PDF hanya tersedia untuk Laporan Harian dan Pendapatan"}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all active:scale-[0.98]",
+              "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] active:scale-[0.98]",
               isPdfSupported
                 ? "bg-brand text-white shadow-brand/20 hover:bg-brand-dark"
                 : "cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
@@ -256,7 +256,7 @@ export default function ReportsPage() {
               key={report.id}
               onClick={() => setSelectedReport(report.id)}
               className={cn(
-                "flex items-start gap-3 rounded-2xl border p-4 text-left transition-all",
+                "flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors",
                 isActive
                   ? "border-brand/50 bg-brand/5 ring-1 ring-brand/30 dark:border-brand dark:bg-brand/10"
                   : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700"
@@ -429,7 +429,7 @@ function MiniBarChart({ data, colorClass = "bg-brand" }: { data: { label: string
           </span>
           <div className="flex-1 h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
             <div
-              className={cn("h-full rounded-full transition-all", colorClass)}
+              className={cn("h-full rounded-full transition-colors", colorClass)}
               style={{ width: `${(item.value / maxVal) * 100}%` }}
             />
           </div>
@@ -957,7 +957,7 @@ function StatusBreakdownGrid({ data }: { data: Array<{ status: string; count: nu
               <div className="flex-1">
                 <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                   <div
-                    className="h-full rounded-full bg-brand transition-all duration-500"
+                    className="h-full rounded-full bg-brand transition-colors duration-500"
                     style={{ width: `${percentage}%` }}
                   />
                 </div>

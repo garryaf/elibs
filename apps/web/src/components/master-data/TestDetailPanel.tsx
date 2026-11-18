@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMasterTestDetail } from "@/services";
+import { useMasterTestDetail } from "@/services/master-data";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 import { PriceHistoryPanel } from "./PriceHistoryPanel";

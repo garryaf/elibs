@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`h-full antialiased ${plusJakarta.variable}`}>
+    <html lang="id" className={`h-full antialiased ${plusJakarta.variable}`}>
       <body className="min-h-full flex flex-col font-sans">
         <QueryProvider>
           <AuthProvider>{children}</AuthProvider>

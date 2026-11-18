@@ -24,7 +24,7 @@ import { useAuth } from "@/lib/auth-context";
 import { RoleGuard } from "@/components/guards/RoleGuard";
 import { PatientStatusBadge } from "@/components/patients/PatientStatusBadge";
 import { PatientLabHistory } from "@/components/patients/PatientLabHistory";
-import { PatientAvatar } from "@/components";
+import { PatientAvatar } from "@/components/patients/PatientAvatar";
 import { PatientFormModal } from "@/components/patients/PatientFormModal";
 import type { Patient, PatientFormData } from "@/types/patient";
 import { cn } from "@/lib/utils";
@@ -362,7 +362,7 @@ export default function PatientProfilePage() {
               <button
                 id="patient-profile-edit-btn"
                 onClick={() => setIsEditOpen(true)}
-                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-brand hover:text-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:border-brand hover:text-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
               >
                 <Pencil className="h-4 w-4" />
                 Edit Data
@@ -420,7 +420,7 @@ export default function PatientProfilePage() {
                 setActiveTab(id);
               }}
               className={cn(
-                "flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all",
+                "flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
                 activeTab === id && !external
                   ? "bg-brand text-white shadow-sm"
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"

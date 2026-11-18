@@ -221,7 +221,7 @@ function StatusBreakdown({
           </span>
           <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
             <div
-              className={cn("h-full rounded-full transition-all", STATUS_COLORS[status])}
+              className={cn("h-full rounded-full transition-colors", STATUS_COLORS[status])}
               style={{ width: `${(count / total) * 100}%` }}
             />
           </div>
@@ -376,7 +376,7 @@ export default function LabDashboardPage() {
                 key={range.value}
                 onClick={() => setDateRange(range.value)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   dateRange === range.value
                     ? "bg-card text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"

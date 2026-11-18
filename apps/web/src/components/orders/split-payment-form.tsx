@@ -122,19 +122,19 @@ export function SplitPaymentForm({ orderId, orderTotal, isFallback = false, onSu
             <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">Jumlah (Rp)</label>
             <input id="fallback-amount" type="text" value={fbAmount}
               onChange={(e) => setFbAmount(e.target.value.replace(/\D/g, ""))}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">Referensi / No. Kwitansi</label>
             <input id="fallback-reference" type="text" value={fbReference} placeholder="Opsional"
               onChange={(e) => setFbReference(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">Catatan</label>
             <textarea id="fallback-notes" rows={2} value={fbNotes} placeholder="Opsional"
               onChange={(e) => setFbNotes(e.target.value)}
-              className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+              className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
           </div>
         </div>
         {error && (
@@ -167,7 +167,7 @@ export function SplitPaymentForm({ orderId, orderTotal, isFallback = false, onSu
           </span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-          <div className={cn("h-full rounded-full transition-all", isBalanced ? "bg-emerald-500" : remaining < 0 ? "bg-red-500" : "bg-brand")}
+          <div className={cn("h-full rounded-full transition-colors", isBalanced ? "bg-emerald-500" : remaining < 0 ? "bg-red-500" : "bg-brand")}
             style={{ width: `${Math.min(100, orderTotal > 0 ? (allocated / orderTotal) * 100 : 0)}%` }} />
         </div>
         <div className="mt-1 flex justify-between text-[11px] text-slate-400">
@@ -217,7 +217,7 @@ export function SplitPaymentForm({ orderId, orderTotal, isFallback = false, onSu
                     <input id={`split-amount-${idx}`} type="text" inputMode="numeric"
                       value={comp.amount} placeholder="0"
                       onChange={(e) => updateComponent(comp.id, { amount: e.target.value.replace(/\D/g, "") })}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
                     {remaining > 0 && idx === components.length - 1 && (
                       <button id={`split-fill-${idx}`}
                         onClick={() => updateComponent(comp.id, { amount: String(remaining) })}
@@ -231,7 +231,7 @@ export function SplitPaymentForm({ orderId, orderTotal, isFallback = false, onSu
                   <label className="mb-1 block text-[11px] font-semibold uppercase text-slate-500">Referensi</label>
                   <input id={`split-ref-${idx}`} type="text" value={comp.reference} placeholder="Opsional"
                     onChange={(e) => updateComponent(comp.id, { reference: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" />
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" />
                 </div>
               </div>
             </div>

@@ -42,7 +42,7 @@ export function ActiveFilters({ items, onResetAll, className }: ActiveFiltersPro
           <span
             key={item.id}
             data-testid={`active-filter-chip-${item.id}`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-brand/20 bg-brand/5 pl-2.5 pr-1.5 py-1 text-xs font-medium text-brand dark:border-brand/30 dark:bg-brand/10 dark:text-brand-light transition-all"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-brand/20 bg-brand/5 pl-2.5 pr-1.5 py-1 text-xs font-medium text-brand dark:border-brand/30 dark:bg-brand/10 dark:text-brand-light transition-colors"
           >
             <span className="font-semibold text-slate-700 dark:text-slate-300">{item.label}:</span>
             <span className="max-w-[200px] truncate">{item.value}</span>

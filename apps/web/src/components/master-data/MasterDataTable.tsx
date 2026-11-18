@@ -297,7 +297,7 @@ function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) 
               key={item}
               onClick={() => onPageChange?.(item)}
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-lg text-sm font-medium transition-all",
+                "flex h-7 w-7 items-center justify-center rounded-lg text-sm font-medium transition-colors",
                 currentPage === item
                   ? "bg-brand text-white shadow-sm shadow-brand/30"
                   : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"

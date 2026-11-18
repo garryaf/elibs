@@ -485,7 +485,7 @@ export default function ResultEntryPage() {
             <div
               key={detail.id}
               className={cn(
-                "rounded-2xl border bg-card p-5 transition-all",
+                "rounded-2xl border bg-card p-5 transition-colors",
                 flagConfig ? flagConfig.borderColor : "border-border"
               )}
             >
@@ -527,7 +527,7 @@ export default function ResultEntryPage() {
                             updateResult(detail.id, e.target.value)
                           }
                           className={cn(
-                            "h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition-colors focus:border-primary text-foreground",
+                            "h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 transition-colors focus:border-primary text-foreground",
                             flagConfig
                               ? flagConfig.borderColor
                               : "border-border",
@@ -548,7 +548,7 @@ export default function ResultEntryPage() {
                             updateResult(detail.id, e.target.value)
                           }
                           className={cn(
-                            "h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition-colors focus:border-primary text-foreground placeholder:text-muted-foreground",
+                            "h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 transition-colors focus:border-primary text-foreground placeholder:text-muted-foreground",
                             flagConfig
                               ? flagConfig.borderColor
                               : "border-border"
@@ -584,7 +584,7 @@ export default function ResultEntryPage() {
                     onChange={(e) =>
                       updateComment(detail.id, e.target.value)
                     }
-                    className="h-8 w-full max-w-md rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-primary text-foreground placeholder:text-muted-foreground"
+                    className="h-8 w-full max-w-md rounded-lg border border-border bg-background px-3 text-xs outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-primary text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
 
@@ -643,7 +643,7 @@ export default function ResultEntryPage() {
           disabled={submitting || !allResultsFilled}
           title={!allResultsFilled ? "Semua hasil harus diisi sebelum menyimpan" : undefined}
           className={cn(
-            "inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all",
+            "inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-colors",
             "border border-brand text-brand hover:bg-brand/10",
             (submitting || !allResultsFilled) && "opacity-50 cursor-not-allowed"
           )}
@@ -662,7 +662,7 @@ export default function ResultEntryPage() {
             onClick={handleVerify}
             disabled={verifying}
             className={cn(
-              "inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all",
+              "inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-colors",
               "bg-brand text-white hover:bg-brand-dark shadow-sm",
               verifying && "opacity-50 cursor-not-allowed"
             )}
@@ -699,7 +699,7 @@ export default function ResultEntryPage() {
           role="status"
           aria-live="polite"
           className={cn(
-            "fixed bottom-6 right-6 z-50 flex items-start space-x-3 rounded-2xl border p-4 shadow-2xl transition-all duration-300 max-w-md animate-in fade-in slide-in-from-bottom-4",
+            "fixed bottom-6 right-6 z-50 flex items-start space-x-3 rounded-2xl border p-4 shadow-2xl transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 max-w-md animate-in fade-in slide-in-from-bottom-4",
             toast.autoApproved
               ? "border-emerald-500/30 bg-emerald-50 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800"
               : "border-blue-500/30 bg-blue-50 text-blue-900 dark:bg-blue-950 dark:text-blue-100 dark:border-blue-800"

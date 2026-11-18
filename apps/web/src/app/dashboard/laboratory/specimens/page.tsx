@@ -169,7 +169,7 @@ export default function SpecimensListPage() {
             <button
               onClick={handleBatchPrint}
               disabled={batchLabels.isPending}
-              className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Printer className="h-4 w-4" />
               {batchLabels.isPending
@@ -311,7 +311,7 @@ export default function SpecimensListPage() {
                               setSearch("");
                               setConditionFilter("ALL");
                             }}
-                            className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-all shadow-sm"
+                            className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-[color,background-color,border-color,box-shadow,transform,opacity] shadow-sm"
                           >
                             <RotateCcw className="h-3.5 w-3.5" />
                             Reset Filter

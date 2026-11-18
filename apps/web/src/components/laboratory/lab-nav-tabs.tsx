@@ -126,7 +126,7 @@ export function LabNavTabs({ userRole = "ADMIN" }: LabNavTabsProps) {
             key={tab.id}
             href={tab.href}
             className={cn(
-              "flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all",
+              "flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors",
               isActive
                 ? "bg-brand text-white shadow-sm"
                 : "text-muted-foreground hover:bg-brand/10 hover:text-brand"

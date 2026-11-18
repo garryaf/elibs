@@ -3,8 +3,10 @@
 import { useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, AlertCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { ToastContainer } from "@/components/ui/ToastContainer";
 import { MasterDataTable } from "@/components/master-data/MasterDataTable";
 import { MasterDataFormModal } from "@/components/master-data/MasterDataFormModal";
 import { TestDetailPanel } from "@/components/master-data/TestDetailPanel";
@@ -58,7 +60,7 @@ import {
   useCreateMasterMethod,
   useUpdateMasterMethod,
   useDeleteMasterMethod,
-} from "@/services";
+} from "@/services/master-data";
 import { apiClient } from "@/lib/api";
 
 // ─── User hooks adapted for EntityConfig interface ───────────────────────────
@@ -451,10 +453,20 @@ const entityConfigs: Record<string, EntityConfig> = {
           threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
           const formatted = expiry.toLocaleDateString("id-ID");
           if (expiry <= now) {
-            return `🔴 Expired: ${formatted}`;
+            return (
+              <span className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                <AlertCircle className="h-3 w-3 shrink-0" aria-hidden="true" />
+                Expired: {formatted}
+              </span>
+            );
           }
           if (expiry <= threeMonthsFromNow) {
-            return `⚠️ Exp: ${formatted}`;
+            return (
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
+                Exp: {formatted}
+              </span>
+            );
           }
           return formatted;
         } catch {
@@ -664,9 +676,10 @@ interface ImportPreviewDialogProps {
   entity: string;
   preview: ImportPreviewData | null;
   onClose: () => void;
+  onNotify: (message: string, variant?: "success" | "error" | "warning" | "info") => void;
 }
 
-function ImportPreviewDialog({ entity, preview, onClose }: ImportPreviewDialogProps) {
+function ImportPreviewDialog({ entity, preview, onClose, onNotify }: ImportPreviewDialogProps) {
   const [importing, setImporting] = useState(false);
 
   if (!preview) return null;
@@ -711,19 +724,18 @@ function ImportPreviewDialog({ entity, preview, onClose }: ImportPreviewDialogPr
         if (errors && errors.length > 0) {
           const details = errors
             .slice(0, 3)
-            .map((e) => `  Baris ${e.row}: ${e.message}`)
-            .join("\n");
-          msg += `\n\nDetail error:\n${details}`;
-          if (errors.length > 3) msg += `\n  ... dan ${errors.length - 3} error lainnya`;
+            .map((e) => `Baris ${e.row}: ${e.message}`)
+            .join("; ");
+          msg += ` (${details}${errors.length > 3 ? `; +${errors.length - 3} lainnya` : ""})`;
         }
-        alert(msg);
+        onNotify(msg, errorCount > 0 ? "warning" : "success");
         if (count > 0) window.location.reload();
       } else {
-        alert(`Import gagal: ${result.message || result.data?.message || "Unknown error"}`);
+        onNotify(`Import gagal: ${result.message || result.data?.message || "Unknown error"}`, "error");
       }
     } catch (err) {
       console.error("Import request failed:", err);
-      alert("Import gagal. Periksa format file.");
+      onNotify("Import gagal. Periksa format file.", "error");
     } finally {
       setImporting(false);
       onClose();
@@ -798,12 +810,14 @@ interface EntityHeaderActionsProps {
   entity: string;
   onOpenCreate: () => void;
   onSetImportPreview: (preview: ImportPreviewData | null) => void;
+  onNotify: (message: string, variant?: "success" | "error" | "warning" | "info") => void;
 }
 
 function EntityHeaderActions({
   entity,
   onOpenCreate,
   onSetImportPreview,
+  onNotify,
 }: EntityHeaderActionsProps) {
   const supportsImportExport = ["pemeriksaan-lab", "tarif", "dokter", "klinik"].includes(entity);
 
@@ -815,7 +829,7 @@ function EntityHeaderActions({
       const text = await file.text();
       const lines = text.split("\n").filter((l) => l.trim());
       if (lines.length < 2) {
-        alert("File kosong atau hanya berisi header.");
+        onNotify("File kosong atau hanya berisi header.", "warning");
         e.target.value = "";
         return;
       }
@@ -835,7 +849,7 @@ function EntityHeaderActions({
       onSetImportPreview({ file, rows: previewRows });
     } catch (err) {
       console.error("Gagal membaca file import:", err);
-      alert("Gagal membaca file.");
+      onNotify("Gagal membaca file import.", "error");
     }
     e.target.value = "";
   };
@@ -871,7 +885,7 @@ function EntityHeaderActions({
       })
       .catch((err) => {
         console.error("Export failed:", err);
-        alert(`Export gagal: ${err.message || "Terjadi kesalahan"}`);
+        onNotify(`Export gagal: ${err.message || "Terjadi kesalahan"}`, "error");
       });
   };
 
@@ -910,7 +924,11 @@ function EntityHeaderActions({
 
 // ─── Custom Hook for Entity Page Logic ───────────────────────────────────────
 
-function useMasterDataEntity(entity: string, config?: EntityConfig) {
+function useMasterDataEntity(
+  entity: string,
+  config?: EntityConfig,
+  onNotify?: (message: string, variant?: "success" | "error" | "warning" | "info") => void,
+) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -988,9 +1006,9 @@ function useMasterDataEntity(entity: string, config?: EntityConfig) {
       }
     }
     if (failedIds.length > 0) {
-      alert(`${failedIds.length} item gagal dihapus.`);
+      onNotify?.(`${failedIds.length} item gagal dihapus.`, "error");
     }
-  }, [deleteMutation]);
+  }, [deleteMutation, onNotify]);
 
   const duplicateNames = useMemo(() => {
     const nameCount = new Map<string, number>();
@@ -1064,8 +1082,9 @@ export default function MasterDataEntityPage() {
   const config = entityConfigs[entity];
 
   const [importPreview, setImportPreview] = useState<ImportPreviewData | null>(null);
+  const { toasts, toast, dismiss } = useToast();
 
-  const entityState = useMasterDataEntity(entity, config);
+  const entityState = useMasterDataEntity(entity, config, toast);
 
   if (!config) {
     return (
@@ -1082,6 +1101,8 @@ export default function MasterDataEntityPage() {
 
   return (
     <div className="space-y-6">
+      <ToastContainer toasts={toasts} onDismiss={dismiss} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -1096,6 +1117,7 @@ export default function MasterDataEntityPage() {
           entity={entity}
           onOpenCreate={entityState.handleOpenCreate}
           onSetImportPreview={setImportPreview}
+          onNotify={toast}
         />
       </div>
 
@@ -1152,6 +1174,7 @@ export default function MasterDataEntityPage() {
         entity={entity}
         preview={importPreview}
         onClose={() => setImportPreview(null)}
+        onNotify={toast}
       />
     </div>
   );

@@ -154,7 +154,7 @@ export default function LabHistoryPage() {
               placeholder="Cari nomor order atau nama pasien..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 text-foreground placeholder:text-muted-foreground transition-all"
+              className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 text-foreground placeholder:text-muted-foreground transition-colors"
             />
           </div>
         </div>
@@ -218,7 +218,7 @@ export default function LabHistoryPage() {
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-all shadow-sm"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-[color,background-color,border-color,box-shadow,transform,opacity] shadow-sm"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Bersihkan Pencarian
@@ -251,7 +251,7 @@ export default function LabHistoryPage() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground transition-all hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
                 Sebelumnya
@@ -269,7 +269,7 @@ export default function LabHistoryPage() {
                   <button
                     key={p}
                     onClick={() => setPage(p as number)}
-                    className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                    className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-medium transition-colors ${
                       page === p
                         ? "bg-primary text-white shadow-sm"
                         : "border border-border bg-card text-foreground hover:bg-muted"
@@ -283,7 +283,7 @@ export default function LabHistoryPage() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground transition-all hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Berikutnya
                 <ChevronRight className="h-3.5 w-3.5" />

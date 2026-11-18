@@ -68,7 +68,7 @@ export function ColumnToggle({ columns, visibility, onChange, className }: Colum
         aria-expanded={open}
         title="Atur visibilitas kolom"
         className={cn(
-          "flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-medium transition-all",
+          "flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-medium transition-colors",
           open
             ? "border-brand bg-brand/10 text-brand dark:border-brand dark:bg-brand/20"
             : "border-slate-200 bg-white text-slate-600 hover:border-brand/50 hover:bg-brand/5 hover:text-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-brand/50 dark:hover:text-brand",

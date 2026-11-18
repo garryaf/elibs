@@ -172,7 +172,7 @@ export default function MasterDataPage() {
         </div>
         <button
           onClick={() => setShowBulkPriceDialog(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md"
+          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md"
         >
           <TrendingUp className="h-4 w-4" />
           Penyesuaian Harga
@@ -280,7 +280,7 @@ export default function MasterDataPage() {
             <Link
               key={item.name}
               href={item.href}
-              className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-brand/40 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/40"
+              className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:border-brand/40 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/40"
             >
               <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10">
                 <Icon className="h-5 w-5 text-brand" />

@@ -62,7 +62,7 @@ function StepIndicator({ current }: { current: Step }) {
             <div className="flex flex-col items-center gap-1 flex-1">
               <div
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-xl transition-all",
+                  "flex h-9 w-9 items-center justify-center rounded-xl transition-colors",
                   active ? "bg-brand text-white shadow-sm shadow-brand/30"
                     : done ? "bg-brand/10 text-brand dark:bg-brand/20 dark:text-brand"
                     : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
@@ -75,7 +75,7 @@ function StepIndicator({ current }: { current: Step }) {
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={cn("h-px flex-1 mx-2 transition-all", done ? "bg-brand/40 dark:bg-brand/40" : "bg-slate-200 dark:bg-slate-700")} />
+              <div className={cn("h-px flex-1 mx-2 transition-colors", done ? "bg-brand/40 dark:bg-brand/40" : "bg-slate-200 dark:bg-slate-700")} />
             )}
           </div>
         );
@@ -294,7 +294,7 @@ function TestStep({
           type="button"
           onClick={() => setMode("individual")}
           className={cn(
-            "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all",
+            "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
             mode === "individual"
               ? "bg-brand text-white shadow-sm"
               : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -307,7 +307,7 @@ function TestStep({
           type="button"
           onClick={() => setMode("panel")}
           className={cn(
-            "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all",
+            "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
             mode === "panel"
               ? "bg-brand text-white shadow-sm"
               : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -327,7 +327,7 @@ function TestStep({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={mode === "individual" ? "Cari nama atau kode pemeriksaan..." : "Cari nama paket..."}
-          className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
       </div>
 
@@ -343,7 +343,7 @@ function TestStep({
                   id={`test-cat-${cat.name.toLowerCase().replace(/\s/g, "-")}`}
                   onClick={() => setActiveCategoryId(cat.id)}
                   className={cn(
-                    "whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
+                    "whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
                     activeCategoryId === cat.id
                       ? "bg-brand text-white shadow-sm"
                       : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -371,7 +371,7 @@ function TestStep({
                         id={`test-item-${test.id}`}
                         onClick={() => onToggle(test)}
                         className={cn(
-                          "flex items-center justify-between rounded-xl border p-3.5 text-left transition-all",
+                          "flex items-center justify-between rounded-xl border p-3.5 text-left transition-colors",
                           selected
                             ? "border-brand/50 bg-brand/10 ring-1 ring-brand/30 dark:border-brand dark:bg-brand/10"
                             : "border-slate-200 bg-white hover:border-brand/30 hover:bg-brand/10/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/50 dark:hover:bg-brand/10"
@@ -394,7 +394,7 @@ function TestStep({
                           </div>
                         </div>
                         <div className={cn(
-                          "ml-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all",
+                          "ml-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                           selected ? "border-brand bg-brand" : "border-slate-300 dark:border-slate-600"
                         )}>
                           {selected && (
@@ -434,7 +434,7 @@ function TestStep({
                 type="button"
                 onClick={() => onTogglePanel(panel)}
                 className={cn(
-                  "w-full rounded-xl border p-4 text-left transition-all",
+                  "w-full rounded-xl border p-4 text-left transition-colors",
                   selected
                     ? "border-brand/50 bg-brand/10 ring-1 ring-brand/30 dark:border-brand dark:bg-brand/10"
                     : "border-slate-200 bg-white hover:border-brand/30 hover:bg-brand/5 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/50 dark:hover:bg-brand/10"
@@ -471,7 +471,7 @@ function TestStep({
                     )}
                   </div>
                   <div className={cn(
-                    "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all",
+                    "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                     selected ? "border-brand bg-brand" : "border-slate-300 dark:border-slate-600"
                   )}>
                     {selected && (
@@ -643,7 +643,7 @@ function ConfirmStep({
           onChange={(e) => onNotesChange(e.target.value)}
           maxLength={2000}
           placeholder="Mis: Pasien puasa 10 jam, suspek DM tipe 2..."
-          className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
       </div>
     </div>

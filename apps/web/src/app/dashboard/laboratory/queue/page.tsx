@@ -379,7 +379,7 @@ interface RerunDialogProps {
   rerunReason: string;
   rerunSubmitting: boolean;
   rerunError: string | null;
-  dialogRef: React.RefObject<HTMLDivElement>;
+  dialogRef: React.RefObject<HTMLDivElement | null>;
   onClose: () => void;
   onSelectTest: (id: string) => void;
   onChangeReason: (reason: string) => void;
@@ -428,7 +428,7 @@ function RerunDialog({
             id="rerun-reason"
             value={rerunReason}
             onChange={(e) => onChangeReason(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
             <option value="">Pilih alasan...</option>
             <option value="QC_FAILURE">QC Failure</option>
@@ -477,7 +477,7 @@ interface SampleConditionDialogProps {
   barcodeVerified: boolean;
   confirmError: string | null;
   isPending: boolean;
-  dialogRef: React.RefObject<HTMLDivElement>;
+  dialogRef: React.RefObject<HTMLDivElement | null>;
   onClose: () => void;
   onSelectCondition: (cond: string) => void;
   onChangeRejectionReason: (r: string) => void;
@@ -545,7 +545,7 @@ function SampleConditionDialog({
                 placeholder="Scan atau ketik nomor barcode..."
                 autoFocus
                 className={cn(
-                  "h-10 w-full rounded-xl border pl-10 pr-4 text-sm font-mono outline-none transition-all placeholder:text-slate-400 focus:ring-1",
+                  "h-10 w-full rounded-xl border pl-10 pr-4 text-sm font-mono outline-none transition-colors placeholder:text-slate-400 focus:ring-1",
                   barcodeVerified
                     ? "border-green-400 bg-green-50 focus:border-green-500 focus:ring-green-200 dark:border-green-600 dark:bg-green-900/20"
                     : barcodeInput && !barcodeVerified
@@ -573,7 +573,7 @@ function SampleConditionDialog({
                 type="button"
                 onClick={() => onSelectCondition(cond.value)}
                 className={cn(
-                  "rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-all",
+                  "rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-colors",
                   selectedCondition === cond.value
                     ? cond.color + " ring-2 ring-brand/30"
                     : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
@@ -655,6 +655,10 @@ function OrderExpandedDetail({
   handlePrintBarcode, onOpenSampleDialog, onOpenRerunDialog,
   rerunDialog, sampleDialog,
 }: OrderExpandedDetailProps) {
+  const [showRecallDialog, setShowRecallDialog] = useState(false);
+  const [recallReason, setRecallReason] = useState("");
+  const recallDialogRef = useFocusTrap(showRecallDialog);
+
   return (
     <>
       {/* 3-column info grid */}
@@ -750,13 +754,13 @@ function OrderExpandedDetail({
           <button
             onClick={(e) => { e.stopPropagation(); onOpenSampleDialog(); }}
             disabled={confirmSampleMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md active:scale-[0.98] disabled:opacity-60"
           >
             <Barcode className="h-4 w-4" /> Konfirmasi Sampel
           </button>
         )}
         {(order.status === "SAMPLE_COLLECTED" || order.status === "IN_ANALYSIS") && (
-          <a href={`/dashboard/laboratory/results/${order.id}`} className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]">
+          <a href={`/dashboard/laboratory/results/${order.id}`} className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md active:scale-[0.98]">
             <FlaskConical className="h-4 w-4" /> {order.status === "SAMPLE_COLLECTED" ? "Input Hasil" : allResultsEntered ? "Lihat Hasil" : "Lanjut Input"}
           </a>
         )}
@@ -765,7 +769,7 @@ function OrderExpandedDetail({
           <button
             onClick={(e) => { e.stopPropagation(); verifyMutation.mutate({ orderId: order.id }); }}
             disabled={verifyMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-[0.98] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-emerald-700 hover:shadow-md active:scale-[0.98] disabled:opacity-60"
           >
             {verifyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Verifikasi
           </button>
@@ -774,7 +778,7 @@ function OrderExpandedDetail({
         {order.status === "IN_ANALYSIS" && (
           <button
             onClick={(e) => { e.stopPropagation(); onOpenRerunDialog(); }}
-            className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-100 active:scale-[0.98] dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+            className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-amber-100 active:scale-[0.98] dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
           >
             <RotateCcw className="h-4 w-4" /> Request Rerun
           </button>
@@ -787,7 +791,7 @@ function OrderExpandedDetail({
           </span>
         )}
         {order.status === "VERIFIED" && (
-          <a href="/dashboard/laboratory/approval" className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-600 hover:shadow-md active:scale-[0.98]">
+          <a href="/dashboard/laboratory/approval" className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-amber-600 hover:shadow-md active:scale-[0.98]">
             <ShieldCheck className="h-4 w-4" /> Menunggu Approval Dokter
           </a>
         )}
@@ -798,15 +802,14 @@ function OrderExpandedDetail({
             if (hoursSince > 24) return null;
             return (
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const reason = window.prompt("Alasan recall order ini untuk koreksi:");
-                  if (reason && reason.trim()) {
-                    recallMutation.mutate({ orderId: order.id, reason: reason.trim() });
-                  }
+                  setRecallReason("");
+                  setShowRecallDialog(true);
                 }}
                 disabled={recallMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-100 active:scale-[0.98] disabled:opacity-60 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700 shadow-sm transition-colors hover:bg-amber-100 active:scale-[0.98] disabled:opacity-60 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
               >
                 {recallMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Recall
               </button>
@@ -821,7 +824,7 @@ function OrderExpandedDetail({
               const token = localStorage.getItem("elis_token") || localStorage.getItem("token") || sessionStorage.getItem("token") || "";
               window.open(`/api/v1/orders/${order.id}/report/pdf?token=${encodeURIComponent(token)}`, "_blank");
             }}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-all hover:bg-brand/5 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand/5 active:scale-[0.98]"
           >
             <Printer className="h-4 w-4" /> Cetak Hasil
           </button>
@@ -838,6 +841,57 @@ function OrderExpandedDetail({
       {/* Dialogs rendered here (inside expanded detail) */}
       {rerunDialog}
       {sampleDialog}
+      {showRecallDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()} data-dialog-open>
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowRecallDialog(false)} />
+          <div
+            ref={recallDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="recall-dialog-title"
+            className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+          >
+            <h3 id="recall-dialog-title" className="text-lg font-bold text-foreground">Recall Order untuk Koreksi</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Order <span className="font-mono font-semibold text-brand">{order.orderNumber}</span>
+            </p>
+            <div className="mt-4">
+              <label htmlFor="recall-reason" className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Alasan Recall
+              </label>
+              <textarea
+                id="recall-reason"
+                rows={3}
+                value={recallReason}
+                onChange={(e) => setRecallReason(e.target.value)}
+                placeholder="Jelaskan alasan recall order ini…"
+                className="mt-1 w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+              />
+            </div>
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowRecallDialog(false)}
+                className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!recallReason.trim()) return;
+                  recallMutation.mutate({ orderId: order.id, reason: recallReason.trim() });
+                  setShowRecallDialog(false);
+                }}
+                disabled={!recallReason.trim() || recallMutation.isPending}
+                className="flex-1 rounded-xl bg-amber-600 py-2.5 text-sm font-bold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+              >
+                {recallMutation.isPending ? "Memproses…" : "Konfirmasi Recall"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -1164,7 +1218,7 @@ export default function LaboratoryQueuePage() {
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
                 className={cn(
-                  "flex whitespace-nowrap items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none",
+                  "flex whitespace-nowrap items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none",
                   isActive
                     ? "bg-brand text-white shadow-sm"
                     : "text-muted-foreground hover:bg-brand/10 hover:text-brand"
@@ -1288,7 +1342,7 @@ export default function LaboratoryQueuePage() {
                   <select
                     value={bulkRejectCondition}
                     onChange={(e) => setBulkRejectCondition(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   >
                     {SAMPLE_CONDITIONS.filter((c) => c.value !== "ACCEPTABLE").map((c) => (
                       <option key={c.value} value={c.value}>{c.label}</option>
@@ -1435,7 +1489,7 @@ export default function LaboratoryQueuePage() {
                     {(debouncedSearch || activeTab !== "ALL") && (
                       <button
                         onClick={() => { setSearch(""); handleTabChange("ALL"); }}
-                        className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-all shadow-sm"
+                        className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-[color,background-color,border-color,box-shadow,transform,opacity] shadow-sm"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
                         Reset Filter
@@ -1512,7 +1566,7 @@ function AuthenticatedBarcodeImage({ orderId, orderNumber }: { orderId: string; 
 
   if (loading) return <div className="h-12 w-full animate-pulse rounded bg-slate-200 dark:bg-slate-700" />;
   if (!dataUrl) return <p className="text-xs text-muted-foreground italic">Gagal memuat barcode</p>;
-  return <img src={dataUrl} alt={`Barcode ${orderNumber}`} className="max-h-full object-contain" />;
+  return <img src={dataUrl} alt={`Barcode ${orderNumber}`} width={240} height={64} className="max-h-full object-contain" />;
 }
 
 // ---------- OrderRow Sub-component ----------
@@ -1658,7 +1712,7 @@ function OrderRow({ order, isExpanded, isSelected, isFocused, rowIndex, totalRow
             <div className="flex items-center justify-end gap-2">
               <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-brand rounded-full transition-all"
+                  className="h-full bg-brand rounded-full transition-colors"
                   style={{ width: `${(resultsCompleted / resultsTotal) * 100}%` }}
                 />
               </div>

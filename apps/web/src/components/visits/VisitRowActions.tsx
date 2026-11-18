@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MoreVertical, Eye, Pencil, XCircle } from "lucide-react";
-import { useClickOutside } from "@/hooks";
+import { useClickOutside } from "@/hooks/use-click-outside";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

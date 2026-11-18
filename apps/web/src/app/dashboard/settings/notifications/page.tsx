@@ -125,7 +125,7 @@ export default function NotificationsSettingsPage() {
                 onChange={(e) => setPreferences((prev) => ({ ...prev, [item.key]: e.target.checked }))}
                 className="peer sr-only"
               />
-              <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-brand peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-slate-700" />
+              <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-[color,background-color,border-color,box-shadow,transform,opacity] after:content-[''] peer-checked:bg-brand peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-slate-700" />
             </label>
           </div>
         ))}

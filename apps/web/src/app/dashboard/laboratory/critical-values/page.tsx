@@ -264,7 +264,7 @@ export default function CriticalValueDashboardPage() {
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "flex whitespace-nowrap items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none",
+                    "flex whitespace-nowrap items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none",
                     isActive
                       ? "bg-brand text-white shadow-sm"
                       : "text-muted-foreground hover:bg-brand/10 hover:text-brand"
@@ -383,7 +383,7 @@ export default function CriticalValueDashboardPage() {
                             setSearch("");
                             handleTabChange("ALL");
                           }}
-                          className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-all shadow-sm"
+                          className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-[color,background-color,border-color,box-shadow,transform,opacity] shadow-sm"
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
                           Reset Filter
@@ -537,7 +537,7 @@ function CriticalValueRow({ alert, onAcknowledge }: CriticalValueRowProps) {
         {isActionable ? (
           <button
             onClick={onAcknowledge}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md active:scale-[0.98]"
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
             Konfirmasi
@@ -647,7 +647,7 @@ function AcknowledgeModal({
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-dark hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-brand-dark hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>

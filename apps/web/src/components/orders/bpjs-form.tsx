@@ -157,7 +157,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
                 type="text"
                 value={formData.sepNumber}
                 onChange={(e) => setFormData({ ...formData, sepNumber: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none dark:border-slate-700 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-white"
                 placeholder="Misal: 1234567890"
               />
             </div>
@@ -166,7 +166,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
               <select
                 value={formData.classLevel}
                 onChange={(e) => setFormData({ ...formData, classLevel: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none dark:border-slate-700 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-white"
               >
                 <option value="1">Kelas 1</option>
                 <option value="2">Kelas 2</option>
@@ -179,7 +179,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
                 type="text"
                 value={formData.referringFacilityCode}
                 onChange={(e) => setFormData({ ...formData, referringFacilityCode: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none dark:border-slate-700 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-white"
               />
             </div>
             <div>
@@ -188,7 +188,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
                 type="text"
                 value={formData.referringFacilityName}
                 onChange={(e) => setFormData({ ...formData, referringFacilityName: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none dark:border-slate-700 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-white"
               />
             </div>
             <div>
@@ -197,7 +197,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
                 type="text"
                 value={formData.diagnosisCode}
                 onChange={(e) => setFormData({ ...formData, diagnosisCode: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none dark:border-slate-700 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-white"
               />
             </div>
             <div>
@@ -206,7 +206,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
                 type="text"
                 value={formData.guaranteeLetterNo}
                 onChange={(e) => setFormData({ ...formData, guaranteeLetterNo: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none dark:border-slate-700 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-white"
               />
             </div>
             

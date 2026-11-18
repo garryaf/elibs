@@ -267,7 +267,7 @@ function ApprovalCard({
             onChange={(e) => setInterpretation(e.target.value)}
             placeholder="Tambahkan catatan interpretasi klinis..."
             rows={3}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary resize-none"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-primary resize-none"
           />
         </div>
 
@@ -321,7 +321,7 @@ function ApprovalCard({
           onChange={(e) => setRejectionReason(e.target.value)}
           placeholder="Alasan penolakan..."
           rows={3}
-          className="mt-4 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary resize-none"
+          className="mt-4 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-primary resize-none"
         />
       </ConfirmDialog>
     </>

@@ -8,7 +8,7 @@ import { PatientAvatar } from "./PatientAvatar";
 import { cn } from "@/lib/utils";
 import { ColumnToggle, useColumnVisibility } from "@/components/ui/ColumnToggle";
 import type { ColumnDef } from "@/components/ui/ColumnToggle";
-import { useClickOutside } from "@/hooks";
+import { useClickOutside } from "@/hooks/use-click-outside";
 
 interface PatientTableProps {
   patients: Patient[];
@@ -656,7 +656,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete, onReactivate,
             }}
             disabled={activePage === 1}
             title="Halaman pertama"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
           >
             <ChevronsLeft className="h-4 w-4" />
           </button>
@@ -671,7 +671,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete, onReactivate,
             }}
             disabled={activePage === 1}
             title="Halaman sebelumnya"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -689,7 +689,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete, onReactivate,
               onKeyDown={(e) => { if (e.key === "Enter") handleJumpSubmit(); }}
               onBlur={handleJumpSubmit}
               placeholder={String(activePage)}
-              className="h-8 w-14 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm text-slate-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-8 w-14 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
             <span className="text-sm text-slate-500 dark:text-slate-400">/ {activeTotalPages}</span>
           </div>
@@ -704,7 +704,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete, onReactivate,
             }}
             disabled={activePage === activeTotalPages}
             title="Halaman berikutnya"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -718,7 +718,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete, onReactivate,
             }}
             disabled={activePage === activeTotalPages}
             title="Halaman terakhir"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
           >
             <ChevronsRight className="h-4 w-4" />
           </button>
@@ -746,7 +746,7 @@ export function PatientTable({ patients, onEdit, onView, onDelete, onReactivate,
                   if (onServerPageChange) onServerPageChange(1);
                   else setCurrentPage(1);
                 }}
-                className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
               >
                 {PAGE_SIZE_OPTIONS.map((s) => (
                   <option key={s} value={s}>{s} data</option>

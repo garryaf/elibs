@@ -185,7 +185,7 @@ export default function LabResultsPage() {
           role="status"
           aria-live="polite"
           className={cn(
-            "flex items-start justify-between rounded-xl border p-4 shadow-md transition-all",
+            "flex items-start justify-between rounded-xl border p-4 shadow-md transition-[color,background-color,border-color,box-shadow,transform,opacity]",
             toastMessage.autoApproved
               ? "border-emerald-500/30 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-100 dark:border-emerald-800"
               : "border-blue-500/30 bg-blue-50 text-blue-900 dark:bg-blue-950/80 dark:text-blue-100 dark:border-blue-800"
@@ -224,7 +224,7 @@ export default function LabResultsPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex whitespace-nowrap items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all",
+                  "flex whitespace-nowrap items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-primary text-white shadow-sm"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -254,7 +254,7 @@ export default function LabResultsPage() {
             placeholder="Cari order atau pasien..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-4 text-sm outline-none focus:border-primary text-foreground placeholder:text-muted-foreground"
+            className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-primary text-foreground placeholder:text-muted-foreground"
             aria-label="Search lab results"
           />
         </div>
@@ -297,7 +297,7 @@ export default function LabResultsPage() {
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-all shadow-sm"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-[color,background-color,border-color,box-shadow,transform,opacity] shadow-sm"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Bersihkan Pencarian
@@ -319,7 +319,7 @@ export default function LabResultsPage() {
               <Link
                 key={order.id}
                 href={`/dashboard/laboratory/results/${order.id}`}
-                className="group block rounded-2xl border border-border bg-card p-5 transition-all hover:border-primary/50 hover:shadow-md"
+                className="group block rounded-2xl border border-border bg-card p-5 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:border-primary/50 hover:shadow-md"
               >
                 <div className="mb-3 flex items-start justify-between">
                   <div>
@@ -356,7 +356,7 @@ export default function LabResultsPage() {
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                     <div
-                      className="h-full rounded-full bg-brand transition-all"
+                      className="h-full rounded-full bg-brand transition-colors"
                       style={{ width: `${progress}%` }}
                     />
                   </div>

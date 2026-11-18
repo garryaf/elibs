@@ -245,7 +245,7 @@ export default function SpecimenDetailPage() {
             <button
               onClick={handlePrintLabel}
               disabled={batchLabels.isPending}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground transition-all hover:bg-muted shadow-sm disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-muted shadow-sm disabled:opacity-60"
             >
               {batchLabels.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -257,7 +257,7 @@ export default function SpecimenDetailPage() {
             <button
               onClick={handleRegenerateBarcode}
               disabled={regenerateBarcode.isPending}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground transition-all hover:bg-muted shadow-sm disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-muted shadow-sm disabled:opacity-60"
             >
               {regenerateBarcode.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
