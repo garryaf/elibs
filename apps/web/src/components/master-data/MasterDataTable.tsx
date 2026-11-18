@@ -415,7 +415,7 @@ export function MasterDataTable({
       {/* Table */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm tabular-nums">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/50">
                 {onBulkDelete && (

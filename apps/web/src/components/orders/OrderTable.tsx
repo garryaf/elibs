@@ -66,7 +66,7 @@ export function OrderTable({ orders, sortField, sortDir, onSort }: OrderTablePro
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm tabular-nums">
           <thead>
             <tr className="border-b border-border bg-brand/5">
               {/* NO. ORDER — always visible */}

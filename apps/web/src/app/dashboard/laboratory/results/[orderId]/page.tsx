@@ -548,7 +548,7 @@ export default function ResultEntryPage() {
                             updateResult(detail.id, e.target.value)
                           }
                           className={cn(
-                            "h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 transition-colors focus:border-primary text-foreground placeholder:text-muted-foreground",
+                            "h-10 w-full rounded-lg border bg-background px-3 text-sm tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-brand/40 transition-colors focus:border-primary text-foreground placeholder:text-muted-foreground",
                             flagConfig
                               ? flagConfig.borderColor
                               : "border-border"
