@@ -36,52 +36,7 @@ import {
   type OrderStatus,
 } from "@/components/laboratory/lab-status-badge";
 import { RoleGuard } from "@/components/guards/RoleGuard";
-
-// ---------- UX-GAP-05: Focus Trap Hook ----------
-
-function useFocusTrap(isActive: boolean) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!isActive || !containerRef.current) return;
-
-    const container = containerRef.current;
-    const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-    const getFocusable = () => Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)).filter((el) => !el.hasAttribute("disabled"));
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Tab") return;
-      const focusable = getFocusable();
-      if (focusable.length === 0) return;
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-
-    // Focus first focusable element on open
-    const focusable = getFocusable();
-    if (focusable.length > 0) {
-      setTimeout(() => focusable[0].focus(), 50);
-    }
-
-    container.addEventListener("keydown", handleKeyDown);
-    return () => container.removeEventListener("keydown", handleKeyDown);
-  }, [isActive]);
-
-  return containerRef;
-}
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 // ---------- Types ----------
 

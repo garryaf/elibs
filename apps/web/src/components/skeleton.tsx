@@ -8,7 +8,7 @@ export function Skeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-md bg-slate-200 dark:bg-slate-700",
+        "animate-pulse rounded-md bg-muted",
         className
       )}
     />
@@ -26,9 +26,9 @@ export function TableSkeleton({
   cols?: number;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+    <div className="overflow-hidden rounded-xl border border-border">
       {/* Header */}
-      <div className="flex gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/50">
+      <div className="flex gap-4 border-b border-border bg-muted/50 px-4 py-3">
         {Array.from({ length: cols }).map((_, i) => (
           <Skeleton key={`header-${i}`} className="h-4 flex-1" />
         ))}
@@ -37,7 +37,7 @@ export function TableSkeleton({
       {Array.from({ length: rows }).map((_, rowIdx) => (
         <div
           key={`row-${rowIdx}`}
-          className="flex gap-4 border-b border-slate-100 px-4 py-3 last:border-b-0 dark:border-slate-800"
+          className="flex gap-4 border-b border-border/60 px-4 py-3 last:border-b-0"
         >
           {Array.from({ length: cols }).map((_, colIdx) => (
             <Skeleton key={`cell-${rowIdx}-${colIdx}`} className="h-4 flex-1" />
@@ -53,7 +53,7 @@ export function TableSkeleton({
  */
 export function CardSkeleton() {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
       <div className="space-y-3">
         <Skeleton className="h-4 w-1/3" />
         <Skeleton className="h-8 w-1/2" />
@@ -71,7 +71,7 @@ export function StatsCardSkeleton({ className }: { className?: string }) {
     <div
       data-testid="stats-card-skeleton"
       className={cn(
-        "rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-slate-800 dark:bg-slate-950",
+        "rounded-2xl border border-border bg-card px-5 py-4 shadow-sm",
         className
       )}
     >

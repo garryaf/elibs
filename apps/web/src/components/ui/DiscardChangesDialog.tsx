@@ -20,7 +20,7 @@ export function DiscardChangesDialog({ open, onConfirm, onCancel }: DiscardChang
         ref={focusTrapRef}
         role="dialog"
         aria-modal="true"
-        className="relative z-10 w-full max-w-xs rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+        className="relative z-10 w-full max-w-xs overscroll-contain rounded-2xl border border-border bg-card p-5 shadow-xl"
       >
         <h3 className="text-base font-bold text-slate-900 dark:text-white">Buang Perubahan?</h3>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
