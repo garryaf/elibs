@@ -74,7 +74,7 @@ export default function WhatsAppSettingsPage() {
   }
 
   const inputCls =
-    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
+    "w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100";
 
   return (
     <div className="max-w-xl space-y-6">
@@ -92,7 +92,7 @@ export default function WhatsAppSettingsPage() {
       )}
 
       <div className="space-y-4">
-        <div className="flex items-start justify-between rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+        <div className="flex items-start justify-between rounded-xl border border-border p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/30">
               <MessageCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -122,7 +122,7 @@ export default function WhatsAppSettingsPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
+      <div className="flex items-center gap-3 border-t border-border pt-4">
         <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark disabled:opacity-50">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {saving ? "Menyimpan..." : "Simpan Konfigurasi"}

@@ -51,7 +51,7 @@ function FilterDropdown({
         id={`filter-${filter.name}`}
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
-        className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm transition-colors hover:border-slate-300 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600"
+        className="h-9 rounded-lg border border-border bg-card px-3 text-sm text-slate-700 shadow-sm transition-colors hover:border-slate-300 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:text-slate-300 dark:hover:border-slate-600"
         aria-label={filter.label}
       >
         <option value="">Semua</option>
@@ -67,7 +67,7 @@ function FilterDropdown({
 
 export function EntityFilterBar({ filters, values, onChange }: EntityFilterBarProps) {
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/50">
+    <div className="flex flex-wrap items-center gap-4 rounded-xl border border-border bg-slate-50/50 px-4 py-3 dark:bg-slate-900/50">
       <div className="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400">
         <Filter className="h-4 w-4" />
         <span>Filter:</span>

@@ -94,7 +94,7 @@ const SAMPLE_CONDITIONS = [
   { value: "HEMOLYTIC", label: "Hemolisis", color: "text-red-700 bg-red-50 border-red-200 dark:text-red-300 dark:bg-red-900/20 dark:border-red-800" },
   { value: "CLOTTED", label: "Beku (Clotted)", color: "text-red-700 bg-red-50 border-red-200 dark:text-red-300 dark:bg-red-900/20 dark:border-red-800" },
   { value: "INSUFFICIENT", label: "Volume Kurang", color: "text-orange-700 bg-orange-50 border-orange-200 dark:text-orange-300 dark:bg-orange-900/20 dark:border-orange-800" },
-  { value: "OTHER", label: "Lainnya (Tolak)", color: "text-slate-700 bg-slate-50 border-slate-200 dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700" },
+  { value: "OTHER", label: "Lainnya (Tolak)", color: "text-slate-700 bg-slate-50 border-border dark:text-slate-300 dark:bg-slate-800" },
 ];
 
 // ---------- Helpers ----------
@@ -350,7 +350,7 @@ function RerunDialog({
     // BP-LAB-03: Rerun Dialog (UX-GAP-05: with focus trap)
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()} data-dialog-open>
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-      <div ref={dialogRef} className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200" role="dialog" aria-modal="true" aria-labelledby="rerun-dialog-title">
+      <div ref={dialogRef} className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200" role="dialog" aria-modal="true" aria-labelledby="rerun-dialog-title">
         <h3 id="rerun-dialog-title" className="text-lg font-bold text-slate-900 dark:text-white">Request Rerun</h3>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Pilih parameter yang perlu diulang
@@ -368,7 +368,7 @@ function RerunDialog({
                   "w-full rounded-lg border px-3 py-2 text-left text-sm font-medium transition",
                   rerunTestId === d.id
                     ? "border-brand bg-brand/10 text-brand ring-1 ring-brand/30"
-                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    : "border-border bg-card text-slate-700 hover:bg-slate-50 dark:text-slate-300"
                 )}
               >
                 <span className="font-mono text-xs">{d.testCode}</span> — {d.testName}
@@ -383,7 +383,7 @@ function RerunDialog({
             id="rerun-reason"
             value={rerunReason}
             onChange={(e) => onChangeReason(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:text-white"
           >
             <option value="">Pilih alasan...</option>
             <option value="QC_FAILURE">QC Failure</option>
@@ -404,7 +404,7 @@ function RerunDialog({
         <div className="mt-5 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+            className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300"
           >
             Batal
           </button>
@@ -452,7 +452,7 @@ function SampleConditionDialog({
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       <div
         ref={dialogRef}
-        className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200"
+        className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="sample-dialog-title"
@@ -505,7 +505,7 @@ function SampleConditionDialog({
                     ? "border-green-400 bg-green-50 focus:border-green-500 focus:ring-green-200 dark:border-green-600 dark:bg-green-900/20"
                     : barcodeInput && !barcodeVerified
                       ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200 dark:border-red-700 dark:bg-red-900/20"
-                      : "border-slate-200 bg-white focus:border-brand focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-800"
+                      : "border-border bg-card focus:border-brand focus:ring-brand/30"
                 )}
               />
             </div>
@@ -531,7 +531,7 @@ function SampleConditionDialog({
                   "rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-colors",
                   selectedCondition === cond.value
                     ? cond.color + " ring-2 ring-brand/30"
-                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                    : "border-border bg-card text-slate-700 hover:bg-slate-50 dark:text-slate-300"
                 )}
               >
                 {cond.label}
@@ -548,7 +548,7 @@ function SampleConditionDialog({
               value={rejectionReason}
               onChange={(e) => onChangeRejectionReason(e.target.value)}
               placeholder="Jelaskan alasan penolakan sampel..."
-              className="mt-1 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none placeholder:text-slate-400 focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              className="mt-1 w-full resize-none rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm outline-none placeholder:text-slate-400 focus:border-brand focus:ring-1 focus:ring-brand/30 dark:text-white"
             />
           </div>
         )}
@@ -564,7 +564,7 @@ function SampleConditionDialog({
         )}
         <div className="mt-5 flex flex-col gap-2">
           <div className="flex gap-3">
-            <button onClick={onClose} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300">Batal</button>
+            <button onClick={onClose} className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300">Batal</button>
             <button
               onClick={onConfirm}
               disabled={isPending || !barcodeVerified || (selectedCondition !== "ACCEPTABLE" && !rejectionReason.trim())}
@@ -1250,7 +1250,7 @@ export default function LaboratoryQueuePage() {
       {showBulkConfirmDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" data-dialog-open>
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowBulkConfirmDialog(false)} />
-          <div ref={bulkDialogRef} className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200" role="dialog" aria-modal="true" aria-labelledby="bulk-dialog-title">
+          <div ref={bulkDialogRef} className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200" role="dialog" aria-modal="true" aria-labelledby="bulk-dialog-title">
             <h3 id="bulk-dialog-title" className="text-lg font-bold text-slate-900 dark:text-white">
               {bulkMode === "accept" ? "Konfirmasi Batch" : "Tolak Batch Sampel"}
             </h3>
@@ -1269,7 +1269,7 @@ export default function LaboratoryQueuePage() {
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {orders.filter((o) => selectedIds.has(o.id)).map((o) => (
-                      <span key={o.id} className="rounded-md bg-white px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-900 shadow-sm border border-amber-200 dark:bg-slate-800 dark:text-amber-200 dark:border-amber-700">
+                      <span key={o.id} className="rounded-md bg-card px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-900 shadow-sm border border-amber-200 dark:text-amber-200 dark:border-amber-700">
                         {o.orderNumber}
                       </span>
                     ))}
@@ -1297,7 +1297,7 @@ export default function LaboratoryQueuePage() {
                   <select
                     value={bulkRejectCondition}
                     onChange={(e) => setBulkRejectCondition(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:text-white"
                   >
                     {SAMPLE_CONDITIONS.filter((c) => c.value !== "ACCEPTABLE").map((c) => (
                       <option key={c.value} value={c.value}>{c.label}</option>
@@ -1311,7 +1311,7 @@ export default function LaboratoryQueuePage() {
                     value={bulkRejectReason}
                     onChange={(e) => setBulkRejectReason(e.target.value)}
                     placeholder="Jelaskan alasan penolakan batch..."
-                    className="mt-1 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="mt-1 w-full resize-none rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-brand focus:ring-1 focus:ring-brand/30 dark:text-white"
                   />
                 </div>
               </div>
@@ -1320,7 +1320,7 @@ export default function LaboratoryQueuePage() {
             <div className="mt-5 flex gap-3">
               <button
                 onClick={() => { setShowBulkConfirmDialog(false); setBulkRejectReason(""); setBulkBarcodeVerified(false); }}
-                className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+                className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300"
               >
                 Batal
               </button>

@@ -120,7 +120,7 @@ export default function AuditSettingsPage() {
         )}
 
         {/* Retention Policy */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-3 mb-6">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand/10">
               <Database className="h-5 w-5 text-brand" />
@@ -167,7 +167,7 @@ export default function AuditSettingsPage() {
         </div>
 
         {/* Scheduled Job Configuration */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-3 mb-6">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20">
               <Clock className="h-5 w-5 text-blue-500 dark:text-blue-400" />

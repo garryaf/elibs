@@ -222,7 +222,7 @@ export default function MasterDataPage() {
                   {setupOrderSteps.map((item) => (
                     <div
                       key={item.step}
-                      className="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 dark:bg-slate-800/50"
+                      className="flex items-center gap-2 rounded-lg bg-card/70 px-3 py-2/50"
                     >
                       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
                         {item.step}
@@ -246,7 +246,7 @@ export default function MasterDataPage() {
         /* Small toggle to show the guide again */
         <button
           onClick={handleShowAgain}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-500 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-blue-700 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-slate-500 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-400 dark:hover:border-blue-700 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
         >
           <Info className="h-3.5 w-3.5" />
           Panduan urutan pengisian
@@ -261,7 +261,7 @@ export default function MasterDataPage() {
           placeholder="Cari menu master data..."
           value={cardSearch}
           onChange={(e) => setCardSearch(e.target.value)}
-          className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-900 dark:text-white placeholder:text-slate-400"
+          className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-4 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:text-white placeholder:text-slate-400"
           aria-label="Search master data cards"
         />
       </div>
@@ -280,7 +280,7 @@ export default function MasterDataPage() {
             <Link
               key={item.name}
               href={item.href}
-              className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:border-brand/40 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/40"
+              className="group flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:border-brand/40 hover:shadow-md dark:hover:border-brand/40"
             >
               <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10">
                 <Icon className="h-5 w-5 text-brand" />

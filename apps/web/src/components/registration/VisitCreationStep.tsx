@@ -337,7 +337,7 @@ export function VisitCreationStep({
       )}
 
       {/* Patient Info Header */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <h2 className="mb-4 text-base font-semibold text-slate-900 dark:text-white">
           Data Pasien
         </h2>
@@ -371,7 +371,7 @@ export function VisitCreationStep({
       {/* Visit Creation Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Doctor and Clinic */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="mb-4 text-base font-semibold text-slate-900 dark:text-white">
             Detail Kunjungan
           </h2>
@@ -394,7 +394,7 @@ export function VisitCreationStep({
         </div>
 
         {/* FUNC-REG-02: Data Rujukan */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="mb-4 text-base font-semibold text-slate-900 dark:text-white">
             Data Rujukan
             <span className="ml-2 text-xs font-normal text-slate-400">(opsional)</span>
@@ -411,7 +411,7 @@ export function VisitCreationStep({
                 placeholder="dr. Nama Dokter"
                 value={referringDoctorName}
                 onChange={(e) => setReferringDoctorName(e.target.value)}
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-10 w-full rounded-xl border border-border bg-card px-3.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
               />
             </div>
             <div>
@@ -425,7 +425,7 @@ export function VisitCreationStep({
                 placeholder="Nomor surat rujukan"
                 value={referralLetterNo}
                 onChange={(e) => setReferralLetterNo(e.target.value)}
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-10 w-full rounded-xl border border-border bg-card px-3.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
               />
             </div>
             <div>
@@ -438,7 +438,7 @@ export function VisitCreationStep({
                 placeholder="Misal: Cek darah rutin, MCU"
                 value={encounterReason}
                 onChange={(e) => setEncounterReason(e.target.value)}
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-10 w-full rounded-xl border border-border bg-card px-3.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
               />
             </div>
             <div>
@@ -451,14 +451,14 @@ export function VisitCreationStep({
                 placeholder="Keluhan pasien (opsional)"
                 value={chiefComplaint}
                 onChange={(e) => setChiefComplaint(e.target.value)}
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-10 w-full rounded-xl border border-border bg-card px-3.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
               />
             </div>
           </div>
         </div>
 
         {/* Payment Method */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="mb-4 text-base font-semibold text-slate-900 dark:text-white">
             Metode Pembayaran <span className="text-red-500">*</span>
           </h2>
@@ -492,7 +492,7 @@ export function VisitCreationStep({
                   className={`rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
                     paymentMethod === option.value
                       ? "border-brand bg-brand/5 text-brand ring-2 ring-brand/20"
-                      : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600"
+                      : "border-border text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:text-slate-400 dark:hover:border-slate-600"
                   }`}
                 >
                   {option.label}
@@ -550,7 +550,7 @@ export function VisitCreationStep({
                     className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 transition-colors ${
                       errors.bpjsNumber
                         ? "border-red-300 bg-red-50 focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:border-red-700 dark:bg-red-900/10"
-                        : "border-slate-200 bg-white focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900"
+                        : "border-border bg-card focus:border-brand focus:ring-2 focus:ring-brand/20"
                     } text-slate-900 placeholder:text-slate-400 dark:text-slate-100`}
                   />
                   <div className="flex items-center justify-between">
@@ -617,7 +617,7 @@ export function VisitCreationStep({
           <button
             type="button"
             onClick={handleBack}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <ArrowLeft className="h-4 w-4" />
             Kembali ke Pencarian

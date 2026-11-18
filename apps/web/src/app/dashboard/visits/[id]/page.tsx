@@ -249,7 +249,7 @@ function VisitDetailPageContent() {
           <ArrowLeft className="h-4 w-4" />
           Kembali
         </button>
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-16 dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card py-16">
           <AlertTriangle className="h-12 w-12 text-red-400" />
           <p className="font-medium text-slate-700 dark:text-slate-300">
             {error || "Data kunjungan tidak ditemukan"}
@@ -302,7 +302,7 @@ function VisitDetailPageContent() {
         {canCancel && (
           <button
             onClick={() => setShowCancelDialog(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-red-50 active:scale-[0.98] dark:border-red-800 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-900/20"
+            className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-card px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-red-50 active:scale-[0.98] dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
           >
             <AlertTriangle className="h-4 w-4" />
             Batalkan Kunjungan
@@ -357,7 +357,7 @@ function VisitDetailPageContent() {
 
 function PatientCard({ patient }: { patient: Patient }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
           <User className="h-4 w-4 text-brand" />
@@ -427,7 +427,7 @@ function PaymentCard({
   clinic?: Clinic | null;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
           <CreditCard className="h-4 w-4 text-brand" />
@@ -505,7 +505,7 @@ function StatusTimeline({
     : TIMELINE_STEPS.findIndex((s) => s.status === status);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
           <Clock className="h-4 w-4 text-brand" />
@@ -530,7 +530,7 @@ function StatusTimeline({
                       ? "border-brand bg-brand text-white"
                       : isActive
                       ? "border-brand bg-brand/10 text-brand"
-                      : "border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500"
+                      : "border-border bg-slate-50 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
                   }`}
                 >
                   {idx + 1}
@@ -583,7 +583,7 @@ function StatusTimeline({
 
 function OrdersList({ orders }: { orders: VisitOrder[] }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">

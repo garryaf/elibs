@@ -62,7 +62,7 @@ function FormField({ label, id, icon: Icon, error, required, children }: FormInp
   );
 }
 
-const inputClass = "mt-0 h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand";
+const inputClass = "mt-0 h-10 w-full rounded-xl border border-border bg-card px-3.5 py-2 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 dark:focus:border-brand";
 
 /**
  * Validates region selection: if any region level is selected, all four must be selected.
@@ -220,9 +220,9 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
     >
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={guardedClose} />
 
-      <div ref={focusTrapRef} className="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+      <div ref={focusTrapRef} className="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl shadow-slate-900/10 animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 backdrop-blur-sm px-6 py-4 dark:border-slate-800 dark:bg-slate-900/95">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-card/95 backdrop-blur-sm px-6 py-4 dark:border-slate-800/95">
           <div>
             <h2 id="patient-modal-title" className="text-lg font-bold text-slate-900 dark:text-white">
               {editData ? "Edit Data Pasien" : "Daftarkan Pasien Baru"}
@@ -299,7 +299,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                           "flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-colors",
                           form.gender === g
                             ? "border-brand bg-brand/10 text-brand ring-1 ring-brand/30 dark:border-brand dark:bg-brand-light dark:text-brand"
-                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+                            : "border-border bg-card text-slate-600 hover:bg-slate-50 dark:text-slate-400"
                         )}
                       >
                         <input
@@ -375,7 +375,7 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
                     value={form.address}
                     onChange={(e) => { setForm({ ...form, address: e.target.value }); setDirty(); }}
                     className={cn(
-                      "mt-0 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand",
+                      "mt-0 w-full resize-none rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 dark:focus:border-brand",
                       errors.address && "border-red-400 focus:border-red-400 focus:ring-red-400/20"
                     )}
                   />
@@ -448,12 +448,12 @@ export function PatientFormModal({ isOpen, onClose, onSubmit, editData }: Patien
           </div>
 
           {/* Footer */}
-          <div className="sticky bottom-0 flex justify-end gap-3 border-t border-slate-100 bg-white/95 backdrop-blur-sm px-6 py-4 dark:border-slate-800 dark:bg-slate-900/95">
+          <div className="sticky bottom-0 flex justify-end gap-3 border-t border-slate-100 bg-card/95 backdrop-blur-sm px-6 py-4 dark:border-slate-800/95">
             <button
               type="button"
               id="patient-modal-cancel"
               onClick={guardedClose}
-              className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700"
             >
               Batal
             </button>

@@ -52,7 +52,7 @@ function StepIndicator({ current }: { current: Step }) {
     { n: 3, label: "Konfirmasi", icon: CheckCircle2 },
   ];
   return (
-    <div className="flex items-center gap-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="flex items-center gap-0 rounded-2xl border border-border bg-card p-4 shadow-sm">
       {steps.map((s, i) => {
         const Icon = s.icon;
         const done = current > s.n;
@@ -158,7 +158,7 @@ function VisitStep({
 
       {/* Patient info from selected visit */}
       {selectedVisit && (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
+        <div className="rounded-xl border border-border bg-slate-50 p-4 dark:bg-slate-900/50">
           <p className="mb-2 text-xs font-bold tracking-wide text-slate-400 uppercase">Pasien (dari kunjungan)</p>
           <div className="flex items-center gap-3">
             <PatientAvatar name={selectedVisit.patient.name} size="md" />
@@ -289,7 +289,7 @@ function TestStep({
       </div>
 
       {/* Mode toggle: Individual vs Panel */}
-      <div className="flex gap-1 rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex gap-1 rounded-xl border border-border bg-card p-1">
         <button
           type="button"
           onClick={() => setMode("individual")}
@@ -327,7 +327,7 @@ function TestStep({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={mode === "individual" ? "Cari nama atau kode pemeriksaan..." : "Cari nama paket..."}
-          className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="h-10 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-white"
         />
       </div>
 
@@ -336,7 +336,7 @@ function TestStep({
         <>
           {/* Category tabs */}
           {!search && categories.length > 0 && (
-            <div className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-card p-1">
               {categories.map((cat) => (
                 <button
                   key={cat.id}
@@ -374,7 +374,7 @@ function TestStep({
                           "flex items-center justify-between rounded-xl border p-3.5 text-left transition-colors",
                           selected
                             ? "border-brand/50 bg-brand/10 ring-1 ring-brand/30 dark:border-brand dark:bg-brand/10"
-                            : "border-slate-200 bg-white hover:border-brand/30 hover:bg-brand/10/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/50 dark:hover:bg-brand/10"
+                            : "border-border bg-card hover:border-brand/30 hover:bg-brand/10/50 dark:hover:border-brand/50 dark:hover:bg-brand/10"
                         )}
                       >
                         <div className="min-w-0">
@@ -437,7 +437,7 @@ function TestStep({
                   "w-full rounded-xl border p-4 text-left transition-colors",
                   selected
                     ? "border-brand/50 bg-brand/10 ring-1 ring-brand/30 dark:border-brand dark:bg-brand/10"
-                    : "border-slate-200 bg-white hover:border-brand/30 hover:bg-brand/5 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/50 dark:hover:bg-brand/10"
+                    : "border-border bg-card hover:border-brand/30 hover:bg-brand/5 dark:hover:border-brand/50 dark:hover:bg-brand/10"
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -556,7 +556,7 @@ function ConfirmStep({
       </div>
 
       {/* Visit & Patient summary */}
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
+      <div className="rounded-xl border border-border bg-slate-50 p-4 dark:bg-slate-900/50">
         <p className="mb-2 text-xs font-bold tracking-wide text-slate-400 uppercase">Kunjungan</p>
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/10 text-brand">
@@ -571,7 +571,7 @@ function ConfirmStep({
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
+      <div className="rounded-xl border border-border bg-slate-50 p-4 dark:bg-slate-900/50">
         <p className="mb-2 text-xs font-bold tracking-wide text-slate-400 uppercase">Pasien</p>
         <div className="flex items-center gap-3">
           <PatientAvatar name={visit.patient.name} size="md" />
@@ -583,13 +583,13 @@ function ConfirmStep({
       </div>
 
       {/* Test list */}
-      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden dark:border-slate-700 dark:bg-slate-950">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="border-b border-slate-100 px-4 py-2.5 dark:border-slate-800">
           <p className="text-xs font-bold tracking-wide text-slate-400 uppercase">
             Pemeriksaan ({selectedTests.length + selectedPanels.length} item)
           </p>
         </div>
-        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="divide-y divide-border">
           {/* Panels */}
           {selectedPanels.map((p) => (
             <div key={p.id} className="flex items-center justify-between px-4 py-3">
@@ -625,7 +625,7 @@ function ConfirmStep({
             );
           })}
         </div>
-        <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex items-center justify-between border-t border-border bg-slate-50 px-4 py-3 dark:bg-slate-900">
           <span className="font-semibold text-slate-700 dark:text-slate-300">Total</span>
           <span className="text-lg font-bold text-brand">{formatRupiah(displayTotal)}</span>
         </div>
@@ -643,7 +643,7 @@ function ConfirmStep({
           onChange={(e) => onNotesChange(e.target.value)}
           maxLength={2000}
           placeholder="Mis: Pasien puasa 10 jam, suspek DM tipe 2..."
-          className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          className="w-full resize-none rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
         />
       </div>
     </div>
@@ -836,7 +836,7 @@ function NewOrderPageInner() {
       <StepIndicator current={step} />
 
       {/* Step content */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         {step === 1 && (
           <VisitStep
             selectedVisit={selectedVisit}

@@ -189,7 +189,7 @@ function ReferenceValueSection({ testId, referenceValues }: {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-xl border border-border bg-card p-3">
       <div className="mb-2 flex items-center justify-between">
         <h4 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           Nilai Rujukan
@@ -237,28 +237,28 @@ function ReferenceValueSection({ testId, referenceValues }: {
       {showAddForm && (
         <div className="mt-2 space-y-2 rounded-lg border border-brand/20 bg-brand/5 p-2.5 dark:bg-brand/10">
           <div className="grid grid-cols-4 gap-2">
-            <select value={gender} onChange={(e) => setGender(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+            <select value={gender} onChange={(e) => setGender(e.target.value)} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs dark:text-white">
               <option value="MALE">Laki-laki</option>
               <option value="FEMALE">Perempuan</option>
             </select>
-            <select value={ageUnit} onChange={(e) => { setAgeUnit(e.target.value); setMinAge("0"); setMaxAge(e.target.value === "YEARS" ? "150" : e.target.value === "MONTHS" ? "1800" : "54750"); }} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+            <select value={ageUnit} onChange={(e) => { setAgeUnit(e.target.value); setMinAge("0"); setMaxAge(e.target.value === "YEARS" ? "150" : e.target.value === "MONTHS" ? "1800" : "54750"); }} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs dark:text-white">
               <option value="YEARS">Tahun</option>
               <option value="MONTHS">Bulan</option>
               <option value="DAYS">Hari</option>
             </select>
-            <input type="number" placeholder={`Min (${ageUnitLabel(ageUnit)})`} value={minAge} onChange={(e) => setMinAge(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
-            <input type="number" placeholder={`Max (${ageUnitLabel(ageUnit)})`} value={maxAge} onChange={(e) => setMaxAge(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+            <input type="number" placeholder={`Min (${ageUnitLabel(ageUnit)})`} value={minAge} onChange={(e) => setMinAge(e.target.value)} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs dark:text-white" />
+            <input type="number" placeholder={`Max (${ageUnitLabel(ageUnit)})`} value={maxAge} onChange={(e) => setMaxAge(e.target.value)} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs dark:text-white" />
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <input type="number" step="0.01" placeholder="Nilai min" value={minRef} onChange={(e) => setMinRef(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white" required />
-            <input type="number" step="0.01" placeholder="Nilai max" value={maxRef} onChange={(e) => setMaxRef(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white" required />
+            <input type="number" step="0.01" placeholder="Nilai min" value={minRef} onChange={(e) => setMinRef(e.target.value)} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs dark:text-white" required />
+            <input type="number" step="0.01" placeholder="Nilai max" value={maxRef} onChange={(e) => setMaxRef(e.target.value)} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs dark:text-white" required />
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <input type="number" step="0.01" placeholder="Kritis min (opsional)" value={criticalMin} onChange={(e) => setCriticalMin(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
-            <input type="number" step="0.01" placeholder="Kritis max (opsional)" value={criticalMax} onChange={(e) => setCriticalMax(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+            <input type="number" step="0.01" placeholder="Kritis min (opsional)" value={criticalMin} onChange={(e) => setCriticalMin(e.target.value)} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs dark:text-white" />
+            <input type="number" step="0.01" placeholder="Kritis max (opsional)" value={criticalMax} onChange={(e) => setCriticalMax(e.target.value)} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs dark:text-white" />
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setShowAddForm(false)} className="flex-1 rounded-lg border border-slate-200 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400">Batal</button>
+            <button onClick={() => setShowAddForm(false)} className="flex-1 rounded-lg border border-border py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:text-slate-400">Batal</button>
             <button
               onClick={handleAdd}
               disabled={!minRef || !maxRef || addMutation.isPending}
@@ -275,7 +275,7 @@ function ReferenceValueSection({ testId, referenceValues }: {
 
 function DetailSection({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-xl border border-border bg-card p-3">
       <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
         {title}
         <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">

@@ -226,10 +226,10 @@ export function MasterDataFormModal({
       {/* Modal Content */}
       <div
         ref={modalRef}
-        className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200"
+        className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl shadow-slate-900/10 animate-in fade-in zoom-in-95 duration-200"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 backdrop-blur-sm px-6 py-4 dark:border-slate-800 dark:bg-slate-900/95">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-card/95 backdrop-blur-sm px-6 py-4 dark:border-slate-800/95">
           <h2
             id="master-data-modal-title"
             className="text-lg font-bold text-slate-900 dark:text-white"
@@ -276,7 +276,7 @@ export function MasterDataFormModal({
                     onChange={(e) => handleChange(field.name, e.target.value)}
                     aria-invalid={!!errors[field.name]}
                     aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
-                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand"
+                    className="w-full resize-none rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 dark:focus:border-brand"
                   />
                 ) : field.type === "select" ? (
                   <select
@@ -286,7 +286,7 @@ export function MasterDataFormModal({
                     onChange={(e) => handleChange(field.name, e.target.value)}
                     aria-invalid={!!errors[field.name]}
                     aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
-                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand"
+                    className="h-10 w-full rounded-xl border border-border bg-card px-3.5 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 dark:focus:border-brand"
                   >
                     <option value="">— Pilih —</option>
                     {field.options?.map((opt) => (
@@ -324,7 +324,7 @@ export function MasterDataFormModal({
                     onChange={(e) => handleChange(field.name, e.target.value)}
                     aria-invalid={!!errors[field.name]}
                     aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
-                    className="h-10 rounded-xl border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand"
+                    className="h-10 rounded-xl border-border bg-card px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 dark:focus:border-brand"
                   />
                 ) : field.type === "checkbox" ? (
                   <label className="flex items-center gap-3 cursor-pointer py-1">
@@ -362,7 +362,7 @@ export function MasterDataFormModal({
                     onChange={(e) => handleChange(field.name, field.type === "number" ? e.target.valueAsNumber || "" : e.target.value)}
                     aria-invalid={!!errors[field.name]}
                     aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
-                    className="h-10 rounded-xl border-slate-200 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand"
+                    className="h-10 rounded-xl border-border bg-card px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 dark:focus:border-brand"
                   />
                 )}
 
@@ -376,7 +376,7 @@ export function MasterDataFormModal({
           </div>
 
           {/* Footer */}
-          <div className="sticky bottom-0 flex justify-end gap-3 border-t border-slate-100 bg-white/95 backdrop-blur-sm px-6 py-4 dark:border-slate-800 dark:bg-slate-900/95">
+          <div className="sticky bottom-0 flex justify-end gap-3 border-t border-slate-100 bg-card/95 backdrop-blur-sm px-6 py-4 dark:border-slate-800/95">
             <Button
               type="button"
               variant="outline"

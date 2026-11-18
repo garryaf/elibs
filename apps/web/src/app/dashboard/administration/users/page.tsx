@@ -188,13 +188,13 @@ export default function UsersPage() {
             placeholder="Cari email atau nama..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="h-10 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
           />
         </div>
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+          className="h-10 rounded-xl border border-border bg-card px-3 text-sm text-slate-700 dark:text-slate-300"
         >
           <option value="">Semua Role</option>
           {ROLES.map((r) => (
@@ -214,7 +214,7 @@ export default function UsersPage() {
       )}
 
       {/* Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 dark:bg-slate-900">
             <tr>
@@ -225,7 +225,7 @@ export default function UsersPage() {
               <th className="px-4 py-3 text-right font-medium text-slate-500">Aksi</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+          <tbody className="divide-y divide-border">
             {loading ? (
               <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">Memuat...</td></tr>
             ) : users.length === 0 ? (
@@ -270,7 +270,7 @@ export default function UsersPage() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 text-xs font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               Sebelumnya
@@ -278,7 +278,7 @@ export default function UsersPage() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 text-xs font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Berikutnya
               <ChevronRight className="h-3.5 w-3.5" />
@@ -291,7 +291,7 @@ export default function UsersPage() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowForm(false)} />
-          <div ref={userFormTrapRef} role="dialog" aria-modal="true" className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+          <div ref={userFormTrapRef} role="dialog" aria-modal="true" className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                 {editingUser ? "Edit User" : "Tambah User"}
@@ -319,7 +319,7 @@ export default function UsersPage() {
                   disabled={!!editingUser}
                   value={formData.email}
                   onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-border px-3 py-2 text-sm disabled:opacity-50 dark:bg-slate-800 dark:text-white"
                 />
               </div>
               <div>
@@ -328,7 +328,7 @@ export default function UsersPage() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-border px-3 py-2 text-sm dark:bg-slate-800 dark:text-white"
                 />
               </div>
               <div>
@@ -340,7 +340,7 @@ export default function UsersPage() {
                   required={!editingUser}
                   value={formData.password}
                   onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-border px-3 py-2 text-sm dark:bg-slate-800 dark:text-white"
                 />
               </div>
               <div>
@@ -349,7 +349,7 @@ export default function UsersPage() {
                   required
                   value={formData.role}
                   onChange={(e) => setFormData((p) => ({ ...p, role: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-border px-3 py-2 text-sm dark:bg-slate-800 dark:text-white"
                 >
                   {ROLES.map((r) => (
                     <option key={r.value} value={r.value}>{r.label}</option>
@@ -361,7 +361,7 @@ export default function UsersPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+                  className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300"
                 >
                   Batal
                 </button>

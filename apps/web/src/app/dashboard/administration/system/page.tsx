@@ -91,7 +91,7 @@ export default function SystemSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-brand" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-brand" />
         <span className="ml-3 text-sm text-slate-500">Memuat pengaturan...</span>
       </div>
     );
@@ -123,7 +123,7 @@ export default function SystemSettingsPage() {
       )}
 
       {/* SMTP Form */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10">
             <Mail className="h-5 w-5 text-brand" />
@@ -150,7 +150,7 @@ export default function SystemSettingsPage() {
                 value={settings.host}
                 onChange={(e) => updateField("host", e.target.value)}
                 placeholder="smtp.gmail.com"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:text-slate-200"
               />
             </div>
 
@@ -164,7 +164,7 @@ export default function SystemSettingsPage() {
                 value={settings.port}
                 onChange={(e) => updateField("port", parseInt(e.target.value) || 587)}
                 placeholder="587"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:text-slate-200"
               />
             </div>
 
@@ -178,7 +178,7 @@ export default function SystemSettingsPage() {
                 value={settings.username}
                 onChange={(e) => updateField("username", e.target.value)}
                 placeholder="user@example.com"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:text-slate-200"
               />
             </div>
 
@@ -192,7 +192,7 @@ export default function SystemSettingsPage() {
                 value={settings.password}
                 onChange={(e) => updateField("password", e.target.value)}
                 placeholder="••••••••"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:text-slate-200"
               />
             </div>
 
@@ -206,7 +206,7 @@ export default function SystemSettingsPage() {
                 value={settings.fromEmail}
                 onChange={(e) => updateField("fromEmail", e.target.value)}
                 placeholder="noreply@lab.com"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:text-slate-200"
               />
             </div>
 
@@ -220,7 +220,7 @@ export default function SystemSettingsPage() {
                 value={settings.fromName}
                 onChange={(e) => updateField("fromName", e.target.value)}
                 placeholder="eLIS Laboratory"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:text-slate-200"
               />
             </div>
           </div>
@@ -244,7 +244,7 @@ export default function SystemSettingsPage() {
               type="button"
               onClick={handleTest}
               disabled={testing || !settings.host}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50 dark:text-slate-200 dark:hover:bg-slate-700"
             >
               {testing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

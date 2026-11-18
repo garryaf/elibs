@@ -26,7 +26,7 @@ export function ActiveFilters({ items, onResetAll, className }: ActiveFiltersPro
       data-testid="active-filters-bar"
       aria-label="Filter aktif"
       className={cn(
-        "flex flex-wrap items-center gap-2 rounded-xl bg-slate-50/80 px-3.5 py-2.5 text-xs text-slate-600 border border-slate-200/80 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400 animate-in fade-in duration-150",
+        "flex flex-wrap items-center gap-2 rounded-xl bg-slate-50/80 px-3.5 py-2.5 text-xs text-slate-600 border border-border/80 dark:bg-slate-900/50 dark:text-slate-400 animate-in fade-in duration-150",
         className
       )}
     >

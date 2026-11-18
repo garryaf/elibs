@@ -248,7 +248,7 @@ export function VisitSelector({
             className={`h-11 w-full rounded-xl border pl-10 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 ${
               error
                 ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/10"
-                : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+                : "border-border bg-card"
             }`}
           />
           {loading && (
@@ -260,7 +260,7 @@ export function VisitSelector({
 
         {/* Hint: minimum 3 characters */}
         {showDropdown && query.length > 0 && query.length < 3 && (
-          <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white p-4 text-center shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card p-4 text-center shadow-lg">
             <p className="text-sm text-slate-500">
               Masukkan minimal 3 karakter untuk mencari...
             </p>
@@ -269,7 +269,7 @@ export function VisitSelector({
 
         {/* Results list */}
         {showDropdown && query.length >= 3 && results.length > 0 && (
-          <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card shadow-lg">
             <div className="max-h-72 overflow-y-auto p-1">
               {results.map((visit) => (
                 <button
@@ -323,7 +323,7 @@ export function VisitSelector({
           query.length >= 3 &&
           results.length === 0 &&
           !loading && (
-            <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+            <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card shadow-lg">
               <div className="p-4">
                 <p className="text-center text-sm text-slate-500">
                   Tidak ada kunjungan aktif ditemukan untuk &quot;{query}&quot;
@@ -341,7 +341,7 @@ export function VisitSelector({
 
               {/* Patient fallback section */}
               {patientFallbackLoading && (
-                <div className="border-t border-slate-200 p-4 text-center dark:border-slate-700">
+                <div className="border-t border-border p-4 text-center">
                   <div className="inline-flex items-center gap-2 text-sm text-slate-500">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-brand" />
                     Mencari pasien...
@@ -350,7 +350,7 @@ export function VisitSelector({
               )}
 
               {!patientFallbackLoading && patientFallbackResults.length > 0 && (
-                <div className="border-t border-slate-200 dark:border-slate-700">
+                <div className="border-t border-border">
                   <div className="px-4 pt-3 pb-1">
                     <p className="text-xs font-semibold tracking-wide text-slate-400 uppercase">
                       Pasien Ditemukan

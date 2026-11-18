@@ -663,7 +663,7 @@ export default function PatientsPage() {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-slate-800 dark:bg-slate-950"
+                className="rounded-2xl border border-border bg-card px-5 py-4 shadow-sm"
               >
                 <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.label}</p>
                 <p className={`mt-2 text-3xl font-bold ${stat.color}`}>{stat.value}</p>
@@ -682,12 +682,12 @@ export default function PatientsPage() {
               placeholder="Cari nama, NIK, atau MRN..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-10 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
             />
           </div>
           <div className="flex items-center gap-2">
             {/* Status Filter */}
-            <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1">
               {(["ALL", "ACTIVE", "INACTIVE"] as const).map((s) => (
                 <button
                   key={s}
@@ -711,7 +711,7 @@ export default function PatientsPage() {
                 "flex h-10 w-10 items-center justify-center rounded-xl border transition-colors",
                 showAdvancedFilters
                   ? "border-brand bg-brand/10 text-brand"
-                  : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+                  : "border-border bg-card text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:hover:bg-slate-800"
               )}
               title="Filter Lanjutan"
             >
@@ -724,7 +724,7 @@ export default function PatientsPage() {
               title={isExporting ? "Mengexport Data..." : "Export Data (CSV)"}
               disabled={isExporting}
               onClick={handleExportCsv}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-slate-500 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-slate-800"
             >
               {isExporting ? (
                 <Loader2 className="h-4 w-4 animate-spin text-brand" />
@@ -737,7 +737,7 @@ export default function PatientsPage() {
 
         {/* Advanced Filters Panel */}
         {showAdvancedFilters && (
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 space-y-4">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Filter Lanjutan</h3>
               <button
@@ -762,7 +762,7 @@ export default function PatientsPage() {
                 <select
                   value={genderFilter}
                   onChange={(e) => setGenderFilter(e.target.value)}
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  className="h-9 w-full rounded-lg border border-border bg-card px-3 text-sm text-slate-700 dark:text-slate-300"
                 >
                   <option value="">Semua</option>
                   <option value="MALE">Laki-laki</option>
@@ -781,7 +781,7 @@ export default function PatientsPage() {
                     max="150"
                     value={ageMin}
                     onChange={(e) => setAgeMin(e.target.value)}
-                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    className="h-9 w-full rounded-lg border border-border bg-card px-2.5 text-sm text-slate-700 dark:text-slate-300"
                   />
                   <span className="text-xs text-slate-400">—</span>
                   <input
@@ -791,7 +791,7 @@ export default function PatientsPage() {
                     max="150"
                     value={ageMax}
                     onChange={(e) => setAgeMax(e.target.value)}
-                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    className="h-9 w-full rounded-lg border border-border bg-card px-2.5 text-sm text-slate-700 dark:text-slate-300"
                   />
                 </div>
               </div>
@@ -804,14 +804,14 @@ export default function PatientsPage() {
                     type="date"
                     value={registeredFrom}
                     onChange={(e) => setRegisteredFrom(e.target.value)}
-                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    className="h-9 w-full rounded-lg border border-border bg-card px-2 text-xs text-slate-700 dark:text-slate-300"
                   />
                   <span className="text-xs text-slate-400">—</span>
                   <input
                     type="date"
                     value={registeredTo}
                     onChange={(e) => setRegisteredTo(e.target.value)}
-                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    className="h-9 w-full rounded-lg border border-border bg-card px-2 text-xs text-slate-700 dark:text-slate-300"
                   />
                 </div>
               </div>
@@ -824,14 +824,14 @@ export default function PatientsPage() {
                     type="date"
                     value={lastVisitFrom}
                     onChange={(e) => setLastVisitFrom(e.target.value)}
-                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    className="h-9 w-full rounded-lg border border-border bg-card px-2 text-xs text-slate-700 dark:text-slate-300"
                   />
                   <span className="text-xs text-slate-400">—</span>
                   <input
                     type="date"
                     value={lastVisitTo}
                     onChange={(e) => setLastVisitTo(e.target.value)}
-                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    className="h-9 w-full rounded-lg border border-border bg-card px-2 text-xs text-slate-700 dark:text-slate-300"
                   />
                 </div>
               </div>
@@ -897,7 +897,7 @@ export default function PatientsPage() {
             className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={() => setViewingPatient(null)}
           />
-          <div ref={viewDetailTrapRef} role="dialog" aria-modal="true" className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+          <div ref={viewDetailTrapRef} role="dialog" aria-modal="true" className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Detail Pasien</h2>
               <button
@@ -1019,7 +1019,7 @@ export default function PatientsPage() {
                   setViewingPatient(null);
                   router.push(`/dashboard/patients/${patientId}`);
                 }}
-                className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-brand hover:bg-brand/5 hover:text-brand dark:border-slate-700 dark:text-slate-400"
+                className="flex items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-brand hover:bg-brand/5 hover:text-brand dark:text-slate-400"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 Buka Profil Lengkap
@@ -1029,7 +1029,7 @@ export default function PatientsPage() {
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={() => { setViewingPatient(null); handleEdit(viewingPatient); }}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+                  className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300"
                 >
                   Edit Data
                 </button>
@@ -1065,7 +1065,7 @@ export default function PatientsPage() {
             className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={() => !deleteLoading && setDeletingPatient(null)}
           />
-          <div ref={deleteTrapRef} role="dialog" aria-modal="true" className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+          <div ref={deleteTrapRef} role="dialog" aria-modal="true" className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
               <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
             </div>
@@ -1093,7 +1093,7 @@ export default function PatientsPage() {
               <button
                 onClick={() => setDeletingPatient(null)}
                 disabled={deleteLoading}
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 Batal
               </button>

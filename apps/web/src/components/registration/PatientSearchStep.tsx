@@ -93,7 +93,7 @@ export function PatientSearchStep({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
       {/* Search Input */}
       <div className="relative">
         <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
@@ -102,7 +102,7 @@ export function PatientSearchStep({
           placeholder="Cari pasien berdasarkan nama, NIK, MRN, telepon, atau email (min. 2 karakter)..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-12 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+          className="h-12 w-full rounded-xl border border-border bg-card pl-12 pr-12 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
         {loading && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -144,7 +144,7 @@ export function PatientSearchStep({
                 key={patient.id}
                 type="button"
                 onClick={() => handleSelect(patient)}
-                className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:border-brand/40 hover:bg-brand/5 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand/40 dark:hover:bg-brand/5"
+                className="flex w-full items-center gap-4 rounded-xl border border-border bg-card p-4 text-left transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:border-brand/40 hover:bg-brand/5 hover:shadow-sm dark:hover:border-brand/40 dark:hover:bg-brand/5"
               >
                 {/* Avatar */}
                 <PatientAvatar name={patient.name} gender={patient.gender} size="md" className="h-10 w-10 text-sm" />

@@ -88,7 +88,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
 
   if (isLoading) {
     return (
-      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 space-y-4">
+      <div className="mt-4 rounded-2xl border border-border bg-card p-5 space-y-4">
         <div className="flex items-center gap-3 border-b border-slate-100 pb-3 dark:border-slate-800">
           <div className="h-4 w-4 animate-pulse rounded bg-muted" />
           <div className="h-4 w-32 animate-pulse rounded bg-muted" />
@@ -108,7 +108,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
   const isVerified = bpjsData?.verificationStatus === "VERIFIED";
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 mt-4 overflow-hidden">
+    <div className="rounded-2xl border border-border bg-card shadow-sm mt-4 overflow-hidden">
       <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-5 py-3 dark:border-slate-800 dark:bg-slate-900/50">
         <div className="flex items-center gap-2">
           <ShieldAlert className="h-4 w-4 text-brand" />
@@ -157,7 +157,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
                 type="text"
                 value={formData.sepNumber}
                 onChange={(e) => setFormData({ ...formData, sepNumber: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-white"
+                className="w-full rounded-xl border border-border bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:text-white"
                 placeholder="Misal: 1234567890"
               />
             </div>
@@ -166,7 +166,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
               <select
                 value={formData.classLevel}
                 onChange={(e) => setFormData({ ...formData, classLevel: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-white"
+                className="w-full rounded-xl border border-border bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:text-white"
               >
                 <option value="1">Kelas 1</option>
                 <option value="2">Kelas 2</option>
@@ -179,7 +179,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
                 type="text"
                 value={formData.referringFacilityCode}
                 onChange={(e) => setFormData({ ...formData, referringFacilityCode: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-white"
+                className="w-full rounded-xl border border-border bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:text-white"
               />
             </div>
             <div>
@@ -188,7 +188,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
                 type="text"
                 value={formData.referringFacilityName}
                 onChange={(e) => setFormData({ ...formData, referringFacilityName: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-white"
+                className="w-full rounded-xl border border-border bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:text-white"
               />
             </div>
             <div>
@@ -197,7 +197,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
                 type="text"
                 value={formData.diagnosisCode}
                 onChange={(e) => setFormData({ ...formData, diagnosisCode: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-white"
+                className="w-full rounded-xl border border-border bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:text-white"
               />
             </div>
             <div>
@@ -206,7 +206,7 @@ export function BpjsForm({ orderId }: { orderId: string }) {
                 type="text"
                 value={formData.guaranteeLetterNo}
                 onChange={(e) => setFormData({ ...formData, guaranteeLetterNo: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-white"
+                className="w-full rounded-xl border border-border bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:text-white"
               />
             </div>
             

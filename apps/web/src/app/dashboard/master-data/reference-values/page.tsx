@@ -379,7 +379,7 @@ function ReferenceValuesContent() {
       )}
 
       {/* Test Selection */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
           1. Pilih Pemeriksaan
         </label>
@@ -414,7 +414,7 @@ function ReferenceValuesContent() {
                 setShowDropdown(true);
               }}
               onFocus={() => setShowDropdown(true)}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-11 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
               aria-label="Cari pemeriksaan"
               aria-expanded={showDropdown && filteredTests.length > 0}
               role="combobox"
@@ -423,7 +423,7 @@ function ReferenceValuesContent() {
             {showDropdown && searchQuery && filteredTests.length > 0 && (
               <ul
                 role="listbox"
-                className="absolute z-10 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900 max-h-56 overflow-y-auto"
+                className="absolute z-10 mt-1 w-full rounded-xl border border-border bg-card shadow-lg max-h-56 overflow-y-auto"
               >
                 {filteredTests.slice(0, 20).map((test) => (
                   <li key={test.id}>
@@ -444,7 +444,7 @@ function ReferenceValuesContent() {
               </ul>
             )}
             {showDropdown && searchQuery && filteredTests.length === 0 && !loadingTests && (
-              <div className="absolute z-10 mt-1 w-full rounded-xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-400 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+              <div className="absolute z-10 mt-1 w-full rounded-xl border border-border bg-card p-4 text-center text-sm text-slate-400 shadow-lg">
                 Tidak ditemukan pemeriksaan dengan kata kunci &quot;{searchQuery}&quot;
               </div>
             )}
@@ -505,7 +505,7 @@ function ReferenceValuesContent() {
             </div>
           )}
 
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 overflow-hidden">
+          <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-900">
                 <tr>
@@ -520,7 +520,7 @@ function ReferenceValuesContent() {
                   <th className="px-4 py-3 text-right font-medium text-slate-600 dark:text-slate-400">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-border">
                 {loadingRefValues ? (
                   <tr>
                     <td colSpan={5} className="px-4 py-8">
@@ -624,7 +624,7 @@ function ReferenceValuesContent() {
           />
           <div
             ref={formTrapRef}
-            className="relative z-10 w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+            className="relative z-10 w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="form-title"
@@ -654,7 +654,7 @@ function ReferenceValuesContent() {
                       "rounded-xl border-2 px-4 py-2.5 text-sm font-semibold transition-colors",
                       formData.gender === "MALE"
                         ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300"
-                        : "border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400"
+                        : "border-border text-slate-500 hover:border-slate-300 dark:text-slate-400"
                     )}
                   >
                     ♂ Laki-laki
@@ -666,7 +666,7 @@ function ReferenceValuesContent() {
                       "rounded-xl border-2 px-4 py-2.5 text-sm font-semibold transition-colors",
                       formData.gender === "FEMALE"
                         ? "border-pink-500 bg-pink-50 text-pink-700 dark:border-pink-400 dark:bg-pink-900/30 dark:text-pink-300"
-                        : "border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400"
+                        : "border-border text-slate-500 hover:border-slate-300 dark:text-slate-400"
                     )}
                   >
                     ♀ Perempuan
@@ -687,7 +687,7 @@ function ReferenceValuesContent() {
                       max="150"
                       value={formData.minAge}
                       onChange={(e) => setFormData((p) => ({ ...p, minAge: e.target.value }))}
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-border px-3 py-2.5 text-sm dark:bg-slate-800 dark:text-white"
                       placeholder="0"
                     />
                     <span className="mt-1 block text-xs text-slate-400">Dari (default: 0)</span>
@@ -699,7 +699,7 @@ function ReferenceValuesContent() {
                       max="150"
                       value={formData.maxAge}
                       onChange={(e) => setFormData((p) => ({ ...p, maxAge: e.target.value }))}
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-border px-3 py-2.5 text-sm dark:bg-slate-800 dark:text-white"
                       placeholder="150"
                     />
                     <span className="mt-1 block text-xs text-slate-400">Sampai (default: 150 = semua)</span>
@@ -721,7 +721,7 @@ function ReferenceValuesContent() {
                       required
                       value={formData.minRef}
                       onChange={(e) => setFormData((p) => ({ ...p, minRef: e.target.value }))}
-                      className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm dark:border-emerald-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-emerald-200 bg-card px-3 py-2.5 text-sm dark:border-emerald-700 dark:text-white"
                       placeholder="Contoh: 13.0"
                     />
                     <span className="mt-1 block text-xs text-emerald-600 dark:text-emerald-500">Batas bawah normal</span>
@@ -733,7 +733,7 @@ function ReferenceValuesContent() {
                       required
                       value={formData.maxRef}
                       onChange={(e) => setFormData((p) => ({ ...p, maxRef: e.target.value }))}
-                      className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm dark:border-emerald-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-emerald-200 bg-card px-3 py-2.5 text-sm dark:border-emerald-700 dark:text-white"
                       placeholder="Contoh: 17.0"
                     />
                     <span className="mt-1 block text-xs text-emerald-600 dark:text-emerald-500">Batas atas normal</span>
@@ -757,7 +757,7 @@ function ReferenceValuesContent() {
                       step="any"
                       value={formData.criticalMin}
                       onChange={(e) => setFormData((p) => ({ ...p, criticalMin: e.target.value }))}
-                      className="w-full rounded-xl border border-red-200 bg-white px-3 py-2.5 text-sm dark:border-red-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-red-200 bg-card px-3 py-2.5 text-sm dark:border-red-700 dark:text-white"
                       placeholder="Contoh: 7.0"
                     />
                     <span className="mt-1 block text-xs text-red-500">Kritis bawah (hasil &lt; ini = CRITICAL)</span>
@@ -768,7 +768,7 @@ function ReferenceValuesContent() {
                       step="any"
                       value={formData.criticalMax}
                       onChange={(e) => setFormData((p) => ({ ...p, criticalMax: e.target.value }))}
-                      className="w-full rounded-xl border border-red-200 bg-white px-3 py-2.5 text-sm dark:border-red-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-red-200 bg-card px-3 py-2.5 text-sm dark:border-red-700 dark:text-white"
                       placeholder="Contoh: 20.0"
                     />
                     <span className="mt-1 block text-xs text-red-500">Kritis atas (hasil &gt; ini = CRITICAL)</span>
@@ -781,7 +781,7 @@ function ReferenceValuesContent() {
                 <button
                   type="button"
                   onClick={handleCloseForm}
-                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   Batal
                 </button>
@@ -810,7 +810,7 @@ function ReferenceValuesContent() {
           />
           <div
             ref={deleteTrapRef}
-            className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+            className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="delete-title"
@@ -826,7 +826,7 @@ function ReferenceValuesContent() {
               <button
                 type="button"
                 onClick={() => setDeletingId(null)}
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 Batal
               </button>
@@ -924,7 +924,7 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
   };
 
   return (
-    <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
       <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-1">
         Nilai Rujukan Kualitatif
       </h3>
@@ -937,7 +937,7 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
       ) : (
         <>
           {items.length > 0 && (
-            <div className="mb-4 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="mb-4 overflow-hidden rounded-xl border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 dark:bg-slate-900">
                   <tr>
@@ -946,7 +946,7 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
                     <th className="px-4 py-2.5 text-right text-xs font-semibold text-slate-500">AKSI</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-border">
                   {items.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
                       <td className="px-4 py-2.5 font-medium text-slate-800 dark:text-white">{item.optionValue}</td>
@@ -991,7 +991,7 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
           )}
 
           {items.length === 0 && (
-            <div className="mb-4 rounded-xl border border-dashed border-slate-200 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
+            <div className="mb-4 rounded-xl border border-dashed border-border py-6 text-center text-sm text-slate-400">
               Belum ada mapping kualitatif. Tambahkan di bawah.
             </div>
           )}
@@ -1011,7 +1011,7 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
                 value={newOption}
                 onChange={(e) => setNewOption(e.target.value)}
                 placeholder="misal: Reaktif, Non-Reaktif, Positif..."
-                className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="mt-1 h-9 w-full rounded-lg border border-border bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:text-white"
               />
             </div>
             <div className="w-32">
@@ -1019,7 +1019,7 @@ function QualitativeReferenceSection({ testId, testName }: { testId: string; tes
               <select
                 value={newFlag}
                 onChange={(e) => setNewFlag(e.target.value)}
-                className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="mt-1 h-9 w-full rounded-lg border border-border bg-card px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:text-white"
               >
                 <option value="NORMAL">NORMAL</option>
                 <option value="LOW">LOW</option>

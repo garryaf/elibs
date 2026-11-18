@@ -105,7 +105,7 @@ export function BulkPriceAdjustDialog({ isOpen, onClose, onSuccess }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={handleClose} />
-      <div className="relative z-10 w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="relative z-10 w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Penyesuaian Harga Massal</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Naikkan atau turunkan harga semua pemeriksaan sekaligus
@@ -135,13 +135,13 @@ export function BulkPriceAdjustDialog({ isOpen, onClose, onSuccess }: Props) {
                 <div className="mt-1.5 flex gap-2">
                   <button
                     onClick={() => setAdjustmentType("PERCENTAGE")}
-                    className={cn("flex-1 rounded-xl border px-3 py-2.5 text-sm font-medium transition", adjustmentType === "PERCENTAGE" ? "border-brand bg-brand/10 text-brand" : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300")}
+                    className={cn("flex-1 rounded-xl border px-3 py-2.5 text-sm font-medium transition", adjustmentType === "PERCENTAGE" ? "border-brand bg-brand/10 text-brand" : "border-border text-slate-700 hover:bg-slate-50 dark:text-slate-300")}
                   >
                     Persentase (%)
                   </button>
                   <button
                     onClick={() => setAdjustmentType("FIXED")}
-                    className={cn("flex-1 rounded-xl border px-3 py-2.5 text-sm font-medium transition", adjustmentType === "FIXED" ? "border-brand bg-brand/10 text-brand" : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300")}
+                    className={cn("flex-1 rounded-xl border px-3 py-2.5 text-sm font-medium transition", adjustmentType === "FIXED" ? "border-brand bg-brand/10 text-brand" : "border-border text-slate-700 hover:bg-slate-50 dark:text-slate-300")}
                   >
                     Nominal (Rp)
                   </button>
@@ -156,7 +156,7 @@ export function BulkPriceAdjustDialog({ isOpen, onClose, onSuccess }: Props) {
                   type="number"
                   value={adjustmentValue}
                   onChange={(e) => setAdjustmentValue(Number(e.target.value))}
-                  className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="mt-1.5 h-10 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:text-white"
                 />
               </div>
 
@@ -165,7 +165,7 @@ export function BulkPriceAdjustDialog({ isOpen, onClose, onSuccess }: Props) {
                 <select
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="mt-1.5 h-10 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:text-white"
                 >
                   <option value="">Semua Kategori</option>
                   {categories.map((cat) => (
@@ -181,7 +181,7 @@ export function BulkPriceAdjustDialog({ isOpen, onClose, onSuccess }: Props) {
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="Misal: Penyesuaian tarif tahunan 2026"
-                  className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none placeholder:text-slate-400 focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="mt-1.5 h-10 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none placeholder:text-slate-400 focus:border-brand focus:ring-1 focus:ring-brand/30 dark:text-white"
                 />
               </div>
             </div>
@@ -224,7 +224,7 @@ export function BulkPriceAdjustDialog({ isOpen, onClose, onSuccess }: Props) {
                   </span>
                 </div>
 
-                <div className="max-h-60 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="max-h-60 overflow-y-auto rounded-xl border border-border">
                   <table className="w-full text-sm">
                     <thead className="bg-slate-50 dark:bg-slate-800 sticky top-0">
                       <tr>
@@ -263,7 +263,7 @@ export function BulkPriceAdjustDialog({ isOpen, onClose, onSuccess }: Props) {
 
                 {/* Execute button */}
                 <div className="mt-4 flex gap-3">
-                  <button onClick={handleClose} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300">
+                  <button onClick={handleClose} className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300">
                     Batal
                   </button>
                   <button

@@ -122,19 +122,19 @@ export function SplitPaymentForm({ orderId, orderTotal, isFallback = false, onSu
             <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">Jumlah (Rp)</label>
             <input id="fallback-amount" type="text" value={fbAmount}
               onChange={(e) => setFbAmount(e.target.value.replace(/\D/g, ""))}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:text-white" />
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">Referensi / No. Kwitansi</label>
             <input id="fallback-reference" type="text" value={fbReference} placeholder="Opsional"
               onChange={(e) => setFbReference(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+              className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:text-white" />
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">Catatan</label>
             <textarea id="fallback-notes" rows={2} value={fbNotes} placeholder="Opsional"
               onChange={(e) => setFbNotes(e.target.value)}
-              className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+              className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:text-white" />
           </div>
         </div>
         {error && (
@@ -151,7 +151,7 @@ export function SplitPaymentForm({ orderId, orderTotal, isFallback = false, onSu
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-center gap-2">
         <Split className="h-4 w-4 text-brand" />
         <p className="text-sm font-bold text-slate-800 dark:text-white">Split Payment</p>
@@ -178,7 +178,7 @@ export function SplitPaymentForm({ orderId, orderTotal, isFallback = false, onSu
       {/* Components */}
       <div className="space-y-3">
         {components.map((comp, idx) => (
-          <div key={comp.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
+          <div key={comp.id} className="rounded-xl border border-border bg-slate-50 p-4 dark:bg-slate-900">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Komponen {idx + 1}</span>
               {components.length > 1 && (
@@ -201,7 +201,7 @@ export function SplitPaymentForm({ orderId, orderTotal, isFallback = false, onSu
                         className={cn("flex flex-col items-center gap-1 rounded-lg border py-2 text-[10px] font-semibold transition",
                           comp.paymentMethod === m.value
                             ? "border-brand bg-brand/10 text-brand dark:border-brand dark:bg-brand/20"
-                            : "border-slate-200 bg-white text-slate-600 hover:border-brand/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400")}>
+                            : "border-border bg-card text-slate-600 hover:border-brand/40 dark:text-slate-400")}>
                         <Icon className="h-3.5 w-3.5" />
                         {m.label}
                       </button>
@@ -217,7 +217,7 @@ export function SplitPaymentForm({ orderId, orderTotal, isFallback = false, onSu
                     <input id={`split-amount-${idx}`} type="text" inputMode="numeric"
                       value={comp.amount} placeholder="0"
                       onChange={(e) => updateComponent(comp.id, { amount: e.target.value.replace(/\D/g, "") })}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+                      className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:text-white" />
                     {remaining > 0 && idx === components.length - 1 && (
                       <button id={`split-fill-${idx}`}
                         onClick={() => updateComponent(comp.id, { amount: String(remaining) })}
@@ -231,7 +231,7 @@ export function SplitPaymentForm({ orderId, orderTotal, isFallback = false, onSu
                   <label className="mb-1 block text-[11px] font-semibold uppercase text-slate-500">Referensi</label>
                   <input id={`split-ref-${idx}`} type="text" value={comp.reference} placeholder="Opsional"
                     onChange={(e) => updateComponent(comp.id, { reference: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" />
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:text-slate-200" />
                 </div>
               </div>
             </div>

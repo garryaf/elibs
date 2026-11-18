@@ -113,7 +113,7 @@ export default function NotificationsSettingsPage() {
 
       <div className="space-y-4">
         {toggleItems.map((item) => (
-          <div key={item.key} className="flex items-start justify-between rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+          <div key={item.key} className="flex items-start justify-between rounded-xl border border-border p-4">
             <div className="pr-4">
               <p className="text-sm font-medium text-slate-900 dark:text-white">{item.label}</p>
               <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{item.description}</p>
@@ -131,7 +131,7 @@ export default function NotificationsSettingsPage() {
         ))}
       </div>
 
-      <div className="flex items-center gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
+      <div className="flex items-center gap-3 border-t border-border pt-4">
         <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark disabled:opacity-50">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {saving ? "Menyimpan..." : "Simpan Preferensi"}

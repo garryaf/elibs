@@ -81,7 +81,7 @@ function mapRawToPatient(p: Record<string, unknown>): Patient {
 function ProfileSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+      <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex items-center gap-4">
           <div className="h-16 w-16 rounded-2xl bg-slate-200 dark:bg-slate-700" />
           <div className="space-y-2 flex-1">
@@ -93,7 +93,7 @@ function ProfileSkeleton() {
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
+          <div key={i} className="rounded-2xl border border-border bg-card p-4">
             <div className="h-3 w-20 rounded bg-slate-200 dark:bg-slate-700 mb-2" />
             <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-700" />
           </div>
@@ -147,7 +147,7 @@ function PageHeader() {
     <div className="flex items-center gap-3">
       <Link
         href="/dashboard/patients"
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-brand/10 hover:text-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-slate-500 transition-colors hover:bg-brand/10 hover:text-brand dark:text-slate-400"
         aria-label="Kembali ke daftar pasien"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -272,7 +272,7 @@ export default function PatientProfilePage() {
       <RoleGuard allowedRoles={ALL_ROLES}>
         <div className="space-y-6">
           <PageHeader />
-          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-20 dark:border-slate-800 dark:bg-slate-950">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card py-20">
             <AlertCircle className="h-12 w-12 text-red-400" />
             <p className="font-semibold text-slate-700 dark:text-slate-300">Pasien Tidak Ditemukan</p>
             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs text-center">
@@ -329,7 +329,7 @@ export default function PatientProfilePage() {
         )}
 
         {/* Patient Hero Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <PatientAvatar name={patient.name} gender={patient.gender} size="xl" />
@@ -362,7 +362,7 @@ export default function PatientProfilePage() {
               <button
                 id="patient-profile-edit-btn"
                 onClick={() => setIsEditOpen(true)}
-                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:border-brand hover:text-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:border-brand hover:text-brand dark:text-slate-300"
               >
                 <Pencil className="h-4 w-4" />
                 Edit Data
@@ -407,7 +407,7 @@ export default function PatientProfilePage() {
         </div>
 
         {/* Tab navigation */}
-        <div className="flex gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex gap-1 rounded-2xl border border-border bg-card p-1.5 shadow-sm">
           {visibleTabs.map(({ id, label, icon: Icon, external }) => (
             <button
               key={id}
@@ -437,7 +437,7 @@ export default function PatientProfilePage() {
         {activeTab === "data" && (
           <div className="space-y-6">
             {/* Data Diri */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
               <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
                 <User className="h-4 w-4 text-brand" />
                 Data Diri
@@ -473,7 +473,7 @@ export default function PatientProfilePage() {
             </div>
 
             {/* Alamat */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
               <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
                 <MapPin className="h-4 w-4 text-brand" />
                 Alamat
@@ -501,7 +501,7 @@ export default function PatientProfilePage() {
 
             {/* Kontak Darurat — hanya tampil jika ada data */}
             {(patient.emergencyContact || patient.emergencyPhone) && (
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
                   <Shield className="h-4 w-4 text-brand" />
                   Kontak Darurat
@@ -524,7 +524,7 @@ export default function PatientProfilePage() {
         )}
 
         {activeTab === "lab" && user?.role && LAB_HISTORY_ROLES.includes(user.role) && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <PatientLabHistory patientId={patientId} />
           </div>
         )}

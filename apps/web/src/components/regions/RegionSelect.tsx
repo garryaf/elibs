@@ -87,7 +87,7 @@ export function RegionSelect({
         disabled={disabled}
         className={cn(
           "flex h-10 w-full items-center justify-between rounded-xl border bg-white px-3.5 py-2 text-sm transition-colors",
-          "border-slate-200 dark:border-slate-700 dark:bg-slate-900",
+          "border-border dark:bg-slate-900",
           "hover:border-slate-300 dark:hover:border-slate-600",
           "focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none",
           disabled && "cursor-not-allowed opacity-50 bg-slate-50 dark:bg-slate-800",
@@ -118,7 +118,7 @@ export function RegionSelect({
       {isOpen && (
         <div
           className={cn(
-            "absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg shadow-slate-900/10",
+            "absolute z-50 mt-1 w-full rounded-xl border border-border bg-white shadow-lg shadow-slate-900/10",
             "dark:border-slate-700 dark:bg-slate-900",
             "animate-in fade-in slide-in-from-top-1 duration-150"
           )}
@@ -134,7 +134,7 @@ export function RegionSelect({
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="Cari wilayah..."
                 className={cn(
-                  "h-8 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
+                  "h-8 w-full rounded-lg border border-border bg-slate-50 pl-8 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
                   "placeholder:text-slate-400",
                   "focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20",
                   "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:bg-slate-900"

@@ -71,7 +71,7 @@ export function ColumnToggle({ columns, visibility, onChange, className }: Colum
           "flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-medium transition-colors",
           open
             ? "border-brand bg-brand/10 text-brand dark:border-brand dark:bg-brand/20"
-            : "border-slate-200 bg-white text-slate-600 hover:border-brand/50 hover:bg-brand/5 hover:text-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-brand/50 dark:hover:text-brand",
+            : "border-border bg-card text-slate-600 hover:border-brand/50 hover:bg-brand/5 hover:text-brand dark:text-slate-400 dark:hover:border-brand/50 dark:hover:text-brand",
           className
         )}
       >
@@ -88,7 +88,7 @@ export function ColumnToggle({ columns, visibility, onChange, className }: Colum
         <div
           role="listbox"
           aria-label="Atur kolom yang ditampilkan"
-          className="absolute right-0 top-full z-50 mt-2 min-w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white py-2 shadow-xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in slide-in-from-top-2 duration-150"
+          className="absolute right-0 top-full z-50 mt-2 min-w-52 overflow-hidden rounded-2xl border border-border bg-card py-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-150"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-100 px-4 pb-2 dark:border-slate-800">
@@ -134,10 +134,10 @@ export function ColumnToggle({ columns, visibility, onChange, className }: Colum
                       className={cn(
                         "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
                         col.required
-                          ? "border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+                          ? "border-border bg-slate-100 dark:bg-slate-800"
                           : isVisible
                           ? "border-brand bg-brand"
-                          : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900"
+                          : "border-slate-300 bg-card dark:border-slate-600"
                       )}
                     >
                       {isVisible && <Check className="h-2.5 w-2.5 text-white" />}

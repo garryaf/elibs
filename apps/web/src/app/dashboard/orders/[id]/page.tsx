@@ -92,7 +92,7 @@ function Numpad({ onPress }: { onPress: (v: string) => void }) {
             "flex h-12 items-center justify-center rounded-xl border text-base font-semibold transition-[color,background-color,border-color,box-shadow,transform,opacity] active:scale-95",
             k === "⌫"
               ? "border-red-200 bg-red-50 text-red-600 hover:bg-red-100 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400"
-              : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50 hover:border-brand/50 hover:text-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-brand dark:hover:text-brand"
+              : "border-border bg-card text-slate-800 hover:bg-slate-50 hover:border-brand/50 hover:text-brand dark:text-slate-200 dark:hover:border-brand dark:hover:text-brand"
           )}
         >
           {k}
@@ -118,7 +118,7 @@ function SuccessModal({ order, onClose }: { order: OrderApi; onClose: () => void
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-2xl dark:border-slate-700 dark:bg-slate-900 text-center animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-2xl text-center animate-in fade-in zoom-in-95 duration-200">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand/10 dark:bg-brand/20">
           <CheckCircle2 className="h-9 w-9 text-brand" />
         </div>
@@ -136,7 +136,7 @@ function SuccessModal({ order, onClose }: { order: OrderApi; onClose: () => void
           <button
             id="payment-success-print"
             onClick={handlePrint}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300"
           >
             <Printer className="h-4 w-4" /> Cetak
           </button>
@@ -187,7 +187,7 @@ function OrderStatusTimeline({ currentStatus }: { currentStatus: string }) {
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
       <div className="flex items-center justify-between overflow-x-auto gap-0">
         {ORDER_WORKFLOW_STEPS.map((step, idx) => {
           const Icon = step.icon;
@@ -205,7 +205,7 @@ function OrderStatusTimeline({ currentStatus }: { currentStatus: string }) {
                       ? "border-brand bg-brand text-white shadow-sm shadow-brand/30"
                       : isCompleted
                         ? "border-brand/50 bg-brand/10 text-brand dark:border-brand/40 dark:bg-brand/20"
-                        : "border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-600"
+                        : "border-border bg-slate-50 text-slate-400 dark:bg-slate-900 dark:text-slate-600"
                   )}
                 >
                   <Icon className="h-3.5 w-3.5" />
@@ -304,7 +304,7 @@ function NextStepPanel({ order }: { order: OrderApi }) {
     <div className={cn("rounded-2xl border p-5 shadow-sm", step.color)}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/80 shadow-sm dark:bg-slate-900/50">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-card/80 shadow-sm/50">
             <Icon className="h-5 w-5 text-slate-700 dark:text-slate-300" />
           </div>
           <div>
@@ -364,7 +364,7 @@ function PaymentHistory({ orderId }: { orderId: string }) {
 
   if (loading) {
     return (
-      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950">
+      <div className="mt-4 rounded-2xl border border-border bg-card p-5">
         <div className="h-4 w-40 animate-pulse rounded bg-muted mb-3" />
         <div className="space-y-3">
           {Array.from({ length: 2 }).map((_, i) => (
@@ -394,7 +394,7 @@ function PaymentHistory({ orderId }: { orderId: string }) {
   };
 
   return (
-    <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 dark:border-slate-800">
         <ReceiptText className="h-4 w-4 text-slate-400" />
         <span className="text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
@@ -410,7 +410,7 @@ function PaymentHistory({ orderId }: { orderId: string }) {
                 "absolute -left-6 top-1 h-3.5 w-3.5 rounded-full border-2",
                 idx === 0
                   ? "border-brand bg-brand/20"
-                  : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900"
+                  : "border-slate-300 bg-card dark:border-slate-600"
               )} />
               <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
                 <div className="flex items-center justify-between">
@@ -679,7 +679,7 @@ export default function OrderDetailPage() {
           <div className="space-y-4 lg:col-span-3">
 
             {/* Patient info */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
               <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                 <User className="h-3.5 w-3.5" /> Informasi Pasien
               </div>
@@ -746,14 +746,14 @@ export default function OrderDetailPage() {
             )}
 
             {/* Test items */}
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 mt-4">
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm mt-4">
               <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 dark:border-slate-800">
                 <FlaskConical className="h-4 w-4 text-slate-400" />
                 <span className="text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                   Daftar Pemeriksaan ({order.orderDetails.length} item)
                 </span>
               </div>
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              <div className="divide-y divide-border">
                 {order.orderDetails.map((d) => (
                   <div key={d.id} className="flex items-center justify-between px-5 py-3.5">
                     <div className="flex items-center gap-3">
@@ -773,7 +773,7 @@ export default function OrderDetailPage() {
                 ))}
               </div>
               {/* Totals */}
-              <div className="space-y-2 border-t border-slate-200 bg-slate-50 px-5 py-4 dark:border-slate-700 dark:bg-slate-900">
+              <div className="space-y-2 border-t border-border bg-slate-50 px-5 py-4 dark:bg-slate-900">
                 <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
                   <span>Subtotal</span>
                   <span>{formatRupiah(subtotal)}</span>
@@ -790,7 +790,7 @@ export default function OrderDetailPage() {
                           onChange={(e) => setDiscount(e.target.value.replace(/\D/g, ""))}
                           placeholder="0"
                           disabled={discountApproval?.exists && discountApproval.status === "APPROVED"}
-                          className="h-7 w-28 rounded-lg border border-slate-200 bg-white px-2 text-right text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand disabled:bg-slate-50 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+                          className="h-7 w-28 rounded-lg border border-border bg-card px-2 text-right text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand disabled:bg-slate-50 disabled:text-slate-500 dark:text-slate-200"
                         />
                         {discountAmount > 0 && !discountApproval?.exists && (
                           <span className="text-[10px] text-amber-600 dark:text-amber-400" title="Diskon memerlukan persetujuan">
@@ -834,7 +834,7 @@ export default function OrderDetailPage() {
                             value={discountReason}
                             onChange={(e) => setDiscountReason(e.target.value)}
                             placeholder="Alasan diskon (wajib diisi)..."
-                            className="h-8 w-full rounded-lg border border-amber-300 bg-white px-3 text-xs outline-none placeholder:text-slate-400 focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-amber-700 dark:bg-slate-900 dark:text-white"
+                            className="h-8 w-full rounded-lg border border-amber-300 bg-card px-3 text-xs outline-none placeholder:text-slate-400 focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-amber-700 dark:text-white"
                           />
                           {discountApprovalError && (
                             <p className="text-[11px] text-red-600 dark:text-red-400">{discountApprovalError}</p>
@@ -947,7 +947,7 @@ export default function OrderDetailPage() {
                     )}
                   </div>
                 )}
-                <div className="flex justify-between border-t border-slate-200 pt-2 dark:border-slate-700">
+                <div className="flex justify-between border-t border-border pt-2">
                   <span className="font-bold text-slate-900 dark:text-white">Total Tagihan</span>
                   <span className="text-lg font-bold text-brand">{formatRupiah(total)}</span>
                 </div>
@@ -986,7 +986,7 @@ export default function OrderDetailPage() {
           {!alreadyPaid && canProcessPayment && (
             <div className="space-y-4 lg:col-span-2">
               {/* Mode toggle */}
-              <div className="flex overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+              <div className="flex overflow-hidden rounded-xl border border-border">
                 <button
                   id="pay-mode-single"
                   onClick={() => setPayMode("single")}
@@ -994,7 +994,7 @@ export default function OrderDetailPage() {
                     "flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-semibold transition",
                     payMode === "single"
                       ? "bg-brand text-white"
-                      : "bg-white text-slate-500 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-400"
+                      : "bg-card text-slate-500 hover:bg-slate-50 dark:text-slate-400"
                   )}
                 >
                   <CreditCard className="h-3.5 w-3.5" /> Bayar Penuh
@@ -1003,10 +1003,10 @@ export default function OrderDetailPage() {
                   id="pay-mode-split"
                   onClick={() => setPayMode("split")}
                   className={cn(
-                    "flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-semibold transition border-l border-slate-200 dark:border-slate-700",
+                    "flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-semibold transition border-l border-border",
                     payMode === "split"
                       ? "bg-brand text-white"
-                      : "bg-white text-slate-500 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-400"
+                      : "bg-card text-slate-500 hover:bg-slate-50 dark:text-slate-400"
                   )}
                 >
                   <Split className="h-3.5 w-3.5" /> Split / Parsial
@@ -1015,10 +1015,10 @@ export default function OrderDetailPage() {
                   id="pay-mode-deposit"
                   onClick={() => setPayMode("deposit")}
                   className={cn(
-                    "flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-semibold transition border-l border-slate-200 dark:border-slate-700",
+                    "flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-semibold transition border-l border-border",
                     payMode === "deposit"
                       ? "bg-brand text-white"
-                      : "bg-white text-slate-500 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-400"
+                      : "bg-card text-slate-500 hover:bg-slate-50 dark:text-slate-400"
                   )}
                 >
                   <Banknote className="h-3.5 w-3.5" /> Deposit
@@ -1038,7 +1038,7 @@ export default function OrderDetailPage() {
                   }}
                 />
               ) : payMode === "deposit" ? (
-                <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
                   <div className="flex items-center gap-2">
                     <Banknote className="h-4 w-4 text-brand" />
                     <p className="text-sm font-bold text-slate-800 dark:text-white">Pembayaran Deposit</p>
@@ -1054,7 +1054,7 @@ export default function OrderDetailPage() {
                       id="deposit-method"
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      className="h-10 w-full rounded-xl border border-border bg-card px-3.5 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:text-slate-100"
                     >
                       {PAYMENT_METHODS.map((m) => (
                         <option key={m.value} value={m.value}>{m.label}</option>
@@ -1072,7 +1072,7 @@ export default function OrderDetailPage() {
                       value={depositInput}
                       placeholder="0"
                       onChange={(e) => setDepositInput(e.target.value.replace(/\D/g, ""))}
-                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      className="h-10 w-full rounded-xl border border-border bg-card px-3.5 text-sm font-semibold outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:text-white"
                     />
                     <p className="mt-1 text-xs text-slate-400">
                       Maksimal: {formatRupiah(total)}
@@ -1088,7 +1088,7 @@ export default function OrderDetailPage() {
                       value={depositNotes}
                       placeholder="Catatan pembayaran deposit..."
                       onChange={(e) => setDepositNotes(e.target.value)}
-                      className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      className="w-full resize-none rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 dark:text-white"
                     />
                   </div>
 
@@ -1144,7 +1144,7 @@ export default function OrderDetailPage() {
                 </div>
               ) : (
               <>
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                 <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                   Metode Pembayaran
                 </p>
@@ -1158,7 +1158,7 @@ export default function OrderDetailPage() {
                           "flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors",
                           paymentMethod === m.value
                             ? "border-brand bg-brand/10 ring-1 ring-brand/30 dark:border-brand dark:bg-brand/10"
-                            : "border-slate-200 bg-white hover:border-brand/30 dark:border-slate-700 dark:bg-slate-900"
+                            : "border-border bg-card hover:border-brand/30"
                         )}
                       >
                         <input type="radio" className="sr-only" value={m.value} checked={paymentMethod === m.value} onChange={() => setPaymentMethod(m.value)} />
@@ -1177,9 +1177,9 @@ export default function OrderDetailPage() {
 
               {/* Numpad (only for CASH) */}
               {paymentMethod === "CASH" && (
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                   <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Jumlah Uang Tunai</p>
-                  <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-right dark:border-slate-700 dark:bg-slate-900">
+                  <div className="mb-3 rounded-xl border border-border bg-slate-50 px-4 py-3 text-right dark:bg-slate-900">
                     <p className="text-xs text-slate-400">Jumlah Bayar</p>
                     <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                       {cashInput ? `Rp ${cashInput}` : "Rp 0"}
@@ -1199,7 +1199,7 @@ export default function OrderDetailPage() {
 
               {/* Non-CASH payment summary */}
               {paymentMethod !== "CASH" && (
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                   <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Ringkasan Pembayaran</p>
                   <div className="rounded-xl border border-brand/20 bg-brand/5 px-4 py-4 text-center dark:border-brand/30 dark:bg-brand/10">
                     <p className="text-xs text-slate-500 dark:text-slate-400">Total yang akan dibayar</p>
@@ -1241,7 +1241,7 @@ export default function OrderDetailPage() {
               {showConfirmPay && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                   <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowConfirmPay(false)} />
-                  <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
                     <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
                       <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                     </div>
@@ -1282,7 +1282,7 @@ export default function OrderDetailPage() {
                     <div className="mt-5 flex gap-3">
                       <button
                         onClick={() => setShowConfirmPay(false)}
-                        className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                        className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
                       >
                         Batal
                       </button>

@@ -82,7 +82,7 @@ export function CancelVisitDialog({
       {/* Dialog */}
       <div
         ref={focusTrapRef}
-        className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+        className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="cancel-visit-dialog-title"
@@ -143,7 +143,7 @@ export function CancelVisitDialog({
               placeholder="Masukkan alasan pembatalan (minimal 10 karakter)..."
               rows={3}
               disabled={cancelMutation.isPending}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-[color,background-color,border-color,box-shadow,transform,opacity] placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-[color,background-color,border-color,box-shadow,transform,opacity] placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 dark:text-slate-100"
             />
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {reason.trim().length}/{MIN_REASON_LENGTH} karakter minimum
@@ -163,7 +163,7 @@ export function CancelVisitDialog({
               type="button"
               onClick={onClose}
               disabled={cancelMutation.isPending}
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Batal
             </button>

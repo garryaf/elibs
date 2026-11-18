@@ -220,7 +220,7 @@ export function MultiEntityAutocomplete({
           role="combobox"
           autoComplete="off"
           className={cn(
-            "h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand",
+            "h-10 w-full rounded-xl border border-border bg-card pl-9 pr-3.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 dark:focus:border-brand",
             error && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
           )}
         />
@@ -232,7 +232,7 @@ export function MultiEntityAutocomplete({
       {/* Dropdown */}
       {isOpen && (
         <div
-          className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900"
+          className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg"
           role="listbox"
           aria-multiselectable="true"
         >

@@ -105,7 +105,7 @@ export default function NotificationsPage() {
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            className="h-10 rounded-xl border border-border bg-card px-3 text-sm text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:text-slate-300"
           >
             <option value="">Semua Status</option>
             <option value="PENDING">Pending</option>
@@ -116,7 +116,7 @@ export default function NotificationsPage() {
           <select
             value={typeFilter}
             onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            className="h-10 rounded-xl border border-border bg-card px-3 text-sm text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:text-slate-300"
           >
             <option value="">Semua Media</option>
             <option value="EMAIL">Email</option>
@@ -126,7 +126,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
@@ -140,7 +140,7 @@ export default function NotificationsPage() {
                 <th className="px-5 py-3.5 text-right font-semibold text-slate-500">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-border">
               {isLoading ? (
                 <tr>
                   <td colSpan={7} className="px-5 py-4">
@@ -233,7 +233,7 @@ export default function NotificationsPage() {
                         <button
                           onClick={() => handleRetry(notif.id)}
                           disabled={retryMutation.isPending}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,transform,opacity] active:scale-95 disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card hover:bg-slate-50 text-slate-700 dark:hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,transform,opacity] active:scale-95 disabled:opacity-50"
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
                           Retry
@@ -258,7 +258,7 @@ export default function NotificationsPage() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-800 dark:bg-slate-900"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-slate-500 hover:bg-slate-50 disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -268,7 +268,7 @@ export default function NotificationsPage() {
               <button
                 onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
                 disabled={page >= meta.totalPages}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-800 dark:bg-slate-900"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-slate-500 hover:bg-slate-50 disabled:opacity-40"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>

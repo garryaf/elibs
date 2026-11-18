@@ -292,7 +292,7 @@ function JsonDiff({
       </div>
 
       {/* Table header */}
-      <div className="grid grid-cols-[minmax(120px,1fr)_1fr_1fr] gap-2 font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 pb-1 mb-1">
+      <div className="grid grid-cols-[minmax(120px,1fr)_1fr_1fr] gap-2 font-semibold text-slate-500 dark:text-slate-400 border-b border-border pb-1 mb-1">
         <span>Field</span>
         <span>Nilai Lama</span>
         <span>Nilai Baru</span>
@@ -1041,7 +1041,7 @@ export default function AuditTrailPage() {
 
                           {/* Expanded detail */}
                           {isExpanded && (
-                            <div className="border-t border-border bg-white px-6 py-4 dark:bg-slate-950">
+                            <div className="border-t border-border bg-card px-6 py-4">
                               <div className="mb-2 flex items-center justify-between">
                                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                   Detail Perubahan

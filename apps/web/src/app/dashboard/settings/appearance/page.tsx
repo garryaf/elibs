@@ -100,7 +100,7 @@ export default function AppearanceSettingsPage() {
                   className={`flex flex-col items-center gap-2 rounded-xl border p-4 text-center transition-colors ${
                     isSelected
                       ? "border-brand bg-brand/5 ring-2 ring-brand/20 dark:border-brand dark:bg-brand/10"
-                      : "border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+                      : "border-border hover:border-slate-300 hover:bg-slate-50 dark:hover:border-slate-600 dark:hover:bg-slate-800"
                   }`}
                 >
                   <Icon className={`h-6 w-6 ${isSelected ? "text-brand" : "text-slate-500 dark:text-slate-400"}`} />
@@ -112,7 +112,7 @@ export default function AppearanceSettingsPage() {
           </div>
         </div>
 
-        <div className="flex items-start justify-between rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+        <div className="flex items-start justify-between rounded-xl border border-border p-4">
           <div className="pr-4">
             <p className="text-sm font-medium text-slate-900 dark:text-white">Mode Kompak</p>
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Kurangi padding dan jarak antar elemen untuk melihat lebih banyak konten.</p>
@@ -124,7 +124,7 @@ export default function AppearanceSettingsPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
+      <div className="flex items-center gap-3 border-t border-border pt-4">
         <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark disabled:opacity-50">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {saving ? "Menyimpan..." : "Simpan Pengaturan"}

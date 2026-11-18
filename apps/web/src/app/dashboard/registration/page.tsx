@@ -198,7 +198,7 @@ function RegistrationWorkflow() {
 
         {/* Success Card */}
         <div className="mx-auto max-w-lg">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand/10">
               <CheckCircle2 className="h-8 w-8 text-brand" />
             </div>
@@ -228,7 +228,7 @@ function RegistrationWorkflow() {
               </button>
               <button
                 onClick={handleRegisterAnother}
-                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="flex items-center justify-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 <ClipboardPlus className="h-4 w-4" />
                 Daftar Pasien Lain
@@ -237,7 +237,7 @@ function RegistrationWorkflow() {
                 onClick={() =>
                   router.push(`/dashboard/visits/${state.createdVisit!.id}`)
                 }
-                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="flex items-center justify-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 <Eye className="h-4 w-4" />
                 Lihat Detail
@@ -281,7 +281,7 @@ function RegistrationWorkflow() {
                   `);
                   printWindow.document.close();
                 }}
-                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="flex items-center justify-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 <Printer className="h-4 w-4" />
                 Cetak Slip

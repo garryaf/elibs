@@ -246,7 +246,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
       />
 
       {/* Dialog */}
-      <div ref={focusTrapRef} role="dialog" aria-modal="true" className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div ref={focusTrapRef} role="dialog" aria-modal="true" className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
         {/* Header */}
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -275,7 +275,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
             </label>
 
             {loadingPreselected ? (
-              <div className="flex items-center justify-center rounded-xl border border-slate-200 px-3.5 py-3 dark:border-slate-700">
+              <div className="flex items-center justify-center rounded-xl border border-border px-3.5 py-3">
                 <div className="inline-flex items-center gap-2 text-sm text-slate-500">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-brand" />
                   Memuat data pasien...
@@ -312,7 +312,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
                     placeholder="Cari pasien (nama, MRN)..."
                     value={patientQuery}
                     onChange={(e) => setPatientQuery(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="h-11 w-full rounded-xl border border-border bg-card pl-9 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
                   />
                   {patientLoading && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -322,7 +322,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
                 </div>
 
                 {showPatientDropdown && patientResults.length > 0 && (
-                  <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                  <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card shadow-lg">
                     <div className="max-h-48 overflow-y-auto p-1">
                       {patientResults.map((patient) => (
                         <button
@@ -347,7 +347,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
                 )}
 
                 {showPatientDropdown && patientQuery.length >= 2 && patientResults.length === 0 && !patientLoading && (
-                  <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white p-3 text-center shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                  <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card p-3 text-center shadow-lg">
                     <p className="text-sm text-slate-500">Tidak ada pasien ditemukan</p>
                   </div>
                 )}
@@ -363,7 +363,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
             <select
               value={paymentMethod}
               onChange={(e) => { setPaymentMethod(e.target.value as PaymentMethod); setDirty(); }}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
             >
               <option value="CASH">Tunai (Cash)</option>
               <option value="TRANSFER">Transfer Bank</option>
@@ -425,7 +425,7 @@ export function InlineVisitCreate({ isOpen, onClose, onCreated, preselectedPatie
               type="button"
               onClick={guardedClose}
               disabled={submitting}
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Batal
             </button>

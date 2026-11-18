@@ -70,7 +70,7 @@ export function VisitRowActions({
         <div
           role="menu"
           aria-label="Menu aksi kunjungan"
-          className="absolute right-0 top-8 z-20 min-w-36 rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900 animate-in fade-in slide-in-from-top-1 duration-150"
+          className="absolute right-0 top-8 z-20 min-w-36 rounded-xl border border-border bg-card py-1 shadow-lg animate-in fade-in slide-in-from-top-1 duration-150"
         >
           {/* Always show "Lihat Detail" */}
           <button

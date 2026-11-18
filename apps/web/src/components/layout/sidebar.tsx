@@ -242,7 +242,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
                           className={cn(
                             "group flex items-center rounded-xl px-3 py-2.5 text-slate-600 hover:bg-white hover:text-brand hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-brand transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 ease-in-out",
                             isActive &&
-                              "bg-white text-brand shadow-sm ring-1 ring-brand/20 dark:bg-slate-900 dark:text-brand dark:ring-brand/30"
+                              "bg-card text-brand shadow-sm ring-1 ring-brand/20 dark:text-brand dark:ring-brand/30"
                           )}
                         >
                           <Icon
@@ -262,7 +262,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           );
         })}
       </nav>
-      <div className="p-4 border-t border-slate-200 dark:border-slate-800 text-center">
+      <div className="p-4 border-t border-border text-center">
         <p className="text-[10px] font-medium tracking-wider text-slate-400">eLIS ENTERPRISE v1.0</p>
       </div>
     </>
@@ -271,7 +271,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   return (
     <>
       {/* Desktop sidebar - always visible on lg+ */}
-      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-slate-200 bg-slate-50 pt-16 transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950 lg:flex">
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-border bg-slate-50 pt-16 transition-colors duration-300 dark:bg-slate-950 lg:flex">
         {sidebarContent}
       </aside>
 
@@ -285,7 +285,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             aria-hidden="true"
           />
           {/* Drawer */}
-          <aside className="fixed inset-y-0 left-0 z-50 w-64 flex-col border-r border-slate-200 bg-white shadow-xl overflow-y-auto dark:border-slate-800 dark:bg-slate-950">
+          <aside className="fixed inset-y-0 left-0 z-50 w-64 flex-col border-r border-border bg-card shadow-xl overflow-y-auto">
             {sidebarContent}
           </aside>
         </div>

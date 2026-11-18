@@ -188,7 +188,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 mt-4 overflow-hidden">
+    <div className="rounded-2xl border border-border bg-card shadow-sm mt-4 overflow-hidden">
       <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/50 px-5 py-3 dark:border-slate-800 dark:bg-slate-900/50">
         <ShieldPlus className="h-4 w-4 text-brand" />
         <span className="text-xs font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">
@@ -210,7 +210,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
         {claims.length > 0 ? (
           <div className="space-y-3" role="list" aria-label="Daftar klaim asuransi">
             {claims.map((claim) => (
-              <div key={claim.id} className="rounded-xl border border-slate-200 p-4 dark:border-slate-800" role="listitem">
+              <div key={claim.id} className="rounded-xl border border-border p-4" role="listitem">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <div className="font-semibold text-sm text-slate-900 dark:text-white">{claim.insuranceProvider?.name || "Asuransi"}</div>
@@ -295,7 +295,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
                 aria-label="Pilih asuransi untuk klaim"
                 value={selectedInsurance}
                 onChange={(e) => setSelectedInsurance(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 flex-1 min-w-[180px] dark:border-slate-700 dark:text-slate-200"
+                className="rounded-xl border border-border bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 flex-1 min-w-[180px] dark:text-slate-200"
               >
                 <option value="">Pilih Asuransi...</option>
                 {insurances.map((ins) => (
@@ -311,7 +311,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
                 placeholder="No Referensi"
                 value={claimReference}
                 onChange={(e) => setClaimReference(e.target.value)}
-                className="w-1/3 min-w-[120px] rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:border-slate-700 dark:text-slate-200"
+                className="w-1/3 min-w-[120px] rounded-xl border border-border bg-transparent px-3 py-2 text-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 dark:text-slate-200"
               />
               <button
                 id="claim-submit-btn"
@@ -333,7 +333,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
               role="dialog"
               aria-modal="true"
               aria-labelledby="claim-decision-title"
-              className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900 dark:border dark:border-slate-700"
+              className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl dark:border dark:border-slate-700"
             >
               <h3 id="claim-decision-title" className="text-lg font-bold mb-4 text-slate-900 dark:text-white">
                 {approvalType === "APPROVE" ? "Approve Klaim Full" : approvalType === "PARTIAL" ? "Approve Sebagian" : "Tolak Klaim"}
@@ -349,7 +349,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
                         type="number"
                         value={coveredAmount}
                         onChange={(e) => setCoveredAmount(e.target.value)}
-                        className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="w-full mt-1 rounded-xl border border-border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:bg-slate-800 dark:text-white"
                       />
                     </div>
                     <div>
@@ -359,7 +359,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
                         type="number"
                         value={copayAmount}
                         onChange={(e) => setCopayAmount(e.target.value)}
-                        className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="w-full mt-1 rounded-xl border border-border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:bg-slate-800 dark:text-white"
                       />
                     </div>
                     <div>
@@ -370,7 +370,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         placeholder="Opsional"
-                        className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="w-full mt-1 rounded-xl border border-border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:bg-slate-800 dark:text-white"
                       />
                     </div>
                   </>
@@ -382,7 +382,7 @@ export function ClaimsForm({ orderId, orderTotal }: { orderId: string; orderTota
                       value={rejectionReason}
                       onChange={(e) => setRejectionReason(e.target.value)}
                       placeholder="Jelaskan alasan penolakan klaim..."
-                      className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full mt-1 rounded-xl border border-border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus:border-brand dark:bg-slate-800 dark:text-white"
                       rows={3}
                     />
                   </div>

@@ -16,7 +16,7 @@ const variantStyles: Record<NonNullable<ButtonProps["variant"]>, string> = {
   secondary:
     "bg-brand/10 text-brand border border-brand/30 hover:bg-brand/20 dark:bg-brand/10 dark:border-brand/50",
   outline:
-    "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800",
+    "border border-border bg-card text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800",
   danger:
     "bg-red-600 text-white shadow-sm hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800",
   ghost:

@@ -422,7 +422,7 @@ export default function GeneralSettingsPage() {
             <div className="h-4 w-72 rounded bg-slate-200 dark:bg-slate-800" />
           </div>
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="animate-pulse rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+            <div key={i} className="animate-pulse rounded-xl border border-border bg-card p-6">
               <div className="mb-4 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-slate-200 dark:bg-slate-800" />
                 <div className="space-y-1.5">
@@ -446,10 +446,10 @@ export default function GeneralSettingsPage() {
   }
 
   const inputCls =
-    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500";
+    "w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 dark:placeholder:text-slate-500";
 
   const selectCls =
-    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
+    "w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100";
 
   const errorCls = "border-red-300 focus:border-red-500 focus:ring-red-200 dark:border-red-700";
 
@@ -492,7 +492,7 @@ export default function GeneralSettingsPage() {
     type: "logo" | "logo_small" | "report_header";
     inputRef: React.RefObject<HTMLInputElement | null>;
   }) => (
-    <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+    <div className="rounded-xl border border-border p-4">
       <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">{label}</p>
       <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">{description}</p>
 
@@ -501,7 +501,7 @@ export default function GeneralSettingsPage() {
           <img
             src={currentUrl}
             alt={label}
-            className="h-16 max-w-[200px] rounded-lg border border-slate-200 object-contain bg-white p-1 dark:border-slate-700 dark:bg-slate-800"
+            className="h-16 max-w-[200px] rounded-lg border border-border object-contain bg-card p-1"
           />
           <button
             onClick={() => {
@@ -514,7 +514,7 @@ export default function GeneralSettingsPage() {
           </button>
         </div>
       ) : (
-        <div className="mb-3 flex h-16 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700">
+        <div className="mb-3 flex h-16 items-center justify-center rounded-lg border-2 border-dashed border-border">
           <ImageIcon className="h-6 w-6 text-slate-300 dark:text-slate-600" />
         </div>
       )}
@@ -533,7 +533,7 @@ export default function GeneralSettingsPage() {
       <button
         onClick={() => inputRef.current?.click()}
         disabled={uploadingLogo === type}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
       >
         {uploadingLogo === type ? (
           <Loader2 className="h-3 w-3 animate-spin" />
@@ -579,7 +579,7 @@ export default function GeneralSettingsPage() {
         {/* ═══════════════════════════════════════════════════════════════════════
             Section 1: Identitas Fasilitas (BIZ-GEN-01)
         ═══════════════════════════════════════════════════════════════════════ */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-3 mb-6">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand/10">
               <Building2 className="h-5 w-5 text-brand" />
@@ -769,7 +769,7 @@ export default function GeneralSettingsPage() {
         {/* ═══════════════════════════════════════════════════════════════════════
             Section 2: Logo & Branding (BIZ-GEN-02)
         ═══════════════════════════════════════════════════════════════════════ */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-3 mb-6">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/20">
               <ImageIcon className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
@@ -812,7 +812,7 @@ export default function GeneralSettingsPage() {
         {/* ═══════════════════════════════════════════════════════════════════════
             Section 3: Regional & Locale (BIZ-GEN-03)
         ═══════════════════════════════════════════════════════════════════════ */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-3 mb-6">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20">
               <Globe className="h-5 w-5 text-blue-500 dark:text-blue-400" />
@@ -899,7 +899,7 @@ export default function GeneralSettingsPage() {
         {/* ═══════════════════════════════════════════════════════════════════════
             Section 4: Format Penomoran (BIZ-GEN-04)
         ═══════════════════════════════════════════════════════════════════════ */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-3 mb-6">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-900/20">
               <Hash className="h-5 w-5 text-purple-500 dark:text-purple-400" />
@@ -1003,7 +1003,7 @@ export default function GeneralSettingsPage() {
                 ].map((v) => (
                   <span
                     key={v.tag}
-                    className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs dark:bg-slate-800"
+                    className="inline-flex items-center gap-1 rounded-md bg-card px-2 py-1 text-xs"
                   >
                     <code className="font-mono text-brand">{v.tag}</code>
                     <span className="text-slate-500">— {v.desc}</span>
@@ -1017,7 +1017,7 @@ export default function GeneralSettingsPage() {
         {/* ═══════════════════════════════════════════════════════════════════════
             Section 5: Jam Operasional (BIZ-GEN-05)
         ═══════════════════════════════════════════════════════════════════════ */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-3 mb-6">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-900/20">
               <Clock className="h-5 w-5 text-amber-500 dark:text-amber-400" />
@@ -1033,7 +1033,7 @@ export default function GeneralSettingsPage() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-start justify-between rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+            <div className="flex items-start justify-between rounded-xl border border-border p-4">
               <div className="pr-4">
                 <p className="text-sm font-medium text-slate-900 dark:text-white">Operasional 24 Jam</p>
                 <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
@@ -1091,7 +1091,7 @@ export default function GeneralSettingsPage() {
         {/* ═══════════════════════════════════════════════════════════════════════
             Section 6: Session & Security (BIZ-GEN-06)
         ═══════════════════════════════════════════════════════════════════════ */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-3 mb-6">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-50 dark:bg-rose-900/20">
               <Shield className="h-5 w-5 text-rose-500 dark:text-rose-400" />
@@ -1211,7 +1211,7 @@ export default function GeneralSettingsPage() {
         {/* ═══════════════════════════════════════════════════════════════════════
             Section 7: Maintenance & Backup (BIZ-GEN-07)
         ═══════════════════════════════════════════════════════════════════════ */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-3 mb-6">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-900/20">
               <Wrench className="h-5 w-5 text-orange-500 dark:text-orange-400" />
@@ -1228,7 +1228,7 @@ export default function GeneralSettingsPage() {
 
           <div className="space-y-4">
             {/* Maintenance Mode toggle */}
-            <div className="flex items-start justify-between rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+            <div className="flex items-start justify-between rounded-xl border border-border p-4">
               <div className="pr-4">
                 <p className="text-sm font-medium text-slate-900 dark:text-white">Mode Maintenance</p>
                 <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
@@ -1278,7 +1278,7 @@ export default function GeneralSettingsPage() {
               </div>
               <div>
                 <label className={labelCls}>Backup Terakhir</label>
-                <div className="flex h-10 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400">
+                <div className="flex h-10 items-center rounded-xl border border-border bg-slate-50 px-4 text-sm text-slate-600 dark:bg-slate-800/50 dark:text-slate-400">
                   {lastBackupAt
                     ? new Date(lastBackupAt).toLocaleString("id-ID", {
                         year: "numeric",
@@ -1306,7 +1306,7 @@ export default function GeneralSettingsPage() {
         {/* ═══════════════════════════════════════════════════════════════════════
             Section 8: Pagination & Display (BIZ-GEN-08)
         ═══════════════════════════════════════════════════════════════════════ */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-3 mb-6">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-50 dark:bg-teal-900/20">
               <LayoutGrid className="h-5 w-5 text-teal-500 dark:text-teal-400" />
@@ -1373,7 +1373,7 @@ export default function GeneralSettingsPage() {
         {/* ═══════════════════════════════════════════════════════════════════════
             Section 9: Export / Import (T-19)
         ═══════════════════════════════════════════════════════════════════════ */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-3 mb-6">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
               <DatabaseBackup className="h-5 w-5 text-slate-500 dark:text-slate-400" />
@@ -1390,7 +1390,7 @@ export default function GeneralSettingsPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Export */}
-            <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+            <div className="rounded-xl border border-border p-4">
               <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">Export Settings</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
                 Download seluruh konfigurasi sebagai file JSON. Nilai sensitif (password) tidak disertakan.
@@ -1398,7 +1398,7 @@ export default function GeneralSettingsPage() {
               <button
                 onClick={handleExport}
                 disabled={exporting}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
                 {exporting ? "Mengexport..." : "Download JSON"}
@@ -1406,7 +1406,7 @@ export default function GeneralSettingsPage() {
             </div>
 
             {/* Import */}
-            <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+            <div className="rounded-xl border border-border p-4">
               <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">Import Settings</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
                 Restore konfigurasi dari file backup JSON. Data sensitif akan diskip.
@@ -1425,7 +1425,7 @@ export default function GeneralSettingsPage() {
               <button
                 onClick={() => importFileRef.current?.click()}
                 disabled={importing}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 {importing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
                 {importing ? "Mengimport..." : "Upload JSON"}
@@ -1437,11 +1437,11 @@ export default function GeneralSettingsPage() {
         {/* ═══════════════════════════════════════════════════════════════════════
             Action Buttons
         ═══════════════════════════════════════════════════════════════════════ */}
-        <div className="flex items-center justify-between border-t border-slate-200 pt-4 dark:border-slate-700">
+        <div className="flex items-center justify-between border-t border-border pt-4">
           <button
             onClick={handleReset}
             disabled={saving || !isDirty}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <RotateCcw className="h-4 w-4" />
             Reset

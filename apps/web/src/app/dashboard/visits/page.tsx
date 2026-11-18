@@ -283,11 +283,11 @@ function VisitsPageContent() {
               placeholder="Cari nama pasien, MRN, atau nomor kunjungan..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-10 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex flex-wrap items-center gap-1 rounded-xl border border-border bg-card p-1">
             {STATUS_FILTERS.map((f) => (
               <button
                 key={f.value}
@@ -314,7 +314,7 @@ function VisitsPageContent() {
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            className="h-9 rounded-lg border border-border bg-card px-3 text-xs text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 dark:text-slate-300"
           />
           <span className="text-xs text-slate-400">s/d</span>
           <input
@@ -322,7 +322,7 @@ function VisitsPageContent() {
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            className="h-9 rounded-lg border border-border bg-card px-3 text-xs text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand/20 dark:text-slate-300"
           />
           {(startDate || endDate) && (
             <button
@@ -365,7 +365,7 @@ function VisitsPageContent() {
       ) : visits.length === 0 ? (
         <EmptyState search={debouncedSearch} />
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800">
@@ -490,7 +490,7 @@ function VisitsPageContent() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 text-xs font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               Sebelumnya
@@ -512,7 +512,7 @@ function VisitsPageContent() {
                   className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-medium transition-colors ${
                     page === p
                       ? "bg-brand text-white shadow-sm"
-                      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                      : "border border-border bg-card text-slate-700 hover:bg-slate-50 dark:text-slate-300"
                   }`}
                 >
                   {p}
@@ -523,7 +523,7 @@ function VisitsPageContent() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 text-xs font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Berikutnya
               <ChevronRight className="h-3.5 w-3.5" />
@@ -586,7 +586,7 @@ function LoadingSkeleton() {
 
 function EmptyState({ search }: { search: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-16 dark:border-slate-800 dark:bg-slate-950">
+    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card py-16">
       <FileX2 className="h-12 w-12 text-slate-300 dark:text-slate-600" />
       <div className="text-center">
         <p className="font-medium text-slate-700 dark:text-slate-300">

@@ -253,7 +253,7 @@ export default function RegionsPage() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-slate-200 dark:border-slate-700">
+      <div className="border-b border-border">
         <nav className="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
           {TAB_CONFIG.map((tab) => (
             <button
@@ -316,7 +316,7 @@ export default function RegionsPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand dark:text-slate-200"
         />
       </div>
 
@@ -353,7 +353,7 @@ export default function RegionsPage() {
       {/* Loading state */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-brand" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-brand" />
           <span className="ml-3 text-sm text-slate-500">
             Memuat data {currentTabConfig.label.toLowerCase()}...
           </span>
@@ -362,9 +362,9 @@ export default function RegionsPage() {
 
       {/* Table */}
       {!loading && !error && !needsParent && (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
+            <thead className="border-b border-border bg-slate-50 dark:bg-slate-800">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-300">
                   No
@@ -382,7 +382,7 @@ export default function RegionsPage() {
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-border">
               {items.length === 0 ? (
                 <tr>
                   <td
@@ -439,14 +439,14 @@ export default function RegionsPage() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300"
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300"
             >
               ← Sebelumnya
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300"
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300"
             >
               Selanjutnya →
             </button>

@@ -259,7 +259,7 @@ export default function ReportsPage() {
                 "flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors",
                 isActive
                   ? "border-brand/50 bg-brand/5 ring-1 ring-brand/30 dark:border-brand dark:bg-brand/10"
-                  : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700"
+                  : "border-border bg-card hover:border-slate-300 hover:shadow-sm dark:hover:border-slate-700"
               )}
             >
               <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", report.color)}>
@@ -277,7 +277,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Date Range Filter */}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
         <Calendar className="h-4 w-4 text-slate-400" />
         <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Periode:</span>
         {/* Quick preset buttons */}
@@ -303,7 +303,7 @@ export default function ReportsPage() {
               setDateFrom(from);
               setDateTo(to);
             }}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-brand hover:bg-brand/5 hover:text-brand dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-brand dark:hover:text-brand"
+            className="rounded-lg border border-border bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-brand hover:bg-brand/5 hover:text-brand dark:bg-slate-800 dark:text-slate-300 dark:hover:border-brand dark:hover:text-brand"
           >
             {preset.label}
           </button>
@@ -313,19 +313,19 @@ export default function ReportsPage() {
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="h-9 rounded-lg border border-border bg-card px-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-white"
         />
         <span className="text-sm text-slate-400">s/d</span>
         <input
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="h-9 rounded-lg border border-border bg-card px-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-white"
         />
       </div>
 
       {/* Report Content */}
-      <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+      <div className="rounded-2xl border border-border bg-card">
         <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", config.color)}>
@@ -537,7 +537,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
         {/* Daily table */}
         <div>
           <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Rincian Harian</h3>
-          <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="overflow-hidden rounded-xl border border-border">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-900">
                 <tr>
@@ -546,7 +546,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
                   <th className="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-400">Pendapatan</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-border">
                 {dailyArray.map((d, i) => (
                   <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                     <td className="px-4 py-3 text-slate-900 dark:text-white">{String(d.date ?? "-")}</td>
@@ -653,7 +653,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
           </div>
           <div>
             <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Rincian per Pemeriksaan</h3>
-            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="overflow-hidden rounded-xl border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 dark:bg-slate-900">
                   <tr>
@@ -663,7 +663,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
                     <th className="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-400">Pendapatan</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-border">
                   {testData.map((item, i) => (
                     <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                       <td className="px-4 py-3">
@@ -732,7 +732,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
           </div>
           <div>
             <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Rincian Pendapatan</h3>
-            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="overflow-hidden rounded-xl border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 dark:bg-slate-900">
                   <tr>
@@ -741,7 +741,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
                     <th className="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-400">Pendapatan</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-border">
                   {revenueData.map((item, i) => (
                     <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                       <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
@@ -786,7 +786,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
           )}
           <div>
             <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Turnaround Time per Kategori</h3>
-            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="overflow-hidden rounded-xl border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 dark:bg-slate-900">
                   <tr>
@@ -795,7 +795,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
                     <th className="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-400">Jumlah Order</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-border">
                   {tatData.map((item, i) => (
                     <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                       <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
@@ -830,7 +830,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
           )}
           <div>
             <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Daftar Data</h3>
-            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="overflow-hidden rounded-xl border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 dark:bg-slate-900">
                   <tr>
@@ -839,7 +839,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
                     <th className="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-400">Jumlah</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-border">
                   {namedData.map((item, i) => (
                     <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                       <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{i + 1}</td>
@@ -868,7 +868,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
             <SummaryCard label="Total" value={String(total)} accent />
           </div>
         )}
-        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+        <div className="overflow-hidden rounded-xl border border-border">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-900">
@@ -880,7 +880,7 @@ function ReportContent({ summary }: { summary: Record<string, unknown> }) {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-border">
                 {dataArray.map((item, i) => (
                   <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 even:bg-slate-50/50 dark:even:bg-slate-900/30 even:bg-slate-50/50 dark:even:bg-slate-900/30">
                     {columns.map((col) => (

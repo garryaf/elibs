@@ -300,7 +300,7 @@ function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) 
                 "flex h-7 w-7 items-center justify-center rounded-lg text-sm font-medium transition-colors",
                 currentPage === item
                   ? "bg-brand text-white shadow-sm shadow-brand/30"
-                  : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+                  : "border border-border bg-card text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
               )}
               aria-label={`Halaman ${item}`}
               aria-current={currentPage === item ? "page" : undefined}
@@ -413,7 +413,7 @@ export function MasterDataTable({
       )}
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

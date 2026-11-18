@@ -57,7 +57,7 @@ function LabHistorySkeleton() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+          className="rounded-xl border border-border p-4"
         >
           <div className="flex items-center justify-between">
             <div className="space-y-2">
@@ -162,7 +162,7 @@ function OrderCard({ order }: { order: LabHistoryItem }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-xl border border-border bg-card">
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
@@ -205,7 +205,7 @@ function OrderCard({ order }: { order: LabHistoryItem }) {
                 <th className="pb-2 font-medium">Flag</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-border">
               {order.orderDetails.map((detail) => (
                 <tr key={detail.id}>
                   <td className="py-1.5 font-medium text-slate-700 dark:text-slate-300">
@@ -324,13 +324,13 @@ export function PatientLabHistory({ patientId }: { patientId: string }) {
             onClick={handleRefresh}
             disabled={refreshing}
             title="Refresh riwayat"
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+            className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Memuat..." : "Refresh"}
           </button>
         </div>
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-800/50">
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-slate-50 p-6 dark:bg-slate-800/50">
           <FlaskConical className="h-8 w-8 text-slate-300 dark:text-slate-600" />
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Belum ada riwayat laboratorium
@@ -352,7 +352,7 @@ export function PatientLabHistory({ patientId }: { patientId: string }) {
           onClick={handleRefresh}
           disabled={refreshing}
           title="Refresh riwayat"
-          className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+          className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
           {refreshing ? "Memuat..." : "Refresh"}
@@ -375,14 +375,14 @@ export function PatientLabHistory({ patientId }: { patientId: string }) {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+              className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-400 dark:hover:bg-slate-800"
             >
               Sebelumnya
             </button>
             <button
               onClick={() => setPage((p) => Math.min(data.meta.totalPages, p + 1))}
               disabled={page >= data.meta.totalPages}
-              className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+              className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-400 dark:hover:bg-slate-800"
             >
               Selanjutnya
             </button>

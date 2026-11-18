@@ -151,7 +151,7 @@ function KPISkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950"
+          className="rounded-xl border border-border bg-card p-6"
         >
           <div className="flex items-center justify-between">
             <div className="space-y-3">
@@ -804,7 +804,7 @@ export default function DashboardPage() {
             <Calendar className="h-4 w-4 text-slate-400" />
             <span>Tren Periode</span>
           </div>
-          <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-slate-50 p-0.5 dark:bg-slate-900">
             {DATE_RANGE_PRESETS.map((preset) => (
               <button
                 key={preset.value}
@@ -812,7 +812,7 @@ export default function DashboardPage() {
                 className={cn(
                   "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   dateRange === preset.value
-                    ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white"
+                    ? "bg-card text-slate-900 shadow-sm dark:text-white"
                     : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                 )}
               >
@@ -825,7 +825,7 @@ export default function DashboardPage() {
         {/* Charts Grid */}
         <div className="grid gap-4 lg:grid-cols-2">
           {/* Revenue Line Chart */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <div className="rounded-lg bg-brand/10 p-2 text-brand">
                 <TrendingUp className="h-4 w-4" />
@@ -843,7 +843,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Volume Bar Chart */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <div className="rounded-lg bg-indigo-100 p-2 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
                 <BarChart3 className="h-4 w-4" />
@@ -863,7 +863,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Region Distribution Widget */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <div className="rounded-lg bg-purple-100 p-2 text-purple-600 dark:bg-purple-900/50 dark:text-purple-400">
             <Users className="h-4 w-4" />
@@ -901,7 +901,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Comparison Metrics (#26) */}
         {compMetrics && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <h3 className="mb-4 text-sm font-semibold text-slate-900 dark:text-white">
             Perbandingan (vs Kemarin)
           </h3>
@@ -934,7 +934,7 @@ export default function DashboardPage() {
 
         {/* SLA Monitoring (#27) + Phased TAT (#23) */}
         {phasedTat && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <h3 className="mb-4 text-sm font-semibold text-slate-900 dark:text-white">
             SLA & Turnaround Time
           </h3>
@@ -981,7 +981,7 @@ export default function DashboardPage() {
 
         {/* Revenue Breakdown (#20) */}
         {revBreakdown && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <h3 className="mb-4 text-sm font-semibold text-slate-900 dark:text-white">
             Revenue Breakdown (Bulan Ini)
           </h3>
@@ -1014,7 +1014,7 @@ export default function DashboardPage() {
 
         {/* Workload Distribution (#28) */}
         {workload && workload.analysts && workload.analysts.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <h3 className="mb-4 text-sm font-semibold text-slate-900 dark:text-white">
             Beban Kerja Analis (30 Hari)
           </h3>
@@ -1043,8 +1043,8 @@ export default function DashboardPage() {
       )}
 
       {/* Recent Orders Table */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+      <div className="rounded-xl border border-border bg-card shadow-sm">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <h2 className="font-semibold text-slate-900 dark:text-white">Order Terbaru</h2>
           <Link
             href="/dashboard/orders"
@@ -1083,7 +1083,7 @@ export default function DashboardPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-border">
                 {orders.slice(0, 5).map((order) => {
                   const badge = STATUS_BADGE[order.status] ?? {
                     label: order.status,

@@ -605,7 +605,7 @@ export default function OrdersPage() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 text-xs font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               Sebelumnya
@@ -627,7 +627,7 @@ export default function OrdersPage() {
                   className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-medium transition-colors ${
                     page === p
                       ? "bg-brand text-white shadow-sm"
-                      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                      : "border border-border bg-card text-slate-700 hover:bg-slate-50 dark:text-slate-300"
                   }`}
                 >
                   {p}
@@ -638,7 +638,7 @@ export default function OrdersPage() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 text-xs font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Berikutnya
               <ChevronRight className="h-3.5 w-3.5" />

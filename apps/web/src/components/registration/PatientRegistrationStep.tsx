@@ -56,7 +56,7 @@ const initialForm: RegistrationFormData = {
 };
 
 const inputClass =
-  "mt-0 h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand";
+  "mt-0 h-10 w-full rounded-xl border border-border bg-card px-3.5 py-2 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 dark:focus:border-brand";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -303,7 +303,7 @@ export function PatientRegistrationStep({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="rounded-2xl border border-border bg-card shadow-sm">
       {/* Header */}
       <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
         <h2 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -389,7 +389,7 @@ export function PatientRegistrationStep({
                         "flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-colors",
                         form.gender === g
                           ? "border-brand bg-brand/10 text-brand ring-1 ring-brand/30 dark:border-brand dark:bg-brand-light dark:text-brand"
-                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+                          : "border-border bg-card text-slate-600 hover:bg-slate-50 dark:text-slate-400"
                       )}
                     >
                       <input
@@ -459,7 +459,7 @@ export function PatientRegistrationStep({
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
                   className={cn(
-                    "mt-0 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-brand",
+                    "mt-0 w-full resize-none rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 dark:focus:border-brand",
                     errors.address && "border-red-400 focus:border-red-400 focus:ring-red-400/20"
                   )}
                 />
@@ -547,7 +547,7 @@ export function PatientRegistrationStep({
           )}
 
           {/* FUNC-REG-01: Consent Digital Notification */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
+          <div className="rounded-xl border border-border bg-slate-50 p-4 dark:bg-slate-900/50">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 id="reg-consent"
@@ -574,7 +574,7 @@ export function PatientRegistrationStep({
             type="button"
             onClick={onBack}
             disabled={isSubmitting}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            className="flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-medium text-slate-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-700"
           >
             <ArrowLeft className="h-4 w-4" />
             Kembali
@@ -602,7 +602,7 @@ export function PatientRegistrationStep({
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowPreview(false)} />
-          <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">Konfirmasi Data Pasien</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Periksa kembali data sebelum mendaftarkan</p>
 
@@ -626,7 +626,7 @@ export function PatientRegistrationStep({
             <div className="mt-5 flex gap-3">
               <button
                 onClick={() => setShowPreview(false)}
-                className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+                className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300"
               >
                 Kembali Edit
               </button>

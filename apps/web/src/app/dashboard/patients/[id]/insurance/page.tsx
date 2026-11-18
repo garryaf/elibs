@@ -275,7 +275,7 @@ function PageHeader({ patientId }: { patientId: string }) {
     <div className="flex items-center gap-3">
       <Link
         href="/dashboard/patients"
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-brand/10 hover:text-brand dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-slate-500 hover:bg-brand/10 hover:text-brand dark:text-slate-400"
         aria-label="Kembali ke daftar pasien"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -296,7 +296,7 @@ function PageHeader({ patientId }: { patientId: string }) {
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-16 dark:border-slate-800 dark:bg-slate-950">
+    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card py-16">
       <Shield className="h-12 w-12 text-slate-300 dark:text-slate-600" />
       <p className="font-medium text-slate-600 dark:text-slate-400">
         Belum ada data asuransi
@@ -330,7 +330,7 @@ function InsuranceRecordCard({
   const insuranceCode = record.insurance?.code ?? "";
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] hover:border-slate-300 dark:hover:border-slate-700">
       <div className="flex items-start justify-between gap-4">
         {/* Left: Insurance Info */}
         <div className="flex items-start gap-3">
@@ -538,7 +538,7 @@ function InsuranceFormModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="insurance-form-title"
-        className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200"
+        className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-200"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
@@ -576,7 +576,7 @@ function InsuranceFormModal({
               <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Penyedia Asuransi
               </label>
-              <div className="flex h-11 items-center rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              <div className="flex h-11 items-center rounded-xl border border-border bg-slate-50 px-3.5 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                 {editingRecord.insurance.name}
               </div>
             </div>
@@ -593,7 +593,7 @@ function InsuranceFormModal({
               onChange={(e) => setMemberNumber(e.target.value)}
               maxLength={50}
               placeholder="Masukkan nomor anggota"
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
             />
           </div>
 
@@ -608,7 +608,7 @@ function InsuranceFormModal({
               onChange={(e) => setPolicyNumber(e.target.value)}
               maxLength={50}
               placeholder="Masukkan nomor polis"
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
             />
           </div>
 
@@ -620,7 +620,7 @@ function InsuranceFormModal({
             <select
               value={priority}
               onChange={(e) => setPriority(Number(e.target.value))}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
             >
               <option value={1}>1 — Primer</option>
               <option value={2}>2 — Sekunder</option>
@@ -638,7 +638,7 @@ function InsuranceFormModal({
             <select
               value={insuranceType}
               onChange={(e) => setInsuranceType(e.target.value as InsuranceType | "")}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
             >
               <option value="">— Pilih tipe —</option>
               <option value="BPJS">BPJS</option>
@@ -656,7 +656,7 @@ function InsuranceFormModal({
               <select
                 value={bpjsClassLevel}
                 onChange={(e) => setBpjsClassLevel(e.target.value ? Number(e.target.value) : "")}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
               >
                 <option value="">— Pilih kelas —</option>
                 <option value={1}>Kelas 1</option>
@@ -676,7 +676,7 @@ function InsuranceFormModal({
                 type="date"
                 value={validFrom}
                 onChange={(e) => setValidFrom(e.target.value)}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
               />
             </div>
             <div>
@@ -687,7 +687,7 @@ function InsuranceFormModal({
                 type="date"
                 value={validUntil}
                 onChange={(e) => setValidUntil(e.target.value)}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100"
               />
             </div>
           </div>
@@ -720,7 +720,7 @@ function InsuranceFormModal({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Catatan tambahan (opsional)"
               rows={2}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 resize-none"
+              className="w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:text-slate-100 resize-none"
             />
           </div>
 
@@ -738,7 +738,7 @@ function InsuranceFormModal({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Batal
             </button>
@@ -781,7 +781,7 @@ function DeleteConfirmDialog({
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200"
+        className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
       >
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
           <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
@@ -800,7 +800,7 @@ function DeleteConfirmDialog({
           <button
             onClick={onCancel}
             disabled={isDeleting}
-            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             Batal
           </button>

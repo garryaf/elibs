@@ -113,10 +113,10 @@ export function SearchableDropdown({
             aria-controls="dropdown-listbox"
             className={`flex h-11 w-full items-center justify-between rounded-xl border px-3.5 text-sm transition-colors ${
               disabled
-                ? "cursor-not-allowed border-slate-200 bg-slate-100 opacity-60 dark:border-slate-700 dark:bg-slate-800"
+                ? "cursor-not-allowed border-border bg-slate-100 opacity-60 dark:bg-slate-800"
                 : error
                   ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/10"
-                  : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+                  : "border-border bg-card hover:border-slate-300"
             }`}
           >
             <span className={value ? "text-slate-900 dark:text-white" : "text-slate-400"}>
@@ -149,13 +149,13 @@ export function SearchableDropdown({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={`Cari ${label?.toLowerCase() ?? ""}...`}
-              className="h-11 w-full rounded-xl border border-brand bg-white pl-9 pr-4 text-sm text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ring-2 ring-brand/20 dark:border-brand dark:bg-slate-900 dark:text-slate-100"
+              className="h-11 w-full rounded-xl border border-brand bg-card pl-9 pr-4 text-sm text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ring-2 ring-brand/20 dark:border-brand dark:text-slate-100"
             />
           </div>
         )}
 
         {isOpen && (
-          <div id="dropdown-listbox" role="listbox" className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          <div id="dropdown-listbox" role="listbox" className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card shadow-lg">
             <div className="max-h-48 overflow-y-auto p-1">
               {loading ? (
                 <div className="flex items-center justify-center py-3">
